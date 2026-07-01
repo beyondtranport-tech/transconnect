@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, Suspense, useEffect, useMemo } from 'react';
@@ -33,7 +34,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Lock, ArrowRight } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
 import { roles } from '@/lib/roles';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -58,10 +59,11 @@ function JoinFormComponent() {
   const [authActionInitiated, setAuthActionInitiated] = useState(false);
   const auth = useAuth();
   const { user, isUserLoading, forceRefresh } = useUser();
+  
   const redirectParam = searchParams.get('redirect');
-
-  // URL Params
   const initialRole = searchParams.get('role');
+  const isRestricted = searchParams.get('restricted') === 'true';
+
   const [selectedPosition, setSelectedPosition] = useState<string | null>(initialRole);
   
   const referrerId = searchParams.get('ref');
@@ -69,10 +71,11 @@ function JoinFormComponent() {
   const firstNameParam = searchParams.get('firstName');
   const lastNameParam = searchParams.get('lastName');
   const phoneParam = searchParams.get('phone');
-  const isRestricted = searchParams.get('restricted') === 'true';
 
+  // Filter roles based on restricted status (Funding origins)
   const displayedRoles = useMemo(() => {
     if (isRestricted) {
+        // High-intent filter for In-house funding: Suppliers (Vendors) and Transporters only
         return roles.filter(r => r.id === 'vendor' || r.id === 'transporter');
     }
     return roles;
@@ -86,7 +89,7 @@ function JoinFormComponent() {
             title: 'Account Ready!',
             description: "Redirecting to your dashboard...",
         });
-        const isAdmin = user.claims?.admin === true || user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com';
+        const isAdmin = user.claims?.admin === true || user.email === 'mkoton100@gmail.com' || user.email === 'beyondtransport@gmail.com' || user.email === 'michael@logisticsflow.co.za';
         const defaultRedirect = isAdmin ? '/adminaccount' : '/account';
         router.push(redirectParam || defaultRedirect);
     }
@@ -172,10 +175,17 @@ function JoinFormComponent() {
           <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16 text-left">
           <Card className="w-full max-w-2xl text-left border-none shadow-2xl overflow-hidden">
             <CardHeader className="text-center bg-slate-900 text-white p-10 text-left">
-                <CardTitle className="text-3xl font-black font-headline text-left">Secure Your Digital Node</CardTitle>
-                <CardDescription className="text-slate-400 mt-2 text-left">
+                <div className="flex justify-between items-center mb-4">
+                    <CardTitle className="text-3xl font-black font-headline text-left">Secure Your Digital Node</CardTitle>
+                    {isRestricted && (
+                        <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 h-6">
+                            <ShieldCheck className="h-3 w-3 mr-1" /> Funding Path Active
+                        </Badge>
+                    )}
+                </div>
+                <CardDescription className="text-slate-400 text-left">
                     {isRestricted 
-                        ? "Select your business type to access specialized industry funding." 
+                        ? "Select your business type to access specialized in-house industrial funding." 
                         : "Select your primary function to optimize your ecosystem experience."}
                 </CardDescription>
             </CardHeader>
@@ -199,7 +209,6 @@ function JoinFormComponent() {
                                     <div className="text-left py-2 flex-1 min-w-0">
                                         <div className="flex items-center gap-2">
                                             <p className="font-black text-sm uppercase tracking-tighter">{role.title}</p>
-                                            {isSupplier && <Badge className="text-[8px] h-4 bg-primary text-white border-none uppercase">Priority</Badge>}
                                         </div>
                                         <p className="text-[11px] text-muted-foreground leading-tight mt-1 font-medium">{role.description}</p>
                                     </div>

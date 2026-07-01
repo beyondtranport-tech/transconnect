@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,9 @@ export default function FundingPage() {
 
     // Direct path for applications starting here
     // Restricted to Transporters and Suppliers (Vendors)
-    const ctaLink = user ? '/funding/apply?origination=direct' : `/join?restricted=true&redirect=${encodeURIComponent('/funding/apply?origination=direct')}`;
+    // EXPLICITLY ensuring restricted=true is passed to /join
+    const redirectDest = encodeURIComponent('/funding/apply?origination=direct');
+    const ctaLink = user ? '/funding/apply?origination=direct' : `/join?restricted=true&redirect=${redirectDest}`;
 
     return (
         <div className="text-left">
