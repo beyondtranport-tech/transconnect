@@ -206,7 +206,7 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
 
 function StakeholderForm({ type, label }: { type: 'directors' | 'shareholders', label: string }) {
     const { control } = useFormContext<ApplicationFormValues>();
-    const { fields, append, remove, replace } = useFieldArray({ control, name: type });
+    const { fields, append, remove } = useFieldArray({ control, name: type });
     const [count, setCount] = useState(fields.length || 0);
 
     const handleCountChange = (val: string) => {
@@ -214,7 +214,7 @@ function StakeholderForm({ type, label }: { type: 'directors' | 'shareholders', 
         setCount(num);
         const currentItems = [...fields];
         if (num > currentItems.length) {
-            for (let i = currentItems.length; i < num; i++) append({ name: '', position: '', since: '', idUrl: '', addressUrl: '' });
+            for (let i = currentItems.length; i < num; i++) append({ name: '', position: '', since: '', rsaIdUrl: '', proofAddressUrl: '' });
         } else if (num < currentItems.length) {
             for (let i = currentItems.length - 1; i >= num; i--) remove(i);
         }
@@ -471,7 +471,7 @@ function ApplyForm() {
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose class..." /></SelectTrigger></FormControl>
                                             <SelectContent>
-                                                {vehicleClasses.map(vc => <SelectItem key={v} value={vc}>{vc}</SelectItem>)}
+                                                {vehicleClasses.map(vc => <SelectItem key={vc} value={vc}>{vc}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </FormItem>
@@ -575,7 +575,7 @@ function ApplyForm() {
             
             <div className="flex justify-between items-center pt-8 border-t text-left">
               <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0} className="h-12 px-8 font-bold"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
-              {currentStep < dynamicSteps.length - 1 ? (
+              {currentStep < staticSteps.length - 1 ? (
                 <Button type="button" onClick={processStep} className="h-12 px-10 font-bold">Next <ArrowRight className="ml-2 h-4 w-4" /></Button>
               ) : (
                 <Button type="submit" disabled={isSubmitting} className="h-12 bg-primary hover:bg-primary/90 shadow-lg font-black uppercase tracking-tight">
