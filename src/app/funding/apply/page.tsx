@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { Suspense, useState, useEffect, useMemo } from 'react';
@@ -109,6 +110,7 @@ const baseSchema = z.object({
   hasDefaults: z.boolean().default(false),
   hasArrears: z.boolean().default(false),
   apiConsent: z.boolean().default(false),
+  originationType: z.enum(['direct', 'market']).default('market'),
 });
 
 const combinedSchema = baseSchema.superRefine((data, ctx) => {
@@ -220,12 +222,12 @@ function StakeholderForm({ type, label }: { type: 'directors' | 'shareholders', 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between bg-muted/30 p-3 rounded-lg">
-                <Label className="font-bold flex items-center gap-2">
+                <Label className="font-bold flex items-center gap-2 text-left">
                     <Users className="h-4 w-4 text-primary" />
                     Number of {label}
                 </Label>
                 <Select value={String(count)} onValueChange={handleCountChange}>
-                    <SelectTrigger className="w-24 bg-white border-2"><SelectValue placeholder="0" /></SelectTrigger>
+                    <SelectTrigger className="w-24 bg-white border-2 text-left"><SelectValue placeholder="0" /></SelectTrigger>
                     <SelectContent>
                         {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
                     </SelectContent>
@@ -233,9 +235,11 @@ function StakeholderForm({ type, label }: { type: 'directors' | 'shareholders', 
             </div>
 
             {fields.map((field, index) => (
-                <div key={field.id} className="p-6 border-2 border-dashed rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center justify-between border-b pb-4">
-                        <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} {index + 1}</Badge>
+                <div key={field.id} className="p-6 border-2 border-dashed rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2 text-left">
+                    <div className="flex items-center justify-between border-b pb-4 text-left">
+                        <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest text-left">
+                            {label} {index + 1}
+                        </Badge>
                         <Button type="button" variant="ghost" size="icon" onClick={() => { remove(index); setCount(count - 1); }} className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                     </div>
                     
@@ -245,7 +249,7 @@ function StakeholderForm({ type, label }: { type: 'directors' | 'shareholders', 
                         <FormField control={control} name={`${type}.${index}.since` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Member Since</FormLabel><FormControl><Input {...field} className="h-9 border-2" placeholder="e.g. 2018" /></FormControl></FormItem>)} />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 text-left">
                         <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="RSA Identity Document" folder="stakeholder-ids" variant="standard" />
                         <FileUploadField name={`${type}.${index}.proofAddressUrl`} label="Proof of Residential Address" folder="stakeholder-address" variant="standard" />
                     </div>
@@ -265,6 +269,7 @@ function ApplyForm() {
   const [currentStep, setCurrentStep] = useState(0);
 
   const enquiryId = searchParams.get('enquiryId');
+  const origination = searchParams.get('origination') as 'direct' | 'market' || 'market';
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -288,7 +293,8 @@ function ApplyForm() {
       apiConsent: false,
       directors: [],
       shareholders: [],
-      assets: [{ vehicleClass: '', assetCategory: '' }]
+      assets: [{ vehicleClass: '', assetCategory: '' }],
+      originationType: origination,
     },
   });
 
@@ -297,7 +303,6 @@ function ApplyForm() {
       name: 'assets'
   });
 
-  const entityType = methods.watch('entityType');
   const fundingNeed = methods.watch('fundingNeed');
 
   const processStep = async () => {
@@ -322,7 +327,11 @@ function ApplyForm() {
             body: JSON.stringify(enquiryId ? { path, data } : { collectionPath: path, data }),
         });
 
-        toast({ title: 'Application Processed', description: 'Our matching engine is identifying suitable lenders.' });
+        const successMsg = values.originationType === 'direct' 
+            ? 'Application submitted directly to platform finance.'
+            : 'Enquiry broadcasted to the finance mall network.';
+
+        toast({ title: 'Application Processed', description: successMsg });
         router.push('/account?view=dashboard');
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
@@ -338,8 +347,15 @@ function ApplyForm() {
   return (
     <Card className="w-full max-w-3xl shadow-xl text-left border-none overflow-hidden">
       <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8 text-left">
-        <CardTitle className="flex items-center gap-2 text-left text-white"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
-        <CardDescription className="text-slate-400 text-left">{currentStepConfig.name}</CardDescription>
+        <div className="flex items-center justify-between text-left">
+            <div className="text-left">
+                <CardTitle className="flex items-center gap-2 text-left text-white"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
+                <CardDescription className="text-slate-400 text-left">{currentStepConfig.name}</CardDescription>
+            </div>
+            <Badge variant="outline" className="border-primary/50 text-primary uppercase font-black text-[10px] tracking-widest px-3">
+                {methods.watch('originationType') === 'direct' ? 'Direct to Platform' : 'Market Broadcast'}
+            </Badge>
+        </div>
       </CardHeader>
       <CardContent className="p-8 text-left bg-white text-foreground">
         <FormProvider {...methods}>
@@ -376,16 +392,16 @@ function ApplyForm() {
             {currentStepConfig.id === 'Profile' && (
                 <div className="space-y-8 text-left">
                     <FormField control={methods.control} name="entityType" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
+                        <FormItem className="text-left"><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2 text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
                     )} />
 
-                    {entityType === 'Private Company (Pty Ltd)' && (
-                        <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed space-y-10 animate-in fade-in slide-in-from-top-4 duration-500 text-left">
+                    {methods.watch('entityType') === 'Private Company (Pty Ltd)' && (
+                        <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed space-y-10 animate-in fade-in slide-in-from-top-4 duration-500 text-left text-foreground">
                              <div className="flex items-center gap-2 text-primary font-bold text-sm mb-4 text-left">
                                 <Building className="h-4 w-4" /> Corporate Discovery Module
                              </div>
                              
-                             <div className="space-y-6 text-left">
+                             <div className="space-y-6 text-left text-foreground">
                                 <FormField control={methods.control} name="companyLegalName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registered Company Name</FormLabel><FormControl><Input placeholder="Legal name as per CIPC" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
                                 <div className="grid grid-cols-2 gap-4 text-left">
                                     <FormField control={methods.control} name="registrationNumber" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registration Number</FormLabel><FormControl><Input placeholder="20XX/XXXXXX/07" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
@@ -399,7 +415,7 @@ function ApplyForm() {
 
                              <Separator />
 
-                             <div className="space-y-8 text-left">
+                             <div className="space-y-8 text-left text-foreground">
                                 <div className="space-y-2 text-left">
                                     <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary text-left">Governance: Key Directors</h4>
                                     <StakeholderForm type="directors" label="Directors" />
@@ -408,7 +424,7 @@ function ApplyForm() {
                                 <Separator />
 
                                 <div className="space-y-2 text-left">
-                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary text-left">Equity: Major Shareholders</h4>
+                                    <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary text-left text-foreground">Equity: Major Shareholders</h4>
                                     <StakeholderForm type="shareholders" label="Shareholders" />
                                 </div>
                              </div>
@@ -431,25 +447,25 @@ function ApplyForm() {
                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground text-left"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
                     <p className="text-sm text-muted-foreground mb-4 text-left">Please provide a clear declaration regarding your business's credit history.</p>
                     
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
                             <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
                                 <FormLabel className="font-bold cursor-pointer text-left">Do you have any active judgements?</FormLabel>
-                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="j-yes" /><Label htmlFor="j-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="j-no" /><Label htmlFor="j-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5 text-left"><RadioGroupItem value="yes" id="j-yes" /><Label htmlFor="j-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="j-no" /><Label htmlFor="j-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
 
                         <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
                              <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
                                 <FormLabel className="font-bold cursor-pointer text-left">Do you have any active defaults?</FormLabel>
-                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="d-yes" /><Label htmlFor="d-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="d-no" /><Label htmlFor="d-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4 text-left"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="d-yes" /><Label htmlFor="d-yes" className="cursor-pointer text-left">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="d-no" /><Label htmlFor="d-no" className="cursor-pointer text-left">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
                         
                         <FormField control={methods.control} name="hasArrears" render={({ field }) => (
                              <FormItem className="flex items-center justify-between p-4 border rounded-xl hover:bg-slate-50 transition-colors text-left">
                                 <FormLabel className="font-bold cursor-pointer text-left">Are any accounts in arrears?</FormLabel>
-                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="a-yes" /><Label htmlFor="a-yes" className="cursor-pointer">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="a-no" /><Label htmlFor="a-no" className="cursor-pointer">No</Label></div></RadioGroup></FormControl>
+                                <FormControl><RadioGroup onValueChange={(val) => field.onChange(val === 'yes')} value={field.value ? 'yes' : 'no'} className="flex gap-4 text-left"><div className="flex items-center gap-1.5"><RadioGroupItem value="yes" id="a-yes" /><Label htmlFor="a-yes" className="cursor-pointer text-left">Yes</Label></div><div className="flex items-center gap-1.5"><RadioGroupItem value="no" id="a-no" /><Label htmlFor="a-no" className="cursor-pointer text-left">No</Label></div></RadioGroup></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -461,7 +477,7 @@ function ApplyForm() {
                              <Sparkles className="h-5 w-5 text-primary" />
                              <h4 className="font-bold text-primary">Automated Credit Analysis</h4>
                          </div>
-                         <p className="text-xs text-muted-foreground leading-relaxed text-left">By authorising a credit check, you significantly increase the speed of matching and the likelihood of approval. Our system will securely connect to our credit bureau partners.</p>
+                         <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">By authorising a credit check, you significantly increase the speed of matching and the likelihood of approval. Our system will securely connect to our credit bureau partners.</p>
                          <FormField control={methods.control} name="apiConsent" render={({ field }) => (
                             <FormItem className="flex items-center space-x-3 space-y-0 text-left">
                                 <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange}/></FormControl>
@@ -473,9 +489,9 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'Asset' && (
-                <div className="space-y-6 text-left">
+                <div className="space-y-6 text-left text-foreground">
                     <div className="flex items-center justify-between border-b pb-4 text-left">
-                        <div className="text-left">
+                        <div className="text-left text-foreground">
                             <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                                 {fundingNeed === 'vehicles' ? <Truck className="h-6 w-6 text-primary" /> : <Package className="h-6 w-6 text-primary" />}
                                 Asset Portfolio Details
@@ -494,12 +510,12 @@ function ApplyForm() {
                         const isTrailer = vClass === 'Trailer';
 
                         return (
-                            <div key={field.id} className="p-6 border-2 rounded-2xl bg-slate-50 space-y-6 relative animate-in fade-in zoom-in-95 duration-300 text-left">
+                            <div key={field.id} className="p-6 border-2 rounded-2xl bg-slate-50 space-y-6 relative animate-in fade-in zoom-in-95 duration-300 text-left text-foreground">
                                 {index > 0 && (
                                     <Button type="button" variant="ghost" size="icon" onClick={() => removeAsset(index)} className="absolute top-2 right-2 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                                 )}
                                 
-                                <Badge variant="secondary" className="font-black text-[10px] tracking-widest uppercase">Asset {index + 1}</Badge>
+                                <Badge variant="secondary" className="font-black text-[10px] tracking-widest uppercase text-left">Asset {index + 1}</Badge>
 
                                 {fundingNeed === 'vehicles' ? (
                                     <div className="space-y-6 text-left">
@@ -514,7 +530,7 @@ function ApplyForm() {
                                         )} />
                                         
                                         {vClass && (
-                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300 text-left">
+                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300 text-left text-foreground">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleMake` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Make / Brand</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     <FormField control={methods.control} name={`assets.${index}.vehicleModel` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Model / Series</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
@@ -555,7 +571,7 @@ function ApplyForm() {
                                         )} />
 
                                         {aCategory && (
-                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300 text-left">
+                                            <div className="space-y-6 animate-in slide-in-from-top-2 duration-300 text-left text-foreground">
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.assetBrand` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Manufacturer / Brand</FormLabel><FormControl><Input placeholder="e.g. Caterpillar" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                     <FormField control={methods.control} name={`assets.${index}.assetModel` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Model / Type</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
@@ -586,7 +602,7 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'Reason' && (
-                <div className="space-y-6 text-left">
+                <div className="space-y-6 text-left text-foreground">
                     <FormField control={methods.control} name="fundingReason" render={({ field }) => (
                         <FormItem className="space-y-3 text-left">
                           <FormLabel className="font-bold text-foreground">Is this for problem solving or capturing opportunity?</FormLabel>
@@ -609,7 +625,7 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'Amount' && (
-                <div className="space-y-6 text-left">
+                <div className="space-y-6 text-left text-foreground">
                     <FormField control={methods.control} name="amountRequested" render={({ field }) => (
                         <FormItem className="text-left">
                         <FormLabel className="text-lg font-bold text-foreground">Estimated Amount (ZAR)</FormLabel>
@@ -617,7 +633,7 @@ function ApplyForm() {
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="preferredTerm" render={({ field }) => (
-                        <FormItem className="text-left text-foreground text-left">
+                        <FormItem className="text-left text-foreground">
                             <FormLabel className="text-foreground">Preferred Repayment Term</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger className="border-2 text-left"><SelectValue placeholder="Select term..." /></SelectTrigger></FormControl>
@@ -630,7 +646,7 @@ function ApplyForm() {
                 </div>
             )}
             
-            <div className="flex justify-between items-center pt-8 border-t text-left text-foreground">
+            <div className="flex justify-between items-center pt-8 border-t text-left">
               <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0} className="h-12 px-8 font-bold"><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
               {currentStep < staticSteps.length - 1 ? (
                 <Button type="button" onClick={processStep} className="h-12 px-10 font-bold text-left">Next <ArrowRight className="ml-2 h-4 w-4" /></Button>

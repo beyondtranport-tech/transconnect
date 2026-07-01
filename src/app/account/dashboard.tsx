@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck } from "lucide-react";
+import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap } from "lucide-react";
 import { doc } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -200,6 +201,49 @@ export default function AccountDashboard() {
                         </div>
                         <p className="text-xs text-muted-foreground text-left">Earn points for community actions.</p>
                     </CardContent>
+                </Card>
+            </div>
+
+            {/* --- STRATEGIC FUNDING CENTER --- */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                <Card className="border-primary/20 bg-primary/5 shadow-md flex flex-col text-left">
+                    <CardHeader className="pb-2 text-left">
+                        <div className="flex items-center gap-3 text-left">
+                            <div className="bg-primary/20 p-2 rounded-lg text-left"><Landmark className="h-5 w-5 text-primary" /></div>
+                            <CardTitle className="text-lg font-bold text-left">In-House Funding</CardTitle>
+                        </div>
+                        <CardDescription className="text-left">Apply directly to the Logistics Flow capital division.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow text-left">
+                        <p className="text-sm text-muted-foreground leading-relaxed text-left">Use this path for rapid, data-driven decisions based on your platform activity and fleet profile.</p>
+                    </CardContent>
+                    <CardFooter className="pt-4 border-t border-primary/10">
+                        <Button asChild className="w-full font-bold h-11" variant="default">
+                            <Link href="/funding/apply?origination=direct">
+                                Apply to Platform <ArrowRight className="ml-2 h-4 w-4" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                <Card className="border-blue-200 bg-blue-50/30 shadow-md flex flex-col text-left">
+                    <CardHeader className="pb-2 text-left">
+                        <div className="flex items-center gap-3 text-left">
+                            <div className="bg-blue-100 p-2 rounded-lg text-left"><Globe className="h-5 w-5 text-blue-600" /></div>
+                            <CardTitle className="text-lg font-bold text-left">Finance Mall</CardTitle>
+                        </div>
+                        <CardDescription className="text-left">Broadcast your enquiry to our 85+ partner lenders.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow text-left">
+                        <p className="text-sm text-muted-foreground leading-relaxed text-left">Compare the market. Your application is automatically matched with niche lenders based on your criteria.</p>
+                    </CardContent>
+                    <CardFooter className="pt-4 border-t border-blue-100">
+                        <Button asChild className="w-full font-bold h-11" variant="outline">
+                            <Link href="/funding/apply?origination=market">
+                                Market Broadcast <Zap className="ml-2 h-4 w-4 text-blue-600" />
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
             </div>
             

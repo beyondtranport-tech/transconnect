@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -154,7 +155,7 @@ function OpportunityDetail({
                 )}
             </CardContent>
             <CardFooter className="bg-slate-50 border-t p-6 rounded-b-lg flex justify-between">
-                <div className="flex gap-2">
+                <div className="flex gap-2 text-left">
                     <Button variant="outline" size="sm" className="gap-2"><Mail className="h-3.5 w-3.5" /> Message Borrower</Button>
                     <Button variant="outline" size="sm" className="gap-2"><Phone className="h-3.5 w-3.5" /> Direct Line</Button>
                 </div>
@@ -177,8 +178,6 @@ export default function LenderDeskContent() {
         user.email === 'michael@logisticsflow.co.za'
     );
 
-    const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
-
     const lenderParams = useMemo(() => user?.companyData?.lendingParams, [user]);
 
     const loadOpportunities = useCallback(async () => {
@@ -196,8 +195,16 @@ export default function LenderDeskContent() {
             // 1. Filter for valid enquiries
             const allEnquiries = (result || []).filter((r: any) => !!r.amountRequested);
             
-            // 2. APPLY V2 FORENSIC MATCHING ENGINE (Per-Product Logic)
+            // 2. APPLY V2 FORENSIC MATCHING ENGINE (Per-Product Logic + Origination Route)
             const matched = allEnquiries.filter((enquiry: any) => {
+                
+                // 2a. ORIGINATION ROUTE FILTERING
+                // If this is a 3rd Party Lender (non-admin), only show 'market' broadcast applications.
+                // Admins see both 'direct' and 'market'.
+                if (!isAdmin && enquiry.originationType === 'direct') {
+                    return false;
+                }
+
                 if (!lenderParams) return true; // Show all if params not set
 
                 const { 
@@ -206,7 +213,7 @@ export default function LenderDeskContent() {
                     entityTypes, serviceRegions, assetTypes
                 } = lenderParams;
 
-                // 2a. Product Specific Check
+                // 2b. Product Specific Check
                 const productKey = enquiry.fundingNeed; // e.g. 'loan-pv-term'
                 const criteria = productCriteria[productKey];
                 
@@ -223,17 +230,17 @@ export default function LenderDeskContent() {
                     }
                 }
 
-                // 2b. Global Entity Checks
+                // 2c. Global Entity Checks
                 if (minAnnualTurnover && enquiry.annualTurnover < minAnnualTurnover) return false;
                 if (minYearsInBusiness && enquiry.yearsInBusiness < minYearsInBusiness) return false;
                 if (entityTypes?.length > 0 && !entityTypes.includes(enquiry.entityType)) return false;
 
-                // 2c. Global Risk Checks
+                // 2d. Global Risk Checks
                 if (requiresNoJudgements && enquiry.hasJudgements) return false;
                 if (requiresNoDefaults && enquiry.hasDefaults) return false;
                 if (requiresNoArrears && enquiry.hasArrears) return false;
 
-                // 2d. Regional & Asset Portfolio Checks
+                // 2e. Regional & Asset Portfolio Checks
                 if (serviceRegions?.length > 0 && !serviceRegions.includes(enquiry.primaryRegion)) return false;
                 
                 // Asset Check (Match if ANY asset in enquiry matches lender's asset specialization)
@@ -253,7 +260,7 @@ export default function LenderDeskContent() {
         } finally {
             setIsLoading(false);
         }
-    }, [toast, lenderParams]);
+    }, [toast, lenderParams, isAdmin]);
 
     useEffect(() => {
         if (!isUserLoading && user) loadOpportunities();
@@ -266,12 +273,12 @@ export default function LenderDeskContent() {
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.companyName || 'Provisional Borrower'}</span>
                     <div className="flex items-center gap-1.5 mt-1 text-left">
-                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 text-[8px] h-3.5 uppercase font-black">
+                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 text-[8px] h-3.5 uppercase font-black text-left">
                             <ShieldCheck className="h-2.5 w-2.5 mr-1" /> Forensic Match
                         </Badge>
-                        <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
-                            {formatDateSafe(row.original.createdAt)}
-                        </span>
+                        <Badge variant="secondary" className="text-[8px] h-3.5 uppercase font-black bg-slate-100 text-left">
+                            {row.original.originationType === 'direct' ? 'Direct to Platform' : 'Market Broadcast'}
+                        </Badge>
                     </div>
                 </div>
             )
@@ -281,7 +288,7 @@ export default function LenderDeskContent() {
             cell: ({ row }) => (
                 <div className="flex flex-col text-left">
                     <span className="font-black text-primary">{formatCurrency(row.original.amountRequested)}</span>
-                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-0.5 uppercase">{row.original.fundingNeed || 'Working Capital'}</Badge>
+                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-0.5 uppercase text-left">{row.original.fundingNeed || 'Working Capital'}</Badge>
                 </div>
             )
         },
@@ -289,18 +296,18 @@ export default function LenderDeskContent() {
             header: 'Risk Summary',
             cell: ({ row }) => (
                 <div className="flex flex-col gap-1 text-left">
-                    <div className="flex gap-1.5 items-center">
+                    <div className="flex gap-1.5 items-center text-left">
                         {!row.original.hasJudgements ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <AlertTriangle className="h-4 w-4 text-destructive" />}
                         <span className="text-[10px] font-bold">{row.original.yearsInBusiness}y Operation</span>
                     </div>
-                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">{row.original.primaryRegion || 'National'}</span>
+                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-left">{row.original.primaryRegion || 'National'}</span>
                 </div>
             )
         },
         {
             header: 'Status',
             cell: ({ row }) => (
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 capitalize text-[9px] font-black tracking-widest">
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 capitalize text-[9px] font-black tracking-widest text-left">
                     {row.original.status || 'New Opportunity'}
                 </Badge>
             )
@@ -310,7 +317,7 @@ export default function LenderDeskContent() {
             header: <div className="text-right">Actions</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setSelectedOpportunity(row.original)} className="h-8 text-[10px] font-black uppercase tracking-widest gap-1.5">
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedOpportunity(row.original)} className="h-8 text-[10px] font-black uppercase tracking-widest gap-1.5 text-left">
                         Open Desk <ArrowRight className="h-3 w-3" />
                     </Button>
                 </div>
@@ -322,40 +329,8 @@ export default function LenderDeskContent() {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-left">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Initializing Lending Desk...</p>
+                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground text-left">Initializing Lending Desk...</p>
             </div>
-        );
-    }
-
-    if (!isPaid && !isAdmin) {
-        return (
-            <Card className="bg-slate-900 text-white border-none shadow-2xl overflow-hidden text-left">
-                <CardHeader className="p-12 text-left">
-                    <div className="bg-primary/10 p-4 rounded-full w-fit mb-8">
-                        <Lock className="h-12 w-12 text-primary" />
-                    </div>
-                    <CardTitle className="text-4xl font-black font-headline text-left text-white">Access Restricted Deal Flow</CardTitle>
-                    <CardDescription className="text-slate-400 text-lg mt-2 max-w-2xl text-left">
-                        The Lending Desk connects financiers directly with high-fidelity deal flow from the transport community. 
-                        Upgrade to an Intelligence Membership to start receiving and concluding agreements.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="px-12 pb-12 text-left">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 text-left text-foreground">
-                        <div className="space-y-2 text-left">
-                            <h4 className="font-bold text-primary text-left">Matched Opportunities</h4>
-                            <p className="text-sm text-slate-300 text-left leading-relaxed">See every enquiry that matches your investment appetite—Turnover, Age, and Asset type.</p>
-                        </div>
-                        <div className="space-y-2 text-left">
-                            <h4 className="font-bold text-primary text-left">Legal Conclusion Suite</h4>
-                            <p className="text-sm text-slate-300 text-left leading-relaxed">Issue facility letters and finalize agreements directly through the platform ledger.</p>
-                        </div>
-                    </div>
-                    <Button asChild size="lg" className="h-14 px-10 text-xl font-black uppercase shadow-xl shadow-primary/20">
-                        <Link href="/checkout/intelligence">Unlock Paid Deal Flow <ArrowRight className="ml-2 h-6 w-6"/></Link>
-                    </Button>
-                </CardContent>
-            </Card>
         );
     }
 
@@ -366,8 +341,8 @@ export default function LenderDeskContent() {
                     <h1 className="text-3xl font-black font-headline tracking-tight text-left">Lending Desk (CRM)</h1>
                     <p className="text-muted-foreground text-left">Management of inbound deal flow and active financing agreements.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={loadOpportunities} disabled={isLoading} className="text-left">
+                <div className="flex gap-2 text-left">
+                    <Button variant="outline" size="sm" onClick={loadOpportunities} disabled={isLoading}>
                         <RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
                         Refresh Queue
                     </Button>
@@ -382,7 +357,7 @@ export default function LenderDeskContent() {
                 />
             ) : (
                 <Tabs defaultValue="matches" className="w-full text-left text-foreground">
-                    <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start text-left text-foreground">
+                    <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start text-left">
                         <TabsTrigger value="matches" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                             <Zap className="h-3.5 w-3.5" /> Matched Opportunities
                         </TabsTrigger>
@@ -406,7 +381,7 @@ export default function LenderDeskContent() {
                                         </div>
                                         <div className="text-center text-foreground">
                                             <h3 className="text-xl font-bold">No Matches Yet</h3>
-                                            <p className="text-muted-foreground max-w-xs mx-auto mt-2">Adjust your **Lending Focus** parameters to widen your borrower pool.</p>
+                                            <p className="text-muted-foreground max-w-xs mx-auto mt-2">Adjust your **Lending Focus** parameters or check for new market broadcasts.</p>
                                         </div>
                                         <Button variant="outline" asChild className="mt-4"><Link href="/lending?view=lending-focus">Review My Focus</Link></Button>
                                     </div>
@@ -433,4 +408,3 @@ export default function LenderDeskContent() {
         </div>
     );
 }
-
