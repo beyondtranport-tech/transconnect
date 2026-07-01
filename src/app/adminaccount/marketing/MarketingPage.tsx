@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Loader2, ClipboardCopy, ArrowRight, ExternalLink } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
+import Link from 'next/link';
 
 // Content components
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -61,7 +63,6 @@ const DeveloperManagement = dynamic(() => import('@/app/adminaccount/marketing/d
 const SupplierManagement = dynamic(() => import('@/app/adminaccount/marketing/supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing/transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateManagement = dynamic(() => import('@/app/adminaccount/marketing/associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const FinanceManagement = dynamic(() => import('@/app/adminaccount/marketing/finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
@@ -71,7 +72,7 @@ const audienceConfig: Record<string, any> = {
     investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
     developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
     associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement },
-    finance: { title: 'Finance Partners', Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement },
+    finance: { title: 'Finance Partners', Offer: InvestorOffer, Emails: InvestorEmails, Management: null, redirectView: 'finance-registry' },
 };
 
 interface MarketingPageProps {
@@ -145,7 +146,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             <FormItem className="text-left">
                                 <FormLabel>Log against {singularAudience}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger disabled={isLoadingPartners} className="bg-white">
+                                    <FormControl><SelectTrigger disabled={isLoadingPartners} className="bg-white text-left">
                                         <SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} />
                                     </SelectTrigger></FormControl>
                                     <SelectContent>
@@ -159,7 +160,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                              <FormItem className="text-left">
                                 <FormLabel>Communication Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger className="bg-white">
+                                    <FormControl><SelectTrigger className="bg-white text-left">
                                         <SelectValue placeholder="Select a type..." />
                                     </SelectTrigger></FormControl>
                                     <SelectContent>
@@ -208,12 +209,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
   const fetchPartnersForLogging = useCallback(async () => {
-    if (!config?.Management) {
-      setIsLoadingPartners(false);
-      setPartners([]);
-      return;
-    }
-    
     setIsLoadingPartners(true);
     try {
         const token = await getClientSideAuthToken();
@@ -236,7 +231,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  }, [audience, config?.Management, toast]);
+  }, [audience, toast]);
 
   useEffect(() => {
     fetchPartnersForLogging();
@@ -296,7 +291,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
       );
   }
 
-  const { Offer, Emails, Management } = config;
+  const { Offer, Emails, Management, redirectView } = config;
 
   return (
     <>
@@ -310,10 +305,21 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             audienceTitle={config.title}
         />
         <div className="space-y-6 text-left text-foreground">
-            <div className="text-left text-foreground">
-                <h1 className="text-2xl font-bold font-headline text-left">Marketing & Pitch Library: {config.title}</h1>
-                <p className="text-muted-foreground text-left">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left text-foreground">
+                    <h1 className="text-2xl font-bold font-headline text-left">Marketing & Pitch Library: {config.title}</h1>
+                    <p className="text-muted-foreground text-left text-sm">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
+                </div>
+                {redirectView && (
+                    <Button variant="outline" size="sm" asChild className="h-9 gap-2 font-bold text-xs uppercase tracking-widest text-primary border-primary/20 bg-primary/5">
+                        <Link href={`/backend?view=${redirectView}`}>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                            Return to Management
+                        </Link>
+                    </Button>
+                )}
             </div>
+
             <Tabs defaultValue="company-profile" className="w-full text-left" onValueChange={setActiveTab}>
                 <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
                     <TabsTrigger value="company-profile">Company Profile</TabsTrigger>

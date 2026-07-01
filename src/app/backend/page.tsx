@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -39,6 +40,7 @@ import {
   Zap,
   PieChart,
   Scale,
+  Landmark,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -64,6 +66,7 @@ import UsersList from '@/app/backend/users-list';
 import CommercialNegotiations from '@/app/backend/commercial-negotiations';
 import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
+import FinanceManagement from '@/app/adminaccount/marketing/finance-management';
 
 // Platform Settings
 import PermissionsContent from '@/app/backend/permissions-content';
@@ -101,7 +104,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Verifying admin credentials...</p>
+                <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest">Verifying Admin Credentials...</p>
             </div>
         );
     }
@@ -144,6 +147,7 @@ function BackendContent() {
       case 'shops': return <ShopsList />;
       case 'commercial-negotiations': return <CommercialNegotiations />;
       case 'reconciliation': return <ReconciliationPage />;
+      case 'finance-registry': return <FinanceManagement />;
       
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
@@ -170,7 +174,7 @@ function BackendContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+        <div className="flex justify-center items-center py-40">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
@@ -179,7 +183,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
-  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
+  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations', 'finance-registry'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -224,6 +228,7 @@ function BackendContent() {
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'success-engine'} onClick={() => navigate('success-engine')}><PieChart />Conversion Engine</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-overview'} onClick={() => navigate('loyalty-overview')}><Award />Loyalty & Tiers</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'finance-registry'} onClick={() => navigate('finance-registry')}><Landmark />Finance Registry</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Data Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shop Management</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>

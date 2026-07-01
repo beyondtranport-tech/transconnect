@@ -8,10 +8,10 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check 
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, UserCheck 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,8 +30,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
-import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import FinanceDiscoveryEngine from './finance-discovery';
+import AudienceCommunicationsTable from './AudienceCommunicationsTable';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -58,10 +59,6 @@ const partnerSchema = z.object({
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
   notes: z.string().optional(),
   address: z.string().optional(),
-  minDealSize: z.coerce.number().optional(),
-  maxDealSize: z.coerce.number().optional(),
-  preferredTerm: z.string().optional(),
-  assetFocus: z.string().optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -76,7 +73,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'finance', website: '', notes: '', address: '', minDealSize: 0, maxDealSize: 0 });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'finance', website: '', notes: '', address: '' });
     }
   }, [open, partner, form]);
 
@@ -105,26 +102,17 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Institution Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    
-                    <div className="grid grid-cols-2 gap-4 text-left border p-3 rounded-lg bg-muted/20">
-                        <Label className="col-span-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Forensic Matching Variables</Label>
-                        <FormField control={form.control} name="minDealSize" render={({ field }) => ( <FormItem><FormLabel>Min Deal (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )} />
-                        <FormField control={form.control} name="maxDealSize" render={({ field }) => ( <FormItem><FormLabel>Max Deal (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem> )} />
-                        <FormField control={form.control} name="preferredTerm" render={({ field }) => ( <FormItem><FormLabel>Preferred Term</FormLabel><FormControl><Input placeholder="e.g. 12-60 months" {...field} /></FormControl></FormItem> )} />
-                        <FormField control={form.control} name="assetFocus" render={({ field }) => ( <FormItem><FormLabel>Asset Focus</FormLabel><FormControl><Input placeholder="e.g. Trucks, CNC, IT" {...field} /></FormControl></FormItem> )} />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Institution Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="status" render={({ field }) => ( 
-                        <FormItem className="text-left text-foreground text-foreground">
-                            <FormLabel>Status</FormLabel>
+                        <FormItem className="text-left">
+                            <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -137,7 +125,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                             <FormMessage />
                         </FormItem> 
                     )} />
-                     <DialogFooter className="pt-4 border-t text-left text-foreground text-foreground">
+                     <DialogFooter className="pt-4 border-t text-left text-foreground">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
@@ -152,36 +140,19 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 export default function FinanceManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
-  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [assigneeFilter, setAssigneeFilter] = useState('all');
-
-  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
-    companyName: true,
-    contactPerson: true,
-    email: true,
-    outreach: true,
-    status: true,
-    actions: true
-  });
-
   const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const [res, staffRes] = await Promise.all([
-          performAdminAction(token, 'searchRegistry', { type: 'finance', term: searchTerm, limit }),
-          performAdminAction(token, 'getPlatformStaff', {})
-        ]);
+        const res = await performAdminAction(token, 'searchRegistry', { type: 'finance', term: searchTerm, limit });
         setAllRecords(res.data || []);
-        setStaff(staffRes.data || []);
         setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
@@ -198,73 +169,59 @@ export default function FinanceManagement() {
     setDialog({ type: 'engage', data: engageList, initialIndex: record ? engageList.findIndex((r: any) => r.id === record.id) : 0 });
   }, [allRecords, selectedIds]);
 
-  const filteredRecords = useMemo(() => {
-    return allRecords.filter(p => {
-        const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
-        return matchesStatus && matchesAssignee;
-    });
-  }, [allRecords, statusFilter, assigneeFilter]);
-
-  const columns: ColumnDef<any>[] = useMemo(() => {
-    const cols: ColumnDef<any>[] = [
-      { 
-          accessorKey: 'companyName',
-          header: 'Finance Institution', 
-          cell: ({row}) => (
-              <div className="flex flex-col text-left">
-                  <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left">
-                      {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Lender</Badge>
-                  </div>
-              </div>
-          )
-      },
-      { 
-          accessorKey: 'contactPerson',
-          header: 'Key Decision Maker',
-          cell: ({ row }) => <div className="text-sm font-medium text-left text-foreground">{row.original.contactPerson || 'N/A'}</div>
-      },
-      { accessorKey: 'email', header: 'Email' },
-      { 
-          header: 'Outreach & Result',
-          id: 'outreach',
-          accessorKey: 'lastOutreachSubject',
-          cell: ({ row }) => {
-              if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-              return (
-                  <div className="flex flex-col text-left text-foreground">
-                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
-                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
-                      {row.original.lastOpenedAt && (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                              <UserCheck className="h-2.5 w-2.5" /> Read
-                          </div>
-                      )}
-                  </div>
-              );
-          }
-      },
-      { 
-          accessorKey: 'status', 
-          header: 'Status', 
-          cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
-      },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end items-center gap-1 text-left text-foreground">
-          <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-          <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-          <PartnerTasksDialog partner={row.original} />
-          <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-        </div>
-      ) },
-    ];
-    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    { 
+        accessorKey: 'companyName',
+        header: 'Finance Institution', 
+        cell: ({row}) => (
+            <div className="flex flex-col text-left">
+                <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
+                <div className="flex items-center gap-2 mt-1 text-left">
+                    {row.original.website && <Globe className="h-3 w-3 text-primary" />}
+                    <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Lender</Badge>
+                </div>
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'contactPerson',
+        header: 'Key Decision Maker',
+        cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || 'N/A'}</div>
+    },
+    { accessorKey: 'email', header: 'Email' },
+    { 
+        header: 'Outreach & Result',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            return (
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
+                    {row.original.lastOpenedAt && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
+                            <UserCheck className="h-2.5 w-2.5" /> Read
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    },
+    { 
+        accessorKey: 'status', 
+        header: 'Status', 
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
+    },
+    { id: 'actions', header: 'Actions', cell: ({ row }) => (
+      <div className="flex justify-end items-center gap-1 text-left text-foreground">
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
+        <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+      </div>
+    ) },
+  ], [fetchData, handleEngage]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -281,11 +238,11 @@ export default function FinanceManagement() {
   }
 
   return (
-    <div className="space-y-6 text-left text-foreground">
+    <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="finance" onEngageSuccess={() => fetchData()} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground text-foreground">
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -294,136 +251,53 @@ export default function FinanceManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
-                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Finance Registry Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the capital database. Use filters to prioritize funder outreach.</p>
-                
-                <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground text-foreground">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <div className="space-y-1 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Status</Label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Outreach" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="none">No Outreach Yet</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="new">New Lead</SelectItem>
-                                    <SelectItem value="contacted">In Research</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
-                            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Staff</SelectItem>
-                                    <SelectItem value="none">Unallocated</SelectItem>
-                                    {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+      <Tabs defaultValue="crm" className="w-full text-left">
+          <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
+              <TabsTrigger value="crm" className="gap-2"><Users className="h-4 w-4" /> Forensic Registry (CRM)</TabsTrigger>
+              <TabsTrigger value="discovery" className="gap-2"><Database className="h-4 w-4" /> Automated Discovery (AI)</TabsTrigger>
+              <TabsTrigger value="oversight" className="gap-2"><Clock className="h-4 w-4" /> Oversight Timeline</TabsTrigger>
+          </TabsList>
 
-                    <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
-                        <div className="flex-1 space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Fund or ID</Label>
-                            <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                        </div>
-                        <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground">
-                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
-                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-foreground"/> : <Search className="mr-2 h-4 w-4 text-foreground" />} Execute Scan
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </Card>
-      ) : (
-            <div className="space-y-6 text-left text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-foreground">
-                    <div className="text-left text-foreground text-left text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Landmark /> Finance Partners</CardTitle><CardDescription className="text-left text-muted-foreground text-foreground text-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
-                    <div className="flex gap-2 text-left text-foreground text-foreground">
-                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
-                        
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="gap-2 text-foreground text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2 text-left text-foreground">
-                                <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
-                                    {Object.keys(visibleColumns).map(col => (
-                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
-                                            <span>{col.replace(/([A-Z])/g, ' $1')}</span>
-                                            {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+          <TabsContent value="crm" className="mt-6 space-y-6">
+              {!hasLoaded ? (
+                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+                      <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
+                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Finance Registry Scan</h2>
+                      <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
+                      <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
+                          <Input placeholder="Search name or keywords..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
+                          <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                              {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
+                          </Button>
+                      </div>
+                  </Card>
+              ) : (
+                  <Card className="text-left text-foreground">
+                      <CardHeader className="flex flex-row items-center justify-between border-b text-left">
+                          <div>
+                              <CardTitle className="text-xl font-bold flex items-center gap-2"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
+                              <CardDescription>Managing {allRecords.length} verified funding nodes.</CardDescription>
+                          </div>
+                          <div className="flex gap-2">
+                              <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)}><RotateCcw className="h-4 w-4 mr-2" /> New Search</Button>
+                              <Button onClick={() => setDialog({ type: 'add' })} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                          </div>
+                      </CardHeader>
+                      <CardContent className="pt-6">
+                          {isLoading ? <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} onSelectionChange={setSelectedIds} />}
+                      </CardContent>
+                  </Card>
+              )}
+          </TabsContent>
 
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'finance-backup.csv')} disabled={isLoading} className="text-left text-foreground text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                        <BulkImportDialog type="finance" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
-                    </div>
-                </CardHeader>
-                <Card className="text-left text-foreground text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                                    <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active</SelectItem></SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
-                                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Staff</SelectItem>
-                                        <SelectItem value="none">Unallocated</SelectItem>
-                                        {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
-                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
-                                    <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end text-left text-foreground text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
-                        </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground text-foreground">
-                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4 text-foreground text-foreground">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground">
-                                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
-                                            Load Next 100 Records
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-      )}
+          <TabsContent value="discovery" className="mt-6">
+              <FinanceDiscoveryEngine />
+          </TabsContent>
+
+          <TabsContent value="oversight" className="mt-6">
+              <AudienceCommunicationsTable audience="finance" />
+          </TabsContent>
+      </Tabs>
     </div>
   );
 }
