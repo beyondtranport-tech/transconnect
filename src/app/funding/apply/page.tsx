@@ -89,6 +89,7 @@ const assetDetailSchema = z.object({
 
 const baseSchema = z.object({
   fundingNeed: z.string().min(1, 'Please select what you need funds for.'),
+  primaryRegion: z.string().min(1, 'Please select your primary operating region.'),
   fundingReason: z.string().min(1, 'Please select a reason.'),
   purpose: z.string().min(10, 'Please provide more detail.'),
   amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
@@ -97,7 +98,6 @@ const baseSchema = z.object({
   yearsInBusiness: z.coerce.number().min(0, 'Required.'),
   annualTurnover: z.coerce.number().min(0, 'Required.'),
   creditRating: z.string().min(1, 'Required.'),
-  primaryRegion: z.string().min(1, 'Please select your primary operating region.'),
   registrationNumber: z.string().optional(),
   companyLegalName: z.string().optional(),
   registeredAddress: z.string().optional(),
@@ -122,8 +122,8 @@ const combinedSchema = baseSchema.superRefine((data, ctx) => {
 type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 const staticSteps = [
-  { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
-  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating', 'primaryRegion', 'registrationNumber', 'companyLegalName', 'directors', 'shareholders'] },
+  { id: 'Need', name: 'Step 1: Need & Location', fields: ['fundingNeed', 'primaryRegion'] },
+  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating', 'registrationNumber', 'companyLegalName', 'directors', 'shareholders'] },
   { id: 'History', name: 'Step 3: Credit History', fields: ['hasJudgements', 'hasDefaults', 'hasArrears', 'apiConsent'] },
   { id: 'Asset', name: 'Step 4: Asset Specifics', fields: ['assets'] },
   { id: 'Reason', name: 'Step 5: The Reason', fields: ['fundingReason', 'purpose'] },
@@ -278,6 +278,7 @@ function ApplyForm() {
     mode: 'onChange',
     defaultValues: {
       fundingNeed: searchParams.get('type') || '',
+      primaryRegion: '',
       amountRequested: Number(searchParams.get('amount')) || 0,
       preferredTerm: '',
       yearsInBusiness: 0,
@@ -286,7 +287,6 @@ function ApplyForm() {
       hasDefaults: false,
       hasArrears: false,
       apiConsent: false,
-      primaryRegion: '',
       directors: [],
       shareholders: [],
       assets: [{ vehicleClass: '', assetCategory: '' }]
@@ -347,18 +347,31 @@ function ApplyForm() {
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8 text-left">
             
             {currentStepConfig.id === 'Need' && (
-                 <FormField control={methods.control} name="fundingNeed" render={({ field }) => (
-                    <FormItem className="text-left">
-                      <FormLabel className="font-bold text-foreground">I require capital for:</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="h-12 border-2"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
-                        <SelectContent>
-                          {Object.entries(fundingNeeds).map(([id, name]) => (<SelectItem key={id} value={id}>{name}</SelectItem>))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
+                <div className="space-y-6 text-left">
+                    <FormField control={methods.control} name="fundingNeed" render={({ field }) => (
+                        <FormItem className="text-left">
+                        <FormLabel className="font-bold text-foreground">I require capital for:</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger className="h-12 border-2"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                            {Object.entries(fundingNeeds).map(([id, name]) => (<SelectItem key={id} value={id}>{name}</SelectItem>))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )} />
+
+                    <FormField control={methods.control} name="primaryRegion" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel className="font-bold text-foreground">Primary Operating Region</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger className="h-12 border-2"><SelectValue placeholder="Select province..." /></SelectTrigger></FormControl>
+                                <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                </div>
             )}
 
             {currentStepConfig.id === 'Profile' && (
@@ -403,21 +416,9 @@ function ApplyForm() {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                        <FormField control={methods.control} name="primaryRegion" render={({ field }) => (
-                            <FormItem className="text-left">
-                                <FormLabel>Primary Operating Region</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select region..." /></SelectTrigger></FormControl>
-                                    <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        <FormField control={methods.control} name="creditRating" render={({ field }) => (
-                            <FormItem className="text-left"><FormLabel>Self-Assessed Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2 text-left text-foreground"><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
-                        )} />
-                    </div>
+                    <FormField control={methods.control} name="creditRating" render={({ field }) => (
+                        <FormItem className="text-left"><FormLabel>Self-Assessed Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2 text-left text-foreground"><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
+                    )} />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                         <FormField control={methods.control} name="yearsInBusiness" render={({ field }) => (<FormItem className="text-left"><FormLabel>Years in Business</FormLabel><FormControl><Input type="number" {...field} className="border-2"/></FormControl></FormItem>)} />

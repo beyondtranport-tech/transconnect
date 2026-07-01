@@ -56,7 +56,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import React from 'react';
 
-// Component Imports
+// Static Imports for reliability in prototype environment
 import AdminDashboardContent from '@/app/backend/dashboard-content';
 import ActivityFeed from '@/app/backend/activity-feed';
 import LeadsAgent from '@/app/adminaccount/leads-agent';
@@ -68,6 +68,7 @@ import AssetGallery from '@/app/adminaccount/asset-gallery';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
+import FinancialsGeneralSettings from '@/app/adminaccount/financials-general-settings';
 import FinancialSetup from '@/app/account/financial-setup';
 import BudgetPage from '@/app/account/budget/page';
 import SalaryForecastPage from '@/app/backend/salary-forecast';
