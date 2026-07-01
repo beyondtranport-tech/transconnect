@@ -31,12 +31,14 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(token);
         const db = getFirestore(app);
 
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
+        // Allow both system admins and registered Lenders to access specific CRM actions
+        const isSystemAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' || 
                         decodedToken.email === 'michael@logisticsflow.co.za' ||
                         decodedToken.admin === true;
 
-        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+        const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+        const isLender = userDoc.data()?.declaredPosition === 'lender' || userDoc.data()?.role === 'lender';
 
         const body = await req.json();
         const action = (body.action || '').trim();
@@ -44,6 +46,16 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
+                // Lenders can only search the registry if they have a paid membership
+                if (!isSystemAdmin && isLender) {
+                    const companyDoc = await db.collection('companies').doc(userDoc.data()?.companyId).get();
+                    if (!companyDoc.exists || companyDoc.data()?.membershipId === 'free') {
+                        throw new Error("Deal flow restricted. Please upgrade to a paid plan.");
+                    }
+                } else if (!isSystemAdmin) {
+                    throw new Error("Forbidden: Admin access required.");
+                }
+
                 const { type, term, limit = 1000 } = payload;
                 let results: any[] = [];
 
@@ -65,87 +77,42 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'getMatchesForEnquiry': {
-                const { enquiryId, companyId } = payload;
-                const enquirySnap = await db.doc(`companies/${companyId}/enquiries/${enquiryId}`).get();
-                if (!enquirySnap.exists) throw new Error("Enquiry not found.");
-                
-                const enquiry = enquirySnap.data()!;
-                const amount = Number(enquiry.amountRequested) || 0;
-                const turnover = Number(enquiry.annualTurnover) || 0;
-                const age = Number(enquiry.yearsInBusiness) || 0;
-
-                const [lendersSnap, activeMemberLendersSnap] = await Promise.all([
-                    db.collection('partners').where('type', '==', 'finance').get(),
-                    db.collection('companies')
-                        .where('declaredRole', '==', 'lender')
-                        .where('membershipId', '!=', 'free')
-                        .get()
-                ]);
-
-                const staticMatches = lendersSnap.docs
-                    .map((d: any) => ({ id: d.id, source: 'Registry', ...d.data() }))
-                    .filter((l: any) => {
-                        const minS = Number(l.minDealSize) || 0;
-                        const maxS = Number(l.maxDealSize) || 100000000;
-                        return amount >= minS && amount <= maxS;
-                    });
-                
-                const memberMatches = activeMemberLendersSnap.docs
-                    .map((d: any) => ({ id: d.id, source: 'Member', ...d.data() }))
-                    .filter((l: any) => {
-                        const params = l.lendingParams;
-                        if (!params) return false;
-                        
-                        const sizeMatch = amount >= (params.minDealSize || 0) && amount <= (params.maxDealSize || 100000000);
-                        const turnoverMatch = turnover >= (params.minAnnualTurnover || 0);
-                        const ageMatch = age >= (params.minYearsInBusiness || 0);
-                        const ratingMatch = !params.minCreditScore || (Number(enquiry.creditScore || 0) >= params.minCreditScore);
-                        
-                        const judgementOk = !params.requiresNoJudgements || !enquiry.hasJudgements;
-                        const defaultOk = !params.requiresNoDefaults || !enquiry.hasDefaults;
-                        const arrearsOk = !params.requiresNoArrears || !enquiry.hasArrears;
-
-                        return sizeMatch && turnoverMatch && ageMatch && ratingMatch && judgementOk && defaultOk && arrearsOk;
-                    });
-
-                return NextResponse.json({ success: true, data: [...staticMatches, ...memberMatches].map(serializeTimestamps) });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
             case 'logCommunication': {
                 const { partnerId, subject, notes, collection: providedColl } = payload;
                 const targetColl = providedColl || 'partners';
                 const parentRef = db.collection(targetColl).doc(partnerId);
 
                 const logRef = parentRef.collection('communications').doc();
-                await logRef.set({ id: logRef.id, type: 'Email', subject, notes, timestamp: FieldValue.serverTimestamp(), adminId: decodedToken.uid });
-                await parentRef.update({ lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject, updatedAt: FieldValue.serverTimestamp() });
+                await logRef.set({ 
+                    id: logRef.id, 
+                    type: payload.type || 'Email', 
+                    subject, 
+                    notes, 
+                    timestamp: FieldValue.serverTimestamp(), 
+                    adminId: decodedToken.uid 
+                });
+                
+                await parentRef.update({ 
+                    lastOutreachAt: FieldValue.serverTimestamp(), 
+                    lastOutreachSubject: subject, 
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
                 return NextResponse.json({ success: true });
             }
 
-            case 'autoEnrichRecord': {
-                const { id, type } = payload;
-                const coll = type === 'lead' ? 'leads' : 'partners';
-                const docRef = db.collection(coll).doc(id);
-                const docSnap = await docRef.get();
-                if (!docSnap.exists) throw new Error("Record not found.");
-                const record = docSnap.data()!;
-                const enriched = await enrichPartner({ companyName: record.companyName || record.firstName });
-                await docRef.update({ ...enriched, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true, data: enriched });
+            case 'getPlatformStaff': {
+                if (!isSystemAdmin) throw new Error("Forbidden.");
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getAuditLogs': {
+                if (!isSystemAdmin) throw new Error("Forbidden.");
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
-            default: return NextResponse.json({ success: false, error: "Invalid action." }, { status: 400 });
+            default: return NextResponse.json({ success: false, error: "Invalid action or insufficient permissions." }, { status: 400 });
         }
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });

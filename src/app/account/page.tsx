@@ -39,6 +39,8 @@ import {
   Search,
   Share2,
   Landmark,
+  ClipboardList,
+  FileSignature,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -77,6 +79,7 @@ import IntelligenceHistory from './intelligence-history';
 import SocialStudio from '@/app/adminaccount/social-studio';
 import MarketingStudio from './marketing-studio';
 import LendingParametersContent from './lending-parameters-content';
+import LenderDeskContent from './lender-desk-content';
 
 function AccountPageContent() {
   const router = useRouter();
@@ -126,6 +129,7 @@ function AccountPageContent() {
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
       case 'lending-focus': return <LendingParametersContent />;
+      case 'lending-desk': return <LenderDeskContent />;
       case 'load-board': return <LoadBoardContent />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
@@ -161,7 +165,7 @@ function AccountPageContent() {
   const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
   
-  const isSalesActive = ['network', 'performance', 'offer', 'emails'].includes(activeView);
+  const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
   const isSocialActive = activeView.startsWith('social-');
 
@@ -253,9 +257,16 @@ function AccountPageContent() {
               )}
 
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>Sales & Outreach</span></SidebarMenuButton>
+                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>{isLender ? 'Lending Desk (CRM)' : 'Sales & Outreach'}</span></SidebarMenuButton>
                 <SidebarMenuSub>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users />My Network</SidebarMenuSubButton></SidebarMenuSubItem>
+                    {isLender ? (
+                        <>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-desk'} onClick={() => navigate('lending-desk')}><ClipboardList />Opportunities</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users />Borrower CRM</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </>
+                    ) : (
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users />My Network</SidebarMenuSubButton></SidebarMenuSubItem>
+                    )}
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}><TrendingUp />Performance</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'offer'} onClick={() => navigate('offer')}><Gift />The Offer</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}><Mail />Email Templates</SidebarMenuSubButton></SidebarMenuSubItem>
