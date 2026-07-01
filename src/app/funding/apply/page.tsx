@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, ClipboardCheck, Info, Users, PlusCircle, Trash2, UserCheck, Truck, FileText } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, ClipboardCheck, Info, Users, PlusCircle, Trash2, UserCheck, Truck, FileText, MapPin } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { provinces } from '@/lib/geodata';
 
 const fundingNeeds = {
   'business': 'Working Capital / Business Loan',
@@ -96,6 +97,7 @@ const baseSchema = z.object({
   yearsInBusiness: z.coerce.number().min(0, 'Required.'),
   annualTurnover: z.coerce.number().min(0, 'Required.'),
   creditRating: z.string().min(1, 'Required.'),
+  primaryRegion: z.string().min(1, 'Please select your primary operating region.'),
   registrationNumber: z.string().optional(),
   companyLegalName: z.string().optional(),
   registeredAddress: z.string().optional(),
@@ -121,7 +123,7 @@ type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 const staticSteps = [
   { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
-  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating', 'registrationNumber', 'companyLegalName', 'directors', 'shareholders'] },
+  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating', 'primaryRegion', 'registrationNumber', 'companyLegalName', 'directors', 'shareholders'] },
   { id: 'History', name: 'Step 3: Credit History', fields: ['hasJudgements', 'hasDefaults', 'hasArrears', 'apiConsent'] },
   { id: 'Asset', name: 'Step 4: Asset Specifics', fields: ['assets'] },
   { id: 'Reason', name: 'Step 5: The Reason', fields: ['fundingReason', 'purpose'] },
@@ -284,6 +286,7 @@ function ApplyForm() {
       hasDefaults: false,
       hasArrears: false,
       apiConsent: false,
+      primaryRegion: '',
       directors: [],
       shareholders: [],
       assets: [{ vehicleClass: '', assetCategory: '' }]
@@ -339,7 +342,7 @@ function ApplyForm() {
         <CardTitle className="flex items-center gap-2 text-left text-white"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
         <CardDescription className="text-slate-400 text-left">{currentStepConfig.name}</CardDescription>
       </CardHeader>
-      <CardContent className="p-8 text-left bg-white">
+      <CardContent className="p-8 text-left bg-white text-foreground">
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8 text-left">
             
@@ -400,13 +403,26 @@ function ApplyForm() {
                         </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                        <FormField control={methods.control} name="primaryRegion" render={({ field }) => (
+                            <FormItem className="text-left">
+                                <FormLabel>Primary Operating Region</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger className="border-2"><SelectValue placeholder="Select region..." /></SelectTrigger></FormControl>
+                                    <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={methods.control} name="creditRating" render={({ field }) => (
+                            <FormItem className="text-left"><FormLabel>Self-Assessed Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2 text-left text-foreground"><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
+                        )} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                         <FormField control={methods.control} name="yearsInBusiness" render={({ field }) => (<FormItem className="text-left"><FormLabel>Years in Business</FormLabel><FormControl><Input type="number" {...field} className="border-2"/></FormControl></FormItem>)} />
                         <FormField control={methods.control} name="annualTurnover" render={({ field }) => (<FormItem className="text-left"><FormLabel>Annual Turnover (R)</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>)} />
                     </div>
-                    <FormField control={methods.control} name="creditRating" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Self-Assessed Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="border-2 text-left text-foreground"><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
-                    )} />
                 </div>
             )}
 
@@ -556,7 +572,7 @@ function ApplyForm() {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="py-12 text-center opacity-50"><p className="text-xs italic text-center">No specific asset details required for this funding need.</p></div>
+                                    <div className="py-12 text-center opacity-50"><p className="text-xs italic text-center text-foreground">No specific asset details required for this funding need.</p></div>
                                 )}
                             </div>
                         );
