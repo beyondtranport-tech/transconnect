@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useUser, getClientSideAuthToken } from '@/firebase';
+import { useUser, getClientSideAuthToken, useFirestore, forceRefresh } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users, Package, MapPin, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
