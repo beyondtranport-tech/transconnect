@@ -7,22 +7,13 @@ import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * UTILITY: Serialize Timestamps for JSON transport
- */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
-    if (docData instanceof Timestamp) {
-        return docData.toDate().toISOString();
-    }
-    if (Array.isArray(docData)) {
-        return docData.map(serializeTimestamps);
-    }
+    if (docData instanceof Timestamp) return docData.toDate().toISOString();
+    if (Array.isArray(docData)) return docData.map(serializeTimestamps);
     if (typeof docData === 'object' && docData !== null) {
         const serialized: { [key: string]: any } = {};
-        for (const key in docData) {
-            serialized[key] = serializeTimestamps(docData[key]);
-        }
+        for (const key in docData) serialized[key] = serializeTimestamps(docData[key]);
         return serialized;
     }
     return docData;
@@ -33,25 +24,20 @@ export async function POST(req: NextRequest) {
         const { app, error: initError } = getAdminApp();
         if (initError || !app) throw new Error(`Admin SDK failed: ${initError}`);
 
-        const authorization = req.headers.get('authorization');
-        if (!authorization?.startsWith('Bearer ')) throw new Error('Unauthorized.');
-        const token = authorization.split('Bearer ')[1];
+        const authHeader = req.headers.get('authorization');
+        if (!authHeader?.startsWith('Bearer ')) throw new Error('Unauthorized.');
+        const token = authHeader.split('Bearer ')[1];
         
         const adminAuth = getAuth(app);
         const decodedToken = await adminAuth.verifyIdToken(token);
-        
+        const db = getFirestore(app);
+
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' || 
                         decodedToken.email === 'michael@logisticsflow.co.za' ||
                         decodedToken.admin === true;
 
-        const db = getFirestore(app);
-        const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-        const userData = userDoc.data();
-        
-        const isAssociate = userData?.role === 'associate' || userData?.declaredPosition === 'associate';
-
-        if (!isAdmin && !isAssociate) throw new Error("Forbidden: Elevated access required.");
+        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         const body = await req.json();
         const action = (body.action || '').trim();
@@ -59,28 +45,12 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { type, term, status, outreachFilter, assigneeId, limit = 1000 } = payload;
+                const { type, term, limit = 1000 } = payload;
                 let results: any[] = [];
 
                 if (type !== 'partner') {
                     let leadsQ: any = db.collection('leads');
-                    if (type && type !== 'all' && type !== 'lead') {
-                        const typeMap: Record<string, string[]> = {
-                            'associate': ['associate', 'Digital Partners', 'Digital Partner'],
-                            'isa': ['isa', 'ISA Agents', 'ISA Agent'],
-                            'supplier': ['supplier', 'vendor', 'Suppliers', 'Supplier', 'Vendors'],
-                            'transporter': ['transporter', 'Transporters', 'Transporter'],
-                            'finance': ['finance', 'financier', 'Finance Companies', 'Finance Partner'],
-                            'driver': ['driver', 'Drivers', 'Driver'],
-                            'investor': ['investor', 'Investors', 'Investor']
-                        };
-                        const possibleRoles = typeMap[type] || [type];
-                        leadsQ = leadsQ.where('role', 'in', possibleRoles);
-                    }
-                    if (status && status !== 'all') leadsQ = leadsQ.where('status', '==', status);
-                    if (assigneeId && assigneeId !== 'all') leadsQ = leadsQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
                     if (term) leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
-                    
                     const leadsSnap = await leadsQ.limit(limit).get();
                     results = [...results, ...leadsSnap.docs.map((d: any) => ({ id: d.id, source: 'Lead', ...d.data() }))];
                 }
@@ -88,138 +58,33 @@ export async function POST(req: NextRequest) {
                 if (type !== 'lead') {
                     let partnersQ: any = db.collection('partners');
                     if (type && type !== 'all' && type !== 'partner') partnersQ = partnersQ.where('type', '==', type);
-                    if (status && status !== 'all') partnersQ = partnersQ.where('status', '==', status);
-                    if (assigneeId && assigneeId !== 'all') partnersQ = partnersQ.where('assigneeId', '==', assigneeId === 'none' ? null : assigneeId);
                     if (term) partnersQ = partnersQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
-
                     const partnersSnap = await partnersQ.limit(limit).get();
                     results = [...results, ...partnersSnap.docs.map((d: any) => ({ id: d.id, source: 'Partner', ...d.data() }))];
-                }
-
-                if (outreachFilter === 'none') {
-                    results = results.filter(r => !r.lastOutreachSubject);
-                } else if (outreachFilter && outreachFilter !== 'all') {
-                    results = results.filter(r => r.lastOutreachSubject === outreachFilter);
                 }
 
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'dispatchEngagement': {
-                const { partnerId, email, subject, html, audience } = payload;
-                if (!partnerId || !email || !html) throw new Error("Missing dispatch payload.");
-
-                const leadsCheck = await db.collection('leads').doc(partnerId).get();
-                const targetCollection = leadsCheck.exists ? 'leads' : 'partners';
-                const parentRef = db.collection(targetCollection).doc(partnerId);
-
-                const logRef = parentRef.collection('communications').doc();
-                const batch = db.batch();
-                batch.set(logRef, { 
-                    id: logRef.id, 
-                    type: 'Email', 
-                    subject, 
-                    notes: `Automated Transactional Dispatch for ${audience}`, 
-                    timestamp: FieldValue.serverTimestamp(), 
-                    adminId: decodedToken.uid 
-                });
-                batch.update(parentRef, { 
-                    lastOutreachAt: FieldValue.serverTimestamp(), 
-                    lastOutreachSubject: subject, 
-                    status: 'contacted', 
-                    updatedAt: FieldValue.serverTimestamp() 
-                });
-
-                const MAIL_API_KEY = process.env.TRANSACTIONAL_MAIL_API_KEY;
-                if (MAIL_API_KEY) {
-                    try {
-                        await fetch('https://api.sendgrid.com/v3/mail/send', {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${MAIL_API_KEY}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                personalizations: [{ to: [{ email }] }],
-                                from: { email: 'noreply@logisticsflow.co.za', name: 'Logistics Flow' },
-                                subject: subject,
-                                content: [{ type: 'text/html', value: html }]
-                            })
-                        });
-                    } catch (mailError) {
-                        console.error("Mail API Dispatch Failed:", mailError);
-                    }
-                }
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'autoEnrichRecord': {
-                const { id, type } = payload;
-                if (!id) throw new Error("ID required for auto-enrichment.");
-
-                let targetCollection = type === 'lead' ? 'leads' : 'partners';
-                let docRef = db.collection(targetCollection).doc(id);
-                let docSnap = await docRef.get();
+            case 'getMatchesForEnquiry': {
+                const { enquiryId, companyId } = payload;
+                const enquirySnap = await db.doc(`companies/${companyId}/enquiries/${enquiryId}`).get();
+                if (!enquirySnap.exists) throw new Error("Enquiry not found.");
                 
-                if (!docSnap.exists) {
-                    targetCollection = targetCollection === 'leads' ? 'partners' : 'leads';
-                    docRef = db.collection(targetCollection).doc(id);
-                    docSnap = await docRef.get();
-                }
-                
-                if (!docSnap.exists) throw new Error(`Record ${id} not found.`);
-                
-                const record = docSnap.data()!;
-                const companyName = record.companyName || record.company_name || record.trading_name || `${record.firstName} ${record.lastName}`;
-                const enriched = await enrichPartner({ companyName });
+                const enquiry = enquirySnap.data()!;
+                const amount = enquiry.amountRequested || 0;
 
-                await docRef.update({
-                    ...enriched,
-                    status: (enriched.email || enriched.website) ? 'qualified' : record.status,
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true, data: enriched });
-            }
+                // Match Logic: Find lenders where range includes amount
+                const lendersSnap = await db.collection('partners').where('type', '==', 'finance').get();
+                const matches = lendersSnap.docs
+                    .map((d: any) => ({ id: d.id, ...d.data() }))
+                    .filter((l: any) => {
+                        const min = l.minDealSize || 0;
+                        const max = l.maxDealSize || 100000000;
+                        return amount >= min && amount <= max;
+                    });
 
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                const batch = db.batch();
-                const collectionName = (type === 'associate' || type === 'lead') ? 'leads' : 'partners';
-                const collRef = db.collection(collectionName);
-
-                partners.forEach((p: any) => {
-                    const id = p.record_id || p.id || collRef.doc().id;
-                    batch.set(collRef.doc(id), {
-                        ...p,
-                        id,
-                        status: p.status || 'new',
-                        updatedAt: FieldValue.serverTimestamp(),
-                        createdAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, type: cType, subject, notes, collection: cName } = payload;
-                let targetColl = cName;
-                if (!targetColl) {
-                    const leadsCheck = await db.collection('leads').doc(partnerId).get();
-                    targetColl = leadsCheck.exists ? 'leads' : 'partners';
-                }
-
-                const parentRef = db.collection(targetColl).doc(partnerId);
-                const logRef = parentRef.collection('communications').doc();
-                const batch = db.batch();
-                batch.set(logRef, { id: logRef.id, type: cType, subject, notes, timestamp: FieldValue.serverTimestamp(), adminId: decodedToken.uid });
-                batch.update(parentRef, { lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject, status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ success: true, data: matches.map(serializeTimestamps) });
             }
 
             case 'getPlatformStaff': {
@@ -237,15 +102,38 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
+            case 'logCommunication': {
+                const { partnerId, subject, notes } = payload;
+                const leadsCheck = await db.collection('leads').doc(partnerId).get();
+                const targetColl = leadsCheck.exists ? 'leads' : 'partners';
+                const parentRef = db.collection(targetColl).doc(partnerId);
+
+                const logRef = parentRef.collection('communications').doc();
+                await logRef.set({ id: logRef.id, type: 'Email', subject, notes, timestamp: FieldValue.serverTimestamp(), adminId: decodedToken.uid });
+                await parentRef.update({ lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                const coll = type === 'lead' ? 'leads' : 'partners';
+                const docRef = db.collection(coll).doc(id);
+                const docSnap = await docRef.get();
+                if (!docSnap.exists) throw new Error("Record not found.");
+                const record = docSnap.data()!;
+                const enriched = await enrichPartner({ companyName: record.companyName || record.firstName });
+                await docRef.update({ ...enriched, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true, data: enriched });
+            }
+
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
-            default: return NextResponse.json({ success: false, error: "Action invalid." }, { status: 400 });
+            default: return NextResponse.json({ success: false, error: "Invalid action." }, { status: 400 });
         }
     } catch (error: any) {
-        console.error("Admin API Error:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

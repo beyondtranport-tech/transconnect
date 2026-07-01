@@ -20,7 +20,7 @@ service cloud.firestore {
       );
     }
 
-    // Explicit check for membership that supports 'list' operations correctly.
+    // Harden member check to support 'list' operations reliably
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
@@ -51,6 +51,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
+      // Explicit sub-collection rules for member access
       match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{payId} { allow read, write: if isMember(companyId); }

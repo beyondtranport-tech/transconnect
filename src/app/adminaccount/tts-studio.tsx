@@ -45,10 +45,7 @@ export default function TTSStudio() {
 
     const form = useForm<TTSInput>({
         resolver: zodResolver(TTSInputSchema),
-        defaultValues: {
-            script: '',
-            voice: 'Algenib',
-        },
+        defaultValues: { script: '', voice: 'Algenib' },
     });
 
     const onSubmit = async (values: TTSInput) => {
@@ -58,9 +55,7 @@ export default function TTSStudio() {
             const result = await generateAudio(values);
             if (result.audioDataUri) {
                 setGeneratedAudio(result.audioDataUri);
-                toast({ title: 'Audio Generated', description: 'Your voiceover is ready.' });
-            } else {
-                throw new Error("The AI did not return any audio data.");
+                toast({ title: 'Audio Generated' });
             }
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Generation Failed', description: e.message });
@@ -80,95 +75,48 @@ export default function TTSStudio() {
     };
 
     return (
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left">
             <Card>
-                <CardHeader className="text-left">
-                    <div className="flex items-center justify-between text-left">
-                        <div className="flex items-center gap-4 text-left">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
                             <Mic className="h-8 w-8 text-primary" />
-                            <div className="text-left">
-                                <CardTitle className="text-left">AI Audio Studio (Text-to-Speech)</CardTitle>
-                                <CardDescription className="text-left text-muted-foreground">Generate high-quality voiceovers for your narrative scenes.</CardDescription>
+                            <div className="text-left text-foreground">
+                                <CardTitle>AI Audio Studio</CardTitle>
+                                <CardDescription>Generate high-quality voiceovers for your narrative scenes.</CardDescription>
                             </div>
                         </div>
                         <Button variant="outline" size="sm" className="gap-2" onClick={() => form.setValue('script', driverScript)}>
-                            <BookOpen className="h-4 w-4" /> Load Driver Narrative
+                            <BookOpen className="h-4 w-4" /> Load Narrative
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
-                            <fieldset disabled={isLoading} className="text-left text-foreground">
-                                <FormField
-                                control={form.control}
-                                name="script"
-                                render={({ field }) => (
-                                    <FormItem className="text-left">
-                                    <FormLabel className="text-left text-foreground">Your Script</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                        placeholder="Enter the script for your voiceover here..."
-                                        className="min-h-[200px] font-mono text-sm leading-relaxed text-foreground bg-white"
-                                        {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                    </FormItem>
-                                )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="voice"
-                                    render={({ field }) => (
-                                        <FormItem className="text-left max-w-sm text-foreground">
-                                        <FormLabel className="text-left text-foreground">Primary Voice Character</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger className="bg-white">
-                                                    <SelectValue placeholder="Select a voice" />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {voices.map(v => (
-                                                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </fieldset>
-                            
-                            <Button type="submit" disabled={isLoading} className="w-full h-12 font-bold text-foreground">
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />}
-                                Generate Narrative Audio
+                            <FormField control={form.control} name="script" render={({ field }) => (
+                                <FormItem><FormLabel>Your Script</FormLabel><FormControl><Textarea className="min-h-[200px] font-mono text-sm leading-relaxed bg-white" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="voice" render={({ field }) => (
+                                <FormItem className="max-w-sm"><FormLabel>Primary Voice Character</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{voices.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            )} />
+                            <Button type="submit" disabled={isLoading} className="w-full h-12 font-bold">
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate Audio
                             </Button>
                         </form>
                     </Form>
-
                     {generatedAudio && (
-                        <div className="mt-8 space-y-4 text-left p-6 border rounded-xl bg-muted/20 animate-in fade-in slide-in-from-bottom-2">
-                            <h4 className="font-bold flex items-center gap-2"><Music className="h-4 w-4 text-primary" /> Generated Voiceover Track</h4>
-                            <audio controls src={generatedAudio} className="w-full">
-                                Your browser does not support the audio element.
-                            </audio>
-                            <Button onClick={handleDownload} variant="outline" className="w-full h-12 font-bold gap-2 text-foreground">
-                                <Download className="h-4 w-4" /> Download Track for Post-Production
-                            </Button>
+                        <div className="mt-8 space-y-4 p-6 border rounded-xl bg-muted/20">
+                            <h4 className="font-bold flex items-center gap-2"><Music className="h-4 w-4 text-primary" /> Track Ready</h4>
+                            <audio controls src={generatedAudio} className="w-full" />
+                            <Button onClick={handleDownload} variant="outline" className="w-full h-12 font-bold gap-2"><Download className="h-4 w-4" /> Download WAV</Button>
                         </div>
                     )}
                 </CardContent>
-                <CardFooter className="bg-muted/30 p-4 border-t rounded-b-xl text-left">
+                <CardFooter className="bg-muted/30 p-4 border-t">
                     <div className="flex items-start gap-3 text-left">
-                        <div className="bg-primary/10 p-2 rounded-lg text-left"><Info className="h-4 w-4 text-primary" /></div>
-                        <div className="space-y-1 text-left text-foreground">
-                            <p className="text-[11px] font-black uppercase tracking-widest text-foreground text-left">Post-Production Guide</p>
-                            <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
-                                Use a tool like **CapCut** to layer this voiceover track with the 3 visual scenes from the **Branding Studio**.
-                            </p>
-                        </div>
+                        <div className="bg-primary/10 p-2 rounded-lg"><Info className="h-4 w-4 text-primary" /></div>
+                        <div className="space-y-1"><p className="text-[11px] font-black uppercase text-foreground">Post-Production</p><p className="text-[11px] text-muted-foreground">Use CapCut to layer this track with your visual scenes.</p></div>
                     </div>
                 </CardFooter>
             </Card>

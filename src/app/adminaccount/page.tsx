@@ -36,7 +36,6 @@ import {
   Star,
   Award,
   Gift,
-  Wrench,
   Share2,
   Facebook,
   Linkedin,
@@ -71,7 +70,6 @@ import SocialStudio from '@/app/adminaccount/social-studio';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
-import FinancialsGeneralSettings from '@/app/adminaccount/financials-general-settings';
 import FinancialSetup from '@/app/account/financial-setup';
 import BudgetPage from '@/app/account/budget/page';
 import SalaryForecastPage from '@/app/backend/salary-forecast';
@@ -164,7 +162,6 @@ function AdminAccountContent() {
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <TargetsPage />;
       case 'financial-projections': return <FinancialProjections />;
-      case 'financial-settings': return <FinancialsGeneralSettings />;
       case 'financial-setup': return <FinancialSetup />;
       case 'budget': return <BudgetPage />;
       case 'salary-forecast': return <SalaryForecastPage />;
@@ -181,57 +178,32 @@ function AdminAccountContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
+      case 'platform-staff': return <PlatformStaffManagement />;
       case 'guides': return (
         <div className="space-y-8 text-left text-foreground">
             <CardHeader className="px-0">
                 <div className="flex items-center gap-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl text-left"><Book className="h-8 w-8 text-primary" /></div>
+                    <div className="bg-primary/10 p-3 rounded-xl"><Book className="h-8 w-8 text-primary" /></div>
                     <div className="text-left">
-                        <CardTitle className="text-2xl font-black font-headline text-left">Platform Guides & Help</CardTitle>
-                        <CardDescription className="text-left">Administrative protocols and troubleshooting walkthroughs.</CardDescription>
+                        <CardTitle className="text-2xl font-black font-headline text-left">Platform Help & Documentation</CardTitle>
+                        <CardDescription className="text-left">Administrative protocols and troubleshooting guides.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/outlook-sending-guide.md', '_blank')}>
-                    <CardHeader className="text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">Outlook Spam Unblocking</CardTitle>
-                        <CardDescription className="text-left">Step-by-step instructions for the Microsoft 365 Defender Portal.</CardDescription>
+                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/outlook-sending-guide.md', '_blank')}>
+                    <CardHeader>
+                        <CardTitle className="text-lg font-bold group-hover:text-primary">Outlook Spam Unblocking</CardTitle>
+                        <CardDescription>Step-by-step for the M365 Defender Portal.</CardDescription>
                     </CardHeader>
-                    <CardContent className="text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed text-left">If your outreach email gets flagged as spam, follow this guide to lift the restriction in the M365 Security center.</p>
-                    </CardContent>
+                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed">If outreach gets flagged, follow this guide to lift restriction.</p></CardContent>
                 </Card>
-
-                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/enable-gemini-api.md', '_blank')}>
-                    <CardHeader className="text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">AI & Gemini Configuration</CardTitle>
-                        <CardDescription className="text-left text-left">Fixing "403 Forbidden" or "Resource Exhausted" errors.</CardDescription>
+                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/enable-gemini-api.md', '_blank')}>
+                    <CardHeader>
+                        <CardTitle className="text-lg font-bold group-hover:text-primary">AI & Gemini Config</CardTitle>
+                        <CardDescription>Fixing 403 or 429 Errors.</CardDescription>
                     </CardHeader>
-                    <CardContent className="text-left text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed text-left">Ensure your AI API keys are correctly scoped and quotas are adjusted for high-volume forensic discovery.</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/backend-setup.md', '_blank')}>
-                    <CardHeader className="text-left text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">Backend & IAM Setup</CardTitle>
-                        <CardDescription className="text-left">Connecting service accounts and environment variables.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-left text-left text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed text-left">Instructions for generating JSON keys and Base64 encoding for the FIREBASE_ADMIN_SDK_CONFIG_B64 variable.</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="hover:border-primary transition-all group cursor-pointer text-left" onClick={() => window.open('https://github.com/mkoton/logistics-flow/blob/main/docs/deployment-guide.md', '_blank')}>
-                    <CardHeader className="text-left">
-                        <CardTitle className="text-lg font-bold group-hover:text-primary text-left">Deployment Guide</CardTitle>
-                        <CardDescription className="text-left">Publishing updates to Firebase App Hosting.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="text-left">
-                        <p className="text-xs text-muted-foreground leading-relaxed text-left text-left">Protocol for pushing code to GitHub and monitoring the App Hosting build pipeline.</p>
-                    </CardContent>
+                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed">Ensure API keys are scoped and quotas adjusted for forensic discovery.</p></CardContent>
                 </Card>
             </div>
         </div>
@@ -255,9 +227,7 @@ function AdminAccountContent() {
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2 text-left">
             <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground text-left">
-              Admin Portal
-            </h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Portal</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -331,7 +301,6 @@ function AdminAccountContent() {
                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}>Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
               </SidebarMenuSub>
             </SidebarMenuItem>
-
             <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Help & Guides" isActive={activeView === 'guides'} onClick={() => navigate('guides')}>
                     <HelpCircle /><span>Help & Guides</span>
