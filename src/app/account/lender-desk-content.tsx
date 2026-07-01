@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, ClipboardList, CheckCircle, FileText, Send, Landmark, 
-    ArrowRight, UserCheck, ShieldCheck, Zap, Info, Search, Building, Clock, Mail, Phone, FileSignature 
+    ArrowRight, UserCheck, ShieldCheck, Zap, Info, Search, Building, Clock, Mail, Phone, FileSignature,
+    AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { DataTable } from '@/components/ui/data-table';
@@ -56,7 +58,7 @@ function OpportunityDetail({
             const token = await getClientSideAuthToken();
             if (!token) return;
 
-            // Simplified: In a real app, this would save to a subcollection and send an email
+            // Log communication against the lead/partner record
             await performAdminAction(token, 'logCommunication', {
                 partnerId: opportunity.id,
                 subject: 'Facility Letter Issued',
@@ -177,16 +179,15 @@ export default function LenderDeskContent() {
             const token = await getClientSideAuthToken();
             if (!token) return;
 
-            // In this prototype, we'll fetch all enquiries that match the lender's focus
+            // Fetch all entries that have financial enquiry data
             const result = await performAdminAction(token, 'searchRegistry', { 
-                type: 'all', // Searches across all leads/partners to find matching enquiries
+                type: 'all', 
                 limit: 100 
             });
             
-            // Filter locally for the prototype to show "Matched" items
-            // A real app would do this on the server side via the matching engine
+            // Filter locally for enquiries with requested amounts
             const matches = (result || []).filter((r: any) => 
-                r.source === 'Lead' && !!r.amountRequested
+                !!r.amountRequested
             );
             
             setOpportunities(matches);
@@ -285,7 +286,7 @@ export default function LenderDeskContent() {
                             <p className="text-sm text-slate-300 text-left leading-relaxed">Issue facility letters and finalize agreements directly through the platform ledger.</p>
                         </div>
                     </div>
-                    <Button asChild size="lg" className="h-16 px-10 text-xl font-black uppercase shadow-xl shadow-primary/20">
+                    <Button asChild size="lg" className="h-14 px-10 text-xl font-black uppercase shadow-xl shadow-primary/20">
                         <Link href="/checkout/intelligence">Unlock Paid Deal Flow <ArrowRight className="ml-2 h-6 w-6"/></Link>
                     </Button>
                 </CardContent>
@@ -368,7 +369,7 @@ export default function LenderDeskContent() {
     );
 }
 
-// Re-using specific Icons from main account page
+// Custom Local Icon
 function RefreshCcw(props: any) {
   return (
     <svg
