@@ -27,19 +27,18 @@ const routeOptions = ['Intra-Gauteng', 'GP to KZN', 'GP to WC', 'GP to EC', 'WC 
 const constraintOptions = ['Dock Loading', 'Forklift On-Site', 'Crane Required', 'Side-Load Only', 'Hand-Offloading Only', 'Secure Overnight Parking'];
 
 export default function NeedsContent() {
-    const { user, isUserLoading, forceRefresh } = userHook();
-    function userHook() { return useUser(); }
+    const { user, isUserLoading, forceRefresh } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
     const form = useForm<z.infer<typeof needsSchema>>({
         resolver: zodResolver(needsSchema),
         defaultValues: {
-            cargoTypes: user?.companyData?.logisticsNeeds?.cargoTypes || [],
-            routes: user?.companyData?.logisticsNeeds?.routes || [],
-            approxMonthlyLoads: user?.companyData?.logisticsNeeds?.approxMonthlyLoads || 0,
-            loadingConstraints: user?.companyData?.logisticsNeeds?.loadingConstraints || [],
-            operatingHours: user?.companyData?.logisticsNeeds?.operatingHours || '',
+            cargoTypes: [],
+            routes: [],
+            approxMonthlyLoads: 0,
+            loadingConstraints: [],
+            operatingHours: '',
         }
     });
 
@@ -90,9 +89,9 @@ export default function NeedsContent() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <CardContent className="p-8 space-y-10 text-left">
-                        <Alert className="bg-primary/5 border-primary/20">
+                        <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Info className="h-5 w-5 text-primary" />
-                            <AlertTitle className="font-bold">The Information Flow Advantage</AlertTitle>
+                            <AlertTitle className="font-bold text-left">The Information Flow Advantage</AlertTitle>
                             <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
                                 By specifying your cargo profile and regular routes, you allow our matching engine to proactively find the most efficient hauliers in the registry. This reduces manual searching and drives down your spot-market procurement costs.
                             </AlertDescription>

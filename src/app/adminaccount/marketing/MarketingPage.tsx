@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Loader2, ClipboardCopy, Mail, ExternalLink } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,7 @@ const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/
 const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
 const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Audience-specific components using absolute paths
+// Audience-specific components
 const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -51,7 +51,7 @@ const TransporterEmails = dynamic(() => import('@/app/adminaccount/marketing/ema
 const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Management components using absolute paths
+// Management components
 const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const ISAManagement = dynamic(() => import('@/app/adminaccount/marketing/isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -77,7 +77,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
-        cache: 'no-store'
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
@@ -119,7 +118,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                 subject: activeTabLabel,
             });
         } catch (e) {
-            // Error is handled by the parent component's toast
+            // Handled in parent
         } finally {
             setIsLogging(false);
         }
@@ -128,16 +127,16 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="text-left text-foreground">
-                <DialogHeader className="text-left text-foreground">
-                    <DialogTitle className="text-left">Log and Copy Content</DialogTitle>
-                    <DialogDescription className="text-left">
+                <DialogHeader className="text-left">
+                    <DialogTitle>Log and Copy Content</DialogTitle>
+                    <DialogDescription>
                         Select a partner to log this communication against before copying the content.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
-                            <FormItem className="text-left text-foreground">
+                            <FormItem className="text-left">
                                 <FormLabel>Log against {singularAudience}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger disabled={isLoadingPartners} className="bg-white">
@@ -151,7 +150,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="communicationType" render={({ field }) => (
-                             <FormItem>
+                             <FormItem className="text-left">
                                 <FormLabel>Communication Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger className="bg-white">
@@ -171,16 +170,16 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             control={form.control}
                             name="notes"
                             render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="text-left">
                                     <FormLabel>Notes (Optional)</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Add notes about the call or meeting..." {...field} className="bg-white" />
+                                        <Textarea placeholder="Add interaction details..." {...field} className="bg-white" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-                         <DialogFooter>
+                         <DialogFooter className="text-left">
                             <Button type="submit" disabled={isLogging}>
                                 {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                                 Log & Copy
@@ -242,9 +241,10 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
+        // OVERRIDE: Using resilient utility to avoid ClipboardItem illegal constructor
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
-            throw new Error('Your browser may not support this feature, or there was an error.');
+            throw new Error('Clipboard operation failed.');
         }
     } else {
       throw new Error(`Could not find the content for the active tab (ID: ${contentId}).`);

@@ -293,7 +293,7 @@ function AccountPageContent() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="p-4 md:p-6">
+        <div className="p-4 md:p-6 text-left">
             {activeView === 'dashboard' && <AccountDashboard />}
             {activeView === 'shop' && <ShopContent />}
             {activeView === 'profile' && <ProfileContent />}
