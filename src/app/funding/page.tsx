@@ -25,7 +25,7 @@ const agreementTypes = [
     {
         id: "installment-sale",
         title: "Installment Sale",
-        icon: Book,
+        icon: FileText,
         description: "Finance the purchase of an asset over time. Ownership transfers to you after the final payment is made.",
     },
     {
@@ -37,7 +37,7 @@ const agreementTypes = [
     {
         id: "discounting",
         title: "Discounting",
-        icon: FileText,
+        icon: Book,
         description: "Unlock the value of your existing contracts and invoices to improve cash flow and fund operations.",
     },
 ]
@@ -45,31 +45,15 @@ const agreementTypes = [
 export default function FundingPage() {
     const { user, isUserLoading } = useUser();
 
-    const handleApplyClick = () => {
-        if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
-        gtag.event({
-            action: 'start_application',
-            category: 'Funding',
-            label: 'Direct In-House Path',
-            value: 1
-        });
-    }
-    
     const handleCategoryClick = (categoryId: string) => {
         if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return;
         gtag.event({
-            action: 'select_funding_category',
+            action: 'start_application_from_card',
             category: 'Funding',
             label: categoryId,
-            value: 0
+            value: 1
         });
     }
-
-    // Direct path for applications starting here
-    // Restricted to Transporters and Suppliers (Vendors)
-    // EXPLICITLY ensuring restricted=true is passed to /join
-    const redirectDest = encodeURIComponent('/funding/apply?origination=direct');
-    const ctaLink = user ? '/funding/apply?origination=direct' : `/join?restricted=true&redirect=${redirectDest}`;
 
     return (
         <div className="text-left">
@@ -95,25 +79,9 @@ export default function FundingPage() {
                 <div className="container mx-auto px-4">
                      <div className="max-w-4xl mx-auto text-center">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">The Direct Funding Advantage</h2>
-                         <div className="mt-8 text-left space-y-4 text-muted-foreground bg-card p-8 rounded-lg shadow-sm">
-                            <p className="text-lg">Applying directly to the Logistics Flow funding division ensures you are evaluated based on your industrial standing, not just a generic credit score. We utilize the forensic data from your platform activity to structure viable funding opportunities that traditional banks often miss.</p>
-                            <p className="text-lg">Whether you are scaling your fleet or bridging a cash flow gap, our in-house team understands the nuances of the transport sector.</p>
-                        </div>
-                        <div className="mt-12">
-                             <Button asChild size="lg" onClick={handleApplyClick} disabled={isUserLoading}>
-                                <Link href={ctaLink}>
-                                    {isUserLoading ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                            Loading...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Apply for In-House Funding <ArrowRight className="ml-2 h-5 w-5" />
-                                        </>
-                                    )}
-                                </Link>
-                            </Button>
+                         <div className="mt-8 text-left space-y-4 text-muted-foreground bg-card p-8 rounded-lg shadow-sm border">
+                            <p className="text-lg leading-relaxed">Applying directly to the Logistics Flow funding division ensures you are evaluated based on your industrial standing, not just a generic credit score. We utilize the forensic data from your platform activity to structure viable funding opportunities that traditional banks often miss.</p>
+                            <p className="text-lg leading-relaxed">Select a funding structure below to begin your application. Our in-house team understands the nuances of the transport sector and is ready to assist.</p>
                         </div>
                     </div>
                 </div>
@@ -124,28 +92,35 @@ export default function FundingPage() {
                      <div className="text-center max-w-3xl mx-auto">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Available Structures</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Explore our three core funding structures to find the best fit for your current business requirement.
+                            Explore our core funding categories and apply for a direct in-house facility.
                         </p>
                     </div>
                     
                     <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
                        {agreementTypes.map((item) => {
                             const Icon = item.icon;
+                            
+                            // Logic: If not logged in, trigger restricted join flow.
+                            const finalDest = `/funding/products?agreement=${item.id}&origination=direct`;
+                            const ctaLink = user ? finalDest : `/join?restricted=true&redirect=${encodeURIComponent(finalDest)}`;
+
                             return (
-                               <Link href={`/funding/products?agreement=${item.id}&origination=direct`} key={item.title} className="block group" onClick={() => handleCategoryClick(item.id)}>
+                               <Link href={ctaLink} key={item.id} className="block group" onClick={() => handleCategoryClick(item.id)}>
                                    <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-primary/20 transition-all h-full group-hover:border-primary">
                                         <CardHeader>
                                             <div className="flex items-center gap-4">
-                                                <Icon className="h-8 w-8 text-primary" />
-                                                <CardTitle>{item.title}</CardTitle>
+                                                <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary transition-colors">
+                                                    <Icon className="h-6 w-6 text-primary group-hover:text-white" />
+                                                </div>
+                                                <CardTitle className="text-xl">{item.title}</CardTitle>
                                             </div>
                                         </CardHeader>
                                         <CardContent className="flex-grow">
-                                            <p className="text-muted-foreground">{item.description}</p>
+                                            <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
                                         </CardContent>
-                                        <CardFooter>
-                                            <p className="text-sm font-semibold text-primary flex items-center gap-2">
-                                                Select Structure <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                        <CardFooter className="pt-4 border-t bg-muted/10">
+                                            <p className="text-sm font-bold text-primary flex items-center gap-2">
+                                                Apply for Funding <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                                             </p>
                                         </CardFooter>
                                    </Card>
