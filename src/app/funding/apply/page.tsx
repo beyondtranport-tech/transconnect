@@ -29,8 +29,8 @@ import { doc } from 'firebase/firestore';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const fundingNeeds = {
   'business': 'Working Capital / Business Loan',
@@ -68,7 +68,6 @@ const stakeholderSchema = z.object({
 });
 
 const assetDetailSchema = z.object({
-    // Conditional Vehicle Fields
     vehicleClass: z.string().optional(),
     vehicleMake: z.string().optional(),
     vehicleModel: z.string().optional(),
@@ -79,8 +78,6 @@ const assetDetailSchema = z.object({
     vehicleRegisterNumber: z.string().optional(),
     titleholder: z.string().optional(),
     owner: z.string().optional(),
-    
-    // Conditional Equipment Fields
     assetCategory: z.string().optional(),
     assetBrand: z.string().optional(),
     assetModel: z.string().optional(),
@@ -95,29 +92,18 @@ const baseSchema = z.object({
   purpose: z.string().min(10, 'Please provide more detail.'),
   amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
   preferredTerm: z.string().min(1, 'Required.'),
-  
-  // Forensic Variables
   entityType: z.string().min(1, 'Please select your entity type.'),
   yearsInBusiness: z.coerce.number().min(0, 'Required.'),
   annualTurnover: z.coerce.number().min(0, 'Required.'),
   creditRating: z.string().min(1, 'Required.'),
-  
-  // Corporate Discovery
   registrationNumber: z.string().optional(),
   companyLegalName: z.string().optional(),
   registeredAddress: z.string().optional(),
-  
-  // Dynamic Stakeholders
   directors: z.array(stakeholderSchema).optional().default([]),
   shareholders: z.array(stakeholderSchema).optional().default([]),
-
-  // Dynamic Assets
   assets: z.array(assetDetailSchema).optional().default([]),
-
-  // Core Document URLs
   registrationDocUrl: z.string().optional(),
   ficaDocUrl: z.string().optional(),
-
   hasJudgements: z.boolean().default(false),
   hasDefaults: z.boolean().default(false),
   hasArrears: z.boolean().default(false),
@@ -252,7 +238,7 @@ function StakeholderForm({ type, label }: { type: 'directors' | 'shareholders', 
                         <Button type="button" variant="ghost" size="icon" onClick={() => { remove(index); setCount(count - 1); }} className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                         <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
                         <FormField control={control} name={`${type}.${index}.position` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Position / Role</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
                         <FormField control={control} name={`${type}.${index}.since` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Member Since</FormLabel><FormControl><Input {...field} className="h-9 border-2" placeholder="e.g. 2018" /></FormControl></FormItem>)} />
@@ -531,7 +517,7 @@ function ApplyForm() {
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                                     <FormField control={methods.control} name={`assets.${index}.titleholder` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Titleholder</FormLabel><FormControl><Input placeholder="Entity that holds title" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
-                                                    <FormField control={methods.control} name={`assets.${index}.owner` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Owner</FormLabel><FormControl><Input placeholder="Registered owner" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                                    <FormField control={methods.control} name={`assets.${index}.owner` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Registered Owner</FormLabel><FormControl><Input placeholder="Registered owner" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
                                                 </div>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 text-left">
@@ -574,6 +560,13 @@ function ApplyForm() {
                             </div>
                         );
                     })}
+                    
+                    <div className="flex justify-center py-4 text-left">
+                        <Button type="button" variant="outline" size="lg" onClick={() => appendAsset({ vehicleClass: '', assetCategory: '' })} className="gap-2 font-bold border-2 border-primary/20 text-primary">
+                            <PlusCircle className="h-5 w-5" />
+                            Add Another Asset to Batch
+                        </Button>
+                    </div>
                 </div>
             )}
 

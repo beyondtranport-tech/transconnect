@@ -241,7 +241,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
-        // OVERRIDE: Using resilient utility to avoid ClipboardItem constructor crash
+        // FIXED: Using resilient utility to avoid ClipboardItem constructor crash
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
             throw new Error('Clipboard operation failed.');
@@ -310,7 +310,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     {Management && <TabsTrigger value="management">Management</TabsTrigger>}
                 </TabsList>
 
-                <Card className="mt-4 text-left border-none shadow-xl text-foreground text-foreground">
+                <Card className="mt-4 text-left border-none shadow-xl text-foreground">
                     <CardHeader className="flex flex-row items-center justify-end border-b text-left bg-muted/10">
                         <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
                             {isLoadingPartners ? (

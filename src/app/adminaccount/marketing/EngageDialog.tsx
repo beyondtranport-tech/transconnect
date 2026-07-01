@@ -151,8 +151,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
+        // FIXED: Using resilient utility to avoid 'Illegal constructor' crash
         const success = await copyHtmlToClipboard(wrappedHtml);
-        if (!success) throw new Error("Clipboard failed.");
+        if (!success) throw new Error("Clipboard operation failed.");
 
         toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
 
