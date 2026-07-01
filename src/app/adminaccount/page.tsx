@@ -46,6 +46,7 @@ import {
   Eye,
   HelpCircle,
   Book,
+  RefreshCcw,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -138,78 +139,6 @@ function AdminAccountContent() {
     router.push('/');
   };
 
-  const renderContent = useCallback(() => {
-    if (activeView.startsWith('social-')) {
-        const platform = activeView.split('-')[1] as any;
-        return <SocialStudio platform={platform} />;
-    }
-    if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as any;
-        return <MarketingPage audience={audience} />;
-    }
-    switch (activeView) {
-      case 'dashboard': return <AdminDashboardContent />;
-      case 'unified-directory': return <UnifiedDirectory />;
-      case 'activity': return <ActivityFeed />;
-      case 'leads-agent': return <LeadsAgent />;
-      case 'leads-database': return <LeadsDatabase />;
-      case 'associate-oversight': return <AssociateOversight />;
-      case 'branding-studio': return <BrandingStudio />;
-      case 'tts-studio': return <TTSStudio />;
-      case 'asset-gallery': return <AssetGallery />;
-      case 'sales-roadmap': return <SalesRoadmap />;
-      case 'targets': return <TargetsPage />;
-      case 'financial-projections': return <FinancialProjections />;
-      case 'financial-setup': return <FinancialSetup />;
-      case 'budget': return <BudgetPage />;
-      case 'salary-forecast': return <SalaryForecastPage />;
-      case 'permissions': return <PermissionsContent />;
-      case 'action-plan': return <ActionPlanSettings />;
-      case 'loyalty-plan': return <TierBenefits />;
-      case 'rewards-plan': return <RewardsManagement />;
-      case 'pricing-memberships': return <PricingManagement />;
-      case 'pricing-connect': return <ConnectPlanPricing />;
-      case 'pricing-tech': return <TechPricing />;
-      case 'pricing-marketplace': return <MarketplaceFees />;
-      case 'commissions-malls': return <MallCommissions />;
-      case 'commissions-isa': return <ISAPitchSettings />;
-      case 'incentives-sales': return <SalesIncentives />;
-      case 'tasks': return <PlatformTasks />;
-      case 'settings-bank': return <PlatformSettingsContent />;
-      case 'platform-staff': return <PlatformStaffManagement />;
-      case 'guides': return (
-        <div className="space-y-8 text-left text-foreground">
-            <CardHeader className="px-0">
-                <div className="flex items-center gap-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl"><Book className="h-8 w-8 text-primary" /></div>
-                    <div className="text-left">
-                        <CardTitle className="text-2xl font-black font-headline text-left">Platform Help & Documentation</CardTitle>
-                        <CardDescription className="text-left">Administrative protocols and troubleshooting guides.</CardDescription>
-                    </div>
-                </div>
-            </CardHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/outlook-sending-guide.md', '_blank')}>
-                    <CardHeader>
-                        <CardTitle className="text-lg font-bold group-hover:text-primary">Outlook Spam Unblocking</CardTitle>
-                        <CardDescription>Step-by-step for the M365 Defender Portal.</CardDescription>
-                    </CardHeader>
-                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed text-left">If outreach gets flagged, follow this guide to lift restriction.</p></CardContent>
-                </Card>
-                <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/enable-gemini-api.md', '_blank')}>
-                    <CardHeader>
-                        <CardTitle className="text-lg font-bold group-hover:text-primary">AI & Gemini Config</CardTitle>
-                        <CardDescription>Fixing 403 or 429 Errors.</CardDescription>
-                    </CardHeader>
-                    <CardContent><p className="text-xs text-muted-foreground leading-relaxed text-left">Ensure API keys are scoped and quotas adjusted for forensic discovery.</p></CardContent>
-                </Card>
-            </div>
-        </div>
-      );
-      default: return <AdminDashboardContent />;
-    }
-  }, [activeView]);
-  
   const getInitials = (name: string | null | undefined) => {
     if (!name) return "AD";
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -323,7 +252,68 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6">
-            {renderContent()}
+            {activeView === 'dashboard' && <AdminDashboardContent />}
+            {activeView === 'unified-directory' && <UnifiedDirectory />}
+            {activeView === 'activity' && <ActivityFeed />}
+            {activeView === 'leads-agent' && <LeadsAgent />}
+            {activeView === 'leads-database' && <LeadsDatabase />}
+            {activeView === 'associate-oversight' && <AssociateOversight />}
+            {activeView === 'branding-studio' && <BrandingStudio />}
+            {activeView === 'tts-studio' && <TTSStudio />}
+            {activeView === 'asset-gallery' && <AssetGallery />}
+            {activeView === 'sales-roadmap' && <SalesRoadmap />}
+            {activeView === 'targets' && <TargetsPage />}
+            {activeView === 'financial-projections' && <FinancialProjections />}
+            {activeView === 'financial-setup' && <FinancialSetup />}
+            {activeView === 'budget' && <BudgetPage />}
+            {activeView === 'salary-forecast' && <SalaryForecastPage />}
+            {activeView === 'permissions' && <PermissionsContent />}
+            {activeView === 'action-plan' && <ActionPlanSettings />}
+            {activeView === 'loyalty-plan' && <TierBenefits />}
+            {activeView === 'rewards-plan' && <RewardsManagement />}
+            {activeView === 'pricing-memberships' && <PricingManagement />}
+            {activeView === 'pricing-connect' && <ConnectPlanPricing />}
+            {activeView === 'pricing-tech' && <TechPricing />}
+            {activeView === 'pricing-marketplace' && <MarketplaceFees />}
+            {activeView === 'commissions-malls' && <MallCommissions />}
+            {activeView === 'commissions-isa' && <ISAPitchSettings />}
+            {activeView === 'incentives-sales' && <SalesIncentives />}
+            {activeView === 'tasks' && <PlatformTasks />}
+            {activeView === 'settings-bank' && <PlatformSettingsContent />}
+            {activeView === 'platform-staff' && <PlatformStaffManagement />}
+            
+            {activeView.startsWith('social-') && <SocialStudio platform={activeView.split('-')[1] as any} />}
+            {activeView.startsWith('marketing-') && <MarketingPage audience={activeView.split('-')[1] as any} />}
+            
+            {activeView === 'guides' && (
+                <div className="space-y-8 text-left text-foreground">
+                    <CardHeader className="px-0">
+                        <div className="flex items-center gap-4 text-left">
+                            <div className="bg-primary/10 p-3 rounded-xl"><Book className="h-8 w-8 text-primary" /></div>
+                            <div className="text-left">
+                                <CardTitle className="text-2xl font-black font-headline text-left">Platform Help & Documentation</CardTitle>
+                                <CardDescription className="text-left">Administrative protocols and troubleshooting guides.</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                        <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/outlook-sending-guide.md', '_blank')}>
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold group-hover:text-primary">Outlook Spam Unblocking</CardTitle>
+                                <CardDescription>Step-by-step for the M365 Defender Portal.</CardDescription>
+                            </CardHeader>
+                            <CardContent><p className="text-xs text-muted-foreground leading-relaxed text-left">If outreach gets flagged, follow this guide to lift restriction.</p></CardContent>
+                        </Card>
+                        <Card className="hover:border-primary transition-all group cursor-pointer" onClick={() => window.open('/docs/enable-gemini-api.md', '_blank')}>
+                            <CardHeader>
+                                <CardTitle className="text-lg font-bold group-hover:text-primary">AI & Gemini Config</CardTitle>
+                                <CardDescription>Fixing 403 or 429 Errors.</CardDescription>
+                            </CardHeader>
+                            <CardContent><p className="text-xs text-muted-foreground leading-relaxed text-left">Ensure API keys are scoped and quotas adjusted for forensic discovery.</p></CardContent>
+                        </Card>
+                    </div>
+                </div>
+            )}
         </div>
     </SidebarInset>
     </SidebarProvider>

@@ -44,6 +44,7 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
 
     const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
 
+    // Try modern API with fallback
     try {
         const container = document.createElement('div');
         container.innerHTML = html;

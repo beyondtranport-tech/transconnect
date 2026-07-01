@@ -40,6 +40,7 @@ import {
   Landmark,
   ClipboardList,
   Users,
+  RefreshCcw,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -112,43 +113,6 @@ function AccountPageContent() {
   const navigate = (view: string) => {
     router.push(`/account?view=${view}`, { scroll: false });
   };
-
-  const renderContent = useCallback(() => {
-    if (activeView.startsWith('social-')) {
-        const platform = activeView.split('-')[1] as any;
-        return <SocialStudio platform={platform} />;
-    }
-    switch (activeView) {
-      case 'profile': return <ProfileContent />;
-      case 'company': return <CompanyContent />;
-      case 'fleet': return <FleetContent />;
-      case 'needs': return <NeedsContent />;
-      case 'product-portfolio': return <SupplierProductContent />;
-      case 'professional-profile': return <HumanCapitalContent />;
-      case 'staff': return <StaffContent />;
-      case 'shop': return <ShopContent />;
-      case 'lending-focus': return <LendingParametersContent />;
-      case 'lending-desk': return <LenderDeskContent />;
-      case 'load-board': return <LoadBoardContent />;
-      case 'wallet': return <WalletContent />;
-      case 'billing': return <BillingContent />;
-      case 'rewards': return <RewardsContent />;
-      case 'activity': return <ActivityFeed />;
-      case 'support-chat': return <SupportChatContent />;
-      case 'network': return <NetworkContent />;
-      case 'performance': return <PerformanceContent />;
-      case 'offer': return <NetworkOffer />;
-      case 'emails': return <NetworkEmails />;
-      case 'connect-loyalty': return <LoyaltyPlanPage />;
-      case 'connect-rewards': return <RewardsPlanPage />;
-      case 'connect-actions': return <ActionsPlanPage />;
-      case 'search-history': return <IntelligenceHistory />;
-      case 'marketing-studio': return <MarketingStudio />;
-      case 'dashboard':
-      default:
-        return <AccountDashboard />;
-    }
-  }, [activeView]);
 
   if (isUserLoading || !user) {
     return (
@@ -327,7 +291,37 @@ function AccountPageContent() {
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset><div className="p-4 md:p-6">{renderContent()}</div></SidebarInset>
+      <SidebarInset>
+        <div className="p-4 md:p-6">
+            {activeView === 'dashboard' && <AccountDashboard />}
+            {activeView === 'shop' && <ShopContent />}
+            {activeView === 'profile' && <ProfileContent />}
+            {activeView === 'company' && <CompanyContent />}
+            {activeView === 'fleet' && <FleetContent />}
+            {activeView === 'needs' && <NeedsContent />}
+            {activeView === 'product-portfolio' && <SupplierProductContent />}
+            {activeView === 'professional-profile' && <HumanCapitalContent />}
+            {activeView === 'staff' && <StaffContent />}
+            {activeView === 'lending-focus' && <LendingParametersContent />}
+            {activeView === 'lending-desk' && <LenderDeskContent />}
+            {activeView === 'load-board' && <LoadBoardContent />}
+            {activeView === 'wallet' && <WalletContent />}
+            {activeView === 'billing' && <BillingContent />}
+            {activeView === 'rewards' && <RewardsContent />}
+            {activeView === 'activity' && <ActivityFeed />}
+            {activeView === 'support-chat' && <SupportChatContent />}
+            {activeView === 'network' && <NetworkContent />}
+            {activeView === 'performance' && <PerformanceContent />}
+            {activeView === 'offer' && <NetworkOffer />}
+            {activeView === 'emails' && <NetworkEmails />}
+            {activeView === 'connect-loyalty' && <LoyaltyPlanPage />}
+            {activeView === 'connect-rewards' && <RewardsPlanPage />}
+            {activeView === 'connect-actions' && <ActionsPlanPage />}
+            {activeView === 'search-history' && <IntelligenceHistory />}
+            {activeView === 'marketing-studio' && <MarketingStudio />}
+            {activeView.startsWith('social-') && <SocialStudio platform={activeView.split('-')[1] as any} />}
+        </div>
+      </SidebarInset>
     </SidebarProvider>
   );
 }
