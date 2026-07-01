@@ -111,7 +111,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !uid || (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com' && email !== 'michael@logisticsflow.co.za')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground text-left">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-center">Verifying Admin Permissions...</p>
             </div>
