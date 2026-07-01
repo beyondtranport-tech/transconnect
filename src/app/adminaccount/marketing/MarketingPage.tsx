@@ -299,7 +299,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <p className="text-muted-foreground text-left">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
             </div>
             <Tabs defaultValue="company-profile" className="w-full text-left" onValueChange={setActiveTab}>
-                <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left">
+                <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
                     <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
                     <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
                     <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
@@ -310,7 +310,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     {Management && <TabsTrigger value="management">Management</TabsTrigger>}
                 </TabsList>
 
-                <Card className="mt-4 text-left border-none shadow-xl text-foreground">
+                <Card className="mt-4 text-left border-none shadow-xl text-foreground text-foreground">
                     <CardHeader className="flex flex-row items-center justify-end border-b text-left bg-muted/10">
                         <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
                             {isLoadingPartners ? (

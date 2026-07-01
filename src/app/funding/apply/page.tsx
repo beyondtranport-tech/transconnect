@@ -27,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
+import { Label } from '@/components/ui/label';
 
 const fundingNeeds = {
   'business': 'Working Capital / Business Loan',
@@ -213,7 +214,7 @@ function ApplyForm() {
             {currentStepConfig.id === 'Need' && (
                  <FormField control={methods.control} name="fundingNeed" render={({ field }) => (
                     <FormItem className="text-left">
-                      <FormLabel className="font-bold">I require capital for:</FormLabel>
+                      <FormLabel className="font-bold text-foreground">I require capital for:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="h-12"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                         <SelectContent>
@@ -241,19 +242,76 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'History' && (
-                <div className="space-y-4 text-left">
+                <div className="space-y-6 text-left">
                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
-                    <p className="text-sm text-muted-foreground mb-4 text-left">Please disclose any active or previous credit constraints.</p>
+                    <p className="text-sm text-muted-foreground mb-4 text-left">Please provide a clear declaration regarding your business's credit history.</p>
+                    
                     <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
-                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Active judgements?</FormLabel>
+                        <FormItem className="space-y-3">
+                            <FormLabel className="text-sm font-semibold">Do you have any active judgements?</FormLabel>
+                            <FormControl>
+                                <RadioGroup
+                                    onValueChange={(val) => field.onChange(val === 'yes')}
+                                    value={field.value ? 'yes' : 'no'}
+                                    className="flex gap-4"
+                                >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">Yes</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="no" /></FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">No</FormLabel>
+                                    </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )} />
+
                     <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
-                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Active defaults?</FormLabel>
+                        <FormItem className="space-y-3">
+                            <FormLabel className="text-sm font-semibold">Do you have any active defaults?</FormLabel>
+                            <FormControl>
+                                <RadioGroup
+                                    onValueChange={(val) => field.onChange(val === 'yes')}
+                                    value={field.value ? 'yes' : 'no'}
+                                    className="flex gap-4"
+                                >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">Yes</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="no" /></FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">No</FormLabel>
+                                    </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    
+                    <FormField control={methods.control} name="hasArrears" render={({ field }) => (
+                        <FormItem className="space-y-3">
+                            <FormLabel className="text-sm font-semibold">Are any accounts currently in arrears?</FormLabel>
+                            <FormControl>
+                                <RadioGroup
+                                    onValueChange={(val) => field.onChange(val === 'yes')}
+                                    value={field.value ? 'yes' : 'no'}
+                                    className="flex gap-4"
+                                >
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="yes" /></FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">Yes</FormLabel>
+                                    </FormItem>
+                                    <FormItem className="flex items-center space-x-2 space-y-0">
+                                        <FormControl><RadioGroupItem value="no" /></FormControl>
+                                        <FormLabel className="font-normal cursor-pointer">No</FormLabel>
+                                    </FormItem>
+                                </RadioGroup>
+                            </FormControl>
+                            <FormMessage />
                         </FormItem>
                     )} />
                 </div>
@@ -291,7 +349,7 @@ function ApplyForm() {
                 <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="fundingReason" render={({ field }) => (
                         <FormItem className="space-y-3 text-left">
-                          <FormLabel className="font-bold">Is this for problem solving or capturing opportunity?</FormLabel>
+                          <FormLabel className="font-bold text-foreground">Is this for problem solving or capturing opportunity?</FormLabel>
                           <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1 text-left">
                                 <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="problem" /></FormControl><FormLabel className="font-normal cursor-pointer">Problem / Recovery</FormLabel></FormItem>
@@ -308,7 +366,7 @@ function ApplyForm() {
                 <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="amountRequested" render={({ field }) => (
                         <FormItem className="text-left">
-                        <FormLabel className="text-lg font-bold">Estimated Amount (ZAR)</FormLabel>
+                        <FormLabel className="text-lg font-bold text-foreground">Estimated Amount (ZAR)</FormLabel>
                         <FormControl><Input type="number" className="h-12 text-xl font-mono" placeholder="500000" {...field} /></FormControl>
                         </FormItem>
                     )} />

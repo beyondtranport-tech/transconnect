@@ -138,7 +138,7 @@ function AccountPageContent() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <div className="bg-primary/10 p-2 rounded-full text-left"><User className="h-6 w-6 text-primary" /></div>
+            <div className="bg-primary/10 p-2 rounded-full text-left text-foreground"><User className="h-6 w-6 text-primary" /></div>
             <h2 className="text-lg font-semibold text-sidebar-foreground text-left">{isAssociate ? 'Partner Area' : 'Member Area'}</h2>
           </div>
         </SidebarHeader>
@@ -292,7 +292,7 @@ function AccountPageContent() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="p-4 md:p-6 text-left">
+        <div className="p-4 md:p-6 text-left text-foreground">
             {activeView === 'dashboard' && <AccountDashboard />}
             {activeView === 'shop' && <ShopContent />}
             {activeView === 'profile' && <ProfileContent />}
