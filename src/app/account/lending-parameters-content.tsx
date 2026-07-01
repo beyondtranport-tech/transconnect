@@ -112,20 +112,20 @@ export default function LendingParametersContent() {
     if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
 
     return (
-        <div className="space-y-6 text-left">
+        <div className="space-y-6 text-left text-foreground">
             <div className="flex items-center gap-4 text-left">
                 <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-8 w-8 text-primary" /></div>
                 <div className="text-left">
                     <h1 className="text-3xl font-black font-headline">Lending Focus & Portfolio</h1>
-                    <p className="text-muted-foreground">Define your credit appetite and the assets you are willing to finance.</p>
+                    <p className="text-muted-foreground text-left">Define your credit appetite and the assets you are willing to finance.</p>
                 </div>
             </div>
 
             {!isPaid && (
                 <Alert className="bg-amber-50 border-amber-200 text-left">
                     <Zap className="h-5 w-5 text-amber-600" />
-                    <AlertTitle className="font-bold text-amber-800 text-left">Draft Mode: Free Account</AlertTitle>
-                    <AlertDescription className="text-sm text-amber-700 leading-relaxed mt-1 text-left">
+                    <AlertTitle className="font-bold text-amber-800 text-left text-foreground">Draft Mode: Free Account</AlertTitle>
+                    <AlertDescription className="text-sm text-amber-700 leading-relaxed mt-1 text-left text-foreground">
                         You can configure your lending focus now, but your profile will only receive **Matched Enquiries** once you upgrade to a paid membership.
                     </AlertDescription>
                 </Alert>
@@ -133,43 +133,43 @@ export default function LendingParametersContent() {
 
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <Tabs defaultValue="criteria" className="w-full">
+                    <Tabs defaultValue="criteria" className="w-full text-left">
                         <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
                             <TabsTrigger value="criteria" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Financial Criteria</TabsTrigger>
                             <TabsTrigger value="risk" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Risk & Entity Focus</TabsTrigger>
                             <TabsTrigger value="assets" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Asset & Product Focus</TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="criteria" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                             <Card>
-                                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Scale className="h-5 w-5 text-primary"/> Deal Size & Terms</CardTitle></CardHeader>
+                        <TabsContent value="criteria" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
+                             <Card className="text-left text-foreground">
+                                <CardHeader className="text-left"><CardTitle className="text-lg flex items-center gap-2"><Scale className="h-5 w-5 text-primary"/> Deal Size & Terms</CardTitle></CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Deal Amount Range (ZAR)</Label>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Deal Amount Range (ZAR)</Label>
+                                        <div className="grid grid-cols-2 gap-4 text-left">
                                             <FormField control={form.control} name="minDealSize" render={({ field }) => (
-                                                <FormItem><FormLabel>Minimum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                                <FormItem className="text-left"><FormLabel>Minimum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                                             )} />
                                             <FormField control={form.control} name="maxDealSize" render={({ field }) => (
-                                                <FormItem><FormLabel>Maximum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                                <FormItem className="text-left"><FormLabel>Maximum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                                             )} />
                                         </div>
                                     </div>
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Annual Turnover Required (R)</Label>
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Annual Turnover Required (R)</Label>
                                         <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
-                                            <FormItem><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} /></FormControl></FormItem>
+                                            <FormItem className="text-left"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} /></FormControl></FormItem>
                                         )} />
                                     </div>
                                 </CardContent>
                                 <CardContent className="space-y-4 text-left border-t pt-6">
-                                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Preferred Terms</Label>
-                                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Preferred Terms</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-left">
                                         {termOptions.map(item => (
                                             <FormField key={item} control={form.control} name="preferredTerms" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
                                                     <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                    <FormLabel className="font-medium text-[10px] cursor-pointer leading-tight">{item}</FormLabel>
+                                                    <FormLabel className="font-medium text-[10px] cursor-pointer leading-tight text-left">{item}</FormLabel>
                                                 </FormItem>
                                             )} />
                                         ))}
@@ -178,48 +178,48 @@ export default function LendingParametersContent() {
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="risk" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                             <Card>
-                                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Users className="h-5 w-5 text-primary"/> Entity & History Focus</CardTitle></CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                        <TabsContent value="risk" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
+                             <Card className="text-left text-foreground">
+                                <CardHeader className="text-left text-foreground"><CardTitle className="text-lg flex items-center gap-2"><Users className="h-5 w-5 text-primary"/> Entity & History Focus</CardTitle></CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Entity Maturity</Label>
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Entity Maturity</Label>
                                         <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
-                                            <FormItem><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
+                                            <FormItem className="text-left"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
                                         )} />
                                     </div>
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Credit History Focus</Label>
-                                        <div className="grid grid-cols-1 gap-2">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Credit History Focus</Label>
+                                        <div className="grid grid-cols-1 gap-2 text-left">
                                             <FormField control={form.control} name="requiresNoJudgements" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
-                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-3 border rounded-md text-left">
                                                     <FormLabel className="font-medium text-xs">Must have no judgements</FormLabel>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 </FormItem>
                                             )} />
                                             <FormField control={form.control} name="requiresNoDefaults" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
-                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-3 border rounded-md text-left">
                                                     <FormLabel className="font-medium text-xs">Must have no defaults</FormLabel>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 </FormItem>
                                             )} />
                                              <FormField control={form.control} name="requiresNoArrears" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
-                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-3 border rounded-md text-left text-foreground">
                                                     <FormLabel className="font-medium text-xs">No active arrears accounts</FormLabel>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 </FormItem>
                                             )} />
                                         </div>
                                     </div>
                                 </CardContent>
                                 <CardContent className="space-y-4 text-left border-t pt-6">
-                                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Target Entity Types</Label>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Target Entity Types</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                         {entityOptions.map(item => (
                                             <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
                                                     <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                    <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
+                                                    <FormLabel className="font-medium text-[10px] cursor-pointer text-left">{item}</FormLabel>
                                                 </FormItem>
                                             )} />
                                         ))}
@@ -228,22 +228,21 @@ export default function LendingParametersContent() {
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="assets" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                             <Card>
-                                <CardHeader>
+                        <TabsContent value="assets" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left text-foreground">
+                             <Card className="text-left text-foreground">
+                                <CardHeader className="text-left text-foreground">
                                     <CardTitle className="text-lg flex items-center gap-2"><Banknote className="h-5 w-5 text-primary"/> Agreement & Asset Portfolio</CardTitle>
-                                    <CardDescription>Select the types of agreements you offer and the physical assets you will finance.</CardDescription>
+                                    <CardDescription className="text-left">Select the types of agreements you offer and the physical assets you will finance.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-10 text-left text-foreground">
-                                    {/* Agreement Products */}
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Lending Agreement Products</Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-4 text-left text-foreground">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Lending Agreement Products</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                             {appTypeOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="appTypes" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
                                                         <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                        <FormLabel className="font-medium text-xs cursor-pointer">{item}</FormLabel>
+                                                        <FormLabel className="font-medium text-xs cursor-pointer text-left">{item}</FormLabel>
                                                     </FormItem>
                                                 )} />
                                             ))}
@@ -252,15 +251,14 @@ export default function LendingParametersContent() {
 
                                     <Separator />
 
-                                    {/* Asset Categories */}
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><Package className="h-4 w-4" /> Industrial Asset Specialization</Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-4 text-left text-foreground">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><Package className="h-4 w-4" /> Industrial Asset Specialization</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                             {supplierCategories.map(item => (
                                                 <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
                                                         <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                        <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight">{item}</FormLabel>
+                                                        <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight text-left">{item}</FormLabel>
                                                     </FormItem>
                                                 )} />
                                             ))}
@@ -269,15 +267,14 @@ export default function LendingParametersContent() {
 
                                     <Separator />
 
-                                    {/* Brands */}
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><Sparkles className="h-4 w-4" /> Preferred Truck Brands</Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="space-y-4 text-left text-foreground">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><Sparkles className="h-4 w-4" /> Preferred Truck Brands</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                             {brandOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="supportedBrands" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
                                                         <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                        <FormLabel className="font-medium text-sm cursor-pointer">{item}</FormLabel>
+                                                        <FormLabel className="font-medium text-sm cursor-pointer text-left">{item}</FormLabel>
                                                     </FormItem>
                                                 )} />
                                             ))}
@@ -286,15 +283,14 @@ export default function LendingParametersContent() {
 
                                     <Separator />
 
-                                    {/* Regions */}
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Funding Regions</Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                    <div className="space-y-4 text-left text-foreground">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><MapPin className="h-4 w-4" /> Funding Regions</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left text-foreground">
                                             {regionOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground text-foreground">
                                                         <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                        <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
+                                                        <FormLabel className="font-medium text-[10px] cursor-pointer text-left">{item}</FormLabel>
                                                     </FormItem>
                                                 )} />
                                             ))}
@@ -307,7 +303,7 @@ export default function LendingParametersContent() {
 
                     <div className="bg-slate-50 border-t p-6 flex justify-end mt-8 rounded-lg shadow-inner">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="mr-2 h-5 w-5" />}
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
                             Update Lending Focus & Portfolio
                         </Button>
                     </div>

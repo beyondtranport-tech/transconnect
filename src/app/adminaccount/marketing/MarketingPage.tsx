@@ -301,7 +301,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
   const AudienceIcon = audienceConfig[audience].icon;
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left text-foreground">
         <LogAndCopyDialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen} partners={partners} isLoadingPartners={isLoadingPartners} activeTabLabel={activeTab} onLogAndCopy={handleLogAndCopy} audienceTitle={audienceConfig[audience].title} />
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
             <div className="flex items-center gap-4 text-left text-foreground">
@@ -356,13 +356,13 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <TabsContent value="forensic-bridge" className="text-left"><ForensicBridge audience={audience} /></TabsContent>
                 {Discovery && <TabsContent value="discovery" className="text-left"><div id="tab-content-discovery">{Discovery && <Discovery />}</div></TabsContent>}
                 {Pitch && <TabsContent value="pitch-generator" className="text-left"><div id="tab-content-pitch-generator">{Pitch && <Pitch />}</div></TabsContent>}
-                <TabsContent value="company-profile" className="text-left"><div id="tab-content-company-profile"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
-                <TabsContent value="tech-architecture" className="text-left"><div id="tab-content-tech-architecture"><TechArchitecture partner={null} /></div></TabsContent>
-                <TabsContent value="revenue-model" className="text-left"><div id="tab-content-revenue-model"><RevenueModel partner={null} /></div></TabsContent>
-                <TabsContent value="offer" className="text-left"><div id="tab-content-offer">{Offer && <Offer partner={null} />}</div></TabsContent>
-                <TabsContent value="pitch" className="text-left"><div id="tab-content-pitch"><PitchDeck partner={null} /></div></TabsContent>
-                <TabsContent value="framework" className="text-left"><div id="tab-content-framework"><Framework partner={null} /></div></TabsContent>
-                <TabsContent value="emails" className="text-left"><div id="tab-content-emails">{Emails && <Emails partner={null} />}</div></TabsContent>
+                <TabsContent value="company-profile" className="text-left"><div id="tab-content-company-profile" className="p-8 bg-white border rounded-xl shadow-sm"><CompanyProfile partner={null} audience={audience} /></div></TabsContent>
+                <TabsContent value="tech-architecture" className="text-left"><div id="tab-content-tech-architecture" className="p-8 bg-white border rounded-xl shadow-sm"><TechArchitecture partner={null} /></div></TabsContent>
+                <TabsContent value="revenue-model" className="text-left"><div id="tab-content-revenue-model" className="p-8 bg-white border rounded-xl shadow-sm"><RevenueModel partner={null} /></div></TabsContent>
+                <TabsContent value="offer" className="text-left"><div id="tab-content-offer" className="p-8 bg-white border rounded-xl shadow-sm">{Offer && <Offer partner={null} />}</div></TabsContent>
+                <TabsContent value="pitch" className="text-left"><div id="tab-content-pitch" className="p-8 bg-white border rounded-xl shadow-sm"><PitchDeck partner={null} /></div></TabsContent>
+                <TabsContent value="framework" className="text-left"><div id="tab-content-framework" className="p-8 bg-white border rounded-xl shadow-sm"><Framework partner={null} /></div></TabsContent>
+                <TabsContent value="emails" className="text-left"><div id="tab-content-emails" className="p-8 bg-white border rounded-xl shadow-sm">{Emails && <Emails partner={null} />}</div></TabsContent>
             </div>
         </Tabs>
     </div>
