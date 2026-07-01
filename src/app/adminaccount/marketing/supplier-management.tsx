@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -7,8 +8,11 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { 
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
@@ -197,7 +201,7 @@ export default function SupplierManagement() {
           header: 'Supplier Entity', 
           cell: ({ row }) => (
               <div className="flex flex-col text-left">
-                  <span className="font-bold text-foreground">{row.original.companyName || 'Unnamed'}</span>
+                  <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed'}</span>
                   <div className="flex items-center gap-1.5 mt-1 text-left">
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.source || 'Registry'}</span>
@@ -207,7 +211,7 @@ export default function SupplierManagement() {
       },
       { accessorKey: 'contactPerson', header: 'Key Contact' },
       { accessorKey: 'email', header: 'Email' },
-      { id: 'outreach', header: 'Outreach', cell: ({row}) => <div className="text-[10px] uppercase font-bold text-muted-foreground">{row.original.lastOutreachSubject || 'None'}</div> },
+      { id: 'outreach', header: 'Outreach', cell: ({row}) => <div className="text-[10px] uppercase font-bold text-muted-foreground text-left">{row.original.lastOutreachSubject || 'None'}</div> },
       { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
       { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
         <div className="flex justify-end gap-1">

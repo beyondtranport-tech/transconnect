@@ -79,15 +79,15 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <Info className="h-4 w-4 text-primary" />
-                    <AlertTitle className="font-bold text-left">Target Mandate</AlertTitle>
+                    <AlertTitle className="font-bold text-left text-foreground">Target Mandate</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
                         {focus}
                     </AlertDescription>
                 </Alert>
 
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Sequence Sync</Label>
-                    <div className="space-y-1.5 text-left">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left text-foreground">Sequence Sync</Label>
+                    <div className="space-y-1.5 text-left text-foreground">
                         <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
                         <Input 
                             type="number" 
@@ -121,10 +121,10 @@ export default function InvestorDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         App Launch Investor Discovery
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Identify foundational partners for the platform equity launch.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground text-foreground">Identify foundational partners for the platform equity launch.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
                         {investorClasses.map(cls => (
                             <TabsTrigger key={cls.id} value={cls.id} className="text-xs px-4 py-2">
                                 {cls.label}

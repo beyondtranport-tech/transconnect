@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,11 +9,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import Link from 'next/link';
 
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
@@ -148,7 +146,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         });
 
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
-        
         const versionSelector = contentClone.querySelector('[data-id="version-selector-ui"]');
         if (versionSelector) versionSelector.remove();
 
@@ -200,7 +197,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         toast({ title: "Dispatch Successful", description: "The engagement has been sent via transactional mail." });
         if (onEngageSuccess) onEngageSuccess();
         
-        // Auto-advance if batching
         if (partners.length > 1 && currentIndex < partners.length - 1) {
             nextRecord();
         } else {
@@ -234,7 +230,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
                 <div className="flex justify-between items-center text-left text-foreground">
-                    <div className="text-left space-y-1 text-foreground text-foreground">
+                    <div className="text-left space-y-1 text-foreground">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
@@ -273,17 +269,17 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden text-left text-foreground text-foreground">
+            <div className="flex-1 flex overflow-hidden text-left text-foreground">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
                         <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
-                        <AlertDescription className="text-[9px] text-amber-700">
-                            Now opening Gmail Web for better deliverability. Avoid sending &gt;20/hr to protect your sender score.
+                        <AlertDescription className="text-[9px] text-amber-700 text-left leading-tight">
+                            Opening Gmail Web for better deliverability. Avoid sending &gt;20/hr to protect score.
                         </AlertDescription>
                     </Alert>
 
-                    <div className="space-y-1 text-left text-foreground text-foreground">
+                    <div className="space-y-1 text-left text-foreground">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 1: Selection</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
@@ -310,7 +306,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground text-foreground">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
                     <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
                             <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left">
@@ -318,7 +314,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">
                                         <p className="text-sm font-bold text-amber-900 text-left">Anti-Spam Variance</p>
-                                        <p className="text-[10px] text-amber-700 text-left text-left">Text varies Deterministically by Partner ID to bypass filters.</p>
+                                        <p className="text-[10px] text-amber-700 text-left">Text varies Deterministically by Partner ID.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-left text-foreground">

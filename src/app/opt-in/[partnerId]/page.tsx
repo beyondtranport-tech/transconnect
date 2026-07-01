@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,9 +9,7 @@ import { ShieldCheck, CheckCircle, Loader2, AlertCircle, Scale, FileText, Lock, 
 import { useToast } from '@/hooks/use-toast';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function OptInPage() {
@@ -21,7 +20,6 @@ export default function OptInPage() {
     
     const [isProcessing, setIsProcessing] = useState(false);
     const [completed, setCompleted] = useState(false);
-    const [showFullTerms, setShowFullTerms] = useState(false);
 
     const [marketingConsent, setMarketingConsent] = useState(false);
     const [popiConsent, setPopiConsent] = useState(false);
@@ -83,10 +81,10 @@ export default function OptInPage() {
                     <CardHeader><CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" /><CardTitle className="text-2xl font-black">Handshake Established</CardTitle></CardHeader>
                     <CardContent className="p-8 space-y-6">
                         <div className="bg-white p-4 rounded-xl border border-green-200 shadow-sm space-y-3">
-                             <p className="text-[10px] font-black uppercase tracking-widest text-green-700 flex items-center gap-2">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-green-700 flex items-center gap-2 justify-center">
                                  <Zap className="h-3 w-3 fill-current"/> Immediate Next Step
                              </p>
-                             <p className="text-sm font-medium text-foreground text-left leading-relaxed">
+                             <p className="text-sm font-medium text-foreground text-center leading-relaxed">
                                  Set up your secure dashboard to access the forensic registry and matching engine.
                              </p>
                         </div>
