@@ -131,7 +131,6 @@ function ApplyForm() {
   }, [existingEnquiry, methods]);
 
   const fundingNeed = methods.watch('fundingNeed');
-  const foundVehicle = methods.watch('foundVehicle');
 
   const dynamicSteps = React.useMemo(() => {
     const steps = [...staticSteps];

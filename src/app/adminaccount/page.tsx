@@ -66,7 +66,6 @@ import MarketingPage from '@/app/adminaccount/marketing/MarketingPage';
 import BrandingStudio from '@/app/adminaccount/branding-studio';
 import TTSStudio from '@/app/adminaccount/tts-studio';
 import AssetGallery from '@/app/adminaccount/asset-gallery';
-import SocialStudio from '@/app/adminaccount/social-studio';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';

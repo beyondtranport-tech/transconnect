@@ -74,13 +74,12 @@ export async function POST(req: NextRequest) {
                 const enquiry = enquirySnap.data()!;
                 const amount = enquiry.amountRequested || 0;
 
-                // Match Logic: Find lenders where range includes amount
                 const lendersSnap = await db.collection('partners').where('type', '==', 'finance').get();
                 const matches = lendersSnap.docs
                     .map((d: any) => ({ id: d.id, ...d.data() }))
                     .filter((l: any) => {
-                        const min = l.minDealSize || 0;
-                        const max = l.maxDealSize || 100000000;
+                        const min = Number(l.minDealSize) || 0;
+                        const max = Number(l.maxDealSize) || 100000000;
                         return amount >= min && amount <= max;
                     });
 
@@ -103,9 +102,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'logCommunication': {
-                const { partnerId, subject, notes } = payload;
-                const leadsCheck = await db.collection('leads').doc(partnerId).get();
-                const targetColl = leadsCheck.exists ? 'leads' : 'partners';
+                const { partnerId, subject, notes, collection: providedColl } = payload;
+                const targetColl = providedColl || 'partners';
                 const parentRef = db.collection(targetColl).doc(partnerId);
 
                 const logRef = parentRef.collection('communications').doc();

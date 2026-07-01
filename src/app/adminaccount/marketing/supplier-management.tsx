@@ -39,7 +39,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
   return result;
 }
 
@@ -121,7 +121,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     </Select>
                 </FormItem>
             )} />
-            <DialogFooter className="pt-4 border-t">
+            <DialogFooter className="pt-4 border-t text-left">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
               </Button>
@@ -210,7 +210,7 @@ export default function SupplierManagement() {
       { accessorKey: 'email', header: 'Email' },
       { id: 'outreach', header: 'Outreach', cell: ({row}) => <div className="text-[10px] uppercase font-bold text-muted-foreground">{row.original.lastOutreachSubject || 'None'}</div> },
       { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
+      { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
         <div className="flex justify-end gap-1">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
@@ -234,24 +234,24 @@ export default function SupplierManagement() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Supplier Registry Scan</h2>
-                <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-10 font-bold uppercase gap-2">
-                    {isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <Search className="h-4 w-4"/>} Scan Registry
+                <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-10 font-bold uppercase gap-2 text-left">
+                    {isLoading ? <Loader2 className="animate-spin h-4 w-4 text-left"/> : <Search className="h-4 w-4 text-left"/>} Scan Registry
                 </Button>
             </Card>
       ) : (
             <div className="space-y-6 text-left text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                      <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
-                      <CardDescription>Unified database view ({filteredRecords.length} records).</CardDescription>
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+                    <div className="text-left text-foreground">
+                      <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
+                      <CardDescription className="text-left">Unified database view ({filteredRecords.length} records).</CardDescription>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 text-left text-foreground">
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)}><RotateCcw className="h-4 w-4 mr-2" /> New Search</Button>
                         <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
                     </div>
                 </CardHeader>
-                <Card><CardContent className="pt-6">
-                    {isLoading ? <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                <Card className="text-left text-foreground"><CardContent className="pt-6 text-left text-foreground text-foreground">
+                    {isLoading ? <div className="flex justify-center py-20 text-left"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
                 </CardContent></Card>
             </div>
       )}

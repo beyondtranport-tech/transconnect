@@ -38,12 +38,12 @@ import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
-import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
-import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
-import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
-import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
-import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { EngageDialog } from './EngageDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
+import { BulkImportDialog } from './BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -123,10 +123,10 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="status" render={({ field }) => (
@@ -140,7 +140,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </SelectContent></Select></FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} className="bg-white text-left" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             <DialogFooter className="pt-4 border-t text-left text-foreground">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
@@ -235,7 +235,7 @@ function LeadsDatabaseComponent() {
             );
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px] text-left">{row.original.status}</Badge> },
+    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
@@ -285,15 +285,15 @@ function LeadsDatabaseComponent() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Registry Offline</h2>
                 <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
                     Load Lead Registry
                 </Button>
             </Card>
         ) : (
-            <Card className="text-left text-foreground">
+            <Card className="text-left text-foreground text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center py-10 text-left"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
+                    {isLoading ? <div className="flex justify-center py-10 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
                 </CardContent>
             </Card>
         )}

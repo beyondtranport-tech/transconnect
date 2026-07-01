@@ -83,8 +83,15 @@ export default function OptInPage() {
                 <Card className="max-w-md w-full text-center border-green-500 bg-green-50 shadow-2xl">
                     <CardHeader><CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" /><CardTitle className="text-2xl font-black">Handshake Established</CardTitle></CardHeader>
                     <CardContent className="p-8 space-y-6">
-                        <p className="text-sm text-muted-foreground">Formal record for <strong>{partner?.companyName}</strong> logged.</p>
-                        <Button asChild size="lg" className="w-full h-14 font-black uppercase"><Link href={signupUrl}>Complete Profile <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
+                        <div className="bg-white p-4 rounded-xl border border-green-200 shadow-sm space-y-3">
+                             <p className="text-[10px] font-black uppercase tracking-widest text-green-700 flex items-center gap-2">
+                                 <Zap className="h-3 w-3 fill-current"/> Immediate Next Step
+                             </p>
+                             <p className="text-sm font-medium text-foreground text-left leading-relaxed">
+                                 Set up your secure dashboard to access the forensic registry and matching engine.
+                             </p>
+                        </div>
+                        <Button asChild size="lg" className="w-full h-14 font-black uppercase shadow-xl"><Link href={signupUrl}>Complete Profile <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
                     </CardContent>
                 </Card>
             </div>
