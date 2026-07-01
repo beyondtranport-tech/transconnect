@@ -10,13 +10,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users } from 'lucide-react';
+import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users, Briefcase } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 
 const lendingSchema = z.object({
-    appTypes: z.array(z.string()).min(1, "Select at least one application type."),
-    assetTypes: z.array(z.string()).min(1, "Select at least one asset type."),
+    appTypes: z.array(z.string()).min(1, "Select at least one agreement type."),
+    assetTypes: z.array(z.string()).min(1, "Select at least one asset focus."),
     minDealSize: z.coerce.number().min(0),
     maxDealSize: z.coerce.number().min(0),
     preferredTerms: z.array(z.string()).min(1, "Select at least one preferred term."),
@@ -31,7 +31,7 @@ const lendingSchema = z.object({
 const appTypeOptions = ['Working Capital', 'Asset Finance', 'Personal Loan', 'Micro Loan', 'Factoring', 'Invoice Discounting'];
 const assetOptions = ['Trucks', 'Trailers', 'CNC Equipment', 'Computer Hardware', 'Automation', 'Production Line', 'Printing', 'CCTV/Security'];
 const termOptions = ['12 Months', '24 Months', '36 Months', '48 Months', '60 Months', '72+ Months'];
-const entityOptions = ['Pty Ltd', 'Sole Proprietor', 'Close Corporation', 'Trust', 'Individual', 'Partnership', 'Ltd'];
+const entityOptions = ['Private Company (Pty Ltd)', 'Sole Proprietor', 'Close Corporation (CC)', 'Trust', 'Individual', 'Partnership', 'Ltd'];
 
 export default function LendingParametersContent() {
     const { user, isUserLoading, forceRefresh } = useUser();
@@ -76,14 +76,14 @@ export default function LendingParametersContent() {
                     path: `companies/${user.companyId}`,
                     data: { 
                         lendingParams: values, 
-                        declaredRole: 'lender', // Explicitly tag as lender
+                        declaredRole: 'lender',
                         updatedAt: { _methodName: 'serverTimestamp' } 
                     }
                 })
             });
 
             if (!response.ok) throw new Error("Update failed.");
-            toast({ title: "Lending Appetite Saved", description: "Your forensic variables have been updated." });
+            toast({ title: "Lending Focus Saved", description: "Your investment parameters have been updated." });
             forceRefresh();
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Error", description: e.message });
@@ -100,8 +100,8 @@ export default function LendingParametersContent() {
                 <div className="flex items-center gap-4">
                     <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
                     <div className="text-left text-foreground">
-                        <CardTitle className="text-2xl font-bold">Lending Appetite Configuration</CardTitle>
-                        <CardDescription>Define the forensic variables that drive your deal selection engine.</CardDescription>
+                        <CardTitle className="text-2xl font-bold">Lending Focus & Portfolio</CardTitle>
+                        <CardDescription>Define the forensic variables that drive your deal selection and matching engine.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -111,15 +111,15 @@ export default function LendingParametersContent() {
                         {!isPaid && (
                             <Alert className="bg-amber-50 border-amber-200 text-left">
                                 <Zap className="h-5 w-5 text-amber-600" />
-                                <AlertTitle className="font-bold text-amber-800">Draft Mode: Free Account</AlertTitle>
+                                <AlertTitle className="font-bold text-amber-800 text-left">Draft Mode: Free Account</AlertTitle>
                                 <AlertDescription className="text-sm text-amber-700 leading-relaxed mt-1 text-left">
-                                    You can configure your lending parameters now, but your profile will only become active in the **Finance Mall matching engine** once you upgrade to a paid membership.
+                                    You can configure your lending portfolio now, but your profile will only receive **Matched Enquiries** once you upgrade to a paid membership.
                                 </AlertDescription>
                             </Alert>
                         )}
 
                         <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg"><Banknote className="h-5 w-5 text-primary" /> Agreement Types</h3>
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Banknote className="h-5 w-5 text-primary" /> Agreement Types</h3>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                                 {appTypeOptions.map(item => (
                                     <FormField key={item} control={form.control} name="appTypes" render={({ field }) => (
@@ -133,7 +133,7 @@ export default function LendingParametersContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg"><Zap className="h-5 w-5 text-primary" /> Asset Specialization</h3>
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Briefcase className="h-5 w-5 text-primary" /> Asset Specialization</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {assetOptions.map(item => (
                                     <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
@@ -148,7 +148,7 @@ export default function LendingParametersContent() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                             <div className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2"><Scale className="h-5 w-5 text-primary"/> Deal Size Range (ZAR)</h3>
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><Scale className="h-5 w-5 text-primary"/> Deal Size Range (ZAR)</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="minDealSize" render={({ field }) => (
                                         <FormItem><FormLabel>Minimum Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
@@ -159,7 +159,7 @@ export default function LendingParametersContent() {
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary"/> Risk Criteria</h3>
+                                <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><TrendingUp className="h-5 w-5 text-primary"/> Risk Criteria</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
                                         <FormItem><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
@@ -172,7 +172,7 @@ export default function LendingParametersContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="font-bold text-lg flex items-center gap-2"><History className="h-5 w-5 text-primary"/> Credit History Constraints</h3>
+                            <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Credit History Focus</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <FormField control={form.control} name="requiresNoJudgements" render={({ field }) => (
                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
@@ -196,7 +196,7 @@ export default function LendingParametersContent() {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="font-bold text-lg flex items-center gap-2"><Users className="h-5 w-5 text-primary" /> Target Entity Types</h3>
+                            <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><Users className="h-5 w-5 text-primary" /> Target Entity Types</h3>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {entityOptions.map(item => (
                                     <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
@@ -213,7 +213,7 @@ export default function LendingParametersContent() {
                     <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
-                            Register Lending Appetite
+                            Update Lending Portfolio
                         </Button>
                     </CardFooter>
                 </form>

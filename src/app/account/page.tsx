@@ -187,7 +187,7 @@ function AccountPageContent() {
 
               {isLender && (
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Lending Parameters" isActive={activeView === 'lending-parameters'} onClick={() => navigate('lending-parameters')}><Landmark /><span>Lending Parameters</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Lending Focus & Portfolio" isActive={activeView === 'lending-parameters'} onClick={() => navigate('lending-parameters')}><Landmark /><span>Lending Focus & Portfolio</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
               
