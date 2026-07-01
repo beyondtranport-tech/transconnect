@@ -57,7 +57,7 @@ import { signOut } from 'firebase/auth';
 import React from 'react';
 
 // Component Imports
-import AdminDashboardContent from '@/app/adminaccount/dashboard';
+import AdminDashboardContent from '@/app/backend/dashboard-content';
 import ActivityFeed from '@/app/backend/activity-feed';
 import LeadsAgent from '@/app/adminaccount/leads-agent';
 import LeadsDatabase from '@/app/adminaccount/leads-database';
@@ -93,7 +93,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     
-    // Stabilize check with primitive values to prevent loop
     const uid = user?.uid;
     const email = user?.email;
 
@@ -224,7 +223,7 @@ function AdminAccountContent() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2 text-left">
+          <div className="flex items-center gap-2 p-2 text-left text-foreground">
             <Shield className="h-6 w-6 text-primary" />
             <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Portal</h2>
           </div>

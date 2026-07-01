@@ -75,7 +75,6 @@ export async function POST(req: NextRequest) {
                 const turnover = Number(enquiry.annualTurnover) || 0;
                 const age = Number(enquiry.yearsInBusiness) || 0;
 
-                // Query BOTH static partners AND paying members who configured parameters
                 const [lendersSnap, activeMemberLendersSnap] = await Promise.all([
                     db.collection('partners').where('type', '==', 'finance').get(),
                     db.collection('companies')
@@ -101,13 +100,13 @@ export async function POST(req: NextRequest) {
                         const sizeMatch = amount >= (params.minDealSize || 0) && amount <= (params.maxDealSize || 100000000);
                         const turnoverMatch = turnover >= (params.minAnnualTurnover || 0);
                         const ageMatch = age >= (params.minYearsInBusiness || 0);
+                        const ratingMatch = !params.minCreditScore || (Number(enquiry.creditScore || 0) >= params.minCreditScore);
                         
-                        // History checks
                         const judgementOk = !params.requiresNoJudgements || !enquiry.hasJudgements;
                         const defaultOk = !params.requiresNoDefaults || !enquiry.hasDefaults;
                         const arrearsOk = !params.requiresNoArrears || !enquiry.hasArrears;
 
-                        return sizeMatch && turnoverMatch && ageMatch && judgementOk && defaultOk && arrearsOk;
+                        return sizeMatch && turnoverMatch && ageMatch && ratingMatch && judgementOk && defaultOk && arrearsOk;
                     });
 
                 return NextResponse.json({ success: true, data: [...staticMatches, ...memberMatches].map(serializeTimestamps) });
@@ -115,16 +114,6 @@ export async function POST(req: NextRequest) {
 
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
                 return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 

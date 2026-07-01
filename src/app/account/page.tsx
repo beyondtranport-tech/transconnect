@@ -234,7 +234,6 @@ function AccountPageContent() {
                 </SidebarMenuItem>
               )}
 
-              {/* Associate & Creator Content Tools */}
               {isAssociate && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Content Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Content Studio</span></SidebarMenuButton>
@@ -294,9 +293,24 @@ function AccountPageContent() {
                 </SidebarMenuItem>
               )}
           </SidebarGroup>
-        </Sidebar>
-        <SidebarInset><div className="p-4 md:p-6">{renderContent()}</div></SidebarInset>
-      </SidebarProvider>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col truncate text-left">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Member'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+            </div>
+            <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
+                <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset><div className="p-4 md:p-6">{renderContent()}</div></SidebarInset>
+    </SidebarProvider>
   );
 }
 
