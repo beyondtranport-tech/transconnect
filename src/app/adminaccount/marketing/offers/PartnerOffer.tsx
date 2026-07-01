@@ -120,19 +120,19 @@ export default function PartnerOffer() {
                             <li className="flex items-start gap-3 text-left">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Finance Mall:</strong> A member finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. You earn <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
+                                    <strong className="font-semibold text-left">Finance Mall:</strong> A member finances a <strong className="font-mono">{formatCurrency(exampleDealSize)}</strong> trailer. You earn <strong className="text-green-600">{formatCurrency(isaExampleDealShare)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3 text-left">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Supplier Mall:</strong> Your network spends {formatCurrency(exampleSupplierSpend)} on spares. You earn <strong className="text-green-600">{formatCurrency(isaSupplierEarnings)}</strong>.
+                                    <strong className="font-semibold text-left">Supplier Mall:</strong> Your network spends {formatCurrency(exampleSupplierSpend)} on spares. You earn <strong className="text-green-600">{formatCurrency(isaSupplierEarnings)}</strong>.
                                 </div>
                             </li>
                              <li className="flex items-start gap-3 text-left">
                                 <CheckCircle className="h-4 w-4 text-green-600 mt-0.5 shrink-0" />
                                 <div>
-                                    <strong className="font-semibold">Buy & Sell Mall:</strong> A member sells a truck for {formatCurrency(exampleTruckSale)}. You earn <strong className="text-green-600">{formatCurrency(isaBuySellEarnings)}</strong>.
+                                    <strong className="font-semibold text-left">Buy & Sell Mall:</strong> A member sells a truck for {formatCurrency(exampleTruckSale)}. You earn <strong className="text-green-600">{formatCurrency(isaBuySellEarnings)}</strong>.
                                 </div>
                             </li>
                         </ul>
