@@ -173,6 +173,12 @@ export default function LenderDeskContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedOpportunity, setSelectedOpportunity] = useState<any | null>(null);
 
+    const isAdmin = user && (
+        user.email === 'beyondtransport@gmail.com' || 
+        user.email === 'mkoton100@gmail.com' || 
+        user.email === 'michael@logisticsflow.co.za'
+    );
+
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
     const lenderParams = useMemo(() => user?.companyData?.lendingParams, [user]);
@@ -310,7 +316,7 @@ export default function LenderDeskContent() {
         );
     }
 
-    if (!isPaid) {
+    if (!isPaid && !isAdmin) {
         return (
             <Card className="bg-slate-900 text-white border-none shadow-2xl overflow-hidden text-left">
                 <CardHeader className="p-12 text-left">

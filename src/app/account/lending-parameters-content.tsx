@@ -52,6 +52,12 @@ export default function LendingParametersContent() {
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
+    const isAdmin = user && (
+        user.email === 'beyondtransport@gmail.com' || 
+        user.email === 'mkoton100@gmail.com' || 
+        user.email === 'michael@logisticsflow.co.za'
+    );
+
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
     const form = useForm<z.infer<typeof lendingSchema>>({
@@ -121,7 +127,7 @@ export default function LendingParametersContent() {
                 </div>
             </div>
 
-            {!isPaid && (
+            {!isPaid && !isAdmin && (
                 <Alert className="bg-amber-50 border-amber-200 text-left">
                     <Zap className="h-5 w-5 text-amber-600" />
                     <AlertTitle className="font-bold text-amber-800 text-left">Draft Mode: Free Account</AlertTitle>

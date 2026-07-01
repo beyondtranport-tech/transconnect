@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -14,6 +13,12 @@ import Link from 'next/link';
 export default function IntelligenceHistory() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+
+    const isAdmin = user && (
+        user.email === 'beyondtransport@gmail.com' || 
+        user.email === 'mkoton100@gmail.com' || 
+        user.email === 'michael@logisticsflow.co.za'
+    );
 
     const searchLogsQuery = useMemoFirebase(() => {
         if (!firestore || !user?.companyId) return null;
@@ -48,7 +53,7 @@ export default function IntelligenceHistory() {
                 </div>
             </CardHeader>
 
-            {!isPaid && (
+            {!isPaid && !isAdmin && (
                 <Card className="bg-slate-900 text-white border-none shadow-2xl overflow-hidden">
                     <CardContent className="p-8">
                         <div className="flex flex-col md:flex-row items-center gap-8">
