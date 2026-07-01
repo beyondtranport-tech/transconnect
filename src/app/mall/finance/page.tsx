@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import data from "@/lib/placeholder-images.json";
-import { Search, ArrowRight, Lock, ShieldCheck, MapPin, Loader2, Info, Landmark, Banknote } from "lucide-react";
+import { Search, ArrowRight, Lock, ShieldCheck, MapPin, Loader2, Info, Landmark, Banknote, Globe, Zap } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import * as gtag from '@/lib/gtag';
@@ -66,7 +67,7 @@ export default function FinanceMallPage() {
     };
 
     return (
-        <div>
+        <div className="text-left">
             <section className="relative w-full h-64 bg-slate-900">
                 {financeMallImage && (
                     <Image
@@ -79,8 +80,29 @@ export default function FinanceMallPage() {
                     />
                 )}
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight text-white">Capital Intelligence</h1>
-                    <p className="mt-2 text-lg text-slate-300">Discover funding partners and specialized transport insurers.</p>
+                    <h1 className="text-4xl md:text-5xl font-black font-headline tracking-tight text-white text-center">Finance Mall</h1>
+                    <p className="mt-2 text-lg text-slate-300 text-center">Compare the market. Broadcast your enquiry to our network of 85+ specialized lenders.</p>
+                </div>
+            </section>
+
+            <section className="py-12 bg-white border-b">
+                <div className="container mx-auto px-4">
+                    <Card className="max-w-4xl mx-auto border-primary/20 bg-primary/5 shadow-xl">
+                        <CardHeader className="text-center">
+                            <div className="bg-primary/10 p-3 rounded-full w-fit mx-auto mb-4"><Globe className="h-8 w-8 text-primary" /></div>
+                            <CardTitle className="text-2xl font-black font-headline">Market Broadcast Enquiry</CardTitle>
+                            <CardDescription className="max-w-md mx-auto">
+                                Skip the manual search. Complete one high-fidelity application and we will match it with every suitable lender in the registry.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardFooter className="flex justify-center pb-8">
+                             <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase shadow-lg">
+                                <Link href={user ? "/funding/apply?origination=market" : "/join?redirect=/funding/apply?origination=market"}>
+                                    Start Market Broadcast <Zap className="ml-2 h-5 w-5" />
+                                </Link>
+                             </Button>
+                        </CardFooter>
+                    </Card>
                 </div>
             </section>
             
@@ -149,14 +171,14 @@ export default function FinanceMallPage() {
                                                 {funder.researchStatus === 'completed' && <ShieldCheck className="h-4 w-4 text-green-500" />}
                                             </div>
                                             <CardTitle className="text-lg font-black group-hover:text-primary transition-colors">{funder.companyName}</CardTitle>
-                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                                            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 text-left">
                                                 <MapPin className="h-3 w-3" />
                                                 <span className="truncate">{funder.address || 'Operational Hub Verified'}</span>
                                             </div>
                                         </CardHeader>
-                                        <CardContent className="space-y-4">
+                                        <CardContent className="space-y-4 text-left">
                                             <div className={cn("p-4 rounded-xl border-2 border-dashed space-y-3", !isPaid ? "bg-slate-50 border-slate-200" : "bg-green-50/30 border-primary/20")}>
-                                                <div className="flex items-center justify-between text-xs">
+                                                <div className="flex items-center justify-between text-xs text-left">
                                                     <span className="text-muted-foreground uppercase font-black tracking-widest text-[10px]">Head of Finance</span>
                                                     {isPaid ? (
                                                         <span className="font-bold text-foreground">{funder.contactPerson || 'Identity Verified'}</span>
@@ -192,7 +214,7 @@ export default function FinanceMallPage() {
                                         {isPaid && (
                                             <CardFooter className="pt-0 flex gap-2">
                                                 <Button className="flex-1" size="sm" asChild>
-                                                    <Link href="/funding/apply">Apply Now</Link>
+                                                    <Link href="/funding/apply?origination=market">Enquire Now</Link>
                                                 </Button>
                                                 <Button variant="outline" size="sm">Visit Website</Button>
                                             </CardFooter>
@@ -205,8 +227,8 @@ export default function FinanceMallPage() {
                                 <div className="mt-16 text-center p-12 bg-white rounded-3xl shadow-xl border-2 border-primary/20 max-w-2xl mx-auto">
                                     <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6"><Lock className="h-8 w-8 text-primary" /></div>
                                     <h3 className="text-3xl font-black font-headline text-foreground">Expand Your Capital Network</h3>
-                                    <p className="mt-4 text-lg text-muted-foreground">You are viewing a limited set of results. Our registry contains specialized lenders ready to fuel your growth. Unlock absolute access today.</p>
-                                    <Button asChild size="lg" className="mt-8 h-14 px-12 text-lg font-black uppercase tracking-tight">
+                                    <p className="mt-4 text-lg text-muted-foreground text-center">You are viewing a limited set of results. Our registry contains specialized lenders ready to fuel your growth. Unlock absolute access today.</p>
+                                    <Button asChild size="lg" className="mt-8 h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                                         <Link href="/pricing">Get Unlimited Access <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                     </Button>
                                 </div>

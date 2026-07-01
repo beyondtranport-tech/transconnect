@@ -50,7 +50,7 @@ export default function FundingPage() {
         gtag.event({
             action: 'start_application',
             category: 'Funding',
-            label: 'Process Section CTA',
+            label: 'Direct In-House Path',
             value: 1
         });
     }
@@ -65,10 +65,11 @@ export default function FundingPage() {
         });
     }
 
-    const ctaLink = user ? '/funding/apply' : '/join?redirect=/funding/apply';
+    // Direct path for applications starting here
+    const ctaLink = user ? '/funding/apply?origination=direct' : '/join?redirect=/funding/apply?origination=direct';
 
     return (
-        <div>
+        <div className="text-left">
             <section className="relative w-full h-80 bg-card">
                 {fundingHeroImage && (
                     <Image
@@ -82,18 +83,18 @@ export default function FundingPage() {
                 )}
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
-                    <h1 className="text-4xl md:text-5xl font-bold font-headline">Business Funding</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Our industry-specific finance solutions are designed to empower you to manage and grow your business.</p>
+                    <h1 className="text-4xl md:text-5xl font-bold font-headline">In-House Business Funding</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Our specialized finance division is designed to provide rapid capital based on your real-world platform performance.</p>
                 </div>
             </section>
 
              <section className="py-16 md:py-24 bg-background">
                 <div className="container mx-auto px-4">
                      <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Approach to Funding</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">The Direct Funding Advantage</h2>
                          <div className="mt-8 text-left space-y-4 text-muted-foreground bg-card p-8 rounded-lg shadow-sm">
-                            <p className="text-lg">At Logistics Flow, our business is built on empowering yours through intelligent finance. We've redesigned the funding process to make it work for you, not against you. Our systems put you in control, providing access to a broad range of products and unique, industry-specific solutions designed to help you do what you do best—managing and growing your business.</p>
-                            <p className="text-lg">We see the opportunities that others miss. Our expertise lies in our ability to take something that seems 'un-financeable', structure it correctly, and convert it into a viable funding opportunity. We don’t want to run your business; we want to fuel it.</p>
+                            <p className="text-lg">Applying directly to the Logistics Flow funding division ensures you are evaluated based on your industrial standing, not just a generic credit score. We utilize the forensic data from your platform activity to structure viable funding opportunities that traditional banks often miss.</p>
+                            <p className="text-lg">Whether you are scaling your fleet or bridging a cash flow gap, our in-house team understands the nuances of the transport sector.</p>
                         </div>
                         <div className="mt-12">
                              <Button asChild size="lg" onClick={handleApplyClick} disabled={isUserLoading}>
@@ -105,7 +106,7 @@ export default function FundingPage() {
                                         </>
                                     ) : (
                                         <>
-                                            Start Your Application <ArrowRight className="ml-2 h-5 w-5" />
+                                            Apply for In-House Funding <ArrowRight className="ml-2 h-5 w-5" />
                                         </>
                                     )}
                                 </Link>
@@ -118,9 +119,9 @@ export default function FundingPage() {
              <section id="start-journey" className="py-16 md:py-24 bg-card">
                 <div className="container mx-auto px-4">
                      <div className="text-center max-w-3xl mx-auto">
-                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Our Funding Structures</h2>
+                        <h2 className="text-3xl md:text-4xl font-bold font-headline">Available Structures</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Our business is based on three core structures, allowing us to build the perfect solution for any scenario. Choose an agreement type to begin.
+                            Explore our three core funding structures to find the best fit for your current business requirement.
                         </p>
                     </div>
                     
@@ -128,7 +129,7 @@ export default function FundingPage() {
                        {agreementTypes.map((item) => {
                             const Icon = item.icon;
                             return (
-                               <Link href={`/funding/products?agreement=${item.id}`} key={item.title} className="block group" onClick={() => handleCategoryClick(item.id)}>
+                               <Link href={`/funding/products?agreement=${item.id}&origination=direct`} key={item.title} className="block group" onClick={() => handleCategoryClick(item.id)}>
                                    <Card className="flex flex-col overflow-hidden shadow-lg hover:shadow-primary/20 transition-all h-full group-hover:border-primary">
                                         <CardHeader>
                                             <div className="flex items-center gap-4">
@@ -141,7 +142,7 @@ export default function FundingPage() {
                                         </CardContent>
                                         <CardFooter>
                                             <p className="text-sm font-semibold text-primary flex items-center gap-2">
-                                                View Products <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                                Select Structure <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                                             </p>
                                         </CardFooter>
                                    </Card>
