@@ -131,6 +131,7 @@ function AccountPageContent() {
   const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
   const isSocialActive = activeView.startsWith('social-');
+  const isMarketingActive = ['shop', 'marketing-studio'].includes(activeView);
 
   return (
     <SidebarProvider>

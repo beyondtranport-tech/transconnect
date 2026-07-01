@@ -37,14 +37,14 @@ export function formatNumber(value: number | null | undefined): string {
 
 /**
  * Resilient HTML clipboard utility.
- * Avoids 'TypeError: Illegal constructor' by using a hidden element approach for broad compatibility.
+ * DEFINITIVELY avoids 'TypeError: Illegal constructor' by avoiding 'new ClipboardItem'.
+ * Uses a hidden element approach for maximum compatibility.
  */
 export async function copyHtmlToClipboard(html: string, plainText?: string) {
     if (typeof window === 'undefined') return false;
 
     const textToCopy = plainText || html.replace(/<[^>]*>/g, '');
 
-    // Try modern API with fallback
     try {
         const container = document.createElement('div');
         container.innerHTML = html;
@@ -59,13 +59,14 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
         range.selectNode(container);
         window.getSelection()?.addRange(range);
 
+        // Standard execCommand approach (Constructor-free)
         const success = document.execCommand('copy');
         document.body.removeChild(container);
         window.getSelection()?.removeAllRanges();
         
         if (success) return true;
     } catch (e) {
-        console.warn("Hidden element copy failed, falling back to writeText:", e);
+        console.warn("DOM copy failed, falling back to writeText:", e);
     }
 
     try {

@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy, Mail } from 'lucide-react';
+import { Loader2, ClipboardCopy } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -151,7 +151,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="communicationType" render={({ field }) => (
-                             <FormItem className="text-left text-foreground">
+                             <FormItem>
                                 <FormLabel>Communication Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger className="bg-white">
@@ -171,7 +171,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             control={form.control}
                             name="notes"
                             render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem>
                                     <FormLabel>Notes (Optional)</FormLabel>
                                     <FormControl>
                                         <Textarea placeholder="Add notes about the call or meeting..." {...field} className="bg-white" />
@@ -242,7 +242,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
-        // FIXED: Replaced 'new ClipboardItem' (Illegal constructor) with resilient utility
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
             throw new Error('Your browser may not support this feature, or there was an error.');
