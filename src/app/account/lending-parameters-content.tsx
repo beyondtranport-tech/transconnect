@@ -5,12 +5,12 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardFooter } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken, forceRefresh } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, Users, Package, MapPin, Sparkles, ChevronRight, ChevronDown } from 'lucide-react';
+import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, Users, Package, MapPin, Sparkles, ChevronRight, ChevronDown, Truck } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -58,9 +58,9 @@ const productHierarchy = [
         id: "discounting",
         name: "Discounting Products",
         items: [
-            { id: "disclosed-confirmed-factoring", name: "Disclosed confirmed factoring" },
-            { id: "disclosed-unconfirmed-factoring", name: "Disclosed un-confirmed factoring" },
-            { id: "invoice-discounting", name: "Invoice discounting" },
+            { id: "disclosed-confirmed-factoring", name: "Disclosed confirmed factoring 75% advance" },
+            { id: "disclosed-unconfirmed-factoring", name: "Disclosed un-confirmed factoring 0% advance" },
+            { id: "invoice-discounting", name: "Invoice discounting 100% advance" },
             { id: "rights-discounting", name: "Rights discounting" }
         ]
     }
@@ -68,7 +68,6 @@ const productHierarchy = [
 
 const termOptions = ['1-12 Months', '12-24 Months', '24-36 Months', '36-48 Months', '48-60 Months', '60-72+ Months'];
 const entityOptions = ['Ltd', 'Private Company (Pty Ltd)', 'Sole Proprietor', 'Close Corporation (CC)', 'Trust', 'Individual', 'Partnership'];
-const brandOptions = ['Scania', 'Volvo', 'Mercedes-Benz', 'MAN', 'Freightliner', 'Iveco', 'DAF', 'UD Trucks', 'Isuzu', 'Hino', 'Toyota (Bakkie)', 'Universal/All'];
 const regionOptions = ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape', 'Cross-Border'];
 
 const productCriteriaSchema = z.object({
@@ -293,7 +292,7 @@ export default function LendingParametersContent() {
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
                                     <div className="space-y-6 text-left">
                                         <div className="space-y-4 text-left">
-                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entity Maturity</Label>
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Entity Maturity</Label>
                                             <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
                                                 <FormItem className="text-left"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} className="border-2" /></FormControl></FormItem>
                                             )} />
@@ -354,7 +353,7 @@ export default function LendingParametersContent() {
                         </TabsContent>
 
                         <TabsContent value="portfolio" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
-                             <Card className="text-left">
+                             <Card className="text-left text-foreground">
                                 <CardHeader className="text-left border-b bg-muted/20">
                                     <CardTitle className="text-lg flex items-center gap-2 text-left"><Package className="h-5 w-5 text-primary"/> Industry & Asset Focus</CardTitle>
                                     <CardDescription>Define the physical assets and regions you specialize in financing.</CardDescription>
@@ -365,7 +364,7 @@ export default function LendingParametersContent() {
                                             <Truck className="h-4 w-4" /> 
                                             Specialized Asset Classes
                                         </Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                             {supplierCategories.map(item => (
                                                 <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
                                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
@@ -392,7 +391,7 @@ export default function LendingParametersContent() {
                                             <MapPin className="h-4 w-4" /> 
                                             Target Funding Regions
                                         </Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left">
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left text-foreground">
                                             {regionOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
                                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
@@ -416,7 +415,7 @@ export default function LendingParametersContent() {
                         </TabsContent>
                     </Tabs>
 
-                    <div className="bg-slate-50 border-t p-8 flex justify-end mt-12 rounded-2xl shadow-inner">
+                    <div className="bg-slate-50 border-t p-8 flex justify-end mt-12 rounded-2xl shadow-inner text-foreground">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-14 px-12 font-black uppercase tracking-widest gap-2 shadow-xl">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
                             Update Global Matching Logic
@@ -427,4 +426,3 @@ export default function LendingParametersContent() {
         </div>
     );
 }
-
