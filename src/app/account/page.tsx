@@ -156,8 +156,8 @@ function AccountPageContent() {
   }
 
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
-  const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
   const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
+  const isSupplier = (user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor') && !isLender;
   const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
   
@@ -187,7 +187,7 @@ function AccountPageContent() {
 
               {isLender && (
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Lending Focus" isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}><Landmark /><span>Lending Focus</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Lending Focus & Portfolio" isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}><Landmark /><span>Lending Focus</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
               

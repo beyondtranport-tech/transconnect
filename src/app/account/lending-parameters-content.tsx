@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users, Briefcase, Star, Package } from 'lucide-react';
+import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users, Briefcase, Star, Package, MapPin, Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,11 +19,13 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
 const lendingSchema = z.object({
+    // Financial Criteria
     appTypes: z.array(z.string()).min(1, "Select at least one agreement type."),
-    assetTypes: z.array(z.string()).min(1, "Select at least one asset focus."),
     minDealSize: z.coerce.number().min(0),
     maxDealSize: z.coerce.number().min(0),
     preferredTerms: z.array(z.string()).min(1, "Select at least one preferred term."),
+    
+    // Risk & Entity
     entityTypes: z.array(z.string()).min(1, "Select at least one entity type."),
     minYearsInBusiness: z.coerce.number().min(0),
     minAnnualTurnover: z.coerce.number().min(0),
@@ -31,11 +33,18 @@ const lendingSchema = z.object({
     requiresNoJudgements: z.boolean().default(false),
     requiresNoDefaults: z.boolean().default(false),
     requiresNoArrears: z.boolean().default(false),
+
+    // Product & Asset Portfolio (Unified)
+    assetTypes: z.array(z.string()).min(1, "Select at least one asset focus."),
+    supportedBrands: z.array(z.string()).min(1, "Select at least one supported brand."),
+    serviceRegions: z.array(z.string()).min(1, "Select your primary funding regions."),
 });
 
 const appTypeOptions = ['Working Capital', 'Asset Finance', 'Personal Loan', 'Micro Loan', 'Factoring', 'Invoice Discounting', 'Bridge Finance'];
 const termOptions = ['1-12 Months', '12-24 Months', '24-36 Months', '36-48 Months', '48-60 Months', '60-72+ Months'];
 const entityOptions = ['Ltd', 'Private Company (Pty Ltd)', 'Sole Proprietor', 'Close Corporation (CC)', 'Trust', 'Individual', 'Partnership'];
+const brandOptions = ['Scania', 'Volvo', 'Mercedes-Benz', 'MAN', 'Freightliner', 'Iveco', 'DAF', 'UD Trucks', 'Isuzu', 'Hino', 'Toyota (Bakkie)', 'Universal/All'];
+const regionOptions = ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape', 'Cross-Border'];
 
 export default function LendingParametersContent() {
     const { user, isUserLoading, forceRefresh } = useUser();
@@ -48,7 +57,6 @@ export default function LendingParametersContent() {
         resolver: zodResolver(lendingSchema),
         defaultValues: {
             appTypes: user?.companyData?.lendingParams?.appTypes || [],
-            assetTypes: user?.companyData?.lendingParams?.assetTypes || [],
             minDealSize: user?.companyData?.lendingParams?.minDealSize || 0,
             maxDealSize: user?.companyData?.lendingParams?.maxDealSize || 0,
             preferredTerms: user?.companyData?.lendingParams?.preferredTerms || [],
@@ -59,6 +67,9 @@ export default function LendingParametersContent() {
             requiresNoJudgements: user?.companyData?.lendingParams?.requiresNoJudgements || false,
             requiresNoDefaults: user?.companyData?.lendingParams?.requiresNoDefaults || false,
             requiresNoArrears: user?.companyData?.lendingParams?.requiresNoArrears || false,
+            assetTypes: user?.companyData?.lendingParams?.assetTypes || [],
+            supportedBrands: user?.companyData?.lendingParams?.supportedBrands || [],
+            serviceRegions: user?.companyData?.lendingParams?.serviceRegions || [],
         }
     });
 
@@ -213,10 +224,11 @@ export default function LendingParametersContent() {
                         <TabsContent value="assets" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                              <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-lg flex items-center gap-2"><Banknote className="h-5 w-5 text-primary"/> Agreement & Asset Products</CardTitle>
+                                    <CardTitle className="text-lg flex items-center gap-2"><Banknote className="h-5 w-5 text-primary"/> Agreement & Asset Portfolio</CardTitle>
                                     <CardDescription>Select the types of agreements you offer and the physical assets you will finance.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-6 text-left">
+                                <CardContent className="space-y-10 text-left">
+                                    {/* Agreement Products */}
                                     <div className="space-y-4">
                                         <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Lending Agreement Products</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -233,14 +245,49 @@ export default function LendingParametersContent() {
 
                                     <Separator />
 
+                                    {/* Asset Categories */}
                                     <div className="space-y-4">
-                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Industrial Asset Portfolio (Lender Specialization)</Label>
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><Package className="h-4 w-4" /> Industrial Asset Specialization</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {supplierCategories.map(item => (
                                                 <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
                                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
                                                         <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
                                                         <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight">{item}</FormLabel>
+                                                    </FormItem>
+                                                )} />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <Separator />
+
+                                    {/* Brands */}
+                                    <div className="space-y-4">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><Sparkles className="h-4 w-4" /> Preferred Truck Brands</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {brandOptions.map(item => (
+                                                <FormField key={item} control={form.control} name="supportedBrands" render={({ field }) => (
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                                        <FormLabel className="font-medium text-sm cursor-pointer">{item}</FormLabel>
+                                                    </FormItem>
+                                                )} />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <Separator />
+
+                                    {/* Regions */}
+                                    <div className="space-y-4">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Funding Regions</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                            {regionOptions.map(item => (
+                                                <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                                        <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
                                                     </FormItem>
                                                 )} />
                                             ))}
@@ -254,7 +301,7 @@ export default function LendingParametersContent() {
                     <div className="bg-slate-50 border-t p-6 flex justify-end mt-8 rounded-lg shadow-inner">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
-                            Update Lending Focus
+                            Update Lending Focus & Portfolio
                         </Button>
                     </div>
                 </form>
