@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle, ShieldAlert, Edit, Eye, ArrowLeft, CheckCircle } from 'lucide-react';
@@ -106,9 +106,21 @@ export default function ShopContent() {
 
   const canCreateShop = can('create', 'shop');
   const shopExists = !!companyData?.shopId;
+  
   const isTransporter = user?.declaredPosition === 'transporter' || companyData?.shopType === 'transporter';
+  const isAssociate = user?.declaredPosition === 'associate' || user?.role === 'associate';
+  const isLender = user?.declaredPosition === 'lender' || user?.role === 'lender' || companyData?.declaredRole === 'lender';
+  const isSupplier = (user?.declaredPosition === 'vendor' || companyData?.shopType === 'vendor') && !isLender;
 
   const shopStatus = userShop?.status || 'draft';
+
+  const creationLabel = useMemo(() => {
+      if (isAssociate) return "Create Creator Profile";
+      if (isTransporter) return "Create Service Profile";
+      if (isLender) return "Create Lender Profile";
+      if (isSupplier) return "Create My Shop";
+      return "Create Profile";
+  }, [isAssociate, isTransporter, isLender, isSupplier]);
 
   const renderContent = () => {
     if (view === 'wizard' && userShop) {
@@ -127,24 +139,26 @@ export default function ShopContent() {
         return (
              <div className="space-y-6">
                 <div className="p-6 border rounded-lg bg-muted/50">
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div>
-                            <h3 className="text-xl font-semibold">{userShop.shopName}</h3>
-                            <p className="text-muted-foreground">{userShop.category || 'General'}</p>
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 text-left">
+                        <div className="text-left">
+                            <h3 className="text-xl font-semibold text-left">{userShop.shopName}</h3>
+                            <p className="text-muted-foreground text-left">{userShop.category || 'General'}</p>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 text-left">
                             <span className="text-sm font-medium">Status:</span>
                             <Badge variant={statusColors[shopStatus] || 'secondary'} className="capitalize text-base">
                                 {shopStatus.replace(/_/g, ' ')}
                             </Badge>
                         </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t">
-                        <div>
-                            <p className="text-sm font-medium">{isTransporter ? 'Active Service Lanes' : 'Products Listed'}</p>
-                            <p className="text-2xl font-bold">{products?.length || 0}</p>
-                        </div>
-                        <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t text-left">
+                        {!isAssociate && !isLender && (
+                            <div className="text-left">
+                                <p className="text-sm font-medium text-left">{isTransporter ? 'Active Service Lanes' : 'Products Listed'}</p>
+                                <p className="text-2xl font-bold text-left">{products?.length || 0}</p>
+                            </div>
+                        )}
+                        <div className="flex gap-2 text-left ml-auto">
                             {userShop.status === 'approved' && (
                                 <Button asChild variant="outline">
                                     <Link href={`/shops/${userShop.id}`} target="_blank">
@@ -163,24 +177,24 @@ export default function ShopContent() {
     }
     
      return (
-          <div className="text-center py-20 border-2 border-dashed rounded-lg">
-            <Store className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-xl font-semibold">You don't have a commercial profile yet.</h3>
-            <p className="mt-2 text-muted-foreground">Ready to start selling your {isTransporter ? 'freight services' : 'products'}? Create your profile to get started.</p>
+          <div className="text-center py-20 border-2 border-dashed rounded-lg text-left">
+            <Store className="mx-auto h-12 w-12 text-muted-foreground text-left" />
+            <h3 className="mt-4 text-xl font-semibold text-left">You don't have a commercial profile yet.</h3>
+            <p className="mt-2 text-muted-foreground text-left">Ready to start {isAssociate ? 'building your network' : 'selling your services'}? Create your profile to get started.</p>
             
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="inline-block mt-4">
+                  <div className="inline-block mt-4 text-left">
                     <Button onClick={handleCreateShop} disabled={isCreating || !canCreateShop || arePermissionsLoading}>
                       {isCreating || arePermissionsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                      Create {isTransporter ? 'Service Profile' : 'My Shop'}
+                      {creationLabel}
                     </Button>
                   </div>
                 </TooltipTrigger>
                 {!canCreateShop && (
                   <TooltipContent>
-                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> You don't have permission to create a shop.</p>
+                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> You don't have permission to create a profile.</p>
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -191,13 +205,13 @@ export default function ShopContent() {
 
   return (
     <Card>
-      <CardHeader>
-        <div className="flex justify-between items-start">
-            <div>
-                <CardTitle className="flex items-center gap-2">
-                    <Store /> {isTransporter ? 'My Service Profile' : 'My Shop'}
+      <CardHeader className="text-left">
+        <div className="flex justify-between items-start text-left">
+            <div className="text-left">
+                <CardTitle className="flex items-center gap-2 text-left">
+                    <Store /> {isAssociate ? 'Creator Profile' : (isTransporter ? 'Service Profile' : isLender ? 'Lender Profile' : 'My Shop')}
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-left">
                 {shopExists ? `Manage your professional profile: ${userShop?.shopName || '...'}` : "Create and manage your public-facing profile."}
                 </CardDescription>
             </div>
@@ -208,9 +222,9 @@ export default function ShopContent() {
             )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="text-left">
         {isLoading ? (
-          <div className="flex justify-center items-center py-20">
+          <div className="flex justify-center items-center py-20 text-left">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
           </div>
         ) : renderContent()}
@@ -218,3 +232,4 @@ export default function ShopContent() {
     </Card>
   );
 }
+    

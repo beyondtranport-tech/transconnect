@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -77,9 +78,9 @@ export default function SupplierProductContent() {
         <Card className="max-w-4xl mx-auto shadow-xl">
             <CardHeader className="border-b bg-muted/20 text-left">
                 <div className="flex items-center gap-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl"><Building2 className="h-6 w-6 text-primary" /></div>
+                    <div className="bg-primary/10 p-3 rounded-xl text-left"><Building2 className="h-6 w-6 text-primary" /></div>
                     <div className="text-left">
-                        <CardTitle className="text-2xl font-bold text-left">Product Portfolio & Focus</CardTitle>
+                        <CardTitle className="text-2xl font-bold text-left">Product Portfolio</CardTitle>
                         <CardDescription className="text-left">Declare your specific industrial capabilities to enable AI matching with fleet owners.</CardDescription>
                     </div>
                 </div>
@@ -87,22 +88,22 @@ export default function SupplierProductContent() {
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <CardContent className="p-8 space-y-10 text-left">
-                        <Alert className="bg-primary/5 border-primary/20">
+                        <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Info className="h-5 w-5 text-primary" />
-                            <AlertTitle className="font-bold">Ecosystem Connectivity</AlertTitle>
+                            <AlertTitle className="font-bold text-left">Ecosystem Connectivity</AlertTitle>
                             <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
                                 By specifying your categories and supported brands, our intelligence engine can deliver your profile directly to members who have declared matching fleet equipment. This drives high-intent RFQs to your digital branch.
                             </AlertDescription>
                         </Alert>
                         
                         <div className="space-y-4 text-left">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Package className="h-5 w-5 text-primary" /> Industrial Categories</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><Package className="h-5 w-5 text-primary" /> Industrial Categories</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                                 {supplierCategories.map(item => (
                                     <FormField key={item} control={form.control} name="categories" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight text-left">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
@@ -110,13 +111,13 @@ export default function SupplierProductContent() {
                         </div>
 
                         <div className="space-y-4 text-left">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Sparkles className="h-5 w-5 text-primary" /> Supported Truck Brands</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><Sparkles className="h-5 w-5 text-primary" /> Supported Truck Brands</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                                 {brandOptions.map(item => (
                                     <FormField key={item} control={form.control} name="supportedBrands" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-sm cursor-pointer">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-sm cursor-pointer text-left">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
@@ -124,22 +125,22 @@ export default function SupplierProductContent() {
                         </div>
 
                         <div className="space-y-4 text-left">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><MapPin className="h-5 w-5 text-primary" /> Service Regions</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><MapPin className="h-5 w-5 text-primary" /> Service Regions</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left">
                                 {regionOptions.map(item => (
                                     <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-[11px] cursor-pointer">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-[11px] cursor-pointer text-left">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
-                        <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
+                    <CardFooter className="bg-slate-50 border-t p-6 flex justify-end text-left">
+                        <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2 text-left">
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin text-left"/> : <Save className="h-5 w-5 text-left" />}
                             Update Product Portfolio
                         </Button>
                     </CardFooter>
@@ -148,3 +149,4 @@ export default function SupplierProductContent() {
         </Card>
     );
 }
+    

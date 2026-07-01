@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -40,7 +41,6 @@ import {
   Landmark,
   ClipboardList,
   Users,
-  RefreshCcw,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -122,11 +122,13 @@ function AccountPageContent() {
     );
   }
 
+  // Role Detection
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
   const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
   const isSupplier = (user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor') && !isLender;
   const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
+  const isCargoOwner = !isTransporter && !isSupplier && !isProfessional && !isAssociate && !isLender;
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
@@ -149,16 +151,23 @@ function AccountPageContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip={isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")} isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>{isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")}</span></SidebarMenuButton>
+                  <SidebarMenuButton 
+                    tooltip={isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")} 
+                    isActive={activeView === 'shop'} 
+                    onClick={() => navigate('shop')}
+                  >
+                    <Store />
+                    <span>{isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")}</span>
+                  </SidebarMenuButton>
               </SidebarMenuItem>
 
               {isLender && (
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Lending Focus & Portfolio" isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}><Landmark /><span>Lending Focus</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Lending Focus" isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}><Landmark /><span>Lending Focus</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
               
-              {!isAssociate && (
+              {!isAssociate && !isLender && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Search History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
                 </SidebarMenuItem>
@@ -179,17 +188,20 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="Fleet & Services" isActive={activeView === 'fleet'} onClick={() => navigate('fleet')}><Truck /><span>Fleet & Services</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+
               {isSupplier && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Product Portfolio" isActive={activeView === 'product-portfolio'} onClick={() => navigate('product-portfolio')}><Package /><span>Product Portfolio</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+
               {isProfessional && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Professional Profile" isActive={activeView === 'professional-profile'} onClick={() => navigate('professional-profile')}><Award /><span>Professional Profile</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
-              {!isTransporter && !isSupplier && !isProfessional && !isAssociate && !isLender && (
+
+              {isCargoOwner && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Shipping Requirements" isActive={activeView === 'needs'} onClick={() => navigate('needs')}><ShoppingCart /><span>Shipping Requirements</span></SidebarMenuButton>
                 </SidebarMenuItem>
@@ -230,15 +242,19 @@ function AccountPageContent() {
                     ) : (
                         <>
                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users className="h-3.5 w-3.5" />My Network</SidebarMenuSubButton></SidebarMenuSubItem>
-                           <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}><TrendingUp className="h-3.5 w-3.5" />Performance</SidebarMenuSubButton></SidebarMenuSubItem>
-                           <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'offer'} onClick={() => navigate('offer')}><Gift className="h-3.5 w-3.5" />The Offer</SidebarMenuSubButton></SidebarMenuSubItem>
-                           <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}><Mail className="h-3.5 w-3.5" />Email Templates</SidebarMenuSubButton></SidebarMenuSubItem>
+                           {!isAssociate && (
+                               <>
+                                <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}><TrendingUp className="h-3.5 w-3.5" />Performance</SidebarMenuSubButton></SidebarMenuSubItem>
+                                <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'offer'} onClick={() => navigate('offer')}><Gift className="h-3.5 w-3.5" />The Offer</SidebarMenuSubButton></SidebarMenuSubItem>
+                                <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'emails'} onClick={() => navigate('emails')}><Mail className="h-3.5 w-3.5" />Email Templates</SidebarMenuSubButton></SidebarMenuSubItem>
+                               </>
+                           )}
                         </>
                     )}
                 </SidebarMenuSub>
               </SidebarMenuItem>
 
-              {!isAssociate && (
+              {!isAssociate && !isLender && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Connect Plans" isActive={isConnectActive}><Zap /><span>Connect</span></SidebarMenuButton>
                     <SidebarMenuSub>
@@ -259,7 +275,7 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Wallet" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet & Earnings</span></SidebarMenuButton>
               </SidebarMenuItem>
 
-              {!isAssociate && (
+              {!isAssociate && !isLender && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Activity" isActive={activeView === 'activity'} onClick={() => navigate('activity')}><Activity /><span>Activity</span></SidebarMenuButton>
                 </SidebarMenuItem>
@@ -269,7 +285,7 @@ function AccountPageContent() {
                 <SidebarMenuButton tooltip="Support Chat" isActive={activeView === 'support-chat'} onClick={() => navigate('support-chat')}><MessageSquare /><span>Support Chat</span></SidebarMenuButton>
               </SidebarMenuItem>
 
-              {!isAssociate && (
+              {!isAssociate && !isLender && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Billing" isActive={activeView === 'billing'} onClick={() => navigate('billing')}><CreditCard /><span>Billing</span></SidebarMenuButton>
                 </SidebarMenuItem>
@@ -338,3 +354,4 @@ export default function AccountPage() {
     </Suspense>
   );
 }
+    

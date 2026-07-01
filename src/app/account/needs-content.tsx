@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -77,12 +78,12 @@ export default function NeedsContent() {
 
     return (
         <Card className="max-w-4xl mx-auto shadow-xl text-left">
-            <CardHeader className="border-b bg-muted/20">
-                <div className="flex items-center gap-4">
-                    <div className="bg-primary/10 p-3 rounded-xl"><ShoppingCart className="h-6 w-6 text-primary" /></div>
+            <CardHeader className="border-b bg-muted/20 text-left">
+                <div className="flex items-center gap-4 text-left">
+                    <div className="bg-primary/10 p-3 rounded-xl text-left"><ShoppingCart className="h-6 w-6 text-primary" /></div>
                     <div className="text-left">
-                        <CardTitle className="text-2xl font-bold">Shipping Requirements</CardTitle>
-                        <CardDescription>Declare your regular logistics needs to enable AI-powered matching with vetted hauliers.</CardDescription>
+                        <CardTitle className="text-2xl font-bold text-left">Shipping Requirements</CardTitle>
+                        <CardDescription className="text-left">Declare your regular logistics needs to enable AI-powered matching with vetted hauliers.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -92,68 +93,68 @@ export default function NeedsContent() {
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Info className="h-5 w-5 text-primary" />
                             <AlertTitle className="font-bold text-left">The Information Flow Advantage</AlertTitle>
-                            <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
+                            <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
                                 By specifying your cargo profile and regular routes, you allow our matching engine to proactively find the most efficient hauliers in the registry. This reduces manual searching and drives down your spot-market procurement costs.
                             </AlertDescription>
                         </Alert>
 
-                        <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Package className="h-5 w-5 text-primary" /> Regular Cargo Types</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-4 text-left">
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><Package className="h-5 w-5 text-primary" /> Regular Cargo Types</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                                 {cargoOptions.map(item => (
                                     <FormField key={item} control={form.control} name="cargoTypes" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-xs cursor-pointer">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-xs cursor-pointer text-left">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><MapPin className="h-5 w-5 text-primary" /> Regular Service Corridors</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="space-y-4 text-left">
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><MapPin className="h-5 w-5 text-primary" /> Regular Service Corridors</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                                 {routeOptions.map(item => (
                                     <FormField key={item} control={form.control} name="routes" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-[10px] cursor-pointer text-left">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Hammer className="h-5 w-5 text-primary" /> Facility Constraints</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="space-y-4 text-left">
+                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><Hammer className="h-5 w-5 text-primary" /> Facility Constraints</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
                                 {constraintOptions.map(item => (
                                     <FormField key={item} control={form.control} name="loadingConstraints" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
                                             <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
+                                            <FormLabel className="font-medium text-[10px] cursor-pointer text-left">{item}</FormLabel>
                                         </FormItem>
                                     )} />
                                 ))}
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="space-y-4">
-                                <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Weight className="h-5 w-5 text-primary" /> Volume Declaration</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><Weight className="h-5 w-5 text-primary" /> Volume Declaration</h3>
                                 <FormField control={form.control} name="approxMonthlyLoads" render={({ field }) => (
-                                    <FormItem className="max-w-xs">
+                                    <FormItem className="max-w-xs text-left">
                                         <FormLabel>Approx. Loads per Month</FormLabel>
                                         <FormControl><Input type="number" placeholder="e.g. 10" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="space-y-4">
-                                <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Clock className="h-5 w-5 text-primary" /> Site Operating Hours</h3>
+                            <div className="space-y-4 text-left">
+                                <h3 className="font-bold flex items-center gap-2 text-lg text-foreground text-left"><Clock className="h-5 w-5 text-primary" /> Site Operating Hours</h3>
                                 <FormField control={form.control} name="operatingHours" render={({ field }) => (
-                                    <FormItem className="max-w-xs">
+                                    <FormItem className="max-w-xs text-left">
                                         <FormLabel>Daily Receiving Hours</FormLabel>
                                         <FormControl><Input placeholder="e.g. 08:00 - 16:30" {...field} /></FormControl>
                                         <FormMessage />
@@ -162,9 +163,9 @@ export default function NeedsContent() {
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
-                        <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
+                    <CardFooter className="bg-slate-50 border-t p-6 flex justify-end text-left">
+                        <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2 text-left">
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin text-left"/> : <Save className="h-5 w-5 text-left" />}
                             Update Shipping Profile
                         </Button>
                     </CardFooter>
@@ -173,3 +174,4 @@ export default function NeedsContent() {
         </Card>
     );
 }
+    
