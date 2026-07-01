@@ -82,26 +82,18 @@ export async function copyHtmlToClipboard(html: string, plainText?: string) {
 export function downloadDataAsCSV(data: any[], filename: string) {
     if (!data || data.length === 0) return;
     
-    // Extract headers from the first object
     const headers = Object.keys(data[0]);
     
     const csvContent = [
-        headers.join(','), // Header row
+        headers.join(','),
         ...data.map(row => headers.map(fieldName => {
             let value = row[fieldName];
-            
-            // Handle null/undefined
             if (value === null || value === undefined) return '';
-            
-            // Handle objects (like Timestamps)
             if (typeof value === 'object') {
                 if (value.toDate) value = value.toDate().toISOString();
                 else value = JSON.stringify(value);
             }
-            
             let stringValue = String(value);
-            
-            // Escape quotes and wrap in quotes if contains comma, newline or quote
             if (/[",\n]/.test(stringValue)) {
                 stringValue = `"${stringValue.replace(/"/g, '""')}"`;
             }

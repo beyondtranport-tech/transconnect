@@ -40,6 +40,9 @@ import {
   Share2,
   Landmark,
   ClipboardList,
+  Settings,
+  Banknote,
+  Lock,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';

@@ -277,8 +277,8 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
             notes: logData.notes,
         });
 
-        const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
-        const success = await copyHtmlToClipboard(wrappedHtml);
+        // Use the resilient utility to avoid the constructor error
+        const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) throw new Error("Copy failed.");
 
         toast({ title: 'Logged and Copied!', description: 'Interaction recorded. Opening Gmail...' });
@@ -308,7 +308,7 @@ function MarketingPageContent({ audience }: MarketingPageProps) {
                 <div className="bg-primary/10 p-3 rounded-lg">
                     {AudienceIcon && React.createElement(AudienceIcon, { className: "h-6 w-6 text-primary" })}
                 </div>
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-2xl font-bold">Marketing Library: {audienceConfig[audience].title}</h1>
                     <p className="text-muted-foreground">Manage forensic records and browse engagement materials.</p>
                 </div>

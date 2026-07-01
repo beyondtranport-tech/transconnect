@@ -234,9 +234,9 @@ export default function LendingParametersContent() {
                                     <CardTitle className="text-lg flex items-center gap-2"><Banknote className="h-5 w-5 text-primary"/> Agreement & Asset Portfolio</CardTitle>
                                     <CardDescription>Select the types of agreements you offer and the physical assets you will finance.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-10 text-left">
+                                <CardContent className="space-y-10 text-left text-foreground">
                                     {/* Agreement Products */}
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 text-left">
                                         <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Lending Agreement Products</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {appTypeOptions.map(item => (
@@ -253,7 +253,7 @@ export default function LendingParametersContent() {
                                     <Separator />
 
                                     {/* Asset Categories */}
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 text-left">
                                         <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><Package className="h-4 w-4" /> Industrial Asset Specialization</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {supplierCategories.map(item => (
@@ -270,7 +270,7 @@ export default function LendingParametersContent() {
                                     <Separator />
 
                                     {/* Brands */}
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 text-left">
                                         <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><Sparkles className="h-4 w-4" /> Preferred Truck Brands</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {brandOptions.map(item => (
@@ -287,7 +287,7 @@ export default function LendingParametersContent() {
                                     <Separator />
 
                                     {/* Regions */}
-                                    <div className="space-y-4">
+                                    <div className="space-y-4 text-left">
                                         <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-2"><MapPin className="h-4 w-4" /> Funding Regions</Label>
                                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                                             {regionOptions.map(item => (
