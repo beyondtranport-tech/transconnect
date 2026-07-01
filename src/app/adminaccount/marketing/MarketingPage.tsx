@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy, Mail, ExternalLink } from 'lucide-react';
+import { Loader2, ClipboardCopy, Mail } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ import * as z from 'zod';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard } from '@/lib/utils';
 
-// Content components using absolute paths
+// Content components
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
 const TechArchitecture = dynamic(() => import('@/app/adminaccount/marketing/content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
 const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -241,7 +241,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
-        // OVERRIDE: Using resilient utility to avoid ClipboardItem illegal constructor
+        // OVERRIDE: Using resilient utility to avoid ClipboardItem constructor crash
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
             throw new Error('Clipboard operation failed.');

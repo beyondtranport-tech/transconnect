@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, Briefcase, History } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, Briefcase, History, Package, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -26,6 +26,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
+import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 
 const fundingNeeds = {
   'business': 'Working Capital / Business Loan',
@@ -51,11 +52,15 @@ const creditRatings = [
     { value: 'poor', label: 'Poor (Active judgments or defaults)' },
 ];
 
+const brandOptions = ['Scania', 'Volvo', 'Mercedes-Benz', 'MAN', 'Freightliner', 'Iveco', 'DAF', 'UD Trucks', 'Isuzu', 'Hino', 'Toyota (Bakkie)', 'Universal/All'];
+const termOptions = ['1-12 Months', '12-24 Months', '24-36 Months', '36-48 Months', '48-60 Months', '60-72+ Months'];
+
 const baseSchema = z.object({
   fundingNeed: z.string().min(1, 'Please select what you need funds for.'),
   fundingReason: z.string().min(1, 'Please select a reason.'),
   purpose: z.string().min(10, 'Please provide more detail.'),
   amountRequested: z.coerce.number().positive('Please enter a valid amount.'),
+  preferredTerm: z.string().min(1, 'Required.'),
   
   // Forensic Variables for Matching
   entityType: z.string().min(1, 'Please select your entity type.'),
@@ -66,6 +71,9 @@ const baseSchema = z.object({
   hasJudgements: z.boolean().default(false),
   hasDefaults: z.boolean().default(false),
   hasArrears: z.boolean().default(false),
+
+  assetCategory: z.string().optional(),
+  assetBrand: z.string().optional(),
 
   foundVehicle: z.enum(['yes', 'no']).optional(),
   vehicleType: z.enum(['powered', 'trailer']).optional(),
@@ -93,8 +101,9 @@ const staticSteps = [
   { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
   { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating'] },
   { id: 'History', name: 'Step 3: Credit History', fields: ['hasJudgements', 'hasDefaults', 'hasArrears'] },
-  { id: 'Reason', name: 'Step 4: The Reason', fields: ['fundingReason', 'purpose'] },
-  { id: 'Amount', name: 'Step 5: The Amount', fields: ['amountRequested'] },
+  { id: 'Asset', name: 'Step 4: Asset Specifics', fields: ['assetCategory', 'assetBrand'] },
+  { id: 'Reason', name: 'Step 5: The Reason', fields: ['fundingReason', 'purpose'] },
+  { id: 'Amount', name: 'Step 6: Amount & Terms', fields: ['amountRequested', 'preferredTerm'] },
   { id: 'Submit', name: 'Final Step: Review' },
 ];
 
@@ -128,11 +137,14 @@ function ApplyForm() {
     defaultValues: {
       fundingNeed: searchParams.get('type') || '',
       amountRequested: Number(searchParams.get('amount')) || 0,
+      preferredTerm: '',
       yearsInBusiness: 0,
       annualTurnover: 0,
       hasJudgements: false,
       hasDefaults: false,
       hasArrears: false,
+      assetCategory: '',
+      assetBrand: ''
     },
   });
 
@@ -144,13 +156,13 @@ function ApplyForm() {
 
   const fundingNeed = methods.watch('fundingNeed');
 
-  const dynamicSteps = React.useMemo(() => {
+  const dynamicSteps = useMemo(() => {
     const steps = [...staticSteps];
     if (fundingNeed === 'vehicles') {
-        const vehicleSteps = [{ id: 'Vehicle', name: 'Step 3: Vehicle Status', fields: ['foundVehicle'] }];
-        steps.splice(2, 0, ...vehicleSteps);
+        const vehicleSteps = [{ id: 'Vehicle', name: 'Step 3.5: Vehicle Status', fields: ['foundVehicle'] }];
+        steps.splice(3, 0, ...vehicleSteps);
     }
-    return steps.map((step, index) => ({...step, name: step.name.replace(/Step \d+|Final Step/, `Step ${index + 1}`)}));
+    return steps.map((step, index) => ({...step, name: step.name.replace(/Step \d+(\.\d+)?|Final Step/, `Step ${index + 1}`)}));
   }, [fundingNeed]);
 
   const processStep = async () => {
@@ -231,23 +243,45 @@ function ApplyForm() {
             {currentStepConfig.id === 'History' && (
                 <div className="space-y-4 text-left">
                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
-                    <p className="text-sm text-muted-foreground mb-4 text-left">Please disclose any active or previous credit constraints. Our matching engine selects lenders based on this criteria.</p>
+                    <p className="text-sm text-muted-foreground mb-4 text-left">Please disclose any active or previous credit constraints.</p>
                     <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Do you have active judgements?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Active judgements?</FormLabel>
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Do you have active defaults?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Active defaults?</FormLabel>
                         </FormItem>
                     )} />
-                    <FormField control={methods.control} name="hasArrears" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md text-left">
-                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs cursor-pointer text-left">Do you have accounts currently in arrears?</FormLabel>
+                </div>
+            )}
+
+            {currentStepConfig.id === 'Asset' && (
+                <div className="space-y-6 text-left">
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><Package className="h-5 w-5 text-primary"/> Asset Specifics</h3>
+                    <FormField control={methods.control} name="assetCategory" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel>Industrial Category</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select asset type..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </FormItem>
+                    )} />
+                    <FormField control={methods.control} name="assetBrand" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel>Preferred Brand</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select brand..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {brandOptions.map(brand => <SelectItem key={brand} value={brand}>{brand}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                         </FormItem>
                     )} />
                 </div>
@@ -257,7 +291,7 @@ function ApplyForm() {
                 <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="fundingReason" render={({ field }) => (
                         <FormItem className="space-y-3 text-left">
-                          <FormLabel className="font-bold">Is this to solve a problem or capture an opportunity?</FormLabel>
+                          <FormLabel className="font-bold">Is this for problem solving or capturing opportunity?</FormLabel>
                           <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1 text-left">
                                 <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="problem" /></FormControl><FormLabel className="font-normal cursor-pointer">Problem / Recovery</FormLabel></FormItem>
@@ -271,13 +305,25 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'Amount' && (
-                 <FormField control={methods.control} name="amountRequested" render={({ field }) => (
-                    <FormItem className="text-left">
-                      <FormLabel className="text-lg font-bold">Estimated Amount (ZAR)</FormLabel>
-                      <FormControl><Input type="number" className="h-12 text-xl font-mono" placeholder="500000" {...field} /></FormControl>
-                      <FormDescription>This drives the initial lender pool selection.</FormDescription>
-                    </FormItem>
-                  )} />
+                <div className="space-y-6 text-left">
+                    <FormField control={methods.control} name="amountRequested" render={({ field }) => (
+                        <FormItem className="text-left">
+                        <FormLabel className="text-lg font-bold">Estimated Amount (ZAR)</FormLabel>
+                        <FormControl><Input type="number" className="h-12 text-xl font-mono" placeholder="500000" {...field} /></FormControl>
+                        </FormItem>
+                    )} />
+                    <FormField control={methods.control} name="preferredTerm" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel>Preferred Repayment Term</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Select term..." /></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {termOptions.map(term => <SelectItem key={term} value={term}>{term}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </FormItem>
+                    )} />
+                </div>
             )}
             
             <div className="flex justify-between items-center pt-6 border-t text-left">
