@@ -176,7 +176,7 @@ function AccountPageContent() {
       <AIChatWidget />
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2 text-left">
+          <div className="flex items-center gap-2 p-2">
             <div className="bg-primary/10 p-2 rounded-full"><User className="h-6 w-6 text-primary" /></div>
             <h2 className="text-lg font-semibold text-sidebar-foreground">{isAssociate ? 'Partner Area' : 'Member Area'}</h2>
           </div>
@@ -320,7 +320,7 @@ function AccountPageContent() {
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left">
+            <div className="flex flex-col truncate">
                 <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Member'}</span>
                 <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
             </div>
