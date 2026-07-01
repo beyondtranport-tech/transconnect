@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense, useEffect } from 'react';
+import { useState, Suspense, useEffect, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, Lock, ShoppingCart, Truck, ShieldCheck, Briefcase, Bot, Users, Code, ArrowRight } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Lock, ArrowRight } from 'lucide-react';
 import { roles } from '@/lib/roles';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -69,6 +69,14 @@ function JoinFormComponent() {
   const firstNameParam = searchParams.get('firstName');
   const lastNameParam = searchParams.get('lastName');
   const phoneParam = searchParams.get('phone');
+  const isRestricted = searchParams.get('restricted') === 'true';
+
+  const displayedRoles = useMemo(() => {
+    if (isRestricted) {
+        return roles.filter(r => r.id === 'vendor' || r.id === 'transporter');
+    }
+    return roles;
+  }, [isRestricted]);
 
   useEffect(() => {
     if (authActionInitiated && !isUserLoading && user?.uid && user?.companyId) {
@@ -163,14 +171,18 @@ function JoinFormComponent() {
       return (
           <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16 text-left">
           <Card className="w-full max-w-2xl text-left border-none shadow-2xl overflow-hidden">
-            <CardHeader className="text-center bg-slate-900 text-white p-10">
+            <CardHeader className="text-center bg-slate-900 text-white p-10 text-left">
                 <CardTitle className="text-3xl font-black font-headline text-left">Secure Your Digital Node</CardTitle>
-                <CardDescription className="text-slate-400 mt-2 text-left">Select your primary function to optimize your ecosystem experience.</CardDescription>
+                <CardDescription className="text-slate-400 mt-2 text-left">
+                    {isRestricted 
+                        ? "Select your business type to access specialized industry funding." 
+                        : "Select your primary function to optimize your ecosystem experience."}
+                </CardDescription>
             </CardHeader>
             <CardContent className="p-8">
                 <ScrollArea className="h-[50vh] pr-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
-                        {roles.map((role) => {
+                        {displayedRoles.map((role) => {
                             const Icon = role.icon;
                             const isSupplier = role.id === 'vendor';
                             return (

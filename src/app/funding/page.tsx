@@ -65,7 +65,8 @@ export default function FundingPage() {
     }
 
     // Direct path for applications starting here
-    const ctaLink = user ? '/funding/apply?origination=direct' : '/join?redirect=/funding/apply?origination=direct';
+    // Restricted to Transporters and Suppliers (Vendors)
+    const ctaLink = user ? '/funding/apply?origination=direct' : `/join?restricted=true&redirect=${encodeURIComponent('/funding/apply?origination=direct')}`;
 
     return (
         <div className="text-left">
