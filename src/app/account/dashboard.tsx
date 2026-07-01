@@ -4,14 +4,14 @@
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy } from "lucide-react";
-import { doc } from 'firebase/firestore';
+import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock } from "lucide-react";
+import { doc, collection, query, limit } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
 import { cn, formatCurrency } from '@/lib/utils';
-import { useMemoFirebase } from '@/firebase';
+import { useMemoFirebase, useCollection } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
 
@@ -41,6 +41,12 @@ export default function AccountDashboard() {
     }, [firestore, userData?.companyId]);
 
     const { data: companyData, isLoading: isCompanyLoading, error } = useDoc(companyDocRef);
+
+    const facilitiesQuery = useMemoFirebase(() => {
+        if (!firestore || !userData?.companyId) return null;
+        return query(collection(firestore, `companies/${userData.companyId}/facilities`), limit(5));
+    }, [firestore, userData?.companyId]);
+    const { data: facilities, isLoading: isFacilitiesLoading } = useCollection(facilitiesQuery);
     
     const isFreeMember = companyData?.membershipId === 'free' || !companyData?.membershipId;
     
@@ -118,7 +124,7 @@ export default function AccountDashboard() {
             {isAdmin && (
                  <Card className="border-primary bg-primary/5 text-left text-foreground">
                     <CardHeader className="text-left">
-                        <div className="flex items-center gap-4 text-left text-foreground">
+                        <div className="flex items-center gap-4 text-left text-foreground text-foreground">
                             <ShieldCheck className="h-10 w-10 text-primary" />
                             <div className="text-left text-foreground">
                                 <CardTitle className="text-2xl text-left text-foreground">Administrator Account</CardTitle>
@@ -277,7 +283,7 @@ export default function AccountDashboard() {
                                 </CardFooter>
                             </Card>
 
-                            <Card className="border-blue-200 bg-blue-50/30 shadow-md flex flex-col text-left">
+                            <Card className="border-blue-200 bg-blue-50/30 shadow-md flex flex-col text-left text-foreground">
                                 <CardHeader className="pb-2 text-left">
                                     <div className="flex items-center gap-3 text-left">
                                         <div className="bg-blue-100 p-2 rounded-lg text-left"><Globe className="h-5 w-5 text-blue-600" /></div>
@@ -299,39 +305,88 @@ export default function AccountDashboard() {
                         </div>
                     </div>
 
-                    <Card className="text-left shadow-sm text-foreground">
-                        <CardHeader className="text-left bg-slate-50 border-b text-foreground">
-                            <CardTitle className="flex items-center gap-2 text-left text-foreground">
-                                <Award className="h-5 w-5 text-primary" />
-                                My Loyalty Benefits
-                            </CardTitle>
-                            <CardDescription className="text-left text-foreground">
-                                You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="text-left p-6 text-foreground">
-                            {userBenefits.length > 0 ? (
-                                <ul className="space-y-3 text-left text-foreground">
-                                    {userBenefits.map((benefit: any) => (
-                                        <li key={benefit.name} className="flex items-center gap-3 text-left">
-                                            <CheckCircle className="h-5 w-5 text-green-500" />
-                                            <span className="font-medium text-sm">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-muted-foreground text-sm text-left italic text-foreground">No benefits are currently configured for your tier.</p>
-                            )}
-                        </CardContent>
-                        <CardFooter className="text-left border-t pt-4">
-                            <Button variant="outline" size="sm" asChild>
-                                <Link href="/connect?view=rewards">View Rewards Store</Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                        <Card className="text-left shadow-sm text-foreground">
+                            <CardHeader className="text-left bg-slate-50 border-b text-foreground">
+                                <CardTitle className="flex items-center gap-2 text-left text-foreground">
+                                    <Landmark className="h-5 w-5 text-primary" />
+                                    Issued Funding Facilities
+                                </CardTitle>
+                                <CardDescription className="text-left text-foreground">
+                                    Active capital offers issued to your business.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-6 text-left text-foreground">
+                                {isFacilitiesLoading ? <Loader2 className="animate-spin h-6 w-6 text-primary"/> : (
+                                    facilities && facilities.length > 0 ? (
+                                        <div className="space-y-4 text-left text-foreground">
+                                            {facilities.map((f: any) => (
+                                                <div key={f.id} className="flex justify-between items-center p-3 border rounded-lg bg-white shadow-sm text-left">
+                                                    <div className="text-left">
+                                                        <p className="font-bold text-sm capitalize text-left">{f.type?.replace(/_/g, ' ')}</p>
+                                                        {isFreeMember && !isAdmin ? (
+                                                            <div className="flex items-center gap-1.5 mt-1 text-left">
+                                                                <Lock className="h-3 w-3 text-amber-600"/>
+                                                                <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest text-left">Terms Restricted</span>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-xs font-mono font-bold text-primary text-left">{formatCurrency(f.limit)}</p>
+                                                        )}
+                                                    </div>
+                                                    <Button variant="ghost" size="sm" asChild className="text-[10px] font-black uppercase h-8 px-3 text-left">
+                                                        <Link href="/account?view=my-facilities">Manage <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-6 border-2 border-dashed rounded-lg opacity-40">
+                                            <p className="text-xs font-bold uppercase tracking-widest">No Facilities Issued</p>
+                                        </div>
+                                    )
+                                )}
+                            </CardContent>
+                            <CardFooter className="border-t pt-4">
+                                <Button variant="outline" size="sm" asChild className="w-full font-bold h-9">
+                                    <Link href="/account?view=my-facilities">View All Facilities</Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+
+                        <Card className="text-left shadow-sm text-foreground">
+                            <CardHeader className="text-left bg-slate-50 border-b text-foreground text-foreground">
+                                <CardTitle className="flex items-center gap-2 text-left text-foreground">
+                                    <Award className="h-5 w-5 text-primary" />
+                                    My Loyalty Benefits
+                                </CardTitle>
+                                <CardDescription className="text-left text-foreground">
+                                    You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="text-left p-6 text-foreground">
+                                {userBenefits.length > 0 ? (
+                                    <ul className="space-y-3 text-left text-foreground text-foreground">
+                                        {userBenefits.map((benefit: any) => (
+                                            <li key={benefit.name} className="flex items-center gap-3 text-left">
+                                                <CheckCircle className="h-5 w-5 text-green-500" />
+                                                <span className="font-medium text-sm text-left">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-muted-foreground text-sm text-left italic text-foreground">No benefits are currently configured for your tier.</p>
+                                )}
+                            </CardContent>
+                            <CardFooter className="text-left border-t pt-4">
+                                <Button variant="outline" size="sm" asChild className="w-full font-bold h-9">
+                                    <Link href="/connect?view=rewards">Open Rewards Store</Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    </div>
 
                     <Card className="text-left border-primary/20 bg-primary/5 text-foreground">
-                        <CardHeader className="text-left text-foreground">
+                        <CardHeader className="text-left text-foreground text-foreground text-left">
                             <CardTitle className="flex items-center gap-2 text-left text-foreground"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
                         </CardHeader>
                         <CardContent className="text-left text-foreground">
@@ -353,4 +408,3 @@ export default function AccountDashboard() {
         </div>
     );
 }
-    

@@ -80,6 +80,7 @@ import SocialStudio from '@/app/adminaccount/social-studio';
 import MarketingStudio from './marketing-studio';
 import LendingParametersContent from './lending-parameters-content';
 import LenderDeskContent from './lender-desk-content';
+import MyFacilitiesContent from './facilities-content';
 
 function AccountPageContent() {
   const router = useRouter();
@@ -130,7 +131,7 @@ function AccountPageContent() {
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
   const isCargoOwner = !isTransporter && !isSupplier && !isProfessional && !isAssociate && !isLender;
   
-  const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk'].includes(activeView);
+  const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk', 'my-facilities'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
   const isSocialActive = activeView.startsWith('social-');
 
@@ -242,6 +243,7 @@ function AccountPageContent() {
                     ) : (
                         <>
                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users className="h-3.5 w-3.5" />My Network</SidebarMenuSubButton></SidebarMenuSubItem>
+                           <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'my-facilities'} onClick={() => navigate('my-facilities')}><Landmark className="h-3.5 w-3.5" />My Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                            {!isAssociate && (
                                <>
                                 <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'performance'} onClick={() => navigate('performance')}><TrendingUp className="h-3.5 w-3.5" />Performance</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -335,6 +337,7 @@ function AccountPageContent() {
             {activeView === 'connect-actions' && <ActionsPlanPage />}
             {activeView === 'search-history' && <IntelligenceHistory />}
             {activeView === 'marketing-studio' && <MarketingStudio />}
+            {activeView === 'my-facilities' && <MyFacilitiesContent />}
             {activeView.startsWith('social-') && <SocialStudio platform={activeView.split('-')[1] as any} />}
         </div>
       </SidebarInset>
@@ -354,4 +357,3 @@ export default function AccountPage() {
     </Suspense>
   );
 }
-    

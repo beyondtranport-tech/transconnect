@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -32,21 +33,35 @@ export async function POST(req: NextRequest) {
 
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' || 
+                        decodedToken.email === 'beyondtransport@gmail.com' ||
                         decodedToken.email === 'michael@logisticsflow.co.za' ||
                         decodedToken.admin === true;
-
-        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         const body = await req.json();
         const action = (body.action || '').trim();
         const payload = body.payload || {};
 
         switch (action) {
-            case 'searchRegistry': {
-                const { type, term, limit = 1000 } = payload;
-                let results: any[] = [];
+            case 'getMemberFacilities': {
+                const { companyId } = payload;
+                if (!companyId) throw new Error("companyId required.");
                 
-                // Unified Registry Fetch
+                // Security: User can only fetch their own company unless admin
+                if (decodedToken.uid !== companyId) {
+                    const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+                    if (userDoc.data()?.companyId !== companyId && !isAdmin) {
+                        throw new Error("Forbidden: Cross-company access denied.");
+                    }
+                }
+
+                const snap = await db.collection(`companies/${companyId}/facilities`).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'searchRegistry': {
+                if (!isAdmin) throw new Error("Admin access required.");
+                const { type, term, limit = 1000 } = payload;
+                
                 const leadsSnap = await db.collection('leads').limit(limit).get();
                 const partnersSnap = await db.collection('partners').limit(limit).get();
 
@@ -55,8 +70,7 @@ export async function POST(req: NextRequest) {
                     ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
                 ];
 
-                // Filtering logic
-                results = allRecords.filter(r => {
+                const results = allRecords.filter(r => {
                     const matchesType = !type || type === 'all' || r.type === type;
                     const matchesTerm = !term || (
                         (r.companyName || '').toLowerCase().includes(term.toLowerCase()) ||
@@ -68,21 +82,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'getPartnersByType': {
-                const { type } = payload;
-                // Query both leads and partners to find matches for the requested type
-                const pSnap = await db.collection('partners').where('type', '==', type).get();
-                const lSnap = await db.collection('leads').where('type', '==', type).get();
-                
-                const results = [
-                    ...pSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() })),
-                    ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))
-                ];
-                
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
-            }
-
             case 'getMembers': {
+                if (!isAdmin) throw new Error("Admin access required.");
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').get();
                 const members = await Promise.all(snap.docs.map(async (doc) => {
                     const data = doc.data();
@@ -100,11 +101,13 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
+                if (!isAdmin) throw new Error("Admin access required.");
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'savePartner': {
+                if (!isAdmin) throw new Error("Admin access required.");
                 const { partner, collection: targetColl = 'partners' } = payload;
                 const id = partner.id || db.collection(targetColl).doc().id;
                 const ref = db.collection(targetColl).doc(id);
@@ -112,14 +115,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'deletePartner': {
-                const { partnerId, source = 'Partner' } = payload;
-                const coll = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
             case 'logCommunication': {
+                if (!isAdmin) throw new Error("Admin access required.");
                 const { partnerId, subject, notes, collection: providedColl } = payload;
                 const targetColl = providedColl || 'partners';
                 const parentRef = db.collection(targetColl).doc(partnerId);
@@ -141,11 +138,13 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getPlatformStaff': {
+                if (!isAdmin) throw new Error("Admin access required.");
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getAuditLogs': {
+                if (!isAdmin) throw new Error("Admin access required.");
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
