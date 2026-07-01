@@ -191,7 +191,7 @@ function ApplyForm() {
   return (
     <Card className="w-full max-w-2xl shadow-xl text-left">
       <CardHeader className="bg-slate-900 text-white rounded-t-xl text-left">
-        <CardTitle className="flex items-center gap-2 text-left"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
+        <CardTitle className="flex items-center gap-2 text-left text-white"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
         <CardDescription className="text-slate-400 text-left">{currentStepConfig.name}</CardDescription>
       </CardHeader>
       <CardContent className="p-8 text-left">
@@ -230,24 +230,24 @@ function ApplyForm() {
 
             {currentStepConfig.id === 'History' && (
                 <div className="space-y-4 text-left">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
                     <p className="text-sm text-muted-foreground mb-4">Please disclose any active or previous credit constraints. Our matching engine selects lenders based on this criteria.</p>
                     <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs">Do you have active judgements?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer">Do you have active judgements?</FormLabel>
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs">Do you have active defaults?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer">Do you have active defaults?</FormLabel>
                         </FormItem>
                     )} />
                     <FormField control={methods.control} name="hasArrears" render={({ field }) => (
                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
                             <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="font-medium text-xs">Do you have accounts currently in arrears?</FormLabel>
+                            <FormLabel className="font-medium text-xs cursor-pointer">Do you have accounts currently in arrears?</FormLabel>
                         </FormItem>
                     )} />
                 </div>
@@ -256,17 +256,17 @@ function ApplyForm() {
             {currentStepConfig.id === 'Reason' && (
                 <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="fundingReason" render={({ field }) => (
-                        <FormItem className="space-y-3">
+                        <FormItem className="space-y-3 text-left">
                           <FormLabel className="font-bold">Is this to solve a problem or capture an opportunity?</FormLabel>
                           <FormControl>
                             <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-1">
-                                <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="problem" /></FormControl><FormLabel className="font-normal">Problem / Recovery</FormLabel></FormItem>
-                                <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="opportunity" /></FormControl><FormLabel className="font-normal">Growth / Opportunity</FormLabel></FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="problem" /></FormControl><FormLabel className="font-normal cursor-pointer">Problem / Recovery</FormLabel></FormItem>
+                                <FormItem className="flex items-center space-x-3 space-y-0"><FormControl><RadioGroupItem value="opportunity" /></FormControl><FormLabel className="font-normal cursor-pointer">Growth / Opportunity</FormLabel></FormItem>
                             </RadioGroup>
                           </FormControl>
                         </FormItem>
                       )} />
-                    <FormField control={methods.control} name="purpose" render={({ field }) => (<FormItem><FormLabel>Brief Technical Summary</FormLabel><FormControl><Textarea placeholder="Explain exactly how these funds will be deployed..." {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={methods.control} name="purpose" render={({ field }) => (<FormItem className="text-left"><FormLabel>Brief Technical Summary</FormLabel><FormControl><Textarea placeholder="Explain exactly how these funds will be deployed..." {...field} /></FormControl><FormMessage /></FormItem>)} />
                 </div>
             )}
 

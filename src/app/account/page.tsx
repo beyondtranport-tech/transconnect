@@ -157,7 +157,7 @@ function AccountPageContent() {
 
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
   const isSupplier = user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor';
-  const isLender = user.declaredPosition === 'lender' || user.role === 'lender';
+  const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
   const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
   
@@ -294,22 +294,9 @@ function AccountPageContent() {
                 </SidebarMenuItem>
               )}
           </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
-            <Avatar className="h-10 w-10">
-              <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col truncate text-left text-foreground">
-              <span className="text-sm font-medium text-sidebar-foreground truncate">{user.displayName}</span>
-              <span className="text-xs text-sidebar-foreground/70 truncate">{user.email}</span>
-            </div>
-            <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout}><LogOut className="h-5 w-5" /></Button>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset><div className="p-4 md:p-6">{renderContent()}</div></SidebarInset>
-    </SidebarProvider>
+        </Sidebar>
+        <SidebarInset><div className="p-4 md:p-6">{renderContent()}</div></SidebarInset>
+      </SidebarProvider>
   );
 }
 
