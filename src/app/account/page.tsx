@@ -125,7 +125,7 @@ function AccountPageContent() {
       case 'professional-profile': return <HumanCapitalContent />;
       case 'staff': return <StaffContent />;
       case 'shop': return <ShopContent />;
-      case 'lending-parameters': return <LendingParametersContent />;
+      case 'lending-focus': return <LendingParametersContent />;
       case 'load-board': return <LoadBoardContent />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
@@ -187,7 +187,7 @@ function AccountPageContent() {
 
               {isLender && (
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Lending Focus & Portfolio" isActive={activeView === 'lending-parameters'} onClick={() => navigate('lending-parameters')}><Landmark /><span>Lending Focus & Portfolio</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Lending Focus" isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}><Landmark /><span>Lending Focus</span></SidebarMenuButton>
                 </SidebarMenuItem>
               )}
               

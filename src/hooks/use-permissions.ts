@@ -30,7 +30,7 @@ export type Resource =
     'permissions' |
     'social' |
     'marketing-studio' |
-    'lending-params' |
+    'lending-focus' |
     'account';
 
 // `manage` implies all other actions
@@ -79,14 +79,14 @@ export function usePermissions() {
         const isWctaMember = user.companyData?.referrerId === 'WCTA';
         const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
         const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
-        const isLender = user.declaredPosition === 'lender' || user.role === 'lender';
+        const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
 
-        // Associate Specific Permissions: They get the Content Studios
+        // Associate Specific Permissions
         if (isAssociate) {
             perms.add('view:social');
             perms.add('manage:marketing-studio');
             perms.add('manage:social');
-            perms.add('manage:shop'); // Associates need to manage their shop/profile
+            perms.add('manage:shop');
             perms.add('manage:products');
         }
 
@@ -98,7 +98,7 @@ export function usePermissions() {
         }
 
         if (isLender) {
-            perms.add('manage:lending-params');
+            perms.add('manage:lending-focus');
         }
 
         if (isPaidMember || isWctaMember) {

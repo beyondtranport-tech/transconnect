@@ -10,9 +10,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users, Briefcase, Star } from 'lucide-react';
+import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users, Briefcase, Star, Package } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 
 const lendingSchema = z.object({
     appTypes: z.array(z.string()).min(1, "Select at least one agreement type."),
@@ -30,7 +32,6 @@ const lendingSchema = z.object({
 });
 
 const appTypeOptions = ['Working Capital', 'Asset Finance', 'Personal Loan', 'Micro Loan', 'Factoring', 'Invoice Discounting', 'Bridge Finance'];
-const assetOptions = ['Trucks', 'Trailers', 'CNC Equipment', 'Computer Hardware', 'Automation', 'Production Line', 'Printing', 'CCTV/Security', 'Material Handling', 'Buses', 'Yellow Metal'];
 const termOptions = ['1-12 Months', '12-24 Months', '24-36 Months', '36-48 Months', '48-60 Months', '60-72+ Months'];
 const entityOptions = ['Ltd', 'Private Company (Pty Ltd)', 'Sole Proprietor', 'Close Corporation (CC)', 'Trust', 'Individual', 'Partnership'];
 
@@ -97,131 +98,165 @@ export default function LendingParametersContent() {
     if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
 
     return (
-        <Card className="max-w-4xl mx-auto shadow-xl text-left text-foreground">
-            <CardHeader className="border-b bg-muted/20 text-left">
-                <div className="flex items-center gap-4">
-                    <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
-                    <div className="text-left text-foreground">
-                        <CardTitle className="text-2xl font-bold">Lending Focus & Portfolio</CardTitle>
-                        <CardDescription>Define the forensic variables that drive your deal selection and matching engine.</CardDescription>
-                    </div>
+        <div className="space-y-6 text-left">
+            <div className="flex items-center gap-4 text-left">
+                <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-8 w-8 text-primary" /></div>
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline">Lending Focus & Portfolio</h1>
+                    <p className="text-muted-foreground">Define your credit appetite and the assets you are willing to finance.</p>
                 </div>
-            </CardHeader>
+            </div>
+
+            {!isPaid && (
+                <Alert className="bg-amber-50 border-amber-200 text-left">
+                    <Zap className="h-5 w-5 text-amber-600" />
+                    <AlertTitle className="font-bold text-amber-800 text-left">Draft Mode: Free Account</AlertTitle>
+                    <AlertDescription className="text-sm text-amber-700 leading-relaxed mt-1 text-left">
+                        You can configure your lending focus now, but your profile will only receive **Matched Enquiries** once you upgrade to a paid membership.
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
-                    <CardContent className="p-8 space-y-10 text-left">
-                        {!isPaid && (
-                            <Alert className="bg-amber-50 border-amber-200 text-left">
-                                <Zap className="h-5 w-5 text-amber-600" />
-                                <AlertTitle className="font-bold text-amber-800 text-left">Draft Mode: Free Account</AlertTitle>
-                                <AlertDescription className="text-sm text-amber-700 leading-relaxed mt-1 text-left">
-                                    You can configure your lending portfolio now, but your profile will only receive **Matched Enquiries** once you upgrade to a paid membership.
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                    <Tabs defaultValue="criteria" className="w-full">
+                        <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50">
+                            <TabsTrigger value="criteria" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Financial Criteria</TabsTrigger>
+                            <TabsTrigger value="risk" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Risk & Entity Focus</TabsTrigger>
+                            <TabsTrigger value="assets" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Asset & Product Focus</TabsTrigger>
+                        </TabsList>
 
-                        <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Banknote className="h-5 w-5 text-primary" /> Agreement Types</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                                {appTypeOptions.map(item => (
-                                    <FormField key={item} control={form.control} name="appTypes" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                            <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-xs cursor-pointer">{item}</FormLabel>
-                                        </FormItem>
-                                    )} />
-                                ))}
-                            </div>
-                        </div>
+                        <TabsContent value="criteria" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                             <Card>
+                                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Scale className="h-5 w-5 text-primary"/> Deal Size & Terms</CardTitle></CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                                    <div className="space-y-4 text-left">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Deal Amount Range (ZAR)</Label>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <FormField control={form.control} name="minDealSize" render={({ field }) => (
+                                                <FormItem><FormLabel>Minimum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                            )} />
+                                            <FormField control={form.control} name="maxDealSize" render={({ field }) => (
+                                                <FormItem><FormLabel>Maximum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                            )} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4 text-left">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Annual Turnover Required (R)</Label>
+                                        <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
+                                            <FormItem><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} /></FormControl></FormItem>
+                                        )} />
+                                    </div>
+                                </CardContent>
+                                <CardContent className="space-y-4 text-left border-t pt-6">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Preferred Terms</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                                        {termOptions.map(item => (
+                                            <FormField key={item} control={form.control} name="preferredTerms" render={({ field }) => (
+                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                                    <FormLabel className="font-medium text-[10px] cursor-pointer leading-tight">{item}</FormLabel>
+                                                </FormItem>
+                                            )} />
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                        <div className="space-y-4">
-                            <h3 className="font-bold flex items-center gap-2 text-lg text-foreground"><Briefcase className="h-5 w-5 text-primary" /> Asset Specialization</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {assetOptions.map(item => (
-                                    <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                            <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-[10px] cursor-pointer leading-tight">{item}</FormLabel>
-                                        </FormItem>
-                                    )} />
-                                ))}
-                            </div>
-                        </div>
+                        <TabsContent value="risk" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                             <Card>
+                                <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Users className="h-5 w-5 text-primary"/> Entity & History Focus</CardTitle></CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                                    <div className="space-y-4 text-left">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Entity Maturity</Label>
+                                        <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
+                                            <FormItem><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
+                                        )} />
+                                    </div>
+                                    <div className="space-y-4 text-left">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Credit History Focus</Label>
+                                        <div className="grid grid-cols-1 gap-2">
+                                            <FormField control={form.control} name="requiresNoJudgements" render={({ field }) => (
+                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                    <FormLabel className="font-medium text-xs">Must have no judgements</FormLabel>
+                                                </FormItem>
+                                            )} />
+                                            <FormField control={form.control} name="requiresNoDefaults" render={({ field }) => (
+                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                    <FormLabel className="font-medium text-xs">Must have no defaults</FormLabel>
+                                                </FormItem>
+                                            )} />
+                                        </div>
+                                    </div>
+                                </CardContent>
+                                <CardContent className="space-y-4 text-left border-t pt-6">
+                                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Target Entity Types</Label>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        {entityOptions.map(item => (
+                                            <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
+                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                                    <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
+                                                </FormItem>
+                                            )} />
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
 
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left text-foreground">
-                            <div className="space-y-4 md:col-span-2">
-                                <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><Scale className="h-5 w-5 text-primary"/> Deal Size Range (ZAR)</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="minDealSize" render={({ field }) => (
-                                        <FormItem><FormLabel>Minimum Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="maxDealSize" render={({ field }) => (
-                                        <FormItem><FormLabel>Maximum Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                                    )} />
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><Star className="h-5 w-5 text-primary"/> Credit Score</h3>
-                                <FormField control={form.control} name="minCreditScore" render={({ field }) => (
-                                    <FormItem><FormLabel>Min Acceptable Score</FormLabel><FormControl><Input type="number" placeholder="e.g. 600" {...field} /></FormControl></FormItem>
-                                )} />
-                            </div>
-                        </div>
+                        <TabsContent value="assets" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg flex items-center gap-2"><Banknote className="h-5 w-5 text-primary"/> Agreement & Asset Products</CardTitle>
+                                    <CardDescription>Select the types of agreements you offer and the physical assets you will finance.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-6 text-left">
+                                    <div className="space-y-4">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Lending Agreement Products</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {appTypeOptions.map(item => (
+                                                <FormField key={item} control={form.control} name="appTypes" render={({ field }) => (
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                                        <FormLabel className="font-medium text-xs cursor-pointer">{item}</FormLabel>
+                                                    </FormItem>
+                                                )} />
+                                            ))}
+                                        </div>
+                                    </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><TrendingUp className="h-5 w-5 text-primary"/> Risk Criteria</h3>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
-                                        <FormItem><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
-                                        <FormItem><FormLabel>Min Annual Turnover (R)</FormLabel><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} /></FormControl></FormItem>
-                                    )} />
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><History className="h-5 w-5 text-primary"/> Credit History Focus</h3>
-                                <div className="grid grid-cols-1 gap-2">
-                                    <FormField control={form.control} name="requiresNoJudgements" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
-                                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                            <FormLabel className="font-medium text-xs">Must have no judgements</FormLabel>
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="requiresNoDefaults" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
-                                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                            <FormLabel className="font-medium text-xs">Must have no defaults</FormLabel>
-                                        </FormItem>
-                                    )} />
-                                </div>
-                            </div>
-                        </div>
+                                    <Separator />
 
-                        <div className="space-y-4">
-                            <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><Users className="h-5 w-5 text-primary" /> Target Entity Types</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                {entityOptions.map(item => (
-                                    <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                            <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                            <FormLabel className="font-medium text-[10px] cursor-pointer">{item}</FormLabel>
-                                        </FormItem>
-                                    )} />
-                                ))}
-                            </div>
-                        </div>
+                                    <div className="space-y-4">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Industrial Asset Portfolio (Lender Specialization)</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {supplierCategories.map(item => (
+                                                <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
+                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
+                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                                        <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight">{item}</FormLabel>
+                                                    </FormItem>
+                                                )} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+                    </Tabs>
 
-                    </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
+                    <div className="bg-slate-50 border-t p-6 flex justify-end mt-8 rounded-lg shadow-inner">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
-                            Update Lending Portfolio
+                            Update Lending Focus
                         </Button>
-                    </CardFooter>
+                    </div>
                 </form>
             </Form>
-        </Card>
+        </div>
     );
 }
