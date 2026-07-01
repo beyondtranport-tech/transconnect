@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -46,26 +45,41 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { type, term, limit = 1000 } = payload;
                 let results: any[] = [];
-                if (type !== 'partner') {
-                    let leadsQ: any = db.collection('leads');
-                    if (term) leadsQ = leadsQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
-                    const leadsSnap = await leadsQ.limit(limit).get();
-                    results = [...results, ...leadsSnap.docs.map((d: any) => ({ id: d.id, source: 'Lead', ...d.data() }))];
-                }
-                if (type !== 'lead') {
-                    let partnersQ: any = db.collection('partners');
-                    if (type && type !== 'all' && type !== 'partner') partnersQ = partnersQ.where('type', '==', type);
-                    if (term) partnersQ = partnersQ.where('companyName', '>=', term).where('companyName', '<=', term + '\uf8ff');
-                    const partnersSnap = await partnersQ.limit(limit).get();
-                    results = [...results, ...partnersSnap.docs.map((d: any) => ({ id: d.id, source: 'Partner', ...d.data() }))];
-                }
+                
+                // Unified Registry Fetch
+                const leadsSnap = await db.collection('leads').limit(limit).get();
+                const partnersSnap = await db.collection('partners').limit(limit).get();
+
+                const allRecords = [
+                    ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
+                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
+                ];
+
+                // Filtering logic
+                results = allRecords.filter(r => {
+                    const matchesType = !type || type === 'all' || r.type === type;
+                    const matchesTerm = !term || (
+                        (r.companyName || '').toLowerCase().includes(term.toLowerCase()) ||
+                        (r.id || '').toLowerCase().includes(term.toLowerCase())
+                    );
+                    return matchesType && matchesTerm;
+                });
+
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
             case 'getPartnersByType': {
                 const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                // Query both leads and partners to find matches for the requested type
+                const pSnap = await db.collection('partners').where('type', '==', type).get();
+                const lSnap = await db.collection('leads').where('type', '==', type).get();
+                
+                const results = [
+                    ...pSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() })),
+                    ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))
+                ];
+                
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
             case 'getMembers': {

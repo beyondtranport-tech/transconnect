@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -66,7 +65,8 @@ import UsersList from '@/app/backend/users-list';
 import CommercialNegotiations from '@/app/backend/commercial-negotiations';
 import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
-import FinanceManagement from '@/app/adminaccount/marketing/finance-management';
+import LenderDeskContent from '@/app/account/lender-desk-content';
+import LendingParametersContent from '@/app/account/lending-parameters-content';
 
 // Platform Settings
 import PermissionsContent from '@/app/backend/permissions-content';
@@ -104,7 +104,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest">Verifying Admin Credentials...</p>
+                <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest text-center">Verifying Admin Credentials...</p>
             </div>
         );
     }
@@ -143,11 +143,12 @@ function BackendContent() {
       // Member Success & Growth
       case 'success-engine': return <MemberSuccessEngine />;
       case 'loyalty-overview': return <MemberLoyaltyStatus />;
+      case 'lender-desk': return <LenderDeskContent />;
+      case 'lending-focus': return <LendingParametersContent />;
       case 'contributions': return <ContributionsList />;
       case 'shops': return <ShopsList />;
       case 'commercial-negotiations': return <CommercialNegotiations />;
       case 'reconciliation': return <ReconciliationPage />;
-      case 'finance-registry': return <FinanceManagement />;
       
       // Platform Settings
       case 'permissions': return <PermissionsContent />;
@@ -183,7 +184,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
-  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations', 'finance-registry'].includes(activeView);
+  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations', 'lender-desk', 'lending-focus'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -197,9 +198,9 @@ function BackendContent() {
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-2 p-2">
+            <div className="flex items-center gap-2 p-2 text-left">
               <Shield className="h-6 w-6 text-primary" />
-              <h2 className="text-lg font-semibold text-sidebar-foreground">
+              <h2 className="text-lg font-semibold text-sidebar-foreground text-left">
                 Success & Growth
               </h2>
             </div>
@@ -226,9 +227,10 @@ function BackendContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Member Success" isActive={isSuccessActive}><TrendingUp /><span>Success Engine</span></SidebarMenuButton>
                     <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lender-desk'} onClick={() => navigate('lender-desk')}><Landmark />Lender Desk (CRM)</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}><Settings />Lending Focus</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'success-engine'} onClick={() => navigate('success-engine')}><PieChart />Conversion Engine</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-overview'} onClick={() => navigate('loyalty-overview')}><Award />Loyalty & Tiers</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'finance-registry'} onClick={() => navigate('finance-registry')}><Landmark />Finance Registry</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Data Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shop Management</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -267,11 +269,11 @@ function BackendContent() {
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col truncate">
-                  <span className="text-sm font-medium text-sidebar-foreground truncate">
+              <div className="flex flex-col truncate text-left">
+                  <span className="text-sm font-medium text-sidebar-foreground truncate text-left">
                   {user.displayName || 'Super Admin'}
                   </span>
-                  <span className="text-xs text-sidebar-foreground/70 truncate">
+                  <span className="text-xs text-sidebar-foreground/70 truncate text-left">
                   {user.email}
                   </span>
               </div>
@@ -289,7 +291,7 @@ function BackendContent() {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset>
-            <div className="p-6">
+            <div className="p-6 text-left">
                 <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
                     {renderContent()}
                 </Suspense>
@@ -303,7 +305,7 @@ function BackendContent() {
 
 export default function BackendPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
       <BackendContent />
     </Suspense>
   );

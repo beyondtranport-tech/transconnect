@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -125,7 +124,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                             <FormMessage />
                         </FormItem> 
                     )} />
-                     <DialogFooter className="pt-4 border-t text-left text-foreground">
+                     <DialogFooter className="pt-4 border-t text-left text-foreground text-left">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
@@ -151,7 +150,7 @@ export default function FinanceManagement() {
     try {
         const token = await getClientSideAuthToken();
         if (!token) return;
-        const res = await performAdminAction(token, 'searchRegistry', { type: 'finance', term: searchTerm, limit });
+        const res = await performAdminAction(token, 'getPartnersByType', { type: 'finance', limit });
         setAllRecords(res.data || []);
         setHasLoaded(true);
     } catch (e: any) {
@@ -159,7 +158,7 @@ export default function FinanceManagement() {
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, toast]);
+  }, [toast]);
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
@@ -258,13 +257,13 @@ export default function FinanceManagement() {
               <TabsTrigger value="oversight" className="gap-2"><Clock className="h-4 w-4" /> Oversight Timeline</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="crm" className="mt-6 space-y-6">
+          <TabsContent value="crm" className="mt-6 space-y-6 text-left">
               {!hasLoaded ? (
-                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Finance Registry Scan</h2>
-                      <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
-                      <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
+                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
+                      <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the capital database. Identify niche lenders and institutional partners.</p>
+                      <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
                           <Input placeholder="Search name or keywords..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
                           <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                               {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
@@ -274,27 +273,27 @@ export default function FinanceManagement() {
               ) : (
                   <Card className="text-left text-foreground">
                       <CardHeader className="flex flex-row items-center justify-between border-b text-left">
-                          <div>
-                              <CardTitle className="text-xl font-bold flex items-center gap-2"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
-                              <CardDescription>Managing {allRecords.length} verified funding nodes.</CardDescription>
+                          <div className="text-left text-foreground">
+                              <CardTitle className="text-xl font-bold flex items-center gap-2 text-left"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
+                              <CardDescription className="text-left">Managing {allRecords.length} verified funding nodes.</CardDescription>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 text-left">
                               <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)}><RotateCcw className="h-4 w-4 mr-2" /> New Search</Button>
                               <Button onClick={() => setDialog({ type: 'add' })} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                           </div>
                       </CardHeader>
-                      <CardContent className="pt-6">
+                      <CardContent className="pt-6 text-left text-foreground">
                           {isLoading ? <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} onSelectionChange={setSelectedIds} />}
                       </CardContent>
                   </Card>
               )}
           </TabsContent>
 
-          <TabsContent value="discovery" className="mt-6">
+          <TabsContent value="discovery" className="mt-6 text-left">
               <FinanceDiscoveryEngine />
           </TabsContent>
 
-          <TabsContent value="oversight" className="mt-6">
+          <TabsContent value="oversight" className="mt-6 text-left">
               <AudienceCommunicationsTable audience="finance" />
           </TabsContent>
       </Tabs>

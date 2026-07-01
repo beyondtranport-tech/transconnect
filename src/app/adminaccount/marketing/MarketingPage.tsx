@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +29,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { getClientSideAuthToken } from '@/firebase';
-import { copyHtmlToClipboard } from '@/lib/utils';
+import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import Link from 'next/link';
 
 // Content components
@@ -63,6 +62,7 @@ const DeveloperManagement = dynamic(() => import('@/app/adminaccount/marketing/d
 const SupplierManagement = dynamic(() => import('@/app/adminaccount/marketing/supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing/transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateManagement = dynamic(() => import('@/app/adminaccount/marketing/associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const FinanceManagement = dynamic(() => import('@/app/adminaccount/marketing/finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
@@ -72,7 +72,7 @@ const audienceConfig: Record<string, any> = {
     investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
     developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
     associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement },
-    finance: { title: 'Finance Partners', Offer: InvestorOffer, Emails: InvestorEmails, Management: null, redirectView: 'finance-registry' },
+    finance: { title: 'Finance Co', Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement },
 };
 
 interface MarketingPageProps {
@@ -304,20 +304,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             onLogAndCopy={handleLogAndCopy}
             audienceTitle={config.title}
         />
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left text-foreground text-left">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left text-foreground">
                     <h1 className="text-2xl font-bold font-headline text-left">Marketing & Pitch Library: {config.title}</h1>
                     <p className="text-muted-foreground text-left text-sm">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
                 </div>
-                {redirectView && (
-                    <Button variant="outline" size="sm" asChild className="h-9 gap-2 font-bold text-xs uppercase tracking-widest text-primary border-primary/20 bg-primary/5">
-                        <Link href={`/backend?view=${redirectView}`}>
-                            <ExternalLink className="h-3.5 w-3.5" />
-                            Return to Management
-                        </Link>
-                    </Button>
-                )}
             </div>
 
             <Tabs defaultValue="company-profile" className="w-full text-left" onValueChange={setActiveTab}>
