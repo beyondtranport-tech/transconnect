@@ -339,7 +339,7 @@ export default function AccountPage() {
     <Suspense fallback={
         <div className="flex flex-col justify-center items-center py-40 gap-4">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Initializing Account Workspace...</p>
+            <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Initializing Account Workspace...</p>
         </div>
     }>
       <AccountPageContent />

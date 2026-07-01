@@ -243,7 +243,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
-        // Use the resilient utility from utils.ts instead of new ClipboardItem
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
             throw new Error('Your browser may not support this feature, or there was an error.');
