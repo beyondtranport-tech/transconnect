@@ -128,23 +128,23 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
     
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Log and Copy Content</DialogTitle>
-                    <DialogDescription>
+            <DialogContent className="text-left text-foreground">
+                <DialogHeader className="text-left">
+                    <DialogTitle className="text-left">Log and Copy Content</DialogTitle>
+                    <DialogDescription className="text-left">
                         Select a partner to log this communication against before copying the content.
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Log against {singularAudience}</FormLabel>
+                            <FormItem className="text-left">
+                                <FormLabel className="text-left">Log against {singularAudience}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger disabled={isLoadingPartners}>
+                                    <FormControl><SelectTrigger disabled={isLoadingPartners} className="text-left">
                                         <SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} />
                                     </SelectTrigger></FormControl>
-                                    <SelectContent>
+                                    <SelectContent className="text-left">
                                         {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
                                     </SelectContent>
                                 </Select>
@@ -152,11 +152,13 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="communicationType" render={({ field }) => (
-                             <FormItem>
-                                <FormLabel>Communication Type</FormLabel>
+                             <FormItem className="text-left">
+                                <FormLabel className="text-left">Communication Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
-                                    <SelectContent>
+                                    <FormControl><SelectTrigger className="text-left">
+                                        <SelectValue placeholder="Select a type..." />
+                                    </SelectTrigger></FormControl>
+                                    <SelectContent className="text-left">
                                         <SelectItem value="Email">Email</SelectItem>
                                         <SelectItem value="WhatsApp">WhatsApp</SelectItem>
                                         <SelectItem value="Call">Call</SelectItem>
@@ -170,17 +172,17 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                             control={form.control}
                             name="notes"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Notes (Optional)</FormLabel>
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-left">Notes (Optional)</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Add notes about the call or meeting..." {...field} />
+                                        <Textarea placeholder="Add notes about the call or meeting..." {...field} className="text-left" />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-                         <DialogFooter>
-                            <Button type="submit" disabled={isLogging}>
+                         <DialogFooter className="text-left">
+                            <Button type="submit" disabled={isLogging} className="text-left">
                                 {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                                 Log & Copy
                             </Button>
@@ -241,6 +243,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     const contentElement = document.getElementById(contentId);
 
     if (contentElement) {
+        // Use the resilient utility from utils.ts instead of new ClipboardItem
         const success = await copyHtmlToClipboard(contentElement.innerHTML);
         if (!success) {
             throw new Error('Your browser may not support this feature, or there was an error.');
@@ -292,13 +295,13 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             onLogAndCopy={handleLogAndCopy}
             audienceTitle={config.title}
         />
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
-                <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
+        <div className="space-y-6 text-left text-foreground">
+            <div className="text-left">
+                <h1 className="text-2xl font-bold text-left">Marketing & Pitch Library: {config.title}</h1>
+                <p className="text-muted-foreground text-left">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
             </div>
-            <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
-                <TabsList className="h-auto flex-wrap justify-start">
+            <Tabs defaultValue="company-profile" className="w-full text-left" onValueChange={setActiveTab}>
+                <TabsList className="h-auto flex-wrap justify-start text-left">
                     <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
                     <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
                     <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
@@ -309,8 +312,8 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     {Management && <TabsTrigger value="management">Management</TabsTrigger>}
                 </TabsList>
 
-                <Card className="mt-4">
-                    <CardHeader className="flex flex-row items-center justify-end border-b">
+                <Card className="mt-4 text-left">
+                    <CardHeader className="flex flex-row items-center justify-end border-b text-left">
                         <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
                             {isLoadingPartners ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -320,31 +323,31 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                             Log & Copy Content
                         </Button>
                     </CardHeader>
-                    <CardContent className="p-6">
-                        <TabsContent value="company-profile">
-                            <div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div>
+                    <CardContent className="p-6 text-left">
+                        <TabsContent value="company-profile" className="text-left">
+                            <div id="tab-content-company-profile" className="text-left"><CompanyProfile audience={audience} /></div>
                         </TabsContent>
-                        <TabsContent value="tech-architecture">
-                            <div id="tab-content-tech-architecture"><TechArchitecture /></div>
+                        <TabsContent value="tech-architecture" className="text-left">
+                            <div id="tab-content-tech-architecture" className="text-left"><TechArchitecture /></div>
                         </TabsContent>
-                        <TabsContent value="revenue-model">
-                            <div id="tab-content-revenue-model"><RevenueModel /></div>
+                        <TabsContent value="revenue-model" className="text-left">
+                            <div id="tab-content-revenue-model" className="text-left"><RevenueModel /></div>
                         </TabsContent>
-                        <TabsContent value="offer">
-                            <div id="tab-content-offer"><Offer /></div>
+                        <TabsContent value="offer" className="text-left">
+                            <div id="tab-content-offer" className="text-left"><Offer /></div>
                         </TabsContent>
-                        <TabsContent value="pitch">
-                            <div id="tab-content-pitch"><PitchDeck /></div>
+                        <TabsContent value="pitch" className="text-left">
+                            <div id="tab-content-pitch" className="text-left"><PitchDeck /></div>
                         </TabsContent>
-                        <TabsContent value="framework">
-                            <div id="tab-content-framework"><Framework /></div>
+                        <TabsContent value="framework" className="text-left">
+                            <div id="tab-content-framework" className="text-left"><Framework /></div>
                         </TabsContent>
-                        <TabsContent value="emails">
-                            <div id="tab-content-emails"><Emails /></div>
+                        <TabsContent value="emails" className="text-left">
+                            <div id="tab-content-emails" className="text-left"><Emails /></div>
                         </TabsContent>
                         {Management && (
-                            <TabsContent value="management">
-                                <div id="tab-content-management"><Management /></div>
+                            <TabsContent value="management" className="text-left">
+                                <div id="tab-content-management" className="text-left"><Management /></div>
                             </TabsContent>
                         )}
                     </CardContent>

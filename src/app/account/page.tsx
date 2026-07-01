@@ -42,7 +42,6 @@ import {
   ClipboardList,
   Settings,
   Banknote,
-  Lock,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -177,8 +176,8 @@ function AccountPageContent() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <div className="bg-primary/10 p-2 rounded-full"><User className="h-6 w-6 text-primary" /></div>
-            <h2 className="text-lg font-semibold text-sidebar-foreground">{isAssociate ? 'Partner Area' : 'Member Area'}</h2>
+            <div className="bg-primary/10 p-2 rounded-full text-left"><User className="h-6 w-6 text-primary" /></div>
+            <h2 className="text-lg font-semibold text-sidebar-foreground text-left">{isAssociate ? 'Partner Area' : 'Member Area'}</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -321,8 +320,8 @@ function AccountPageContent() {
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Member'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Member'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />
@@ -337,7 +336,12 @@ function AccountPageContent() {
 
 export default function AccountPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center py-40"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+    <Suspense fallback={
+        <div className="flex flex-col justify-center items-center py-40 gap-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Initializing Account Workspace...</p>
+        </div>
+    }>
       <AccountPageContent />
     </Suspense>
   );
