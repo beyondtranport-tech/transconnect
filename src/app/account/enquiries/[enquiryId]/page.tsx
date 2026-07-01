@@ -4,18 +4,21 @@ import { Suspense } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Loader2, Landmark, FileText, User, Calendar, CircleHelp, HandCoins, Truck, Building, ArrowLeft } from 'lucide-react';
+import { Loader2, Landmark, FileText, User, Calendar, CircleHelp, HandCoins, Truck, Building, ArrowLeft, Globe } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
 
 const fundingNeedsMap: { [key: string]: string } = {
     'business': 'My Business',
     'equipment': 'To finance equipment',
     'vehicles': 'To finance vehicles',
     'cashflow': 'Support my cashflow',
+    'loan-pv-term': 'Working Capital',
+    'installment-sale-term': 'Equipment Finance',
+    'disclosed-confirmed-factoring': 'Factoring',
 };
 
 const fundingReasonsMap: { [key: string]: string } = {
@@ -34,9 +37,9 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 function DetailItem({ label, value, icon }: { label: string; value?: string | number | null; icon?: React.ReactNode }) {
     if (!value) return null;
     return (
-        <div className="flex flex-col">
-            <dt className="text-sm font-medium text-muted-foreground flex items-center gap-2">{icon}{label}</dt>
-            <dd className="mt-1 text-md font-semibold">{value}</dd>
+        <div className="flex flex-col text-left">
+            <dt className="text-[10px] font-black uppercase text-muted-foreground tracking-widest flex items-center gap-2 mb-1">{icon}{label}</dt>
+            <dd className="text-sm font-bold text-foreground">{value}</dd>
         </div>
     );
 }
@@ -70,7 +73,7 @@ function EnquiryDetail() {
     }
     
     if (error) {
-        return <div className="text-center py-20 text-destructive">Error: {error.message}</div>
+        return <div className="text-center py-20 text-destructive font-bold">Error: {error.message}</div>
     }
     
     if (!enquiry) {
@@ -84,79 +87,92 @@ function EnquiryDetail() {
             </div>
         )
     }
-    
-    const fullAddress = [
-        enquiry.supplierStreet,
-        enquiry.supplierSuburb,
-        enquiry.supplierCity,
-        enquiry.supplierPostalCode
-    ].filter(Boolean).join(', ');
-
 
     return (
-        <Card className="w-full max-w-4xl mx-auto">
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="flex items-center gap-2 text-2xl">
-                           <FileText /> Enquiry Details
+        <Card className="w-full max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left">
+            <CardHeader className="bg-slate-900 text-white p-8">
+                <div className="flex justify-between items-start text-left">
+                    <div className="text-left space-y-2">
+                        <Badge variant="outline" className={cn(
+                            "uppercase font-black text-[10px] tracking-widest px-3 border-primary/40 text-primary",
+                            enquiry.originationType === 'direct' ? "bg-primary/5" : "bg-blue-500/10 text-blue-400 border-blue-500/40"
+                        )}>
+                            {enquiry.originationType === 'direct' ? <Landmark className="h-3 w-3 mr-1"/> : <Globe className="h-3 w-3 mr-1" />}
+                            {enquiry.originationType === 'direct' ? 'In-House Direct Path' : 'Marketplace Broadcast'}
+                        </Badge>
+                        <CardTitle className="flex items-center gap-2 text-2xl font-black text-white text-left">
+                           <FileText className="h-6 w-6 text-primary" /> Enquiry Reference: {enquiry.id.slice(-6).toUpperCase()}
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-slate-400">
                             Submitted on {formatDateSafe(enquiry.createdAt, "dd MMMM yyyy")}
                         </CardDescription>
                     </div>
-                    <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize text-lg">
+                    <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize text-sm font-black px-4 py-1 h-auto">
                         {enquiry.status.replace(/_/g, ' ')}
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="p-4 bg-muted/50 rounded-lg">
-                    <h3 className="font-bold text-3xl text-primary">{formatCurrency(enquiry.amountRequested)}</h3>
-                    <p className="text-muted-foreground">Amount Requested</p>
-                </div>
-                
-                <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
-                    <DetailItem label="Funding Need" value={fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed} icon={<Landmark className="h-4 w-4"/>} />
-                    <DetailItem label="Funding Reason" value={fundingReasonsMap[enquiry.fundingReason] || enquiry.fundingReason} icon={<CircleHelp className="h-4 w-4"/>} />
-                    <div className="md:col-span-2">
-                        <DetailItem label="Purpose" value={enquiry.purpose} icon={<HandCoins className="h-4 w-4"/>} />
+            <CardContent className="p-8 space-y-10 bg-white">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed text-left">
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Total Requested Capital</p>
+                        <h3 className="font-black text-4xl text-primary">{formatCurrency(enquiry.amountRequested)}</h3>
+                        <p className="text-xs text-muted-foreground mt-2 italic">Preferred Term: {enquiry.preferredTerm || 'N/A'}</p>
                     </div>
-                </dl>
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                        <DetailItem label="Funding Need" value={fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed} icon={<Landmark className="h-3 w-3"/>} />
+                        <DetailItem label="Origin Region" value={enquiry.primaryRegion || 'National'} icon={<MapPin className="h-3 w-3"/>} />
+                        <DetailItem label="Entity Class" value={enquiry.entityType} icon={<Building className="h-3 w-3"/>} />
+                        <DetailItem label="Business Age" value={`${enquiry.yearsInBusiness} Years`} icon={<Calendar className="h-3 w-3"/>} />
+                    </div>
+                </div>
 
-                {enquiry.fundingNeed === 'vehicles' && enquiry.foundVehicle === 'yes' && (
-                    <>
-                        <div className="border-t pt-6">
-                            <h3 className="font-semibold text-lg flex items-center gap-2"><Truck className="h-5 w-5"/> Vehicle Information</h3>
-                            <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
-                                <DetailItem label="Vehicle Type" value={enquiry.vehicleType} />
-                                <DetailItem label="Make" value={enquiry.vehicleMake} />
-                                <DetailItem label="Model" value={enquiry.vehicleModel} />
-                                <DetailItem label="Year" value={enquiry.vehicleYear} />
-                                <DetailItem label="VIN" value={enquiry.vehicleVin} />
-                                {enquiry.engineNumber && <DetailItem label="Engine Number" value={enquiry.engineNumber} />}
-                            </dl>
-                        </div>
-                        <div className="border-t pt-6">
-                             <h3 className="font-semibold text-lg flex items-center gap-2"><Building className="h-5 w-5"/> Supplier Information</h3>
-                             <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mt-4">
-                                <DetailItem label="Supplier Name" value={enquiry.supplierName} />
-                                <DetailItem label="Contact Person" value={enquiry.supplierContact} />
-                                <DetailItem label="Phone" value={enquiry.supplierPhone} />
-                                <DetailItem label="Email" value={enquiry.supplierEmail} />
-                                <div className="md:col-span-2">
-                                    <DetailItem label="Address" value={fullAddress} />
+                <div className="space-y-4 text-left">
+                     <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
+                         <CircleHelp className="h-4 w-4 text-primary" /> Purpose of Funds
+                     </h4>
+                     <div className="p-5 bg-muted/30 rounded-xl italic text-muted-foreground leading-relaxed text-sm">
+                         "{enquiry.purpose}"
+                     </div>
+                </div>
+
+                {enquiry.assets && enquiry.assets.length > 0 && (
+                    <div className="space-y-4 text-left">
+                         <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
+                             <Truck className="h-4 w-4 text-primary" /> Asset Portfolio Specification
+                         </h4>
+                         <div className="grid gap-4">
+                            {enquiry.assets.map((asset: any, idx: number) => (
+                                <div key={idx} className="p-4 border rounded-xl bg-slate-50/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground">Asset {idx + 1}</p>
+                                        <p className="text-sm font-bold">{asset.vehicleYear || asset.assetYear} {asset.vehicleMake || asset.assetBrand} {asset.vehicleModel || asset.assetModel}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground">Class / Category</p>
+                                        <p className="text-xs font-medium">{asset.vehicleClass || asset.assetCategory}</p>
+                                    </div>
+                                    <div className="space-y-1 text-left">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground">Identifier (VIN/Serial)</p>
+                                        <p className="text-xs font-mono">{asset.vehicleVin || asset.assetSerialNumber || 'N/A'}</p>
+                                    </div>
                                 </div>
-                            </dl>
-                        </div>
-                    </>
+                            ))}
+                         </div>
+                    </div>
                 )}
             </CardContent>
-             <CardFooter className="bg-muted/50 p-4 border-t flex justify-between items-center">
-                 <p className="text-sm text-muted-foreground">A funding specialist will be in contact shortly to discuss the next steps.</p>
-                 <Button asChild>
+             <CardFooter className="bg-slate-900 p-8 flex justify-between items-center text-white">
+                 <div className="space-y-1 text-left">
+                    <p className="text-xs font-bold text-primary flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" /> Professional Oversight Active
+                    </p>
+                    <p className="text-[10px] text-slate-400">A funding specialist is reviewing your forensic data profile.</p>
+                 </div>
+                 <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold h-12">
                     <Link href={`/funding/apply?enquiryId=${enquiryId}`}>
-                        Edit Enquiry
+                        <Edit className="mr-2 h-4 w-4" /> Refine Application
                     </Link>
                  </Button>
             </CardFooter>
@@ -167,8 +183,8 @@ function EnquiryDetail() {
 
 export default function EnquiryDetailPage() {
     return (
-         <div className="container mx-auto px-4 py-16">
-            <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+         <div className="container mx-auto px-4 py-20 text-left bg-slate-50 min-h-screen">
+            <Suspense fallback={<div className="flex justify-center items-center h-[50vh]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
                 <EnquiryDetail />
             </Suspense>
         </div>

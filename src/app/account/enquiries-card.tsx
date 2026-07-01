@@ -3,7 +3,7 @@
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye } from 'lucide-react';
+import { Loader2, FileText, MoreVertical, Trash2, Edit, Eye, Zap, Landmark, Globe, PlusCircle } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -41,27 +41,9 @@ const fundingNeedsMap: { [key: string]: string } = {
     'equipment': 'Equipment',
     'vehicles': 'Vehicles',
     'cashflow': 'Cashflow',
-    'loan-pv-term': 'Loan (PV) – term',
-    'loan-pv-interest-only': 'Loan (PV) - interest only',
-    'loan-pv-single-payment': 'Loan (PV) - single payment',
-    'loan-fl-term-daily': 'Loan (FL) – term daily',
-    'loan-fl-term-weekly': 'Loan (FL) term weekly',
-    'loan-fl-term-bi-monthly': 'Loan (FL) term bi-monthly',
-    'loan-fl-term-monthly': 'Loan (FL) term monthly',
-    'loan-revolving-credit': 'Loan Revolving credit',
-    'installment-sale-term': 'Term Agreement',
-    'installment-sale-balloon': 'Balloon Payment',
-    'rental-term': 'Term Agreement',
-    'rental-balloon': 'Balloon (Residual) Agreement',
-    'disclosed-confirmed-factoring': 'Disclosed confirmed factoring 75% advance',
-    'disclosed-unconfirmed-factoring': 'Disclosed un-confirmed factoring 0% advance',
-    'invoice-discounting': 'Invoice discounting 100% advance',
-    'rights-discounting': 'Rights discounting',
-};
-
-const fundingReasonsMap: { [key: string]: string } = {
-    problem: 'Problem',
-    opportunity: 'Opportunity',
+    'loan-pv-term': 'Working Capital',
+    'installment-sale-term': 'Equipment Finance',
+    'disclosed-confirmed-factoring': 'Factoring',
 };
 
 export default function EnquiriesCard() {
@@ -107,7 +89,7 @@ export default function EnquiriesCard() {
             if (!result.success) throw new Error(result.error || 'Failed to fetch enquiries.');
             
             const sortedEnquiries = (result.data || []).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-            setEnquiries(sortedEnquiries.slice(0, 10));
+            setEnquiries(sortedEnquiries);
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -149,28 +131,40 @@ export default function EnquiriesCard() {
         }
     };
 
-    const isAdmin = user && (user.email === 'beyondtransport@gmail.com' || user.email === 'mkoton100@gmail.com');
-    if (isAdmin) {
-        return null;
-    }
+    const isAdmin = user && (
+        user.email === 'beyondtransport@gmail.com' || 
+        user.email === 'mkoton100@gmail.com' ||
+        user.email === 'michael@logisticsflow.co.za'
+    );
+    if (isAdmin) return null;
     
     const pageIsLoading = isAdminLoading || isLoading;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                   <FileText className="h-6 w-6" />
-                   My Formal Enquiries
+        <Card className="text-left">
+            <CardHeader className="text-left border-b bg-muted/20">
+                <CardTitle className="flex items-center gap-2 text-left">
+                   <FileText className="h-6 w-6 text-primary" />
+                   Funding Applications Ledger
                 </CardTitle>
-                <CardDescription>Begin a formal funding application. Your recent enquiries are shown here.</CardDescription>
+                <CardDescription className="text-left">
+                    Manage your internal and market-broadcast enquiries.
+                </CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="mb-6">
-                    <Button asChild>
-                        <Link href="/funding/apply">Start New Enquiry</Link>
+            <CardContent className="p-6 space-y-8">
+                <div className="flex flex-col sm:flex-row gap-4">
+                    <Button asChild className="flex-1 h-12 font-bold gap-2 shadow-sm" variant="default">
+                        <Link href="/funding/apply?origination=direct">
+                            <Landmark className="h-4 w-4" /> Start In-House Application
+                        </Link>
+                    </Button>
+                    <Button asChild className="flex-1 h-12 font-bold gap-2 shadow-sm" variant="outline">
+                        <Link href="/funding/apply?origination=market">
+                            <Globe className="h-4 w-4 text-primary" /> Start Market Broadcast
+                        </Link>
                     </Button>
                 </div>
+
                 {pageIsLoading && (
                     <div className="flex justify-center items-center py-10">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -185,13 +179,13 @@ export default function EnquiriesCard() {
 
                 {!pageIsLoading && !error && (
                     enquiries && enquiries.length > 0 ? (
-                        <div className="overflow-x-auto">
+                        <div className="overflow-x-auto rounded-lg border">
                             <Table>
-                                <TableHeader>
+                                <TableHeader className="bg-slate-50">
                                     <TableRow>
                                         <TableHead>Date</TableHead>
-                                        <TableHead>Need</TableHead>
-                                        <TableHead>Reason</TableHead>
+                                        <TableHead>Path</TableHead>
+                                        <TableHead>Purpose</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Amount</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
@@ -199,20 +193,27 @@ export default function EnquiriesCard() {
                                 </TableHeader>
                                 <TableBody>
                                     {enquiries.map((enquiry) => (
-                                        <TableRow key={enquiry.id}>
+                                        <TableRow key={enquiry.id} className="hover:bg-slate-50/50">
                                             <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{formatDateSafe(enquiry.createdAt, "dd MMM yyyy")}</TableCell>
                                             <TableCell>
-                                                <p className="font-medium capitalize">{fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed?.replace(/-/g, ' ')}</p>
+                                                <Badge variant="outline" className={cn(
+                                                    "text-[10px] font-black uppercase tracking-tight h-5",
+                                                    enquiry.originationType === 'direct' ? "bg-green-50 text-green-700 border-green-100" : "bg-blue-50 text-blue-700 border-blue-100"
+                                                )}>
+                                                    {enquiry.originationType === 'direct' ? 'Direct' : 'Broadcast'}
+                                                </Badge>
                                             </TableCell>
                                             <TableCell>
-                                                <p className="font-medium capitalize">{fundingReasonsMap[enquiry.fundingReason] || enquiry.fundingReason}</p>
+                                                <p className="text-xs font-bold text-foreground">
+                                                    {fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed?.replace(/-/g, ' ')}
+                                                </p>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize">
+                                                <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize text-[10px]">
                                                     {enquiry.status.replace(/_/g, ' ')}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="font-semibold whitespace-nowrap">
+                                            <TableCell className="font-bold text-sm whitespace-nowrap">
                                                 {formatCurrency(enquiry.amountRequested)}
                                             </TableCell>
                                             <TableCell className="text-right space-x-1">
@@ -263,9 +264,10 @@ export default function EnquiriesCard() {
                             </Table>
                         </div>
                     ) : (
-                         <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">You have no formal enquiries yet.</p>
-                             <p className="text-sm text-muted-foreground mt-1">Click the button above to start your first application.</p>
+                         <div className="text-center py-20 border-2 border-dashed rounded-xl bg-slate-50/50">
+                            <PlusCircle className="mx-auto h-12 w-12 text-muted-foreground/20" />
+                            <p className="text-muted-foreground mt-4 font-medium">You have no formal enquiries yet.</p>
+                             <p className="text-sm text-muted-foreground mt-1">Select an origination path above to begin.</p>
                         </div>
                     )
                 )}
