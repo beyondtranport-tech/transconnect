@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useState, useEffect } from 'react';
@@ -17,13 +16,14 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, Briefcase } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, Send, CheckCircle, ShieldCheck, Briefcase, History } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { doc } from 'firebase/firestore';
 
@@ -40,6 +40,8 @@ const entityTypes = [
     "Close Corporation (CC)",
     "Trust",
     "Individual",
+    "Partnership",
+    "Ltd"
 ];
 
 const creditRatings = [
@@ -58,8 +60,13 @@ const baseSchema = z.object({
   // Forensic Variables for Matching
   entityType: z.string().min(1, 'Please select your entity type.'),
   yearsInBusiness: z.coerce.number().min(0, 'Required.'),
+  annualTurnover: z.coerce.number().min(0, 'Required.'),
   creditRating: z.string().min(1, 'Required.'),
   
+  hasJudgements: z.boolean().default(false),
+  hasDefaults: z.boolean().default(false),
+  hasArrears: z.boolean().default(false),
+
   foundVehicle: z.enum(['yes', 'no']).optional(),
   vehicleType: z.enum(['powered', 'trailer']).optional(),
   vehicleMake: z.string().optional(),
@@ -84,9 +91,10 @@ type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 const staticSteps = [
   { id: 'Need', name: 'Step 1: Your Need', fields: ['fundingNeed'] },
-  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'creditRating'] },
-  { id: 'Reason', name: 'Step 3: The Reason', fields: ['fundingReason', 'purpose'] },
-  { id: 'Amount', name: 'Step 4: The Amount', fields: ['amountRequested'] },
+  { id: 'Profile', name: 'Step 2: Business Profile', fields: ['entityType', 'yearsInBusiness', 'annualTurnover', 'creditRating'] },
+  { id: 'History', name: 'Step 3: Credit History', fields: ['hasJudgements', 'hasDefaults', 'hasArrears'] },
+  { id: 'Reason', name: 'Step 4: The Reason', fields: ['fundingReason', 'purpose'] },
+  { id: 'Amount', name: 'Step 5: The Amount', fields: ['amountRequested'] },
   { id: 'Submit', name: 'Final Step: Review' },
 ];
 
@@ -121,6 +129,10 @@ function ApplyForm() {
       fundingNeed: searchParams.get('type') || '',
       amountRequested: Number(searchParams.get('amount')) || 0,
       yearsInBusiness: 0,
+      annualTurnover: 0,
+      hasJudgements: false,
+      hasDefaults: false,
+      hasArrears: false,
     },
   });
 
@@ -177,18 +189,18 @@ function ApplyForm() {
   const currentStepConfig = dynamicSteps[currentStep];
 
   return (
-    <Card className="w-full max-w-2xl shadow-xl">
-      <CardHeader className="bg-slate-900 text-white rounded-t-xl">
-        <CardTitle className="flex items-center gap-2"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
-        <CardDescription className="text-slate-400">{currentStepConfig.name}</CardDescription>
+    <Card className="w-full max-w-2xl shadow-xl text-left">
+      <CardHeader className="bg-slate-900 text-white rounded-t-xl text-left">
+        <CardTitle className="flex items-center gap-2 text-left"><Landmark className="text-primary"/> Forensic Funding Application</CardTitle>
+        <CardDescription className="text-slate-400 text-left">{currentStepConfig.name}</CardDescription>
       </CardHeader>
-      <CardContent className="p-8">
+      <CardContent className="p-8 text-left">
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8">
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-8 text-left">
             
             {currentStepConfig.id === 'Need' && (
                  <FormField control={methods.control} name="fundingNeed" render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-left">
                       <FormLabel className="font-bold">I require capital for:</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl><SelectTrigger className="h-12"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
@@ -202,21 +214,47 @@ function ApplyForm() {
             )}
 
             {currentStepConfig.id === 'Profile' && (
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="entityType" render={({ field }) => (
-                        <FormItem><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
+                        <FormItem className="text-left"><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select..." /></SelectTrigger></FormControl><SelectContent>{entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
                     )} />
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={methods.control} name="yearsInBusiness" render={({ field }) => (<FormItem><FormLabel>Years in Business</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={methods.control} name="creditRating" render={({ field }) => (
-                            <FormItem><FormLabel>Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
-                        )} />
+                        <FormField control={methods.control} name="annualTurnover" render={({ field }) => (<FormItem><FormLabel>Annual Turnover (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                     </div>
+                    <FormField control={methods.control} name="creditRating" render={({ field }) => (
+                        <FormItem className="text-left"><FormLabel>Self-Assessed Credit Standing</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Rate yourself..." /></SelectTrigger></FormControl><SelectContent>{creditRatings.map(r => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent></Select></FormItem>
+                    )} />
+                </div>
+            )}
+
+            {currentStepConfig.id === 'History' && (
+                <div className="space-y-4 text-left">
+                    <h3 className="font-bold text-lg flex items-center gap-2"><History className="h-5 w-5 text-primary"/> Forensic Disclosure</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Please disclose any active or previous credit constraints. Our matching engine selects lenders based on this criteria.</p>
+                    <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel className="font-medium text-xs">Do you have active judgements?</FormLabel>
+                        </FormItem>
+                    )} />
+                    <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel className="font-medium text-xs">Do you have active defaults?</FormLabel>
+                        </FormItem>
+                    )} />
+                    <FormField control={methods.control} name="hasArrears" render={({ field }) => (
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel className="font-medium text-xs">Do you have accounts currently in arrears?</FormLabel>
+                        </FormItem>
+                    )} />
                 </div>
             )}
 
             {currentStepConfig.id === 'Reason' && (
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="fundingReason" render={({ field }) => (
                         <FormItem className="space-y-3">
                           <FormLabel className="font-bold">Is this to solve a problem or capture an opportunity?</FormLabel>
@@ -234,7 +272,7 @@ function ApplyForm() {
 
             {currentStepConfig.id === 'Amount' && (
                  <FormField control={methods.control} name="amountRequested" render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-left">
                       <FormLabel className="text-lg font-bold">Estimated Amount (ZAR)</FormLabel>
                       <FormControl><Input type="number" className="h-12 text-xl font-mono" placeholder="500000" {...field} /></FormControl>
                       <FormDescription>This drives the initial lender pool selection.</FormDescription>
@@ -242,7 +280,7 @@ function ApplyForm() {
                   )} />
             )}
             
-            <div className="flex justify-between items-center pt-6 border-t">
+            <div className="flex justify-between items-center pt-6 border-t text-left">
               <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0}><ArrowLeft className="mr-2 h-4 w-4" /> Back</Button>
               {currentStep < dynamicSteps.length - 1 ? (
                 <Button type="button" onClick={processStep}>Next <ArrowRight className="ml-2 h-4 w-4" /></Button>

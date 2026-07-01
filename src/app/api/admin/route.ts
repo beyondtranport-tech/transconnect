@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -72,7 +71,9 @@ export async function POST(req: NextRequest) {
                 if (!enquirySnap.exists) throw new Error("Enquiry not found.");
                 
                 const enquiry = enquirySnap.data()!;
-                const amount = enquiry.amountRequested || 0;
+                const amount = Number(enquiry.amountRequested) || 0;
+                const turnover = Number(enquiry.annualTurnover) || 0;
+                const age = Number(enquiry.yearsInBusiness) || 0;
 
                 // Query BOTH static partners AND paying members who configured parameters
                 const [lendersSnap, activeMemberLendersSnap] = await Promise.all([
@@ -86,9 +87,9 @@ export async function POST(req: NextRequest) {
                 const staticMatches = lendersSnap.docs
                     .map((d: any) => ({ id: d.id, source: 'Registry', ...d.data() }))
                     .filter((l: any) => {
-                        const min = Number(l.minDealSize) || 0;
-                        const max = Number(l.maxDealSize) || 100000000;
-                        return amount >= min && amount <= max;
+                        const minS = Number(l.minDealSize) || 0;
+                        const maxS = Number(l.maxDealSize) || 100000000;
+                        return amount >= minS && amount <= maxS;
                     });
                 
                 const memberMatches = activeMemberLendersSnap.docs
@@ -96,7 +97,17 @@ export async function POST(req: NextRequest) {
                     .filter((l: any) => {
                         const params = l.lendingParams;
                         if (!params) return false;
-                        return amount >= (params.minDealSize || 0) && amount <= (params.maxDealSize || 100000000);
+                        
+                        const sizeMatch = amount >= (params.minDealSize || 0) && amount <= (params.maxDealSize || 100000000);
+                        const turnoverMatch = turnover >= (params.minAnnualTurnover || 0);
+                        const ageMatch = age >= (params.minYearsInBusiness || 0);
+                        
+                        // History checks
+                        const judgementOk = !params.requiresNoJudgements || !enquiry.hasJudgements;
+                        const defaultOk = !params.requiresNoDefaults || !enquiry.hasDefaults;
+                        const arrearsOk = !params.requiresNoArrears || !enquiry.hasArrears;
+
+                        return sizeMatch && turnoverMatch && ageMatch && judgementOk && defaultOk && arrearsOk;
                     });
 
                 return NextResponse.json({ success: true, data: [...staticMatches, ...memberMatches].map(serializeTimestamps) });

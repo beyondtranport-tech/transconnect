@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap } from 'lucide-react';
+import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 
@@ -23,12 +23,16 @@ const lendingSchema = z.object({
     entityTypes: z.array(z.string()).min(1, "Select at least one entity type."),
     creditFocus: z.array(z.string()).min(1, "Select credit focus."),
     minYearsInBusiness: z.coerce.number().min(0),
+    minAnnualTurnover: z.coerce.number().min(0),
+    requiresNoJudgements: z.boolean().default(false),
+    requiresNoDefaults: z.boolean().default(false),
+    requiresNoArrears: z.boolean().default(false),
 });
 
 const appTypeOptions = ['Working Capital', 'Asset Finance', 'Personal Loan', 'Micro Loan', 'Factoring', 'Invoice Discounting'];
 const assetOptions = ['Trucks', 'Trailers', 'CNC Equipment', 'Computer Hardware', 'Automation', 'Production Line', 'Printing', 'CCTV/Security'];
 const termOptions = ['12 Months', '24 Months', '36 Months', '48 Months', '60 Months', '72+ Months'];
-const entityOptions = ['Pty Ltd', 'Sole Proprietor', 'Close Corporation', 'Trust', 'Individual'];
+const entityOptions = ['Pty Ltd', 'Sole Proprietor', 'Close Corporation', 'Trust', 'Individual', 'Partnership', 'Ltd'];
 const creditOptions = ['Excellent', 'Good', 'Fair', 'Poor (with collateral)', 'New Business'];
 
 export default function LendingParametersContent() {
@@ -49,6 +53,10 @@ export default function LendingParametersContent() {
             entityTypes: user?.companyData?.lendingParams?.entityTypes || [],
             creditFocus: user?.companyData?.lendingParams?.creditFocus || [],
             minYearsInBusiness: user?.companyData?.lendingParams?.minYearsInBusiness || 0,
+            minAnnualTurnover: user?.companyData?.lendingParams?.minAnnualTurnover || 0,
+            requiresNoJudgements: user?.companyData?.lendingParams?.requiresNoJudgements || false,
+            requiresNoDefaults: user?.companyData?.lendingParams?.requiresNoDefaults || false,
+            requiresNoArrears: user?.companyData?.lendingParams?.requiresNoArrears || false,
         }
     });
 
@@ -139,7 +147,7 @@ export default function LendingParametersContent() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                             <div className="space-y-4">
-                                <h3 className="font-bold text-lg">Deal Size Range (ZAR)</h3>
+                                <h3 className="font-bold text-lg flex items-center gap-2"><Scale className="h-5 w-5 text-primary"/> Deal Size Range (ZAR)</h3>
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="minDealSize" render={({ field }) => (
                                         <FormItem><FormLabel>Minimum Amount</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
@@ -150,16 +158,45 @@ export default function LendingParametersContent() {
                                 </div>
                             </div>
                             <div className="space-y-4">
-                                <h3 className="font-bold text-lg">Years in Business</h3>
-                                <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
-                                    <FormItem><FormLabel>Minimum Operating History</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
+                                <h3 className="font-bold text-lg flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary"/> Financial Criteria</h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
+                                        <FormItem><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
+                                    )} />
+                                    <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
+                                        <FormItem><FormLabel>Min Annual Turnover (R)</FormLabel><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} /></FormControl></FormItem>
+                                    )} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="font-bold text-lg flex items-center gap-2"><History className="h-5 w-5 text-primary"/> Credit History Constraints</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={form.control} name="requiresNoJudgements" render={({ field }) => (
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        <FormLabel className="font-medium text-xs">Must have no judgements</FormLabel>
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="requiresNoDefaults" render={({ field }) => (
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        <FormLabel className="font-medium text-xs">Must have no defaults</FormLabel>
+                                    </FormItem>
+                                )} />
+                                <FormField control={form.control} name="requiresNoArrears" render={({ field }) => (
+                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                        <FormLabel className="font-medium text-xs">Must have no active arrears</FormLabel>
+                                    </FormItem>
                                 )} />
                             </div>
                         </div>
 
                         <div className="space-y-4">
                             <h3 className="font-bold text-lg">Preferred Target Entities</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {entityOptions.map(item => (
                                     <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
                                         <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
@@ -175,7 +212,7 @@ export default function LendingParametersContent() {
                     <CardFooter className="bg-slate-50 border-t p-6 flex justify-end">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2 text-foreground">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
-                            Register Lending appetite
+                            Register Lending Appetite
                         </Button>
                     </CardFooter>
                 </form>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -38,12 +37,12 @@ import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { PartnerTasksDialog } from './PartnerTasksDialog';
-import { CommunicationLogDialog } from './CommunicationLogDialog';
-import { EngageDialog } from './EngageDialog';
-import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { BulkImportDialog } from './BulkImportDialog';
+import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
+import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
+import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
+import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
+import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
+import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -130,12 +129,12 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-foreground text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
                   <SelectItem value="new">New</SelectItem><SelectItem value="contacted">In Research</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="active">Member</SelectItem>
                 </SelectContent></Select></FormItem>
               )} />
               <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-foreground text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
                   {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
                 </SelectContent></Select></FormItem>
               )} />
@@ -285,7 +284,7 @@ function LeadsDatabaseComponent() {
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Registry Offline</h2>
                 <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
+                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
                     Load Lead Registry
                 </Button>
