@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -84,7 +83,7 @@ export default function FundingPage() {
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">In-House Business Funding</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Our specialized finance division is designed to provide rapid capital based on your real-world platform performance.</p>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Our specialized finance division has been financing transporters for 25 years. We can finance you where others have failed</p>
                 </div>
             </section>
 
