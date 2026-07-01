@@ -15,6 +15,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 const lendingSchema = z.object({
     appTypes: z.array(z.string()).min(1, "Select at least one agreement type."),
