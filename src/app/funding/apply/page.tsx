@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, Users, PlusCircle, Trash2, UserCheck, Truck, FileText, Navigation, MapPin } from 'lucide-react';
+import { Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, History, Package, Sparkles, Building, FileUp, Users, PlusCircle, Trash2, UserCheck, Truck, FileText, Navigation, MapPin, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -25,7 +25,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
-import { doc } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
@@ -34,10 +34,10 @@ import { Separator } from '@/components/ui/separator';
 import { provinces } from '@/lib/geodata';
 
 const fundingNeeds = {
-  'business': 'Working Capital / Business Loan',
-  'equipment': 'Equipment Finance (Production, CNC, Printing, etc.)',
+  'loan-pv-term': 'Working Capital / Business Loan',
+  'installment-sale-term': 'Equipment Finance (Production, CNC, etc.)',
   'vehicles': 'Vehicle Finance (Truck, Trailer, Bus, Car)',
-  'cashflow': 'Cashflow Support (Factoring, Discounting)',
+  'disclosed-confirmed-factoring': 'Cashflow Support (Factoring, Discounting)',
 };
 
 const entityTypes = [
