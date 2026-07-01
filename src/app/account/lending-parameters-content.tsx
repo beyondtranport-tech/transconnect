@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 const lendingSchema = z.object({
     // Financial Criteria
@@ -192,14 +193,20 @@ export default function LendingParametersContent() {
                                         <div className="grid grid-cols-1 gap-2">
                                             <FormField control={form.control} name="requiresNoJudgements" render={({ field }) => (
                                                 <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
-                                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                     <FormLabel className="font-medium text-xs">Must have no judgements</FormLabel>
                                                 </FormItem>
                                             )} />
                                             <FormField control={form.control} name="requiresNoDefaults" render={({ field }) => (
                                                 <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
-                                                    <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                     <FormLabel className="font-medium text-xs">Must have no defaults</FormLabel>
+                                                </FormItem>
+                                            )} />
+                                             <FormField control={form.control} name="requiresNoArrears" render={({ field }) => (
+                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md">
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                    <FormLabel className="font-medium text-xs">No active arrears accounts</FormLabel>
                                                 </FormItem>
                                             )} />
                                         </div>
@@ -300,7 +307,7 @@ export default function LendingParametersContent() {
 
                     <div className="bg-slate-50 border-t p-6 flex justify-end mt-8 rounded-lg shadow-inner">
                         <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="mr-2 h-5 w-5" />}
                             Update Lending Focus & Portfolio
                         </Button>
                     </div>
