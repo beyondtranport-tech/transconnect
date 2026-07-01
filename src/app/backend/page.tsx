@@ -65,8 +65,6 @@ import UsersList from '@/app/backend/users-list';
 import CommercialNegotiations from '@/app/backend/commercial-negotiations';
 import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
-import LenderDeskContent from '@/app/account/lender-desk-content';
-import LendingParametersContent from '@/app/account/lending-parameters-content';
 
 // Platform Settings
 import PermissionsContent from '@/app/backend/permissions-content';
@@ -143,8 +141,6 @@ function BackendContent() {
       // Member Success & Growth
       case 'success-engine': return <MemberSuccessEngine />;
       case 'loyalty-overview': return <MemberLoyaltyStatus />;
-      case 'lender-desk': return <LenderDeskContent />;
-      case 'lending-focus': return <LendingParametersContent />;
       case 'contributions': return <ContributionsList />;
       case 'shops': return <ShopsList />;
       case 'commercial-negotiations': return <CommercialNegotiations />;
@@ -184,7 +180,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
-  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations', 'lender-desk', 'lending-focus'].includes(activeView);
+  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -227,8 +223,6 @@ function BackendContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Member Success" isActive={isSuccessActive}><TrendingUp /><span>Success Engine</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lender-desk'} onClick={() => navigate('lender-desk')}><Landmark />Lender Desk (CRM)</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}><Settings />Lending Focus</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'success-engine'} onClick={() => navigate('success-engine')}><PieChart />Conversion Engine</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-overview'} onClick={() => navigate('loyalty-overview')}><Award />Loyalty & Tiers</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Data Contributions</SidebarMenuSubButton></SidebarMenuSubItem>

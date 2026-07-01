@@ -31,6 +31,7 @@ import {
   Repeat,
   Paperclip,
   CalendarCheck,
+  Settings,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
 
-// --- Dynamic Imports for Business Components ---
+// --- Components ---
 const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LendingAssumptions = dynamic(() => import('@/app/lending/lending-assumptions'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const LoanBook = dynamic(() => import('@/app/lending/loan-book'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -58,6 +59,7 @@ const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content
 const CollateralContent = dynamic(() => import('@/app/lending/collateral-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const PaymentsContent = dynamic(() => import('@/app/lending/payments-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const FinancialModel = dynamic(() => import('@/app/lending/financial-model'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const LendingParametersContent = dynamic(() => import('@/app/account/lending-parameters-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 
 function LendingPortalContent() {
@@ -105,6 +107,7 @@ function LendingPortalContent() {
       case 'financial-model': return <FinancialModel />;
       case 'assumptions': return <LendingAssumptions />;
       case 'loan-book': return <LoanBook />;
+      case 'lending-focus': return <LendingParametersContent />;
       default: return <FundingDivisionContent />;
     }
   }, [activeView]);
@@ -120,7 +123,7 @@ function LendingPortalContent() {
 
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
 
-  const isOriginationActive = ['opportunities', 'discovery', 'scoring'].includes(activeView);
+  const isOriginationActive = ['opportunities', 'discovery', 'scoring', 'lending-focus'].includes(activeView);
   const isPortfolioActive = ['clients', 'partners', 'agreements', 'asset-register', 'transactions', 'facilities', 'collateral', 'payments'].includes(activeView);
   const isModellingActive = ['financial-model', 'assumptions', 'loan-book'].includes(activeView);
   
@@ -145,6 +148,11 @@ function LendingPortalContent() {
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}>
                                 Opportunities
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}>
+                                <Settings className="h-3.5 w-3.5" />Lending Focus
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>

@@ -21,12 +21,11 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { doc } from 'firebase/firestore';
 
 /**
  * LENDER DESK (CRM)
  * Primary hub for financiers to manage deal flow and concluded agreements.
- * Features automated forensic matching based on lender parameters.
+ * Features automated forensic matching based on granular per-product parameters.
  */
 
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -130,7 +129,7 @@ function OpportunityDetail({
                         <FileSignature className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
                         <div className="space-y-1 text-center">
                             <h4 className="font-bold text-foreground">Pending Document Pack</h4>
-                            <p className="text-xs text-muted-foreground max-w-xs mx-auto">Borrower has not yet uploaded finalized RC1 or Financial Statements for this specific enquiry.</p>
+                            <p className="text-xs text-muted-foreground max-w-xs mx-auto">Borrower has not yet uploaded finalized documents for this specific enquiry.</p>
                         </div>
                         <Button variant="outline" size="sm">Request Document Pack</Button>
                     </div>
@@ -143,7 +142,7 @@ function OpportunityDetail({
                             <div className="space-y-3 font-mono text-[11px] text-muted-foreground text-left">
                                 <p>OFFER TO: {opportunity.companyName}</p>
                                 <p>AMOUNT: {formatCurrency(opportunity.amountRequested)}</p>
-                                <p>TERM: {opportunity.term || 'TBD'} Months</p>
+                                <p>TERM: {opportunity.preferredTerm || 'TBD'}</p>
                                 <p>SUBJECT TO: FICA/KYC Verification and Asset Inspection.</p>
                             </div>
                         </div>
@@ -167,7 +166,6 @@ function OpportunityDetail({
 
 export default function LenderDeskContent() {
     const { user, isUserLoading } = useUser();
-    const firestore = useFirestore();
     const { toast } = useToast();
     const [opportunities, setOpportunities] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -198,31 +196,44 @@ export default function LenderDeskContent() {
             // 1. Filter for valid enquiries
             const allEnquiries = (result || []).filter((r: any) => !!r.amountRequested);
             
-            // 2. APPLY FORENSIC MATCHING ENGINE
+            // 2. APPLY V2 FORENSIC MATCHING ENGINE (Per-Product Logic)
             const matched = allEnquiries.filter((enquiry: any) => {
                 if (!lenderParams) return true; // Show all if params not set
 
                 const { 
-                    minDealSize, maxDealSize, minAnnualTurnover, minYearsInBusiness, 
+                    productCriteria = {}, minAnnualTurnover, minYearsInBusiness, 
                     requiresNoJudgements, requiresNoDefaults, requiresNoArrears,
                     entityTypes, serviceRegions, assetTypes
                 } = lenderParams;
 
-                // Capital Checks
-                if (minDealSize && enquiry.amountRequested < minDealSize) return false;
-                if (maxDealSize && enquiry.amountRequested > maxDealSize) return false;
+                // 2a. Product Specific Check
+                const productKey = enquiry.fundingNeed; // e.g. 'loan-pv-term'
+                const criteria = productCriteria[productKey];
+                
+                // If the product is not enabled by the lender, they shouldn't see it
+                if (criteria && !criteria.enabled) return false;
 
-                // Entity Checks
+                // If enabled, check specific range
+                if (criteria && criteria.enabled) {
+                    if (criteria.minAmount && enquiry.amountRequested < criteria.minAmount) return false;
+                    if (criteria.maxAmount && enquiry.amountRequested > criteria.maxAmount) return false;
+                    // Check term alignment if specified
+                    if (criteria.preferredTerms?.length > 0 && enquiry.preferredTerm) {
+                        if (!criteria.preferredTerms.includes(enquiry.preferredTerm)) return false;
+                    }
+                }
+
+                // 2b. Global Entity Checks
                 if (minAnnualTurnover && enquiry.annualTurnover < minAnnualTurnover) return false;
                 if (minYearsInBusiness && enquiry.yearsInBusiness < minYearsInBusiness) return false;
                 if (entityTypes?.length > 0 && !entityTypes.includes(enquiry.entityType)) return false;
 
-                // Risk Checks (declaration based)
+                // 2c. Global Risk Checks
                 if (requiresNoJudgements && enquiry.hasJudgements) return false;
                 if (requiresNoDefaults && enquiry.hasDefaults) return false;
                 if (requiresNoArrears && enquiry.hasArrears) return false;
 
-                // Regional & Asset Portfolio Checks
+                // 2d. Regional & Asset Portfolio Checks
                 if (serviceRegions?.length > 0 && !serviceRegions.includes(enquiry.primaryRegion)) return false;
                 
                 // Asset Check (Match if ANY asset in enquiry matches lender's asset specialization)
@@ -397,7 +408,7 @@ export default function LenderDeskContent() {
                                             <h3 className="text-xl font-bold">No Matches Yet</h3>
                                             <p className="text-muted-foreground max-w-xs mx-auto mt-2">Adjust your **Lending Focus** parameters to widen your borrower pool.</p>
                                         </div>
-                                        <Button variant="outline" asChild className="mt-4"><Link href="/account?view=lending-focus">Review My Focus</Link></Button>
+                                        <Button variant="outline" asChild className="mt-4"><Link href="/lending?view=lending-focus">Review My Focus</Link></Button>
                                     </div>
                                 )}
                             </CardContent>
@@ -422,3 +433,4 @@ export default function LenderDeskContent() {
         </div>
     );
 }
+

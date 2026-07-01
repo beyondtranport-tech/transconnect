@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect, useMemo } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken, forceRefresh } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, TrendingUp, History, Users, Package, MapPin, Sparkles } from 'lucide-react';
+import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, Users, Package, MapPin, Sparkles, ChevronRight, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,15 +18,71 @@ import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engin
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { cn } from '@/lib/utils';
+
+// --- DATA DEFINITIONS ---
+
+const productHierarchy = [
+    {
+        id: "loans",
+        name: "Loan Products",
+        items: [
+            { id: "loan-pv-term", name: "Loan (PV) – term" },
+            { id: "loan-pv-interest-only", name: "Loan (PV) - interest only" },
+            { id: "loan-pv-single-payment", name: "Loan (PV) - single payment" },
+            { id: "loan-fl-term-daily", name: "Loan (FL) – term daily" },
+            { id: "loan-fl-term-weekly", name: "Loan (FL) term weekly" },
+            { id: "loan-fl-term-bi-monthly", name: "Loan (FL) term bi-monthly" },
+            { id: "loan-fl-term-monthly", name: "Loan (FL) term monthly" },
+            { id: "loan-revolving-credit", name: "Loan Revolving credit" },
+        ]
+    },
+    {
+        id: "installment-sale",
+        name: "Installment Sale Products",
+        items: [
+            { id: "installment-sale-term", name: "Term Agreement" },
+            { id: "installment-sale-balloon", name: "Balloon Payment" }
+        ]
+    },
+    {
+        id: "rental",
+        name: "Rental / Lease Products",
+        items: [
+             { id: "rental-term", name: "Term Agreement" },
+             { id: "rental-balloon", name: "Balloon (Residual) Agreement" }
+        ]
+    },
+    {
+        id: "discounting",
+        name: "Discounting Products",
+        items: [
+            { id: "disclosed-confirmed-factoring", name: "Disclosed confirmed factoring" },
+            { id: "disclosed-unconfirmed-factoring", name: "Disclosed un-confirmed factoring" },
+            { id: "invoice-discounting", name: "Invoice discounting" },
+            { id: "rights-discounting", name: "Rights discounting" }
+        ]
+    }
+];
+
+const termOptions = ['1-12 Months', '12-24 Months', '24-36 Months', '36-48 Months', '48-60 Months', '60-72+ Months'];
+const entityOptions = ['Ltd', 'Private Company (Pty Ltd)', 'Sole Proprietor', 'Close Corporation (CC)', 'Trust', 'Individual', 'Partnership'];
+const brandOptions = ['Scania', 'Volvo', 'Mercedes-Benz', 'MAN', 'Freightliner', 'Iveco', 'DAF', 'UD Trucks', 'Isuzu', 'Hino', 'Toyota (Bakkie)', 'Universal/All'];
+const regionOptions = ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape', 'Cross-Border'];
+
+const productCriteriaSchema = z.object({
+    enabled: z.boolean().default(false),
+    minAmount: z.coerce.number().min(0).default(0),
+    maxAmount: z.coerce.number().min(0).default(0),
+    preferredTerms: z.array(z.string()).default([]),
+});
 
 const lendingSchema = z.object({
-    // Financial Criteria
-    appTypes: z.array(z.string()).min(1, "Select at least one agreement type."),
-    minDealSize: z.coerce.number().min(0),
-    maxDealSize: z.coerce.number().min(0),
-    preferredTerms: z.array(z.string()).min(1, "Select at least one preferred term."),
+    // Per-product parameters
+    productCriteria: z.record(z.string(), productCriteriaSchema).optional(),
     
-    // Risk & Entity
+    // Risk & Entity (Global for lender)
     entityTypes: z.array(z.string()).min(1, "Select at least one entity type."),
     minYearsInBusiness: z.coerce.number().min(0),
     minAnnualTurnover: z.coerce.number().min(0),
@@ -35,17 +91,15 @@ const lendingSchema = z.object({
     requiresNoDefaults: z.boolean().default(false),
     requiresNoArrears: z.boolean().default(false),
 
-    // Product & Asset Portfolio (Unified)
+    // Portfolio Focus
     assetTypes: z.array(z.string()).min(1, "Select at least one asset focus."),
     supportedBrands: z.array(z.string()).min(1, "Select at least one supported brand."),
     serviceRegions: z.array(z.string()).min(1, "Select your primary funding regions."),
 });
 
-const appTypeOptions = ['Working Capital', 'Asset Finance', 'Personal Loan', 'Micro Loan', 'Factoring', 'Invoice Discounting', 'Bridge Finance'];
-const termOptions = ['1-12 Months', '12-24 Months', '24-36 Months', '36-48 Months', '48-60 Months', '60-72+ Months'];
-const entityOptions = ['Ltd', 'Private Company (Pty Ltd)', 'Sole Proprietor', 'Close Corporation (CC)', 'Trust', 'Individual', 'Partnership'];
-const brandOptions = ['Scania', 'Volvo', 'Mercedes-Benz', 'MAN', 'Freightliner', 'Iveco', 'DAF', 'UD Trucks', 'Isuzu', 'Hino', 'Toyota (Bakkie)', 'Universal/All'];
-const regionOptions = ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape', 'Cross-Border'];
+type LendingFormValues = z.infer<typeof lendingSchema>;
+
+// --- COMPONENT ---
 
 export default function LendingParametersContent() {
     const { user, isUserLoading } = useUser();
@@ -60,23 +114,20 @@ export default function LendingParametersContent() {
 
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
-    const form = useForm<z.infer<typeof lendingSchema>>({
+    const form = useForm<LendingFormValues>({
         resolver: zodResolver(lendingSchema),
         defaultValues: {
-            appTypes: user?.companyData?.lendingParams?.appTypes || [],
-            minDealSize: user?.companyData?.lendingParams?.minDealSize || 0,
-            maxDealSize: user?.companyData?.lendingParams?.maxDealSize || 0,
-            preferredTerms: user?.companyData?.lendingParams?.preferredTerms || [],
-            entityTypes: user?.companyData?.lendingParams?.entityTypes || [],
-            minYearsInBusiness: user?.companyData?.lendingParams?.minYearsInBusiness || 0,
-            minAnnualTurnover: user?.companyData?.lendingParams?.minAnnualTurnover || 0,
-            minCreditScore: user?.companyData?.lendingParams?.minCreditScore || 600,
-            requiresNoJudgements: user?.companyData?.lendingParams?.requiresNoJudgements || false,
-            requiresNoDefaults: user?.companyData?.lendingParams?.requiresNoDefaults || false,
-            requiresNoArrears: user?.companyData?.lendingParams?.requiresNoArrears || false,
-            assetTypes: user?.companyData?.lendingParams?.assetTypes || [],
-            supportedBrands: user?.companyData?.lendingParams?.supportedBrands || [],
-            serviceRegions: user?.companyData?.lendingParams?.serviceRegions || [],
+            productCriteria: {},
+            entityTypes: [],
+            minYearsInBusiness: 0,
+            minAnnualTurnover: 0,
+            minCreditScore: 600,
+            requiresNoJudgements: false,
+            requiresNoDefaults: false,
+            requiresNoArrears: false,
+            assetTypes: [],
+            supportedBrands: [],
+            serviceRegions: [],
         }
     });
 
@@ -86,7 +137,7 @@ export default function LendingParametersContent() {
         }
     }, [user, form]);
 
-    const onSubmit = async (values: z.infer<typeof lendingSchema>) => {
+    const onSubmit = async (values: LendingFormValues) => {
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
@@ -123,7 +174,7 @@ export default function LendingParametersContent() {
                 <div className="bg-primary/10 p-3 rounded-xl text-left"><Landmark className="h-8 w-8 text-primary" /></div>
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline text-left">Lending Focus & Portfolio</h1>
-                    <p className="text-muted-foreground text-left">Define your credit appetite and the assets you are willing to finance.</p>
+                    <p className="text-muted-foreground text-left">Define your credit appetite per product to receive matched deal flow.</p>
                 </div>
             </div>
 
@@ -141,91 +192,159 @@ export default function LendingParametersContent() {
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     <Tabs defaultValue="criteria" className="w-full text-left text-foreground">
                         <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/50 text-left">
-                            <TabsTrigger value="criteria" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Financial Criteria</TabsTrigger>
-                            <TabsTrigger value="risk" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Risk & Entity Focus</TabsTrigger>
-                            <TabsTrigger value="assets" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Asset & Product Portfolio</TabsTrigger>
+                            <TabsTrigger value="criteria" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Product Criteria</TabsTrigger>
+                            <TabsTrigger value="risk" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Entity Risk Profile</TabsTrigger>
+                            <TabsTrigger value="portfolio" className="py-2.5 font-bold uppercase tracking-widest text-[10px]">Industry Portfolio</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="criteria" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
-                             <Card className="text-left">
-                                <CardHeader className="text-left"><CardTitle className="text-lg flex items-center gap-2 text-left"><Scale className="h-5 w-5 text-primary"/> Deal Size & Terms</CardTitle></CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Deal Amount Range (ZAR)</Label>
-                                        <div className="grid grid-cols-2 gap-4 text-left">
-                                            <FormField control={form.control} name="minDealSize" render={({ field }) => (
-                                                <FormItem className="text-left"><FormLabel>Minimum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                                            )} />
-                                            <FormField control={form.control} name="maxDealSize" render={({ field }) => (
-                                                <FormItem className="text-left"><FormLabel>Maximum</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                                            )} />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Annual Turnover Required (R)</Label>
-                                        <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
-                                            <FormItem className="text-left"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} /></FormControl></FormItem>
-                                        )} />
-                                    </div>
-                                </CardContent>
-                                <CardContent className="space-y-4 border-t pt-6 text-left">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Preferred Terms</Label>
-                                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4 text-left">
-                                        {termOptions.map(item => (
-                                            <FormField key={item} control={form.control} name="preferredTerms" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                    <FormLabel className="font-medium text-[10px] cursor-pointer leading-tight text-left">{item}</FormLabel>
-                                                </FormItem>
-                                            )} />
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
+                             <div className="space-y-4">
+                                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground ml-1">Agreement Specifics</h3>
+                                <Accordion type="multiple" className="w-full space-y-4">
+                                    {productHierarchy.map(group => (
+                                        <AccordionItem key={group.id} value={group.id} className="border rounded-xl bg-white overflow-hidden px-4">
+                                            <AccordionTrigger className="hover:no-underline py-6">
+                                                <div className="flex items-center gap-3 text-left">
+                                                    <div className="bg-muted p-2 rounded-lg"><Banknote className="h-4 w-4 text-primary" /></div>
+                                                    <div className="text-left">
+                                                        <span className="text-lg font-bold">{group.name}</span>
+                                                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{group.items.length} Products Available</p>
+                                                    </div>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent className="space-y-6 pt-2 pb-8">
+                                                {group.items.map(product => {
+                                                    const productEnabled = form.watch(`productCriteria.${product.id}.enabled`);
+                                                    return (
+                                                        <div key={product.id} className={cn("p-6 border-2 rounded-xl transition-all", productEnabled ? "border-primary bg-primary/5" : "border-slate-100 bg-slate-50/50")}>
+                                                            <div className="flex items-center justify-between mb-6">
+                                                                <div className="flex items-center gap-3">
+                                                                     <FormField
+                                                                        control={form.control}
+                                                                        name={`productCriteria.${product.id}.enabled`}
+                                                                        render={({ field }) => (
+                                                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                                                <FormLabel className="text-base font-black cursor-pointer">{product.name}</FormLabel>
+                                                                            </FormItem>
+                                                                        )}
+                                                                    />
+                                                                </div>
+                                                                {productEnabled && <Badge className="bg-primary text-white border-none uppercase text-[8px] tracking-[0.2em] font-black h-4 px-2">Enabled for Matching</Badge>}
+                                                            </div>
+                                                            
+                                                            {productEnabled && (
+                                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in zoom-in-95 duration-300">
+                                                                    <div className="space-y-4">
+                                                                        <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Amount Filter (ZAR)</Label>
+                                                                        <div className="grid grid-cols-2 gap-4">
+                                                                            <FormField control={form.control} name={`productCriteria.${product.id}.minAmount`} render={({ field }) => (
+                                                                                <FormItem><FormLabel className="text-[9px] uppercase font-bold">Min</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
+                                                                            )} />
+                                                                            <FormField control={form.control} name={`productCriteria.${product.id}.maxAmount`} render={({ field }) => (
+                                                                                <FormItem><FormLabel className="text-[9px] uppercase font-bold">Max</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
+                                                                            )} />
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="space-y-4">
+                                                                        <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Acceptable Terms</Label>
+                                                                        <div className="grid grid-cols-2 gap-2">
+                                                                            {termOptions.map(term => (
+                                                                                <FormField key={term} control={form.control} name={`productCriteria.${product.id}.preferredTerms`} render={({ field }) => (
+                                                                                    <FormItem className="flex items-center space-x-2 space-y-0 p-2 border rounded-md bg-white">
+                                                                                        <FormControl>
+                                                                                            <Checkbox 
+                                                                                                checked={field.value?.includes(term)} 
+                                                                                                onCheckedChange={(checked) => {
+                                                                                                    const current = field.value || [];
+                                                                                                    return checked 
+                                                                                                        ? field.onChange([...current, term]) 
+                                                                                                        : field.onChange(current.filter(t => t !== term));
+                                                                                                }} 
+                                                                                            />
+                                                                                        </FormControl>
+                                                                                        <FormLabel className="text-[10px] font-bold cursor-pointer">{term}</FormLabel>
+                                                                                    </FormItem>
+                                                                                )} />
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                             </div>
                         </TabsContent>
 
                         <TabsContent value="risk" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
                              <Card className="text-left">
-                                <CardHeader className="text-left"><CardTitle className="text-lg flex items-center gap-2 text-left"><Users className="h-5 w-5 text-primary"/> Entity & History Focus</CardTitle></CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Entity Maturity</Label>
-                                        <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
-                                            <FormItem className="text-left"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} /></FormControl></FormItem>
-                                        )} />
+                                <CardHeader className="text-left border-b bg-muted/20">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-left text-foreground">
+                                        <ShieldCheck className="h-5 w-5 text-primary"/> 
+                                        Entity Risk Parameters
+                                    </CardTitle>
+                                    <CardDescription>Universal risk filters applied across all deal origination.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
+                                    <div className="space-y-6 text-left">
+                                        <div className="space-y-4 text-left">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entity Maturity</Label>
+                                            <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
+                                                <FormItem className="text-left"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} className="border-2" /></FormControl></FormItem>
+                                            )} />
+                                        </div>
+                                        <div className="space-y-4 text-left">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Minimum Annual Turnover (R)</Label>
+                                            <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
+                                                <FormItem className="text-left"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2" /></FormControl></FormItem>
+                                            )} />
+                                        </div>
                                     </div>
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Credit History Focus</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hard Risk Exclusions</Label>
                                         <div className="grid grid-cols-1 gap-2 text-left">
                                             <FormField control={form.control} name="requiresNoJudgements" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-3 border rounded-md text-left">
-                                                    <FormLabel className="font-medium text-xs text-left">Must have no judgements</FormLabel>
+                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-4 border rounded-xl bg-slate-50/50">
+                                                    <FormLabel className="font-bold text-xs text-left">Exclude records with judgments</FormLabel>
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 </FormItem>
                                             )} />
                                             <FormField control={form.control} name="requiresNoDefaults" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-3 border rounded-md text-left">
-                                                    <FormLabel className="font-medium text-xs text-left">Must have no defaults</FormLabel>
+                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-4 border rounded-xl bg-slate-50/50">
+                                                    <FormLabel className="font-bold text-xs text-left">Exclude records with defaults</FormLabel>
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 </FormItem>
                                             )} />
                                              <FormField control={form.control} name="requiresNoArrears" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-3 border rounded-md text-left">
-                                                    <FormLabel className="font-medium text-xs text-left">No active arrears accounts</FormLabel>
+                                                <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-4 border rounded-xl bg-slate-50/50">
+                                                    <FormLabel className="font-bold text-xs text-left">Exclude records in arrears</FormLabel>
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 </FormItem>
                                             )} />
                                         </div>
                                     </div>
                                 </CardContent>
-                                <CardContent className="space-y-4 border-t pt-6 text-left">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Target Entity Types</Label>
+                                <CardContent className="space-y-4 border-t pt-8 text-left">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Acceptable Legal Structures</Label>
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                                         {entityOptions.map(item => (
                                             <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
                                                 <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                    <FormLabel className="font-medium text-[10px] cursor-pointer text-left">{item}</FormLabel>
+                                                    <FormControl>
+                                                        <Checkbox 
+                                                            checked={field.value?.includes(item)} 
+                                                            onCheckedChange={(checked) => {
+                                                                const current = field.value || [];
+                                                                return checked ? field.onChange([...current, item]) : field.onChange(current.filter(v => v !== item));
+                                                            }} 
+                                                        />
+                                                    </FormControl>
+                                                    <FormLabel className="font-medium text-[11px] cursor-pointer text-left">{item}</FormLabel>
                                                 </FormItem>
                                             )} />
                                         ))}
@@ -234,36 +353,31 @@ export default function LendingParametersContent() {
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="assets" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
+                        <TabsContent value="portfolio" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
                              <Card className="text-left">
-                                <CardHeader className="text-left">
-                                    <CardTitle className="text-lg flex items-center gap-2 text-left"><Banknote className="h-5 w-5 text-primary"/> Agreement & Asset Portfolio</CardTitle>
-                                    <CardDescription className="text-left">Select the types of agreements you offer and the physical assets you will finance.</CardDescription>
+                                <CardHeader className="text-left border-b bg-muted/20">
+                                    <CardTitle className="text-lg flex items-center gap-2 text-left"><Package className="h-5 w-5 text-primary"/> Industry & Asset Focus</CardTitle>
+                                    <CardDescription>Define the physical assets and regions you specialize in financing.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-10 text-left">
+                                <CardContent className="space-y-10 pt-8 text-left">
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Lending Agreement Products</Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-                                            {appTypeOptions.map(item => (
-                                                <FormField key={item} control={form.control} name="appTypes" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                        <FormLabel className="font-medium text-xs cursor-pointer text-left">{item}</FormLabel>
-                                                    </FormItem>
-                                                )} />
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1 text-left"><Package className="h-4 w-4" /> Industrial Asset Specialization</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left flex items-center gap-2">
+                                            <Truck className="h-4 w-4" /> 
+                                            Specialized Asset Classes
+                                        </Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                                             {supplierCategories.map(item => (
                                                 <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
                                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                                        <FormControl>
+                                                            <Checkbox 
+                                                                checked={field.value?.includes(item)} 
+                                                                onCheckedChange={(checked) => {
+                                                                    const current = field.value || [];
+                                                                    return checked ? field.onChange([...current, item]) : field.onChange(current.filter(v => v !== item));
+                                                                }} 
+                                                            />
+                                                        </FormControl>
                                                         <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight text-left">{item}</FormLabel>
                                                     </FormItem>
                                                 )} />
@@ -274,29 +388,24 @@ export default function LendingParametersContent() {
                                     <Separator />
 
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1 text-left"><Sparkles className="h-4 w-4" /> Preferred Truck Brands</Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-                                            {brandOptions.map(item => (
-                                                <FormField key={item} control={form.control} name="supportedBrands" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                        <FormLabel className="font-medium text-sm cursor-pointer text-left">{item}</FormLabel>
-                                                    </FormItem>
-                                                )} />
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1 text-left"><MapPin className="h-4 w-4" /> Funding Regions</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1 text-left">
+                                            <MapPin className="h-4 w-4" /> 
+                                            Target Funding Regions
+                                        </Label>
                                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left">
                                             {regionOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
                                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors">
-                                                        <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                                        <FormLabel className="font-medium text-[10px] cursor-pointer text-left">{item}</FormLabel>
+                                                        <FormControl>
+                                                            <Checkbox 
+                                                                checked={field.value?.includes(item)} 
+                                                                onCheckedChange={(checked) => {
+                                                                    const current = field.value || [];
+                                                                    return checked ? field.onChange([...current, item]) : field.onChange(current.filter(v => v !== item));
+                                                                }} 
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-medium text-[11px] cursor-pointer text-left">{item}</FormLabel>
                                                     </FormItem>
                                                 )} />
                                             ))}
@@ -307,10 +416,10 @@ export default function LendingParametersContent() {
                         </TabsContent>
                     </Tabs>
 
-                    <div className="bg-slate-50 border-t p-6 flex justify-end mt-8 rounded-lg shadow-inner">
-                        <Button type="submit" disabled={isSaving} size="lg" className="h-12 px-10 font-bold gap-2">
+                    <div className="bg-slate-50 border-t p-8 flex justify-end mt-12 rounded-2xl shadow-inner">
+                        <Button type="submit" disabled={isSaving} size="lg" className="h-14 px-12 font-black uppercase tracking-widest gap-2 shadow-xl">
                             {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
-                            Update Lending Focus & Portfolio
+                            Update Global Matching Logic
                         </Button>
                     </div>
                 </form>
@@ -318,3 +427,4 @@ export default function LendingParametersContent() {
         </div>
     );
 }
+
