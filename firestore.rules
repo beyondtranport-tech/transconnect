@@ -33,28 +33,27 @@ service cloud.firestore {
     // --- RULES ---
 
     // Global Admin Override (Covers standard paths and root access)
-    // For collection group queries, the rules engine needs an explicit or recursive match.
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
     // Explicit rules for collection group queries (Critical for Admin CRM oversight)
     // These must match the collection ID regardless of its depth in the hierarchy
-    match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/quotes/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/facilities/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/shops/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/products/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/enquiries/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/transactions/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/supportMessages/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/staff/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/tasks/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/walletPayments/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/quotes/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/searchLogs/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/payoutRequests/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/communications/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/facilities/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/auditLogs/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/shops/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/products/{id} { allow get, list, write: if isAdmin(); }
+    match /{path=**}/reconciliations/{id} { allow get, list, write: if isAdmin(); }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -76,6 +75,8 @@ service cloud.firestore {
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{payId} { allow read, write: if isMember(companyId); }
       match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
+      allow get, list: if isMember(companyId);
+      
       match /quotes/{quoteId} { allow read, write: if isMember(companyId); }
       match /tasks/{taskId} { allow read, write: if isMember(companyId); }
       match /payoutRequests/{pid} { allow read, write: if isMember(companyId); }
@@ -134,4 +135,4 @@ service cloud.firestore {
   }
 }
 
-// Rule Sync Token: 2026-03-15T12:30:00Z
+// Global Definitive Rule Sync Token: 2026-03-15T13:45:00Z
