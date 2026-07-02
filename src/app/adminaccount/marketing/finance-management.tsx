@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -213,7 +214,7 @@ export default function FinanceManagement() {
   const filteredRecords = useMemo(() => {
     return allRecords.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesCategory = categoryFilter === 'all' || p.industrial_category === categoryFilter;
+        const matchesCategory = categoryFilter === 'all' || (p.industrial_category || p.category) === categoryFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         return matchesStatus && matchesCategory && matchesAssignee;
     });
@@ -237,7 +238,7 @@ export default function FinanceManagement() {
       { 
           accessorKey: 'industrial_category', 
           header: 'Funder Class',
-          cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || 'General'}</Badge>
+          cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || row.original.category || 'General'}</Badge>
       },
       { 
           accessorKey: 'contactPerson',

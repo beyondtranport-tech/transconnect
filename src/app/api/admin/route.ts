@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -42,52 +43,80 @@ export async function POST(req: NextRequest) {
         if (!action) throw new Error("No action provided.");
 
         switch (action) {
-            case 'getMemberFacilities': {
-                const { companyId } = payload;
-                if (!companyId) throw new Error("companyId required.");
-                const snap = await db.collection(`companies/${companyId}/facilities`).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getPartnersByType': {
-                if (!isAdmin) throw new Error("Admin access required.");
-                const { type } = payload;
-                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
-                const leadsSnap = await db.collection('leads').where('type', '==', type).get();
-                const results = [
-                    ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() })),
-                    ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))
-                ];
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
-            }
-
-            case 'getAudienceCommunications': {
-                if (!isAdmin) throw new Error("Admin access required.");
-                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getAudienceTasks': {
-                if (!isAdmin) throw new Error("Admin access required.");
-                const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
             case 'searchRegistry': {
                 if (!isAdmin) throw new Error("Admin access required.");
                 const { type, term, limit = 1000 } = payload;
-                const leadsSnap = await db.collection('leads').limit(limit).get();
-                const partnersSnap = await db.collection('partners').limit(limit).get();
-                const allRecords = [
+                
+                // Optimized: Query Firestore for the specific type first
+                const leadsSnap = await db.collection('leads').where('type', '==', type).limit(limit).get();
+                const partnersSnap = await db.collection('partners').where('type', '==', type).limit(limit).get();
+                
+                let results = [
                     ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
                     ...partnersSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
                 ];
-                const results = allRecords.filter(r => {
-                    const matchesType = !type || type === 'all' || r.type === type;
-                    const matchesTerm = !term || (r.companyName || '').toLowerCase().includes(term.toLowerCase());
-                    return matchesType && matchesTerm;
-                });
+
+                if (term) {
+                    const lowTerm = term.toLowerCase();
+                    results = results.filter(r => 
+                        (r.companyName || '').toLowerCase().includes(lowTerm) ||
+                        (r.id || '').toLowerCase().includes(lowTerm)
+                    );
+                }
+
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
+            case 'bulkSavePartners': {
+                if (!isAdmin) throw new Error("Admin access required.");
+                const { partners, type } = payload;
+                const batch = db.batch();
+                
+                partners.forEach((p: any) => {
+                    const coll = p.source === 'Lead' ? 'leads' : 'partners';
+                    const id = p.record_id || p.id || db.collection(coll).doc().id;
+                    const ref = db.collection(coll).doc(id);
+                    batch.set(ref, { 
+                        ...p, 
+                        id, 
+                        type: type || p.type || 'lead',
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                if (!isAdmin) throw new Error("Admin access required.");
+                const { leadIds, type } = payload;
+                const batch = db.batch();
+                const coll = type === 'lead' ? 'leads' : 'partners';
+
+                leadIds.forEach((id: string) => {
+                    const ref = db.collection(coll).doc(id);
+                    batch.update(ref, { 
+                        status: 'contacted',
+                        researchStatus: 'searching',
+                        updatedAt: FieldValue.serverTimestamp() 
+                    });
+                });
+
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logForensicInitiated': {
+                if (!isAdmin) throw new Error("Admin access required.");
+                const { partnerId, isLead } = payload;
+                const coll = isLead ? 'leads' : 'partners';
+                await db.collection(coll).doc(partnerId).update({
+                    status: 'contacted',
+                    researchStatus: 'searching',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
             }
 
             case 'getMembers': {
@@ -168,6 +197,7 @@ export async function POST(req: NextRequest) {
             default: return NextResponse.json({ success: false, error: `Invalid action: ${action}` }, { status: 400 });
         }
     } catch (error: any) {
+        console.error("ADMIN_API_ERROR:", error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
