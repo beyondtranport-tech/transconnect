@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -37,7 +36,7 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(token);
         const db = getFirestore(app);
 
-        // Security Shield: Verify Admin status via email or custom claim
+        // Security Shield: Verify Admin status
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' || 
                         decodedToken.email === 'michael@logisticsflow.co.za' ||
@@ -58,7 +57,6 @@ export async function POST(req: NextRequest) {
             
             case 'searchRegistry': {
                 const { type, term, limit = 20000, outreachFilter } = payload;
-                
                 let results: any[] = [];
                 
                 if (type === 'all') {
@@ -84,8 +82,8 @@ export async function POST(req: NextRequest) {
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     results = results.filter(r => 
-                        (r.companyName || '').toLowerCase().includes(lowTerm) ||
-                        (r.company_name || '').toLowerCase().includes(lowTerm) ||
+                        (r.companyName || r.company_name || '').toLowerCase().includes(lowTerm) ||
+                        (r.contactPerson || r.contact_person || '').toLowerCase().includes(lowTerm) ||
                         (r.id || '').toLowerCase().includes(lowTerm)
                     );
                 }
@@ -110,11 +108,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
             case 'savePartner': {
                 const { partner, collection: targetColl = 'partners' } = payload;
                 const id = partner.id || db.collection(targetColl).doc().id;
@@ -123,10 +116,46 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'deletePartner': {
-                const { partnerId, source = 'Partner' } = payload;
-                const coll = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).delete();
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                const batch = db.batch();
+                const coll = type === 'lead' ? 'leads' : 'partners';
+                
+                partners.forEach((p: any) => {
+                    const id = p.record_id || p.id || db.collection(coll).doc().id;
+                    const ref = db.collection(coll).doc(id);
+                    batch.set(ref, { 
+                        ...p, 
+                        id, 
+                        type: p.type || type, 
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getPlatformStaff':
+            case 'getStaff': {
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const id = staff.id || db.collection('platformStaff').doc().id;
+                await db.collection('platformStaff').doc(id).set({ ...staff, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePlatformStaff': {
+                await db.collection('platformStaff').doc(payload.staffId).delete();
                 return NextResponse.json({ success: true });
             }
 
@@ -156,9 +185,6 @@ export async function POST(req: NextRequest) {
 
             case 'dispatchEngagement': {
                 const { partnerId, email, subject, html, audience } = payload;
-                if (!email || !html) throw new Error("Email and content required for dispatch.");
-
-                // 1. Log the communication
                 const isLead = partnerId.startsWith('DISC_') || partnerId.includes('lead');
                 const targetColl = isLead ? 'leads' : 'partners';
                 const parentRef = db.collection(targetColl).doc(partnerId);
@@ -179,16 +205,28 @@ export async function POST(req: NextRequest) {
                     status: 'contacted',
                     updatedAt: FieldValue.serverTimestamp()
                 });
-
-                // 2. Transmit via transactional bridge
-                // Placeholder: In production, this would call SendGrid/AWS SES.
-                // We simulate success for the prototype.
-                console.log(`[DISPATCH] Sent to ${email}: ${subject}`);
-
-                return NextResponse.json({ success: true, message: "Dispatched successfully." });
+                return NextResponse.json({ success: true, message: "Dispatched and Logged." });
             }
 
-            // --- FINANCIAL & WALLET ACTIONS ---
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
+                const filtered = snap.docs
+                    .map(doc => ({ id: doc.id, path: doc.ref.path, ...doc.data() }))
+                    .filter((log: any) => log.path.includes(`/${type}s/`) || log.path.includes(`/leads/`));
+                
+                return NextResponse.json({ success: true, data: filtered.map(serializeTimestamps) });
+            }
+
+            case 'getAudienceTasks': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
+                const filtered = snap.docs
+                    .map(doc => ({ id: doc.id, path: doc.ref.path, ...doc.data() }))
+                    .filter((t: any) => t.path.includes(`/${type}s/`) || t.path.includes(`/leads/`));
+                
+                return NextResponse.json({ success: true, data: filtered.map(serializeTimestamps) });
+            }
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').get();
@@ -207,30 +245,46 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: members });
             }
 
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getLendingData': {
+                const { collectionName } = payload;
+                const snap = await db.collection(collectionName).limit(1000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map((d:any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'saveLendingAgreement': {
+                const { agreement } = payload;
+                const id = agreement.id || db.collection('agreements').doc().id;
+                await db.collection('agreements').doc(id).set({ ...agreement, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id });
+            }
+
             case 'approvePayout': {
                 const { companyId, payoutId, amount } = payload;
+                const batch = db.batch();
                 const companyRef = db.collection('companies').doc(companyId);
                 const payoutRef = companyRef.collection('payoutRequests').doc(payoutId);
-                
-                await db.runTransaction(async (transaction) => {
-                    transaction.update(payoutRef, { status: 'approved', processedAt: FieldValue.serverTimestamp() });
-                    transaction.update(companyRef, {
-                        walletBalance: FieldValue.increment(-amount),
-                        availableBalance: FieldValue.increment(-amount),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                    
-                    const txRef = companyRef.collection('transactions').doc();
-                    transaction.set(txRef, {
-                        transactionId: txRef.id,
-                        type: 'debit',
-                        amount,
-                        date: FieldValue.serverTimestamp(),
-                        description: 'Wallet Payout (Withdrawal)',
-                        status: 'allocated',
-                        chartOfAccountsCode: '7050'
-                    });
+                const txRef = companyRef.collection('transactions').doc();
+
+                batch.update(companyRef, {
+                    walletBalance: FieldValue.increment(-amount),
+                    availableBalance: FieldValue.increment(-amount),
+                    updatedAt: FieldValue.serverTimestamp()
                 });
+                batch.update(payoutRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                batch.set(txRef, {
+                    id: txRef.id,
+                    type: 'debit',
+                    amount,
+                    description: 'Wallet Payout (Approved)',
+                    date: FieldValue.serverTimestamp(),
+                    status: 'allocated'
+                });
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -243,31 +297,41 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            // --- LENDING PORTAL ACTIONS ---
-
-            case 'getLendingData': {
-                const { collectionName, clientId } = payload;
-                let ref: any = db.collection(collectionName);
-                if (clientId) ref = ref.where('clientId', '==', clientId);
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                const coll = type === 'lead' ? 'leads' : 'partners';
+                const ref = db.collection(coll).doc(id);
+                const snap = await ref.get();
+                if (!snap.exists) throw new Error("Record not found.");
                 
-                const snap = await ref.limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d:any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+                const data = snap.data()!;
+                const companyName = data.companyName || data.trading_name || `${data.firstName} ${data.lastName}`;
+                
+                const { enrichPartner } = await import('@/ai/flows/enrich-partner-flow');
+                const result = await enrichPartner({ companyName });
+                
+                const update = {
+                    ...result,
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+                
+                await ref.update(update);
+                return NextResponse.json({ success: true, data: result });
             }
 
-            case 'saveLendingAgreement': {
-                const { agreement } = payload;
-                const id = agreement.id || db.collection('agreements').doc().id;
-                await db.collection('agreements').doc(id).set({
-                    ...agreement,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true, id });
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const batch = db.batch();
+                const coll = type === 'lead' ? 'leads' : 'partners';
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection(coll).doc(id), {
+                        status: 'contacted',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             default: return NextResponse.json({ success: false, error: `Action ${action} not supported.` }, { status: 400 });

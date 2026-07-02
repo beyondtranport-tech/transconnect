@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -33,10 +32,11 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import FinanceDiscoveryEngine, { financeCategories } from './finance-discovery';
+import { financeCategories } from './finance-discovery';
 import AudienceCommunicationsTable from './AudienceCommunicationsTable';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { AddCommunicationLogDialog } from './AddCommunicationLogDialog';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -107,7 +107,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
@@ -129,7 +129,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                     </div>
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
-                            <FormLabel>Pipeline Status</Label>
+                            <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
