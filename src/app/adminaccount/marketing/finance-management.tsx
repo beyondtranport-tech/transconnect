@@ -61,7 +61,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   industrial_category: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('finance'),
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
   notes: z.string().optional(),

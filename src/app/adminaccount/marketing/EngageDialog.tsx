@@ -156,7 +156,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
 
-        // Changed from Gmail Web to mailto protocol for local Outlook integration
+        //mailTo triggers local Outlook
         const mailtoUrl = `mailto:${currentPartner.email}?subject=${encodeURIComponent(getSubject())}`;
         window.location.href = mailtoUrl;
         
@@ -274,9 +274,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Outlook Integration</AlertTitle>
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Outlook vs Dispatch</AlertTitle>
                         <AlertDescription className="text-[9px] text-amber-700 text-left leading-tight">
-                            "Log & Open" triggers your local Outlook client. "Automated Dispatch" runs in the background.
+                            "Log & Open" triggers your local Outlook client. "Automated Dispatch" runs in the background via transactional provider.
                         </AlertDescription>
                     </Alert>
 
