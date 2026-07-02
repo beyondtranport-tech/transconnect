@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -62,6 +61,6 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       }
     ],
-    "reasoning": "Added lastOpenedAt and lastAccessedAt to support forensic tracking of lead engagement across email and app visits."
+    "reasoning": "Synchronized rules to explicitly support collection group queries for administrators across all platform data nodes."
   }
 }

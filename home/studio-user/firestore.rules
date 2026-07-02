@@ -31,7 +31,6 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // Explicitly handle collection group queries for admins.
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
@@ -52,7 +51,6 @@ service cloud.firestore {
 
     // --- STANDARD PATH RULES ---
 
-    // Global Admin Override (Covers standard paths and root access)
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -135,4 +133,4 @@ service cloud.firestore {
   }
 }
 
-// Global Definitive Rule Sync Token: 2026-03-15T15:20:00Z
+// Rule Sync Token: 2026-03-16T10:00:00Z
