@@ -11,10 +11,10 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
+        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
         request.auth.token.email == 'michael@logisticsflow.co.za' ||
-        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
         (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
       );
     }
@@ -32,7 +32,7 @@ service cloud.firestore {
 
     // --- RULES ---
 
-    // Global Admin Override (Covers standard paths)
+    // Global Admin Override (Covers standard paths and root access)
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -49,6 +49,7 @@ service cloud.firestore {
     match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/facilities/{id} { allow read, write: if isAdmin(); }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -120,4 +121,4 @@ service cloud.firestore {
   }
 }
 
-// Rule Sync Token: 2026-03-14T22:30:00Z
+// Rule Sync Token: 2026-03-14T23:55:00Z
