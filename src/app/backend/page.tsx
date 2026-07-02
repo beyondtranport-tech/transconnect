@@ -40,6 +40,8 @@ import {
   PieChart,
   Scale,
   Landmark,
+  ArrowRightLeft,
+  Globe,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,6 +52,7 @@ import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
+import Link from 'next/link';
 
 // --- Static Imports for Member Success Focus ---
 import AdminDashboardContent from '@/app/backend/dashboard-content';
@@ -65,6 +68,7 @@ import UsersList from '@/app/backend/users-list';
 import CommercialNegotiations from '@/app/backend/commercial-negotiations';
 import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
+import FundingDivisionContent from '@/app/backend/funding-division-content';
 
 // Platform Settings
 import PermissionsContent from '@/app/backend/permissions-content';
@@ -137,6 +141,7 @@ function BackendContent() {
       case 'wallet-transactions': return <WalletTransactionsList />;
       case 'activity': return <ActivityFeed />;
       case 'support-inbox': return <SupportChatInbox />;
+      case 'market-origination': return <FundingDivisionContent mode="market" />;
       
       // Member Success & Growth
       case 'success-engine': return <MemberSuccessEngine />;
@@ -179,7 +184,7 @@ function BackendContent() {
 
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
-  const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
+  const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox', 'market-origination'].includes(activeView);
   const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -217,6 +222,7 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}><Users />Member Roster</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => navigate('wallet-transactions')}><Wallet />Wallet Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
 
@@ -258,6 +264,13 @@ function BackendContent() {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
+          <div className="border-t p-2">
+            <Button variant="outline" className="w-full justify-start gap-2 h-9 text-xs" asChild>
+                <Link href="/lending">
+                    <ArrowRightLeft className="h-3.5 w-3.5" /> Lending Portal
+                </Link>
+            </Button>
+          </div>
           {user && (
               <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
               <Avatar className="h-10 w-10">

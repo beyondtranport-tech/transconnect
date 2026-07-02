@@ -17,8 +17,6 @@ import {
 import {
   LogOut,
   Loader2,
-  User,
-  Star,
   Calculator,
   Banknote,
   Landmark,
@@ -32,6 +30,7 @@ import {
   Paperclip,
   CalendarCheck,
   Settings,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -65,7 +64,7 @@ const LendingParametersContent = dynamic(() => import('@/app/account/lending-par
 function LendingPortalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const initialView = searchParams.get('view') || 'opportunities';
+  const initialView = searchParams.get('view') || 'direct-deals';
   const [activeView, setActiveView] = useState(initialView);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -93,7 +92,7 @@ function LendingPortalContent() {
 
   const renderContent = useCallback(() => {
     switch (activeView) {
-      case 'opportunities': return <FundingDivisionContent />;
+      case 'direct-deals': return <FundingDivisionContent mode="direct" />;
       case 'discovery': return <DiscoveryContent />;
       case 'scoring': return <ScoringContent />;
       case 'clients': return <ClientsContent />;
@@ -108,7 +107,7 @@ function LendingPortalContent() {
       case 'assumptions': return <LendingAssumptions />;
       case 'loan-book': return <LoanBook />;
       case 'lending-focus': return <LendingParametersContent />;
-      default: return <FundingDivisionContent />;
+      default: return <FundingDivisionContent mode="direct" />;
     }
   }, [activeView]);
   
@@ -123,7 +122,7 @@ function LendingPortalContent() {
 
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
 
-  const isOriginationActive = ['opportunities', 'discovery', 'scoring', 'lending-focus'].includes(activeView);
+  const isOriginationActive = ['direct-deals', 'discovery', 'scoring', 'lending-focus'].includes(activeView);
   const isPortfolioActive = ['clients', 'partners', 'agreements', 'asset-register', 'transactions', 'facilities', 'collateral', 'payments'].includes(activeView);
   const isModellingActive = ['financial-model', 'assumptions', 'loan-book'].includes(activeView);
   
@@ -131,7 +130,7 @@ function LendingPortalContent() {
       <SidebarProvider>
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 p-2">
               <Landmark className="h-6 w-6 text-primary" />
               <h2 className="text-lg font-semibold text-sidebar-foreground">
                 Lending Portal
@@ -141,28 +140,28 @@ function LendingPortalContent() {
           <SidebarContent>
             <SidebarGroup>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Origination" isActive={isOriginationActive}>
-                        <Lightbulb /><span>Origination</span>
+                    <SidebarMenuButton tooltip="Deal Flow" isActive={isOriginationActive}>
+                        <Lightbulb /><span>Deal Flow</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem>
-                            <SidebarMenuSubButton isActive={activeView === 'opportunities'} onClick={() => navigate('opportunities')}>
-                                Opportunities
+                            <SidebarMenuSubButton isActive={activeView === 'direct-deals'} onClick={() => navigate('direct-deals')}>
+                                <Landmark className="h-3.5 w-3.5" />Direct Queue
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'lending-focus'} onClick={() => navigate('lending-focus')}>
-                                <Settings className="h-3.5 w-3.5" />Lending Focus
+                                <Settings className="h-3.5 w-3.5" />Investment Focus
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'discovery'} onClick={() => navigate('discovery')}>
-                                Discovery
+                                KYC Discovery
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                         <SidebarMenuSubItem>
                             <SidebarMenuSubButton isActive={activeView === 'scoring'} onClick={() => navigate('scoring')}>
-                                Scoring
+                                Risk Scoring
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
                     </SidebarMenuSub>
@@ -239,16 +238,23 @@ function LendingPortalContent() {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
+          <div className="border-t p-2">
+            <Button variant="outline" className="w-full justify-start gap-2 h-9 text-xs" asChild>
+                <Link href="/backend">
+                    <ArrowRightLeft className="h-3.5 w-3.5" /> Operations Backend
+                </Link>
+            </Button>
+          </div>
           {user && (
               <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col truncate">
-                  <span className="text-sm font-medium text-sidebar-foreground truncate">
+                  <span className="text-sm font-medium text-sidebar-foreground truncate text-left">
                   {user.displayName || 'Admin'}
                   </span>
-                  <span className="text-xs text-sidebar-foreground/70 truncate">
+                  <span className="text-xs text-sidebar-foreground/70 truncate text-left">
                   {user.email}
                   </span>
               </div>
