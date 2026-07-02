@@ -59,6 +59,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   industrial_category: z.string().optional(),
+  industrial_tags: z.array(z.string()).optional().default([]),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.literal('finance'),
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
@@ -78,7 +79,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', industrial_category: '', status: 'new', type: 'finance', website: '', notes: '', address: '' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', industrial_category: '', industrial_tags: [], status: 'new', type: 'finance', website: '', notes: '', address: '' });
     }
   }, [open, partner, form]);
 
@@ -104,7 +105,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
         <DialogContent className="sm:max-w-[700px] text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>Edit Finance Partner</DialogTitle>
-                <DialogDescription>Manage core details for the lending institution.</DialogDescription>
+                <DialogDescription>Manage core details and specialized forensic tags.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
@@ -143,6 +144,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                             <FormMessage />
                         </FormItem> 
                     )} />
+                    <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Forensic Notes</FormLabel><FormControl><Textarea {...field} className="bg-white min-h-[100px]" /></FormControl></FormItem>)} />
                      <DialogFooter className="pt-4 border-t text-left text-foreground">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
@@ -183,7 +185,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
             </DialogTrigger>
             <DialogContent className="max-w-md text-left text-foreground">
                  <DialogHeader><DialogTitle>Auto-Clean Registry</DialogTitle></DialogHeader>
-                <div className="py-4 space-y-4 text-left">
+                <div className="py-4 space-y-4 text-left text-foreground">
                     <div className="p-4 bg-muted/30 border rounded-xl space-y-3">
                         <p className="text-xs font-bold flex items-center gap-2 text-foreground"><CheckCircle className="h-4 w-4 text-green-600"/> Prioritizes Registered Members</p>
                         <p className="text-xs font-bold flex items-center gap-2 text-foreground"><CheckCircle className="h-4 w-4 text-green-600"/> Matches Name + Email</p>
@@ -215,6 +217,7 @@ export default function FinanceManagement() {
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
     industrial_category: true,
+    industrial_tags: true,
     contactPerson: true,
     email: true,
     outreach: true,
@@ -281,13 +284,24 @@ export default function FinanceManagement() {
     },
     { 
         accessorKey: 'industrial_category', 
-        header: 'Classification',
+        header: 'Category',
         cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || 'General'}</Badge>
+    },
+    {
+        accessorKey: 'industrial_tags',
+        header: 'Specialized Tags',
+        cell: ({row}) => (
+            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                {(row.original.industrial_tags || []).map((tag: string) => (
+                    <Badge key={tag} variant="outline" className="text-[8px] h-3.5 px-1 font-bold bg-muted/50 text-foreground border-none uppercase">{tag}</Badge>
+                ))}
+            </div>
+        )
     },
     { accessorKey: 'contactPerson', header: 'Key Contact' },
     { accessorKey: 'email', header: 'Email' },
     { 
-        header: 'Outreach & Result',
+        header: 'Outreach',
         id: 'outreach',
         accessorKey: 'lastOutreachSubject',
         cell: ({ row }) => {
@@ -334,7 +348,7 @@ export default function FinanceManagement() {
   }
 
   return (
-    <div className="space-y-6 text-left text-foreground">
+    <div className="space-y-6 text-left text-foreground text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="finance" onEngageSuccess={() => fetchData()} />
       <BatchResearchDialog open={dialog.type === 'research'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={dialog.data || []} onComplete={() => fetchData()} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
@@ -357,7 +371,7 @@ export default function FinanceManagement() {
 
           <TabsContent value="crm" className="mt-6 space-y-6 text-left text-foreground">
               {!hasLoaded ? (
-                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                       <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
                       <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Scan the capital database. Identify niche lenders and institutional partners.</p>
@@ -366,9 +380,9 @@ export default function FinanceManagement() {
                       </Button>
                   </Card>
               ) : (
-                  <Card className="text-left text-foreground">
+                  <Card className="text-left text-foreground text-left">
                       <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6 text-foreground">
-                          <div className="text-left text-foreground">
+                          <div className="text-left text-foreground text-left">
                               <CardTitle className="text-xl font-bold flex items-center gap-2 text-left text-foreground"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
                               <CardDescription className="text-left text-muted-foreground">Managing {filteredRecords.length} verified funding nodes.</CardDescription>
                           </div>
@@ -393,7 +407,7 @@ export default function FinanceManagement() {
                                 </Select>
                             </div>
                             <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Tag className="h-3 w-3"/> Classification</Label>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Tag className="h-3 w-3"/> Category</Label>
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                                     <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
                                     <SelectContent>
