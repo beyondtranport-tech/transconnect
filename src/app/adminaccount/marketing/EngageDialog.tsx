@@ -242,8 +242,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         </DialogTitle>
                         <div className="flex items-center gap-2 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
-                           <span className="text-muted-foreground">•</span>
-                           <span className="text-muted-foreground font-medium">{currentPartner.email || 'No email recorded'}</span>
+                           <span className="text-muted-foreground text-left">•</span>
+                           <span className="text-muted-foreground font-medium text-left">{currentPartner.email || 'No email recorded'}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-4 text-left">
@@ -260,16 +260,16 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 </Button>
                             </div>
                         )}
-                        <div className="flex gap-2">
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentPartner.email}>
+                        <div className="flex gap-2 text-left">
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-foreground" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentPartner.email}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />}
                                 Outlook
                             </Button>
-                            <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-red-200 hover:bg-red-50" onClick={() => handleLogCopyAndLaunch('gmail')} disabled={isProcessing || isDispatching || !currentPartner.email}>
+                            <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-red-200 hover:bg-red-50 text-foreground" onClick={() => handleLogCopyAndLaunch('gmail')} disabled={isProcessing || isDispatching || !currentPartner.email}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <div className="h-4 w-4 bg-red-600 rounded-sm" />}
                                 Gmail Web
                             </Button>
-                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentPartner.email}>
+                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-foreground" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentPartner.email}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                                 Automated Dispatch
                             </Button>
@@ -306,7 +306,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 key={tab.id}
                                 variant={activeTab === tab.id ? "secondary" : "ghost"}
                                 className={cn(
-                                    "w-full justify-start font-medium text-left text-xs h-10 px-3",
+                                    "w-full justify-start font-medium text-left text-xs h-10 px-3 text-foreground",
                                     activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20"
                                 )}
                                 onClick={() => setActiveTab(tab.id)}
@@ -331,7 +331,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 <div className="flex items-center gap-3 text-left text-foreground">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Version</Label>
                                     <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
-                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200 text-left">
+                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200 text-left text-foreground">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>

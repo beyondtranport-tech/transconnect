@@ -185,8 +185,8 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                  <DialogHeader><DialogTitle>Auto-Clean Registry</DialogTitle></DialogHeader>
                 <div className="py-4 space-y-4 text-left">
                     <div className="p-4 bg-muted/30 border rounded-xl space-y-3">
-                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Prioritizes Registered Members</p>
-                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Matches Name + Email</p>
+                        <p className="text-xs font-bold flex items-center gap-2 text-foreground"><CheckCircle className="h-4 w-4 text-green-600"/> Prioritizes Registered Members</p>
+                        <p className="text-xs font-bold flex items-center gap-2 text-foreground"><CheckCircle className="h-4 w-4 text-green-600"/> Matches Name + Email</p>
                     </div>
                 </div>
                  <DialogFooter>
@@ -293,7 +293,7 @@ export default function FinanceManagement() {
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
-                <div className="flex flex-col text-left text-foreground">
+                <div className="flex flex-col text-left text-foreground text-left">
                     <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] text-left border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
@@ -324,7 +324,7 @@ export default function FinanceManagement() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      await performAdminAction(token, 'deletePartners', { partnerIds: [dialog.data.id] });
+      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
       toast({ title: 'Deleted' });
       fetchData();
       setDialog({ type: null });
@@ -340,7 +340,7 @@ export default function FinanceManagement() {
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-left">Delete Record?</AlertDialogTitle></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -359,15 +359,15 @@ export default function FinanceManagement() {
               {!hasLoaded ? (
                   <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Finance Registry Scan</h2>
-                      <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
-                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
+                      <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Scan the capital database. Identify niche lenders and institutional partners.</p>
+                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />} Execute Scan
                       </Button>
                   </Card>
               ) : (
                   <Card className="text-left text-foreground">
-                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6">
+                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6 text-foreground">
                           <div className="text-left text-foreground">
                               <CardTitle className="text-xl font-bold flex items-center gap-2 text-left text-foreground"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
                               <CardDescription className="text-left text-muted-foreground">Managing {filteredRecords.length} verified funding nodes.</CardDescription>
@@ -381,11 +381,15 @@ export default function FinanceManagement() {
                       </CardHeader>
                       <CardContent className="pt-6 text-left text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground">
+                            <div className="space-y-1 text-left text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                                    <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active</SelectItem></SelectContent>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        <SelectItem value="new">New</SelectItem>
+                                        <SelectItem value="active">Active</SelectItem>
+                                    </SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1 text-left text-foreground">
@@ -398,18 +402,18 @@ export default function FinanceManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground">
+                            <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground text-foreground">
                                 {selectedIds.length > 0 ? (
                                     <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2 text-foreground text-foreground">
                                         <Button variant="secondary" onClick={() => handleEngage(null)} className="flex-1 h-9 font-bold text-xs gap-2 text-foreground"><Send className="h-3.5 w-3.5" /> Engage ({selectedIds.length})</Button>
-                                        <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2 text-foreground text-foreground"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
+                                        <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2 text-foreground text-foreground text-foreground"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                                 )}
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center p-12 text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
+                        {isLoading ? <div className="flex justify-center p-12 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
