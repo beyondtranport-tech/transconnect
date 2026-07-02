@@ -1,11 +1,10 @@
-
 'use client';
 
 import React from "react";
 
 /**
  * AUTHORITATIVE DIGITAL HANDSHAKE
- * Tailored for three primary audiences: Suppliers, Transporters, and Digital Partners.
+ * Tailored for four primary audiences: Suppliers, Transporters, Finance Partners, and Digital Partners.
  */
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
     const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
@@ -16,11 +15,63 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
 
     const isSupplier = audience === 'suppliers';
     const isAssociate = audience === 'associates' || audience === 'isa';
+    const isFinance = audience === 'finance' || audience === 'investors';
     
-    // Extract creator type for personalized greeting
-    const creatorType = (partner?.industrial_category || 'digital').toLowerCase().replace('creator', '').trim();
+    // 1. FINANCE PARTNER / LENDER VERSION
+    if (isFinance) {
+        return (
+            <div style={{ 
+                fontFamily: 'Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif', 
+                fontSize: '12pt', 
+                color: '#000000', 
+                lineHeight: '1.2',
+                backgroundColor: '#ffffff',
+                padding: '0'
+            }}>
+                <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName},</p>
 
-    // 1. DIGITAL PARTNER / ASSOCIATE VERSION
+                <p style={{ margin: '0 0 14pt 0' }}>
+                    Inefficient origination is a silent cost for funding institutions. Logistics Flow is a unified digital ecosystem built to bridge the data gap between the South African transport industry and institutional capital.
+                </p>
+
+                <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>
+                    "We have cataloged the national transport grid into a forensic registry of over 22,000 records. Within our Finance Mall, we provide specialized lenders with an automated matching tool—exposing your institution only to verified applications that meet your exact credit and asset criteria."
+                </p>
+
+                <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Finance Partner Advantage:</p>
+                <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
+                    <li style={{ marginBottom: '7pt' }}><strong>Automated Deal-Flow:</strong> Receive high-intent enquiries pre-filtered to match your lending mandate.</li>
+                    <li style={{ marginBottom: '7pt' }}><strong>Forensic Verification:</strong> Every application includes verified RC1 fleet data and human identity confirmation.</li>
+                    <li style={{ marginBottom: '7pt' }}><strong>Market Transparency:</strong> Access direct leadership contacts for over 5,400+ transport companies.</li>
+                    <li style={{ marginBottom: '7pt' }}><strong>Digital Credit Scoring:</strong> Utilize platform-native performance data to de-risk your deployment.</li>
+                </ul>
+
+                <p style={{ margin: '0 0 14pt 0' }}>
+                    Establish the handshake to secure your standing in the industrial funding pipeline:
+                </p>
+                
+                <p style={{ margin: '0 0 14pt 0' }}>
+                    <a href={optInLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0000FF', textDecoration: 'underline', fontWeight: 'bold' }}>
+                        {optInLink}
+                    </a>
+                </p>
+                
+                <p style={{ margin: '0 0 14pt 0' }}>
+                    By establishing this handshake, you confirm your standing in our secure industrial communication network.
+                </p>
+
+                <div style={{ borderTop: '1px solid #eeeeee', paddingTop: '10pt', marginTop: '20pt' }}>
+                    <p style={{ fontSize: '9pt', color: '#999999', margin: '0', fontWeight: 'bold' }}>
+                        LOGISTICS FLOW SECURE NETWORK | AUTHORIZED CAPITAL SESSION | ALL RIGHTS RESERVED
+                    </p>
+                </div>
+
+                <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="Tracking" />
+            </div>
+        );
+    }
+
+    // 2. DIGITAL PARTNER / ASSOCIATE VERSION
     if (isAssociate) {
         return (
             <div style={{ 
@@ -34,7 +85,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 <p style={{ margin: '0 0 14pt 0' }}>Good day {firstName},</p>
 
                 <p style={{ margin: '0 0 14pt 0' }}>
-                    The South African transport industry is moving from fragmented physical networks to a unified digital ecosystem. We have identified your standing as a <strong>{creatorType} creator</strong> and are writing to propose a strategic partnership that turns your industry influence into a recurring revenue engine.
+                    The South African transport industry is moving from fragmented physical networks to a unified digital ecosystem. We have identified your standing as a digital creator and are writing to propose a strategic partnership that turns your industry influence into a recurring revenue engine.
                 </p>
 
                 <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold' }}>
@@ -45,14 +96,12 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
                     <li style={{ marginBottom: '7pt' }}><strong>Network Integration:</strong> Use your influence to digitalize your existing haulier and supplier contacts into our community.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Content Leadership:</strong> Utilize our AI tools to broadcast high-value industrial insights to your audience.</li>
-                    <li style={{ marginBottom: '7pt' }}><strong>Ecosystem Growth:</strong> Act as an authorized node for member recruitment and service lane activation.</li>
                 </ul>
 
                 <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Associate Advantage:</p>
                 <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
                     <li style={{ marginBottom: '7pt' }}><strong>AI Content Studio:</strong> Free access to 4K video, image, and copy generators tailored for transport.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Recurring Annuity:</strong> Earn a lifetime percentage of every membership and transaction generated by your node.</li>
-                    <li style={{ marginBottom: '7pt' }}><strong>Absolute Transparency:</strong> Full dashboard visibility into your network's growth and your accrued earnings.</li>
                 </ul>
 
                 <p style={{ margin: '0 0 14pt 0' }}>
@@ -80,7 +129,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
         );
     }
 
-    // 2. SUPPLIER VERSION
+    // 3. SUPPLIER VERSION
     if (isSupplier) {
         return (
             <div style={{ 
@@ -106,7 +155,6 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                     <li style={{ marginBottom: '7pt' }}><strong>Direct Market Access:</strong> Instantly reach 5,400+ fleet owners actively searching for parts and services.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Forensic Sales Tools:</strong> Access direct mobile numbers and emails for MDs/Owners to bypass generic switchboards.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Embedded Finance:</strong> We fund your customers so you can close more deals without cash flow constraints.</li>
-                    <li style={{ marginBottom: '7pt' }}><strong>Verified Digital Branch:</strong> Showcase your specialized inventory to a high-intent industrial community 24/7.</li>
                 </ul>
 
                 <p style={{ margin: '0 0 14pt 0' }}>
@@ -134,7 +182,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
         );
     }
 
-    // 3. TRANSPORTER VERSION
+    // 4. TRANSPORTER VERSION (Default)
     return (
         <div style={{ 
             fontFamily: 'Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif', 
@@ -159,7 +207,6 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 <li style={{ marginBottom: '7pt' }}><strong>Capacity Matching:</strong> Proactive AI alerts for loads that match your empty leg routes.</li>
                 <li style={{ marginBottom: '7pt' }}><strong>Group Buying Power:</strong> Access community-negotiated rates for tires, fuel, and parts.</li>
                 <li style={{ marginBottom: '7pt' }}><strong>Validated Standing:</strong> Build a digital track record to unlock asset finance from our 85+ lenders.</li>
-                <li style={{ marginBottom: '7pt' }}><strong>Direct Engagement:</strong> Connect with cargo owners and vetted suppliers without middle-man friction.</li>
             </ul>
 
             <p style={{ margin: '0 0 14pt 0' }}>

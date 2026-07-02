@@ -2,11 +2,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp, Handshake, AppWindow, DatabaseZap, ShoppingBasket } from 'lucide-react';
+import { DollarSign, TrendingUp, Handshake, AppWindow, DatabaseZap, ShoppingBasket, Target, ShieldCheck, Zap } from 'lucide-react';
 import React from 'react';
 import { useConfig } from '@/hooks/use-config';
 import { Loader2 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 export default function InvestorOffer() {
     const { data: isaConfig, isLoading: isIsaLoading } = useConfig<any>('isaPitch');
@@ -26,38 +27,55 @@ export default function InvestorOffer() {
     return (
         <div className="space-y-8 text-left text-foreground">
             <div className="text-left">
-                <h1 className="text-3xl font-bold font-headline text-left">Investor Strategic Participation</h1>
-                <p className="text-lg text-muted-foreground mt-2 text-left">Maximize the yield on your capital through platform-originated deal flow.</p>
+                <h1 className="text-3xl font-bold font-headline text-left">Strategic Capital Participation</h1>
+                <p className="text-lg text-muted-foreground mt-2 text-left">Maximize your yield by connecting with pre-vetted industrial deal flow through our automated matching engine.</p>
             </div>
             
+            <Card className="border-primary border-2 bg-primary/5">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <Zap className="h-6 w-6 text-primary animate-pulse" />
+                        <CardTitle className="text-xl">The Origination Engine</CardTitle>
+                    </div>
+                    <CardDescription>
+                        Eliminate manual searching. Our platform currently catalogs 22,000+ industrial records.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <p className="text-sm leading-relaxed">
+                        Our **Automated Matching Tool** exposes your institution to finance applications that meet your exact lending criteria—Asset Class, Turnover, Term, and Risk Profile—instantly upon submission.
+                    </p>
+                </CardContent>
+            </Card>
+
             <div className="grid md:grid-cols-2 gap-8 text-left">
                 <Card className="flex flex-col text-left">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-left"><DollarSign className="h-6 w-6 text-primary"/>Benefit #1: Recurring Revenue Stream</CardTitle>
-                        <CardDescription className="text-left">Participate in SaaS membership growth.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-left text-foreground"><Target className="h-6 w-6 text-primary"/>Direct Matched Deal Flow</CardTitle>
+                        <CardDescription className="text-left">High-fidelity leads, delivered instantly.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 flex-grow text-left">
-                        <p className="text-sm text-muted-foreground">Direct participation in the platform's recurring income. You receive a <strong className="text-primary">{isaMembershipShare}% recurring share</strong> of all membership fees within your originated network.</p>
+                        <p className="text-sm text-muted-foreground">Receive pre-vetted applications from our registry of **5,400+ verified transporters**. Each lead includes full forensic data packs for rapid due diligence.</p>
                     </CardContent>
                 </Card>
                  <Card className="flex flex-col text-left">
                     <CardHeader className="text-left">
-                        <CardTitle className="flex items-center gap-2 text-left"><TrendingUp className="h-6 w-6 text-primary"/>Benefit #2: Transactional Revenue Share</CardTitle>
-                         <CardDescription className="text-left">Uncapped upside from Mall activity.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-left text-foreground"><TrendingUp className="h-6 w-6 text-primary"/>Recurring Yield Sharing</CardTitle>
+                         <CardDescription className="text-left">Uncapped upside from network growth.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 flex-grow text-left">
-                        <p className="text-sm text-muted-foreground">Receive a <strong className="text-primary">{isaFinanceShare}% share</strong> of the platform's origination and transaction fees generated by your referred members.</p>
+                        <p className="text-sm text-muted-foreground">Receive a <strong className="text-primary font-black">{isaFinanceShare}% share</strong> of the platform's origination and transaction fees generated by your referred members.</p>
                     </CardContent>
                 </Card>
             </div>
 
             <Card className="text-left">
                 <CardHeader className="text-left">
-                    <CardTitle className="flex items-center gap-2 text-left"><ShoppingBasket className="h-6 w-6 text-primary" />Benefit #3: Earn from Value-Added Products</CardTitle>
-                    <CardDescription className="text-left">Resell specialized industrial fintech solutions.</CardDescription>
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground"><ShieldCheck className="h-6 w-6 text-primary" />Forensic Data Integration</CardTitle>
+                    <CardDescription className="text-left">De-risk your lending with first-party performance data.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-left">
-                    <p className="text-sm text-muted-foreground">Monetize high-demand reseller services within your portfolio with an immediate <strong className="text-primary">{isaMarketplaceShare}% commission split</strong>.</p>
+                    <p className="text-sm text-muted-foreground">Access verified MD/CEO names and direct mobile numbers for **all 22,000+ records**. Use our platform-native activity logs to validate business standing beyond standard credit reports.</p>
                 </CardContent>
             </Card>
         </div>
