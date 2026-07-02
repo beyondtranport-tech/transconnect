@@ -3,20 +3,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- HELPER FUNCTIONS ---
-    
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
+    // --- BULLETPROOF ADMIN CHECK ---
     function isAdmin() {
-      return isSignedIn() && (
+      return request.auth != null && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
         request.auth.token.email == 'michael@logisticsflow.co.za' ||
         (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
       );
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
     }
 
     // Explicit check for membership that supports 'list' operations correctly.
@@ -31,8 +30,8 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // These MUST be defined with the /{path=**} prefix to be valid for group queries.
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/agreements/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
@@ -52,7 +51,6 @@ service cloud.firestore {
 
     // --- STANDARD PATH RULES ---
 
-    // Global Admin Override (Covers standard paths and root access)
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -135,4 +133,4 @@ service cloud.firestore {
   }
 }
 
-// Global Definitive Rule Sync Token: 2026-03-16T12:00:00Z
+// Global Definitive Rule Sync Token: 2026-03-16T13:45:00Z
