@@ -47,7 +47,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
                     <li style={{ marginBottom: '7pt' }}><strong>Automated Deal-Flow:</strong> Receive high-intent enquiries pre-filtered to match your lending mandate.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Forensic Verification:</strong> Every application includes verified RC1 fleet data and human identity confirmation.</li>
-                    <li style={{ marginBottom: '7pt' }}><strong>Market Transparency:</strong> Access direct leadership contacts for over 5,400+ transport companies.</li>
+                    <li style={{ marginBottom: '7pt' }}><strong>Digital Documentation:</strong> All required documents (RC1, KYC, FICA) are uploaded seamlessly by the borrower and are available for instant download, significantly improving due-diligence efficiency.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Digital Credit Scoring:</strong> Utilize platform-native performance data to de-risk your deployment.</li>
                 </ul>
 
@@ -158,7 +158,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>The Supplier Advantage:</p>
                 <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
                     <li style={{ marginBottom: '7pt' }}><strong>Direct Market Access:</strong> Instantly reach 5,400+ fleet owners actively searching for parts and services.</li>
-                    <li style={{ marginBottom: '7pt' }}><strong>Forensic Sales Tools:</strong> Access direct mobile numbers and emails for MDs/Owners to bypass generic switchboards.</li>
+                    <li style={{ marginBottom: '7pt' }}><strong>Forensic Sales Tools:</strong> Access direct mobile numbers and emails for MDs/Owners to bypass generic call centers.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Embedded Finance:</strong> We fund your customers so you can close more deals without cash flow constraints.</li>
                 </ul>
 
