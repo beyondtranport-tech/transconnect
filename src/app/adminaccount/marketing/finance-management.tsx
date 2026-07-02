@@ -24,7 +24,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -33,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Internal components
 import FinanceDiscoveryEngine, { financeCategories } from './finance-discovery';
@@ -156,6 +157,134 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
   );
 }
 
+function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [duplicates, setDuplicates] = useState<any[][]>([]);
+    const [selections, setSelections] = useState<Record<number, string>>({});
+    const { toast } = useToast();
+
+    const findDuplicates = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+            const response = await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'findDuplicates', payload: { type: 'finance' } }),
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error);
+            setDuplicates(result.data);
+            if (result.data.length === 0) {
+                 toast({ title: "No duplicates found." });
+            } else {
+                 setIsOpen(true);
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const handleSelection = (groupIndex: number, leadId: string) => {
+        setSelections(prev => ({...prev, [groupIndex]: leadId}));
+    }
+
+    const handleClean = async () => {
+        setIsLoading(true);
+        const leadIdsToDelete: string[] = [];
+        const partnerIdsToDelete: string[] = [];
+
+        duplicates.forEach((group, index) => {
+            const idToKeep = selections[index];
+            if (!idToKeep) return;
+            group.filter(item => item.id !== idToKeep).forEach(item => {
+                if (item.source === 'Lead') leadIdsToDelete.push(item.id);
+                else partnerIdsToDelete.push(item.id);
+            });
+        });
+
+        if (leadIdsToDelete.length === 0 && partnerIdsToDelete.length === 0) {
+            toast({ title: "No duplicates selected for deletion." });
+            setIsLoading(false);
+            setIsOpen(false);
+            return;
+        }
+
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            if (leadIdsToDelete.length > 0) {
+                await performAdminAction(token, 'deleteLeads', { leadIds: leadIdsToDelete });
+            }
+            if (partnerIdsToDelete.length > 0) {
+                await performAdminAction(token, 'deletePartners', { partnerIds: partnerIdsToDelete });
+            }
+            
+            toast({ title: "Duplicates Cleaned!", description: "Duplicate records have been removed." });
+            onComplete();
+            setIsOpen(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" onClick={findDuplicates} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4"/>}
+                    Clean Duplicates
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+                 <DialogHeader>
+                    <DialogTitle>Finance Record Cleaner</DialogTitle>
+                    <DialogDescription>
+                        Select the institutions you want to keep. The duplicates will be deleted permanently.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 max-h-[60vh] overflow-y-auto p-4">
+                    {duplicates.map((group, groupIndex) => (
+                        <Card key={groupIndex}>
+                            <CardHeader><CardTitle>Group: {group[0]?.companyName || group[0]?.company_name}</CardTitle></CardHeader>
+                            <CardContent>
+                                {group.map(item => (
+                                    <div key={item.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
+                                        <Checkbox 
+                                            id={`lead-${groupIndex}-${item.id}`} 
+                                            checked={selections[groupIndex] === item.id} 
+                                            onCheckedChange={() => handleSelection(groupIndex, item.id)}
+                                        />
+                                        <label htmlFor={`lead-${groupIndex}-${item.id}`} className="text-sm space-y-1">
+                                            <p className="font-semibold">{item.companyName || item.company_name} - <span className="font-mono text-xs">{item.id}</span></p>
+                                            <p className="text-muted-foreground">{item.email || 'No Email'} | {item.phone || 'No Phone'}</p>
+                                            <Badge variant="outline" className="text-[10px] uppercase">{item.source}</Badge>
+                                        </label>
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                    <Button onClick={handleClean} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4"/>}
+                        Clean Selected
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
 export default function FinanceManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
@@ -223,74 +352,71 @@ export default function FinanceManagement() {
     });
   }, [allRecords, statusFilter, categoryFilter, assigneeFilter]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => {
-    const cols: ColumnDef<any>[] = [
-      { 
-          accessorKey: 'companyName',
-          header: 'Finance Institution', 
-          cell: ({row}) => (
-              <div className="flex flex-col text-left">
-                  <span className="font-bold text-left text-foreground">{row.original.companyName || row.original.company_name || 'Unnamed Entity'}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left">
-                      {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Lender</Badge>
-                  </div>
-              </div>
-          )
-      },
-      { 
-          accessorKey: 'industrial_category', 
-          header: 'Industrial Category',
-          cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || row.original.category || 'General'}</Badge>
-      },
-      { 
-          accessorKey: 'contactPerson',
-          header: 'Key Contact',
-          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || row.original.contact_person || 'N/A'}</div>
-      },
-      { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email || row.original.email_address || 'N/A'}</div> },
-      { 
-          header: 'Outreach & Result',
-          id: 'outreach',
-          accessorKey: 'lastOutreachSubject',
-          cell: ({ row }) => {
-              if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-              return (
-                  <div className="flex flex-col text-left">
-                      <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] text-left border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
-                      {row.original.lastOpenedAt && (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                              <UserCheck className="h-2.5 w-2.5" /> Read
-                          </div>
-                      )}
-                  </div>
-              );
-          }
-      },
-      { 
-          accessorKey: 'status', 
-          header: 'Status', 
-          cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
-      },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end items-center gap-1 text-left text-foreground">
-          <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-          <AddCommunicationLogDialog 
-              partnerId={row.original.id} 
-              collection={row.original.source === 'Lead' ? 'leads' : 'partners'} 
-              onLogAdded={() => fetchData()} 
-          />
-          <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
-          <PartnerTasksDialog partner={row.original} />
-          <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-        </div>
-      ) },
-    ];
-    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    { 
+        accessorKey: 'companyName',
+        header: 'Finance Institution', 
+        cell: ({row}) => (
+            <div className="flex flex-col text-left">
+                <span className="font-bold text-left text-foreground">{row.original.companyName || row.original.company_name || 'Unnamed Entity'}</span>
+                <div className="flex items-center gap-2 mt-1 text-left">
+                    {row.original.website && <Globe className="h-3 w-3 text-primary" />}
+                    <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Lender</Badge>
+                </div>
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'industrial_category', 
+        header: 'Industrial Category',
+        cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || row.original.category || 'General'}</Badge>
+    },
+    { 
+        accessorKey: 'contactPerson',
+        header: 'Key Contact',
+        cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || row.original.contact_person || 'N/A'}</div>
+    },
+    { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email || row.original.email_address || 'N/A'}</div> },
+    { 
+        header: 'Outreach & Result',
+        id: 'outreach',
+        accessorKey: 'lastOutreachSubject',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            return (
+                <div className="flex flex-col text-left text-foreground">
+                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] text-left border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
+                    {row.original.lastOpenedAt && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
+                            <UserCheck className="h-2.5 w-2.5" /> Read
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    },
+    { 
+        accessorKey: 'status', 
+        header: 'Status', 
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
+    },
+    { id: 'actions', header: 'Actions', cell: ({ row }) => (
+      <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <AddCommunicationLogDialog 
+            partnerId={row.original.id} 
+            collection={row.original.source === 'Lead' ? 'leads' : 'partners'} 
+            onLogAdded={() => fetchData()} 
+        />
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
+        <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+      </div>
+    ) },
+  ], [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -307,12 +433,12 @@ export default function FinanceManagement() {
   }
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="finance" onEngageSuccess={() => fetchData()} />
       <BatchResearchDialog open={dialog.type === 'research'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={dialog.data || []} onComplete={() => fetchData()} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
+        <AlertDialogContent className="text-left text-foreground text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -321,77 +447,78 @@ export default function FinanceManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Tabs defaultValue="crm" className="w-full text-left">
-          <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
+      <Tabs defaultValue="crm" className="w-full text-left text-foreground">
+          <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground text-foreground">
               <TabsTrigger value="crm" className="gap-2"><Users className="h-4 w-4" /> Forensic Registry (CRM)</TabsTrigger>
               <TabsTrigger value="discovery" className="gap-2"><Database className="h-4 w-4" /> Automated Discovery (AI)</TabsTrigger>
               <TabsTrigger value="oversight" className="gap-2"><Clock className="h-4 w-4" /> Oversight Timeline</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="crm" className="mt-6 space-y-6 text-left">
+          <TabsContent value="crm" className="mt-6 space-y-6 text-left text-foreground text-foreground">
               {!hasLoaded ? (
-                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
+                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground text-left">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
+                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left text-foreground">Finance Registry Scan</h2>
                       <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
-                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />} Execute Scan
                       </Button>
                   </Card>
               ) : (
                   <Card className="text-left text-foreground">
-                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6">
+                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6 text-foreground">
                           <div className="text-left text-foreground">
                               <CardTitle className="text-xl font-bold flex items-center gap-2 text-left text-foreground"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
                               <CardDescription className="text-left text-foreground">Managing {filteredRecords.length} verified funding nodes.</CardDescription>
                           </div>
-                          <div className="flex gap-2 text-left">
-                              <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={isLoading}><RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh</Button>
-                              <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(allRecords, 'finance-registry-backup.csv')}><Download className="h-4 w-4 mr-2" /> Backup</Button>
+                          <div className="flex gap-2 text-left text-foreground">
+                              <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={isLoading} className="text-foreground"><RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh</Button>
+                              <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(allRecords, 'finance-registry-backup.csv')} className="text-foreground"><Download className="h-4 w-4 mr-2" /> Backup</Button>
                               
                               <Popover>
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" size="sm" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-56 p-2 text-left text-foreground">
-                                    <div className="space-y-1 text-left">
+                                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground">
+                                    <div className="space-y-1 text-left text-foreground">
                                         {Object.keys(visibleColumns).map(col => (
-                                            <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                            <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                                 <span>{col.replace(/([A-Z]|_)/g, ' $1').trim()}</span>
-                                                {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
+                                                {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
                                             </div>
                                         ))}
                                     </div>
                                 </PopoverContent>
                               </Popover>
 
-                              <BulkImportDialog type="finance" onComplete={() => fetchData()}><Button variant="outline" size="sm"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                              <Button onClick={() => setDialog({ type: 'add' })} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                              <DuplicateCleaner onComplete={() => fetchData()} />
+                              <BulkImportDialog type="finance" onComplete={() => fetchData()}><Button variant="outline" size="sm" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                              <Button onClick={() => setDialog({ type: 'add' })} size="sm" className="text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                           </div>
                       </CardHeader>
                       <CardContent className="pt-6 text-left text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-foreground text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Classification</Label>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Tag className="h-3 w-3"/> Classification</Label>
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Categories</SelectItem>
                                         {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-foreground text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
@@ -406,13 +533,13 @@ export default function FinanceManagement() {
                                         <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
                                     </div>
                                 ) : (
-                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                                 )}
                             </div>
                         </div>
 
                         {isLoading ? (
-                             <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                             <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                         ) : (
                             <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                         )}

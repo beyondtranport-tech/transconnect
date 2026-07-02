@@ -141,6 +141,61 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
+            case 'findDuplicateLeads': {
+                const snap = await db.collection('leads').get();
+                const records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const groups: Record<string, any[]> = {};
+                records.forEach((r: any) => {
+                    const name = (r.companyName || '').toLowerCase().trim();
+                    if (!name) return;
+                    if (!groups[name]) groups[name] = [];
+                    groups[name].push(r);
+                });
+                const duplicates = Object.values(groups).filter(g => g.length > 1);
+                return NextResponse.json({ success: true, data: duplicates.map(serializeTimestamps) });
+            }
+
+            case 'findDuplicates': {
+                const { type } = payload;
+                const [lSnap, pSnap] = await Promise.all([
+                    db.collection('leads').where('type', '==', type).get(),
+                    db.collection('partners').where('type', '==', type).get()
+                ]);
+                const records = [
+                    ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
+                    ...pSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
+                ];
+                const groups: Record<string, any[]> = {};
+                records.forEach((r: any) => {
+                    const name = (r.companyName || r.company_name || r.trading_name || '').toLowerCase().trim();
+                    if (!name) return;
+                    if (!groups[name]) groups[name] = [];
+                    groups[name].push(r);
+                });
+                const duplicates = Object.values(groups).filter(g => g.length > 1);
+                return NextResponse.json({ success: true, data: duplicates.map(serializeTimestamps) });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.delete(db.collection('leads').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+            
+            case 'deletePartners': {
+                const { partnerIds } = payload;
+                const batch = db.batch();
+                partnerIds.forEach((id: string) => {
+                    batch.delete(db.collection('partners').doc(id));
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'getPlatformStaff':
             case 'getStaff': {
                 const snap = await db.collection('platformStaff').get();
