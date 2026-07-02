@@ -33,6 +33,7 @@ service cloud.firestore {
     // --- RULES ---
 
     // Global Admin Override (Covers standard paths and root access)
+    // For collection group queries, the rules engine needs an explicit or recursive match.
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -75,6 +76,8 @@ service cloud.firestore {
       match /transactions/{txId} { allow read, write: if isMember(companyId); }
       match /walletPayments/{payId} { allow read, write: if isMember(companyId); }
       match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
+      allow get, list: if isMember(companyId);
+      
       match /quotes/{quoteId} { allow read, write: if isMember(companyId); }
       match /tasks/{taskId} { allow read, write: if isMember(companyId); }
       match /payoutRequests/{pid} { allow read, write: if isMember(companyId); }
@@ -133,4 +136,4 @@ service cloud.firestore {
   }
 }
 
-// Rule Sync Token: 2026-03-15T12:00:00Z
+// Rule Sync Token: 2026-03-15T12:30:00Z
