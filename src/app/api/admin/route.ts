@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -187,13 +186,14 @@ export async function POST(req: NextRequest) {
 
             case 'dispatchEngagement': {
                 const { partnerId, subject, audience } = payload;
-                const logRef = db.collection('leads').doc(partnerId).collection('communications').doc();
+                const coll = (audience === 'transporters' || audience === 'suppliers' || audience === 'isa' || audience === 'finance' || audience === 'developers') ? 'partners' : 'leads';
+                const logRef = db.collection(coll).doc(partnerId).collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
                     type: 'Automated Dispatch',
                     subject,
                     timestamp: FieldValue.serverTimestamp(),
-                    notes: `Background dispatch initiated for ${audience}.`
+                    notes: `Background dispatch initiated via Transactional API for ${audience}.`
                 });
                 return NextResponse.json({ success: true });
             }
