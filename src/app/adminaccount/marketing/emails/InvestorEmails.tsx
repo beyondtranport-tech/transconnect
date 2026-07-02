@@ -9,7 +9,12 @@ import { useUser } from '@/firebase';
 const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
     const personalizedContent = React.useMemo(() => {
         let text = content;
-        const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
+        // Robust name extraction
+        const name = partner?.firstName || 
+                     partner?.contactPerson?.split(' ')[0] || 
+                     partner?.contact_person?.split(' ')[0] || 
+                     'Partner';
+
         const company = partner?.companyName || 'your institution';
         
         text = text.replace(/\[Partner Name\]/g, name);
@@ -30,7 +35,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                     </div>
                     {partner && (
                          <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border border-green-200">
-                            <UserCheck className="h-3.5 w-3.5" /> Personalized for {partner.firstName || partner.contactPerson?.split(' ')[0]}
+                            <UserCheck className="h-3.5 w-3.5" /> Personalized for {partner.firstName || partner.contactPerson?.split(' ')[0] || partner.contact_person?.split(' ')[0]}
                         </div>
                     )}
                 </div>

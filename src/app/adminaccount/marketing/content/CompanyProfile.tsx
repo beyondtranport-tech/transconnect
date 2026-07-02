@@ -7,7 +7,12 @@ import React from "react";
  * Reinstated approved DaaS and Flow Pillars narrative.
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
-    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Member');
+    // Robust name extraction
+    const firstName = partner?.firstName || 
+                      partner?.contactPerson?.split(' ')[0] || 
+                      partner?.contact_person?.split(' ')[0] || 
+                      'Member';
+
     const email = partner?.email || '';
     const lastName = partner?.lastName || '';
     const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;

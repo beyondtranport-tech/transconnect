@@ -42,13 +42,13 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
   {
     "seq": ${startSeq},
     "record_id": "...",
-    "company_name": "FULL LEGAL NAME",
+    "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME",
-    "email_address": "Professional Email",
-    "telephone_number": "...",
+    "contactPerson": "VERIFIED HUMAN NAME",
+    "email": "Professional Email",
+    "phone": "...",
     "website": "OFFICIAL VERIFIED URL",
-    "physical_address": "FULL Street, Suburb, City, Province",
+    "address": "FULL Street, Suburb, City, Province",
     "notes": "TECHNICAL SUMMARY"
   }
 ]`;

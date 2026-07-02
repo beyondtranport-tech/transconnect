@@ -7,7 +7,12 @@ import React from "react";
  * Tailored for four primary audiences: Suppliers, Transporters, Finance Partners, and Digital Partners.
  */
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
-    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
+    // Robust name extraction favoring first name from any contact field variant
+    const firstName = partner?.firstName || 
+                      partner?.contactPerson?.split(' ')[0] || 
+                      partner?.contact_person?.split(' ')[0] || 
+                      'Partner';
+
     const companyName = partner?.companyName || 'your business';
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const optInLink = `${baseUrl}/opt-in/${partner?.id || 'PROSPECT'}`;

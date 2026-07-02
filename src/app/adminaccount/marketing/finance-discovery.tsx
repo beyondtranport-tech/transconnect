@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,7 +57,7 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "FULL INSTITUTION NAME",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME",
+    "contactPerson": "VERIFIED HUMAN NAME",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL VERIFIED URL",
