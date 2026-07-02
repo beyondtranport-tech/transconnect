@@ -11,11 +11,11 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' || 
         request.auth.token.email == 'mkoton100@gmail.com' || 
         request.auth.token.email == 'beyondtransport@gmail.com' ||
         request.auth.token.email == 'michael@logisticsflow.co.za' ||
-        request.auth.token.admin == true
+        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
+        (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
       );
     }
 
@@ -32,19 +32,20 @@ service cloud.firestore {
 
     // --- RULES ---
 
+    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
     // Explicit rules for collection group queries (Required for admin oversight)
-    match /{path=**}/enquiries/{id} { allow read: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow read: if isAdmin(); }
-    match /{path=**}/supportMessages/{id} { allow read: if isAdmin(); }
-    match /{path=**}/staff/{id} { allow read: if isAdmin(); }
-    match /{path=**}/tasks/{id} { allow read: if isAdmin(); }
-    match /{path=**}/walletPayments/{id} { allow read: if isAdmin(); }
-    match /{path=**}/quotes/{id} { allow read: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow read: if isAdmin(); }
+    match /{path=**}/enquiries/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/transactions/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/supportMessages/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/staff/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/tasks/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/walletPayments/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/quotes/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/searchLogs/{id} { allow read, list: if isAdmin(); }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -115,3 +116,5 @@ service cloud.firestore {
     }
   }
 }
+
+// Rule Deployment Sync: 2026-03-14T16:15:00Z
