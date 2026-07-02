@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap, AlertTriangle, Info, Mail } from 'lucide-react';
+import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap, AlertTriangle, Info, Mail, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -281,10 +281,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             <div className="flex-1 flex overflow-hidden text-left text-foreground">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
-                        <Info className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Avoid Blocking</AlertTitle>
+                        <ShieldAlert className="h-3 w-3 text-amber-600" />
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Inbound Shielding</AlertTitle>
                         <AlertDescription className="text-[9px] text-amber-700 text-left leading-tight">
-                            If Outlook (Defender) is blocking you, switch to **Gmail Web** to send manually. Use Automated Dispatch for large batches once a dedicated SMTP is linked.
+                            Google Workspace handles **Outbound** limits. **Inbound** blocking (Microsoft Defender) depends on content similarity and domain SPF/DKIM/DMARC health.
                         </AlertDescription>
                     </Alert>
 

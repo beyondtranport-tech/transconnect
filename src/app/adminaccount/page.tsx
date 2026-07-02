@@ -91,6 +91,7 @@ import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import SocialStudio from '@/app/adminaccount/social-studio';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
+import AdminGuides from '@/app/adminaccount/guides';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -182,6 +183,7 @@ function AdminAccountContent() {
       case 'platform-staff': return <PlatformStaffManagement />;
       case 'associate-oversight': return <AssociateOversight />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
+      case 'guides': return <AdminGuides />;
       default: return <AdminDashboardContent />;
     }
   }, [activeView]);
