@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap, AlertTriangle, Info, Mail, ShieldAlert } from 'lucide-react';
+import { Loader2, ExternalLink, Send, ChevronLeft, ChevronRight, CheckCircle2, Zap, AlertTriangle, Info, Mail, ShieldAlert, ShieldCheck, Server } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -141,7 +141,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             partnerId: currentPartner.id,
             type: channel === 'outlook' ? 'Outlook' : 'Gmail',
             subject: subjectLabel,
-            notes: `System generated engagement for ${currentPartner.firstName || ''} (${currentPartner.industrial_category || 'General'}). Launched via ${channel}.`,
+            notes: `Manual engagement launched via ${channel}. Copy/paste initiated.`,
             collection: (!currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners'
         });
 
@@ -154,7 +154,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Clipboard operation failed.");
 
-        toast({ title: "Content Ready", description: `Interaction logged and HTML copied. Opening ${channel}...` });
+        toast({ title: "Content Ready", description: `Interaction logged. Opening ${channel}...` });
 
         if (channel === 'outlook') {
             const mailtoUrl = `mailto:${currentPartner.email}?subject=${encodeURIComponent(getSubject())}`;
@@ -199,13 +199,13 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             audience
         });
 
-        toast({ title: "Dispatch Successful", description: "The engagement has been logged and queued for background dispatch." });
+        toast({ title: "Dispatch Successful", description: "Background dispatch initiated. This bypasses local Defender blocks." });
         if (onEngageSuccess) onEngageSuccess();
         
         if (partners.length > 1 && currentIndex < partners.length - 1) {
-            nextRecord();
+            setTimeout(nextRecord, 500);
         } else {
-            onOpenChange(false);
+            setTimeout(() => onOpenChange(false), 1000);
         }
     } catch (e: any) {
         toast({ variant: 'destructive', title: "Dispatch Failed", description: e.message });
@@ -280,12 +280,14 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
             <div className="flex-1 flex overflow-hidden text-left text-foreground">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
-                    <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
-                        <ShieldAlert className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Inbound Shielding</AlertTitle>
-                        <AlertDescription className="text-[9px] text-amber-700 text-left leading-tight">
-                            Google Workspace handles **Outbound** limits. **Inbound** blocking (Microsoft Defender) depends on content similarity and domain SPF/DKIM/DMARC health.
-                        </AlertDescription>
+                    <Alert className="bg-amber-50 py-3 border-amber-200 text-left shadow-sm">
+                        <ShieldAlert className="h-4 w-4 text-amber-600" />
+                        <div className="ml-2 text-left">
+                            <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
+                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">
+                                Use **Automated Dispatch** to route mail through our Transactional API. This bypasses your local account limits and blocks.
+                            </AlertDescription>
+                        </div>
                     </Alert>
 
                     <div className="space-y-1 text-left text-foreground">
@@ -318,12 +320,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
                     <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
-                            <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left">
+                            <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left shadow-sm">
                                 <div className="flex items-center gap-3 text-left">
                                     <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">
-                                        <p className="text-sm font-bold text-amber-900 text-left">Anti-Spam Variance</p>
-                                        <p className="text-[10px] text-amber-700 text-left">Text varies Deterministically by Partner ID.</p>
+                                        <p className="text-sm font-bold text-amber-900 text-left">Pattern Randomization</p>
+                                        <p className="text-[10px] text-amber-700 text-left leading-none mt-1">Deterministically unique text per partner.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-left text-foreground">
