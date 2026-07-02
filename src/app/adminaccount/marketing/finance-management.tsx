@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, UserCheck, RefreshCcw, Phone,
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, RefreshCcw, Phone,
   Zap, Tag, CheckCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';

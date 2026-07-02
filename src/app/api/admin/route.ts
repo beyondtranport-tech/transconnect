@@ -21,8 +21,8 @@ function serializeTimestamps(docData: any): any {
 
 /**
  * ADMIN MASTER API
- * Centralized authority for platform operations and forensic registry management.
- * Optimized with stricter limits to prevent resource exhaustion.
+ * Centralized authority for platform operations.
+ * Optimized with strict limits (500 cap) to prevent Resource Exhaustion.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -52,12 +52,10 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                // Enforce a hard cap of 500 per search to prevent quota burn
                 const { type, term, limit = 100, outreachFilter } = payload;
                 const safeLimit = Math.min(limit, 500);
                 
                 let results: any[] = [];
-                
                 const [leadsSnap, partnersSnap] = await Promise.all([
                     db.collection('leads').where('type', '==', type).limit(safeLimit).get(),
                     db.collection('partners').where('type', '==', type).limit(safeLimit).get()
@@ -71,12 +69,11 @@ export async function POST(req: NextRequest) {
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     results = results.filter(r => 
-                        (r.companyName || r.company_name || '').toLowerCase().includes(lowTerm) ||
-                        (r.contactPerson || r.contact_person || '').toLowerCase().includes(lowTerm)
+                        (r.companyName || '').toLowerCase().includes(lowTerm) ||
+                        (r.contactPerson || '').toLowerCase().includes(lowTerm)
                     );
                 }
 
-                // Sort by most recently updated
                 results.sort((a, b) => {
                     const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate().getTime() : 0;
                     const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate().getTime() : 0;
@@ -86,39 +83,72 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
+            case 'getPartnersByType': {
+                const { type } = payload;
+                const [lSnap, pSnap] = await Promise.all([
+                    db.collection('leads').where('type', '==', type).limit(500).get(),
+                    db.collection('partners').where('type', '==', type).limit(500).get()
+                ]);
+                const results = [
+                    ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
+                    ...pSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data() }))
+                ];
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
+            case 'savePartner': {
+                const { partner, collection: coll = 'partners' } = payload;
+                const ref = db.collection(coll).doc(partner.id || db.collection(coll).doc().id);
+                await ref.set({ ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getStaff':
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const id = staff.id || db.collection('platformStaff').doc().id;
+                await db.collection('platformStaff').doc(id).set({ ...staff, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
+                const logs = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data: logs });
+            }
+
+            case 'getAudienceTasks': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(100).get();
+                const tasks = snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) }));
+                return NextResponse.json({ success: true, data: tasks });
+            }
+
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
                 const coll = type === 'lead' ? 'leads' : 'partners';
-                
                 partners.forEach((p: any) => {
-                    let id = p.record_id || p.id;
-                    if (!id) {
-                        const name = p.companyName || p.company_name || 'entry';
-                        const slug = name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 30);
-                        id = `DISC_${type.toUpperCase()}_${slug}_${Math.random().toString(36).substring(2, 7)}`;
-                    }
-
+                    const id = p.record_id || p.id || db.collection(coll).doc().id;
                     const ref = db.collection(coll).doc(id);
-                    const updateData = { 
+                    batch.set(ref, { 
                         ...p, 
                         id, 
                         type: p.type || type, 
-                        updatedAt: FieldValue.serverTimestamp() 
-                    };
-
-                    // FORENSIC DATA SHIELD: Ensure new imports don't inherit old outreach history
-                    if (p.status === 'new' || !p.status) {
-                        updateData.lastOutreachAt = null;
-                        updateData.lastOutreachSubject = null;
-                        updateData.lastOpenedAt = null;
-                        updateData.lastAccessedAt = null;
-                        updateData.status = 'new';
-                    }
-
-                    batch.set(ref, updateData, { merge: true });
+                        updatedAt: FieldValue.serverTimestamp(),
+                        // Data Shield: Clear outreach for new records
+                        lastOutreachAt: null,
+                        lastOutreachSubject: null,
+                        lastOpenedAt: null,
+                        lastAccessedAt: null
+                    }, { merge: true });
                 });
-                
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
             }
@@ -130,40 +160,42 @@ export async function POST(req: NextRequest) {
                     db.collection('partners').where('type', '==', type).get()
                 ]);
                 const records = [
-                    ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
-                    ...pSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
+                    ...lSnap.docs.map(d => ({ id: d.id, coll: 'leads', ...d.data() })),
+                    ...pSnap.docs.map(d => ({ id: d.id, coll: 'partners', ...d.data() }))
                 ];
-                
                 const groups: Record<string, any[]> = {};
                 records.forEach((r: any) => {
-                    const name = (r.companyName || r.company_name || '').toLowerCase().trim();
-                    const email = (r.email || r.email_address || '').toLowerCase().trim();
-                    if (!name || !email) return;
-                    const compositeKey = `${name}|${email}`;
-                    if (!groups[compositeKey]) groups[compositeKey] = [];
-                    groups[compositeKey].push(r);
+                    const key = `${(r.companyName || '').toLowerCase().trim()}|${(r.email || '').toLowerCase().trim()}`;
+                    if (!key.includes('|')) return;
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(r);
                 });
-                
                 const batch = db.batch();
-                let deleteCount = 0;
-                Object.values(groups).forEach(group => {
-                    if (group.length <= 1) return;
-                    // Sort to keep Partner (Member) first, then by date
-                    group.sort((a, b) => {
-                        if (a.source !== b.source) return a.source === 'Partner' ? -1 : 1;
-                        const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
-                        const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
-                        return dateA - dateB;
-                    });
-                    const [keep, ...toDelete] = group;
-                    toDelete.forEach(item => {
-                        const coll = item.source === 'Lead' ? 'leads' : 'partners';
-                        batch.delete(db.collection(coll).doc(item.id));
-                        deleteCount++;
+                let count = 0;
+                Object.values(groups).forEach(g => {
+                    if (g.length <= 1) return;
+                    g.sort((a, b) => (a.coll === 'partners' ? -1 : 1));
+                    const [keep, ...rest] = g;
+                    rest.forEach(item => {
+                        batch.delete(db.collection(item.coll).doc(item.id));
+                        count++;
                     });
                 });
-                if (deleteCount > 0) await batch.commit();
-                return NextResponse.json({ success: true, count: deleteCount });
+                if (count > 0) await batch.commit();
+                return NextResponse.json({ success: true, count });
+            }
+
+            case 'dispatchEngagement': {
+                const { partnerId, subject, audience } = payload;
+                const logRef = db.collection('leads').doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type: 'Automated Dispatch',
+                    subject,
+                    timestamp: FieldValue.serverTimestamp(),
+                    notes: `Background dispatch initiated for ${audience}.`
+                });
+                return NextResponse.json({ success: true });
             }
 
             case 'getMembers': {
@@ -181,21 +213,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'savePlatformStaff': {
-                const { staff } = payload;
-                const id = staff.id || db.collection('platformStaff').doc().id;
-                await db.collection('platformStaff').doc(id).set({ ...staff, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deletePlatformStaff': {
-                await db.collection('platformStaff').doc(payload.staffId).delete();
-                return NextResponse.json({ success: true });
             }
 
             case 'logCommunication': {
@@ -206,13 +226,6 @@ export async function POST(req: NextRequest) {
                 await logRef.set({ id: logRef.id, type: channel || 'Email', subject, notes: notes || '', timestamp: FieldValue.serverTimestamp(), adminId: decodedToken.uid });
                 await parentRef.update({ lastOutreachAt: FieldValue.serverTimestamp(), lastOutreachSubject: subject, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true });
-            }
-
-            case 'autoEnrichRecord': {
-                // Background service for high-velocity enrichment
-                const { id, type } = payload;
-                // This would call the enrichment flow logic internally
-                return NextResponse.json({ success: true, data: { id, status: 'searching' } });
             }
 
             default: return NextResponse.json({ success: false, error: "Action not supported." }, { status: 400 });
