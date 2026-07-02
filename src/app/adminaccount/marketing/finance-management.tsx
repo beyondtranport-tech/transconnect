@@ -116,7 +116,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                          <FormItem className="text-left text-foreground">
                             <FormLabel>Funder Category</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                                 </SelectContent>
@@ -214,7 +214,8 @@ export default function FinanceManagement() {
   const filteredRecords = useMemo(() => {
     return allRecords.filter(p => {
         const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-        const matchesCategory = categoryFilter === 'all' || (p.industrial_category || p.category) === categoryFilter;
+        const pCat = (p.industrial_category || p.category || '').trim();
+        const matchesCategory = categoryFilter === 'all' || pCat === categoryFilter;
         const matchesAssignee = assigneeFilter === 'all' || p.assigneeId === assigneeFilter;
         return matchesStatus && matchesCategory && matchesAssignee;
     });
@@ -237,7 +238,7 @@ export default function FinanceManagement() {
       },
       { 
           accessorKey: 'industrial_category', 
-          header: 'Funder Class',
+          header: 'Industrial Category',
           cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || row.original.category || 'General'}</Badge>
       },
       { 
@@ -377,7 +378,7 @@ export default function FinanceManagement() {
                             <div className="space-y-1 text-left">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Classification</Label>
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Categories" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Categories</SelectItem>
                                         {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
@@ -397,7 +398,7 @@ export default function FinanceManagement() {
                             </div>
                             <div className="md:col-span-2 flex items-end gap-2 text-left">
                                 {selectedIds.length > 0 ? (
-                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2">
+                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2 text-left">
                                         <Button variant="secondary" onClick={() => handleEngage(null)} className="flex-1 h-9 font-bold text-xs gap-2"><Send className="h-3.5 w-3.5" /> Engage ({selectedIds.length})</Button>
                                         <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
                                     </div>
@@ -428,3 +429,4 @@ export default function FinanceManagement() {
     </div>
   );
 }
+

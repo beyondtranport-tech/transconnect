@@ -45,11 +45,13 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'searchRegistry': {
                 if (!isAdmin) throw new Error("Admin access required.");
-                const { type, term, limit = 1000 } = payload;
+                const { type, term, limit = 20000 } = payload;
                 
-                // Optimized: Query Firestore for the specific type first
-                const leadsSnap = await db.collection('leads').where('type', '==', type).limit(limit).get();
-                const partnersSnap = await db.collection('partners').where('type', '==', type).limit(limit).get();
+                // Explicitly query both collections for the specific industrial type
+                const [leadsSnap, partnersSnap] = await Promise.all([
+                    db.collection('leads').where('type', '==', type).limit(limit).get(),
+                    db.collection('partners').where('type', '==', type).limit(limit).get()
+                ]);
                 
                 let results = [
                     ...leadsSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
@@ -60,6 +62,7 @@ export async function POST(req: NextRequest) {
                     const lowTerm = term.toLowerCase();
                     results = results.filter(r => 
                         (r.companyName || '').toLowerCase().includes(lowTerm) ||
+                        (r.company_name || '').toLowerCase().includes(lowTerm) ||
                         (r.id || '').toLowerCase().includes(lowTerm)
                     );
                 }
@@ -67,56 +70,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'bulkSavePartners': {
+            case 'getPartnersByType': {
                 if (!isAdmin) throw new Error("Admin access required.");
-                const { partners, type } = payload;
-                const batch = db.batch();
-                
-                partners.forEach((p: any) => {
-                    const coll = p.source === 'Lead' ? 'leads' : 'partners';
-                    const id = p.record_id || p.id || db.collection(coll).doc().id;
-                    const ref = db.collection(coll).doc(id);
-                    batch.set(ref, { 
-                        ...p, 
-                        id, 
-                        type: type || p.type || 'lead',
-                        updatedAt: FieldValue.serverTimestamp() 
-                    }, { merge: true });
-                });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                if (!isAdmin) throw new Error("Admin access required.");
-                const { leadIds, type } = payload;
-                const batch = db.batch();
-                const coll = type === 'lead' ? 'leads' : 'partners';
-
-                leadIds.forEach((id: string) => {
-                    const ref = db.collection(coll).doc(id);
-                    batch.update(ref, { 
-                        status: 'contacted',
-                        researchStatus: 'searching',
-                        updatedAt: FieldValue.serverTimestamp() 
-                    });
-                });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logForensicInitiated': {
-                if (!isAdmin) throw new Error("Admin access required.");
-                const { partnerId, isLead } = payload;
-                const coll = isLead ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).update({
-                    status: 'contacted',
-                    researchStatus: 'searching',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
+                const { type } = payload;
+                const [pSnap, lSnap] = await Promise.all([
+                    db.collection('partners').where('type', '==', type).get(),
+                    db.collection('leads').where('type', '==', type).get()
+                ]);
+                const results = [
+                    ...pSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() })),
+                    ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() }))
+                ];
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
             case 'getMembers': {
@@ -137,10 +102,35 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: members });
             }
 
-            case 'getLeads': {
+            case 'getStaff': {
                 if (!isAdmin) throw new Error("Admin access required.");
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
+                const snap = await db.collectionGroup('staff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'getPlatformStaff': {
+                if (!isAdmin) throw new Error("Admin access required.");
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'bulkSavePartners': {
+                if (!isAdmin) throw new Error("Admin access required.");
+                const { partners, type } = payload;
+                const batch = db.batch();
+                partners.forEach((p: any) => {
+                    const coll = p.source === 'Lead' ? 'leads' : 'partners';
+                    const id = p.record_id || p.id || db.collection(coll).doc().id;
+                    const ref = db.collection(coll).doc(id);
+                    batch.set(ref, { 
+                        ...p, 
+                        id, 
+                        type: type || p.type || 'lead',
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
             case 'savePartner': {
@@ -150,14 +140,6 @@ export async function POST(req: NextRequest) {
                 const ref = db.collection(targetColl).doc(id);
                 await ref.set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true, id });
-            }
-
-            case 'deletePartner': {
-                if (!isAdmin) throw new Error("Admin access required.");
-                const { partnerId, source } = payload;
-                const coll = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
             }
 
             case 'logCommunication': {
@@ -180,12 +162,6 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp() 
                 });
                 return NextResponse.json({ success: true });
-            }
-
-            case 'getPlatformStaff': {
-                if (!isAdmin) throw new Error("Admin access required.");
-                const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'getAuditLogs': {
