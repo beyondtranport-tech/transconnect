@@ -32,20 +32,21 @@ service cloud.firestore {
 
     // --- RULES ---
 
-    // Cache-busting deployment comment: 2026-03-14T15:30:00Z
+    // Cache-busting deployment comment: 2026-03-14T15:45:00Z
     
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // Explicit rules for collection group queries (required for /backend and /lending views)
-    match /{path=**}/enquiries/{enquiryId} {
-      allow read: if isAdmin();
-    }
-    
-    match /{path=**}/transactions/{txId} {
-      allow read: if isAdmin();
-    }
+    // Explicit rules for collection group queries (Required for admin oversight)
+    match /{path=**}/enquiries/{id} { allow read: if isAdmin(); }
+    match /{path=**}/transactions/{id} { allow read: if isAdmin(); }
+    match /{path=**}/supportMessages/{id} { allow read: if isAdmin(); }
+    match /{path=**}/staff/{id} { allow read: if isAdmin(); }
+    match /{path=**}/tasks/{id} { allow read: if isAdmin(); }
+    match /{path=**}/walletPayments/{id} { allow read: if isAdmin(); }
+    match /{path=**}/quotes/{id} { allow read: if isAdmin(); }
+    match /{path=**}/searchLogs/{id} { allow read: if isAdmin(); }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
