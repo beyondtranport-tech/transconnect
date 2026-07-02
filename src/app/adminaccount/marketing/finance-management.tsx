@@ -263,7 +263,7 @@ export default function FinanceManagement() {
                   <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                       <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
-                      <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the capital database. Identify niche lenders and institutional partners.</p>
+                      <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
                       <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
                       </Button>
@@ -272,8 +272,8 @@ export default function FinanceManagement() {
                   <Card className="text-left text-foreground">
                       <CardHeader className="flex flex-row items-center justify-between border-b text-left">
                           <div className="text-left text-foreground">
-                              <CardTitle className="text-xl font-bold flex items-center gap-2 text-left"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
-                              <CardDescription className="text-left">Managing {allRecords.length} verified funding nodes.</CardDescription>
+                              <CardTitle className="text-xl font-bold flex items-center gap-2 text-left text-foreground"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
+                              <CardDescription className="text-left text-foreground">Managing {allRecords.length} verified funding nodes.</CardDescription>
                           </div>
                           <div className="flex gap-2 text-left">
                               <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={isLoading}><RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh</Button>
@@ -282,7 +282,7 @@ export default function FinanceManagement() {
                           </div>
                       </CardHeader>
                       <CardContent className="pt-6 text-left text-foreground">
-                          {isLoading ? <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} onSelectionChange={setSelectedIds} />}
+                          {isLoading ? <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={allRecords} onSelectionChange={setSelectedIds} />}
                       </CardContent>
                   </Card>
               )}

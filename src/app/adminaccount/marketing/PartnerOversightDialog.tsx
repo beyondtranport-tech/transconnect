@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -40,7 +39,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const parentCollection = isLead ? 'leads' : 'partners';
 
     const logsQuery = useMemoFirebase(() => {
-        if (!firestore || !partner?.id || !isOpen) return null;
+        // Robust guard to prevent root listener attempts
+        if (!firestore || !partner?.id || partner.id === '' || !isOpen) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'communications'), 
             orderBy('timestamp', 'desc'),
@@ -50,7 +50,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { data: logs, isLoading: isLoadingLogs, error: logsError } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!firestore || !partner?.id || !isOpen) return null;
+        // Robust guard to prevent root listener attempts
+        if (!firestore || !partner?.id || partner.id === '' || !isOpen) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'tasks'), 
             orderBy('createdAt', 'desc'),
@@ -59,14 +60,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     }, [firestore, partner?.id, isOpen, parentCollection]);
     const { data: tasks, isLoading: isLoadingTasks, error: tasksError, forceRefresh: refreshTasks } = useCollection(tasksQuery);
 
-    /**
-     * ENHANCED TIMELINE LOGIC
-     * Includes:
-     * - Email Open Tracking (Pixel)
-     * - App Access Tracking (Ping)
-     * - Task Completion
-     * - Communication Logs
-     */
     const timeline = useMemo(() => {
         const events: any[] = [];
         if (isOpen && !isLoadingLogs && !isLoadingTasks) {
@@ -200,8 +193,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 text-left">
-                    {/* Technical Profile Section */}
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                             <BookOpen className="h-4 w-4 text-primary"/>
                             Forensic & Technical Profile
@@ -233,14 +225,14 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
 
                     <Separator />
 
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                             <Activity className="h-4 w-4"/>
                             Relationship Timeline
                         </h3>
                         
                         {(isLoadingLogs || isLoadingTasks) ? (
-                            <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>
+                            <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin text-primary" /></div>
                         ) : (logsError || tasksError) ? (
                             <Card className="border-destructive bg-destructive/10">
                                 <CardContent className="p-6 flex items-center gap-3 text-destructive">
@@ -262,16 +254,16 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                             event.type === 'access' ? "bg-purple-600" :
                                             "bg-primary"
                                         )} />
-                                        <Card className="shadow-none">
+                                        <Card className="shadow-none text-left">
                                             <CardContent className="p-4 text-left">
-                                                <div className="flex justify-between items-start">
+                                                <div className="flex justify-between items-start text-left">
                                                     <div className="space-y-1 text-left">
-                                                        <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-2 text-left">
                                                             {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : 
                                                              event.type === 'tracking' ? <Eye className="h-3.5 w-3.5 text-blue-600" /> :
                                                              event.type === 'access' ? <Smartphone className="h-3.5 w-3.5 text-purple-600" /> :
                                                              <MessageSquare className="h-3.5 w-3.5 text-primary" />}
-                                                            <span className="font-bold text-sm">{event.subject || event.title}</span>
+                                                            <span className="font-bold text-sm text-foreground">{event.subject || event.title}</span>
                                                             <Badge variant="outline" className="text-[10px] h-4 uppercase">{event.type}</Badge>
                                                         </div>
                                                         <p className="text-sm text-muted-foreground">{event.notes || event.description || 'No details.'}</p>
@@ -297,14 +289,14 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-12 border-2 border-dashed rounded-lg">
+                            <div className="text-center py-12 border-2 border-dashed rounded-lg text-foreground">
                                 <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                <p className="text-sm text-muted-foreground">No activity recorded for this entity.</p>
+                                <p className="text-sm text-muted-foreground text-center">No activity recorded for this entity.</p>
                             </div>
                         )}
                     </div>
                 </div>
-                <div className="p-4 border-t bg-muted/10 flex justify-end px-6">
+                <div className="p-4 border-t bg-muted/10 flex justify-end px-6 text-foreground">
                     <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Close Oversight</Button>
                 </div>
             </DialogContent>
