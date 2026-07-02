@@ -11,9 +11,7 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Globe, Search, Download, Save, 
   Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, UserCheck, RefreshCcw, Phone,
-  Zap,
-  Tag,
-  CheckCircle
+  Zap, Tag, CheckCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,7 +23,7 @@ import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { downloadDataAsCSV, formatDateSafe, cn } from '@/lib/utils';
 import { EnrichPartnerButton } from './EnrichPartnerButton';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -35,7 +33,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 
-// Internal components
 import FinanceDiscoveryEngine, { financeCategories } from './finance-discovery';
 import AudienceCommunicationsTable from './AudienceCommunicationsTable';
 import { BatchResearchDialog } from './BatchResearchDialog';
@@ -167,14 +164,8 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
-            
             const result = await performAdminAction(token, 'bulkDeduplicate', { type: 'finance' });
-            
-            if (result.count === 0) {
-                toast({ title: "Registry Clean", description: "No duplicates found based on Company Name + Email." });
-            } else {
-                toast({ title: "Deduplication Complete", description: `Successfully consolidated ${result.count} redundant records.` });
-            }
+            toast({ title: "Cleanup Complete", description: result.count === 0 ? "No duplicates found." : `Consolidated ${result.count} records.` });
             onComplete();
             setIsOpen(false);
         } catch (e: any) {
@@ -187,31 +178,19 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                    <Trash2 className="mr-2 h-4 w-4"/>
-                    Clean Duplicates
-                </Button>
+                <Button variant="outline" size="sm" className="gap-2 text-foreground"><Trash2 className="mr-2 h-4 w-4"/>Clean Duplicates</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md text-left">
-                 <DialogHeader>
-                    <DialogTitle>Auto-Clean Duplicates</DialogTitle>
-                    <DialogDescription>
-                        This tool will automatically identify and delete duplicates where the **Institution Name** and **Email Address** are identical. 
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="max-w-md text-left text-foreground">
+                 <DialogHeader><DialogTitle>Auto-Clean Registry</DialogTitle></DialogHeader>
                 <div className="py-4 space-y-4 text-left">
                     <div className="p-4 bg-muted/30 border rounded-xl space-y-3">
-                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Prioritizes Registered Members</p>
-                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Preserves Earliest Records</p>
-                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Cleans Leads Database & Partner Registry</p>
+                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Prioritizes Members</p>
+                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Matches Name + Email</p>
                     </div>
                 </div>
                  <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleAutoClean} disabled={isLoading} className="bg-primary hover:bg-primary/90">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4"/>}
-                        Execute One-Click Clean
-                    </Button>
+                    <Button onClick={handleAutoClean} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4"/>} Execute Clean</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -291,8 +270,8 @@ export default function FinanceManagement() {
         header: 'Finance Institution', 
         cell: ({row}) => (
             <div className="flex flex-col text-left">
-                <span className="font-bold text-left text-foreground">{row.original.companyName || row.original.company_name || 'Unnamed Entity'}</span>
-                <div className="flex items-center gap-2 mt-1 text-left">
+                <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
+                <div className="flex items-center gap-2 mt-1 text-left text-foreground">
                     {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                     <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Lender</Badge>
                 </div>
@@ -301,15 +280,11 @@ export default function FinanceManagement() {
     },
     { 
         accessorKey: 'industrial_category', 
-        header: 'Industrial Category',
-        cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || row.original.category || 'General'}</Badge>
+        header: 'Classification',
+        cell: ({row}) => <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">{row.original.industrial_category || 'General'}</Badge>
     },
-    { 
-        accessorKey: 'contactPerson',
-        header: 'Key Contact',
-        cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || row.original.contact_person || (row.original.firstName ? `${row.original.firstName} ${row.original.lastName}` : 'N/A')}</div>
-    },
-    { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email || row.original.email_address || 'N/A'}</div> },
+    { accessorKey: 'contactPerson', header: 'Key Contact' },
+    { accessorKey: 'email', header: 'Email' },
     { 
         header: 'Outreach & Result',
         id: 'outreach',
@@ -328,20 +303,11 @@ export default function FinanceManagement() {
             );
         }
     },
-    { 
-        accessorKey: 'status', 
-        header: 'Status', 
-        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
-    },
-    { id: 'actions', header: 'Actions', cell: ({ row }) => (
-      <div className="flex justify-end items-center gap-1 text-left text-foreground">
+    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+      <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-        <AddCommunicationLogDialog 
-            partnerId={row.original.id} 
-            collection={row.original.source === 'Lead' ? 'leads' : 'partners'} 
-            onLogAdded={() => fetchData()} 
-        />
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
         <PartnerTasksDialog partner={row.original} />
         <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
@@ -349,15 +315,15 @@ export default function FinanceManagement() {
         <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
       </div>
     ) },
-  ], [fetchData, handleEngage, visibleColumns]);
+  ], [fetchData, handleEngage]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id, source: dialog.data.source });
-      toast({ title: 'Record Deleted' });
+      await performAdminAction(token, 'deletePartners', { partnerIds: [dialog.data.id] });
+      toast({ title: 'Deleted' });
       fetchData();
       setDialog({ type: null });
     } catch (e: any) {
@@ -372,7 +338,7 @@ export default function FinanceManagement() {
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -406,86 +372,52 @@ export default function FinanceManagement() {
                           </div>
                           <div className="flex gap-2 text-left text-foreground">
                               <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={isLoading} className="text-foreground"><RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh</Button>
-                              <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(allRecords, 'finance-registry-backup.csv')} className="text-foreground"><Download className="h-4 w-4 mr-2" /> Backup</Button>
-                              
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" size="sm" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-56 p-2 text-left">
-                                    <div className="space-y-1 text-left text-foreground">
-                                        {Object.keys(visibleColumns).map(col => (
-                                            <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
-                                                <span>{col.replace(/([A-Z]|_)/g, ' $1').trim()}</span>
-                                                {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </PopoverContent>
-                              </Popover>
-
                               <DuplicateCleaner onComplete={() => fetchData()} />
                               <BulkImportDialog type="finance" onComplete={() => fetchData()}><Button variant="outline" size="sm" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                               <Button onClick={() => setDialog({ type: 'add' })} size="sm" className="text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                           </div>
                       </CardHeader>
                       <CardContent className="pt-6 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Classification</Label>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Tag className="h-3 w-3"/> Classification</Label>
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Categories</SelectItem>
                                         {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
-                                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Staff</SelectItem>
-                                        <SelectItem value="none">Unallocated</SelectItem>
-                                        {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
                             <div className="md:col-span-2 flex items-end gap-2 text-left">
                                 {selectedIds.length > 0 ? (
-                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2">
-                                        <Button variant="secondary" onClick={() => handleEngage(null)} className="flex-1 h-9 font-bold text-xs gap-2"><Send className="h-3.5 w-3.5" /> Engage ({selectedIds.length})</Button>
-                                        <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
+                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2 text-foreground">
+                                        <Button variant="secondary" onClick={() => handleEngage(null)} className="flex-1 h-9 font-bold text-xs gap-2 text-foreground"><Send className="h-3.5 w-3.5" /> Engage ({selectedIds.length})</Button>
+                                        <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2 text-foreground"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
                                     </div>
                                 ) : (
-                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                                 )}
                             </div>
                         </div>
-
-                        {isLoading ? (
-                             <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
-                        ) : (
-                            <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                        )}
+                        {isLoading ? <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
                       </CardContent>
                   </Card>
               )}
           </TabsContent>
 
-          <TabsContent value="discovery" className="mt-6 text-left">
+          <TabsContent value="discovery" className="mt-6 text-left text-foreground">
               <FinanceDiscoveryEngine />
           </TabsContent>
 
-          <TabsContent value="oversight" className="mt-6 text-left">
+          <TabsContent value="oversight" className="mt-6 text-left text-foreground">
               <AudienceCommunicationsTable audience="finance" />
           </TabsContent>
       </Tabs>
