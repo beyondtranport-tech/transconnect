@@ -30,30 +30,32 @@ service cloud.firestore {
       );
     }
 
-    // --- RULES ---
+    // --- COLLECTION GROUP RULES ---
+    // Explicitly handle collection group queries for admins.
+    match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/quotes/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/facilities/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/shops/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/products/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/vehicleListings/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/loads/{id} { allow read, write: if isAdmin(); }
+
+    // --- STANDARD PATH RULES ---
 
     // Global Admin Override (Covers standard paths and root access)
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
-
-    // Explicit rules for collection group queries (Critical for Admin CRM oversight)
-    // These must match the collection ID regardless of its depth in the hierarchy
-    match /{path=**}/enquiries/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/supportMessages/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/staff/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/tasks/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/walletPayments/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/quotes/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/payoutRequests/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/communications/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/facilities/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/auditLogs/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/shops/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/products/{id} { allow get, list, write: if isAdmin(); }
-    match /{path=**}/reconciliations/{id} { allow get, list, write: if isAdmin(); }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -71,18 +73,16 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      match /supportMessages/{msgId} { allow read, write: if isMember(companyId); }
-      match /transactions/{txId} { allow read, write: if isMember(companyId); }
-      match /walletPayments/{payId} { allow read, write: if isMember(companyId); }
-      match /enquiries/{enqId} { allow read, write: if isMember(companyId); }
-      allow get, list: if isMember(companyId);
-      
-      match /quotes/{quoteId} { allow read, write: if isMember(companyId); }
-      match /tasks/{taskId} { allow read, write: if isMember(companyId); }
-      match /payoutRequests/{pid} { allow read, write: if isMember(companyId); }
-      match /searchLogs/{sid} { allow read, write: if isMember(companyId); }
-      match /facilities/{fid} { allow read: if isMember(companyId); allow write: if isAdmin(); }
-      match /staff/{sid} { allow read: if isMember(companyId); allow write: if isAdmin(); }
+      match /supportMessages/{id} { allow read, write: if isMember(companyId); }
+      match /transactions/{id} { allow read, write: if isMember(companyId); }
+      match /walletPayments/{id} { allow read, write: if isMember(companyId); }
+      match /enquiries/{id} { allow read, write: if isMember(companyId); }
+      match /quotes/{id} { allow read, write: if isMember(companyId); }
+      match /tasks/{id} { allow read, write: if isMember(companyId); }
+      match /payoutRequests/{id} { allow read, write: if isMember(companyId); }
+      match /searchLogs/{id} { allow read, write: if isMember(companyId); }
+      match /facilities/{id} { allow read: if isMember(companyId); allow write: if isAdmin(); }
+      match /staff/{id} { allow read: if isMember(companyId); allow write: if isAdmin(); }
       
       match /shops/{shopId} { 
         allow read: if true; 
@@ -135,4 +135,4 @@ service cloud.firestore {
   }
 }
 
-// Global Definitive Rule Sync Token: 2026-03-15T13:45:00Z
+// Global Definitive Rule Sync Token: 2026-03-15T15:20:00Z
