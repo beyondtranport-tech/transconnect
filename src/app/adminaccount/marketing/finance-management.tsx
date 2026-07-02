@@ -129,7 +129,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                     </div>
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
-                            <FormLabel>Pipeline Status</FormLabel>
+                            <FormLabel>Pipeline Status</Label>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
