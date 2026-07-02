@@ -160,14 +160,14 @@ export async function POST(req: NextRequest) {
             }
 
             case 'logCommunication': {
-                const { partnerId, subject, notes, collection: providedColl } = payload;
+                const { partnerId, subject, notes, collection: providedColl, type: channel } = payload;
                 const targetColl = providedColl || 'partners';
                 const parentRef = db.collection(targetColl).doc(partnerId);
                 const logRef = parentRef.collection('communications').doc();
                 
                 await logRef.set({ 
                     id: logRef.id, 
-                    type: payload.type || 'Email', 
+                    type: channel || 'Email', 
                     subject, 
                     notes: notes || '', 
                     timestamp: FieldValue.serverTimestamp(), 
@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
                 const logRef = parentRef.collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
-                    type: 'Email',
+                    type: 'Email (Automated)',
                     subject: `Automated: ${subject}`,
                     notes: `Transactional dispatch via system bridge. Audience: ${audience}`,
                     timestamp: FieldValue.serverTimestamp(),

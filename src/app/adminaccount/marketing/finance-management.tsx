@@ -335,7 +335,7 @@ export default function FinanceManagement() {
                       <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
                       <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
                       <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
-                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
+                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />} Execute Scan
                       </Button>
                   </Card>
               ) : (

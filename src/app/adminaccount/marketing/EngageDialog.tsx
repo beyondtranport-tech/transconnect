@@ -116,7 +116,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
       return `Logistics Flow: ${label} for ${company}`;
   }
 
-  const handleLogCopyAndLaunch = async () => {
+  const handleLogCopyAndLaunch = async (channel: 'outlook' | 'gmail') => {
     if (!currentPartner) return;
 
     const contentId = `engage-content-wrapper-${activeTab}`;
@@ -139,9 +139,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
-            type: 'Email',
+            type: channel === 'outlook' ? 'Outlook' : 'Gmail',
             subject: subjectLabel,
-            notes: `System generated engagement for ${currentPartner.firstName || ''} (${currentPartner.industrial_category || 'General'}).`,
+            notes: `System generated engagement for ${currentPartner.firstName || ''} (${currentPartner.industrial_category || 'General'}). Launched via ${channel}.`,
             collection: (!currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners'
         });
 
@@ -154,11 +154,15 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Clipboard operation failed.");
 
-        toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
+        toast({ title: "Content Ready", description: `Interaction logged and HTML copied. Opening ${channel}...` });
 
-        //mailTo triggers local Outlook
-        const mailtoUrl = `mailto:${currentPartner.email}?subject=${encodeURIComponent(getSubject())}`;
-        window.location.href = mailtoUrl;
+        if (channel === 'outlook') {
+            const mailtoUrl = `mailto:${currentPartner.email}?subject=${encodeURIComponent(getSubject())}`;
+            window.location.href = mailtoUrl;
+        } else {
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${currentPartner.email}&su=${encodeURIComponent(getSubject())}`;
+            window.open(gmailUrl, '_blank');
+        }
         
         if (onEngageSuccess) onEngageSuccess();
     } catch (e: any) {
@@ -195,7 +199,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             audience
         });
 
-        toast({ title: "Dispatch Successful", description: "The engagement has been sent via transactional mail." });
+        toast({ title: "Dispatch Successful", description: "The engagement has been logged and queued for background dispatch." });
         if (onEngageSuccess) onEngageSuccess();
         
         if (partners.length > 1 && currentIndex < partners.length - 1) {
@@ -257,9 +261,13 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
                         <div className="flex gap-2">
-                             <Button variant="outline" size="lg" className="h-12 px-6 font-bold gap-2 shadow-sm" onClick={handleLogCopyAndLaunch} disabled={isProcessing || isDispatching || !currentPartner.email}>
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
-                                Log & Open Outlook
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentPartner.email}>
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />}
+                                Outlook
+                            </Button>
+                            <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-red-200 hover:bg-red-50" onClick={() => handleLogCopyAndLaunch('gmail')} disabled={isProcessing || isDispatching || !currentPartner.email}>
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <div className="h-4 w-4 bg-red-600 rounded-sm" />}
+                                Gmail Web
                             </Button>
                             <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentPartner.email}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
@@ -274,9 +282,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Outlook vs Dispatch</AlertTitle>
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Avoid Blocking</AlertTitle>
                         <AlertDescription className="text-[9px] text-amber-700 text-left leading-tight">
-                            "Log & Open" triggers your local Outlook client. "Automated Dispatch" runs in the background via transactional provider.
+                            If Outlook (Defender) is blocking you, switch to **Gmail Web** to send manually. Use Automated Dispatch for large batches once a dedicated SMTP is linked.
                         </AlertDescription>
                     </Alert>
 
