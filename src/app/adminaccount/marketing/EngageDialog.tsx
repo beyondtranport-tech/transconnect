@@ -151,14 +151,14 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
-        // FIXED: Using resilient utility to avoid 'Illegal constructor' crash
         const success = await copyHtmlToClipboard(wrappedHtml);
         if (!success) throw new Error("Clipboard operation failed.");
 
         toast({ title: "Content Ready", description: "Interaction logged and formatted HTML copied to clipboard." });
 
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${currentPartner.email}&su=${encodeURIComponent(getSubject())}`;
-        window.open(gmailUrl, '_blank');
+        // Changed from Gmail Web to mailto protocol for local Outlook integration
+        const mailtoUrl = `mailto:${currentPartner.email}?subject=${encodeURIComponent(getSubject())}`;
+        window.location.href = mailtoUrl;
         
         if (onEngageSuccess) onEngageSuccess();
     } catch (e: any) {
@@ -259,7 +259,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <div className="flex gap-2">
                              <Button variant="outline" size="lg" className="h-12 px-6 font-bold gap-2 shadow-sm" onClick={handleLogCopyAndLaunch} disabled={isProcessing || isDispatching || !currentPartner.email}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <ExternalLink className="mr-2 h-4 w-4" />}
-                                Log & Open Gmail
+                                Log & Open Outlook
                             </Button>
                             <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentPartner.email}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
@@ -274,9 +274,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <Alert className="bg-amber-50 py-2 border-amber-200 text-left">
                         <Info className="h-3 w-3 text-amber-600" />
-                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Gmail Web Integration</AlertTitle>
+                        <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Outlook Integration</AlertTitle>
                         <AlertDescription className="text-[9px] text-amber-700 text-left leading-tight">
-                            Opening Gmail Web for better deliverability. Avoid sending &gt;20/hr to protect score.
+                            "Log & Open" triggers your local Outlook client. "Automated Dispatch" runs in the background.
                         </AlertDescription>
                     </Alert>
 
