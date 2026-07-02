@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, UserCheck 
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, UserCheck, RefreshCcw, Phone 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -140,11 +140,24 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 export default function FinanceManagement() {
   const { toast } = useToast();
   const [allRecords, setAllRecords] = useState<any[]>([]);
+  const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
+
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [assigneeFilter, setAssigneeFilter] = useState('all');
+
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
+    companyName: true,
+    contactPerson: true,
+    email: true,
+    outreach: true,
+    status: true,
+    actions: true
+  });
 
   const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
@@ -263,7 +276,7 @@ export default function FinanceManagement() {
                   <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                       <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
-                      <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
+                      <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
                       <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
                       </Button>
