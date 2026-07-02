@@ -133,4 +133,4 @@ service cloud.firestore {
   }
 }
 
-// Rule Sync Token: 2026-03-15T10:30:00Z
+// Rule Sync Token: 2026-03-15T12:00:00Z
