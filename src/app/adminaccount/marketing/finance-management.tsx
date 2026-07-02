@@ -228,7 +228,7 @@ export default function FinanceManagement() {
           header: 'Finance Institution', 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
-                  <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
+                  <span className="font-bold text-left text-foreground">{row.original.companyName || row.original.company_name || 'Unnamed Entity'}</span>
                   <div className="flex items-center gap-2 mt-1 text-left">
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Lender</Badge>
@@ -244,9 +244,9 @@ export default function FinanceManagement() {
       { 
           accessorKey: 'contactPerson',
           header: 'Key Contact',
-          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || 'N/A'}</div>
+          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || row.original.contact_person || 'N/A'}</div>
       },
-      { accessorKey: 'email', header: 'Email' },
+      { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email || row.original.email_address || 'N/A'}</div> },
       { 
           header: 'Outreach & Result',
           id: 'outreach',
@@ -363,6 +363,7 @@ export default function FinanceManagement() {
                                 </PopoverContent>
                               </Popover>
 
+                              <BulkImportDialog type="finance" onComplete={() => fetchData()}><Button variant="outline" size="sm"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                               <Button onClick={() => setDialog({ type: 'add' })} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                           </div>
                       </CardHeader>
@@ -429,4 +430,3 @@ export default function FinanceManagement() {
     </div>
   );
 }
-
