@@ -12,7 +12,8 @@ import {
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Globe, Search, Download, Save, 
   Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, UserCheck, RefreshCcw, Phone,
   Zap,
-  Tag
+  Tag,
+  CheckCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -33,7 +34,6 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 
 // Internal components
 import FinanceDiscoveryEngine, { financeCategories } from './finance-discovery';
