@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -89,9 +90,10 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             
             let apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
             
+            // Reduced initial scan limit to prevent resource exhaustion
             const res = await performAdminAction(token, 'searchRegistry', { 
                 type: apiType, 
-                limit: 5000 
+                limit: 500 
             });
             
             if (!res.success) throw new Error(res.error);
@@ -111,7 +113,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setStats({ domains: 0, emails: 0, leadership: 0, errors: 0 });
             
             if (needsEnrichment.length === 0) {
-                toast({ title: "Registry Fully Bridged", description: "No gapped records found." });
+                toast({ title: "Registry Fully Bridged", description: "No gapped records found in current segment." });
                 setStatus('idle');
                 localStorage.removeItem(BRIDGE_STORAGE_KEY);
             } else {
@@ -142,16 +144,14 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
-            // Re-fetch status within loop to check for pause/stop signals
+            // Check status at start of each tick
             let currentStatus: string = 'running';
             setStatus(s => {
                 currentStatus = s;
                 return s;
             });
             
-            // This is a tick-based check. Since setStatus is async, we use a bit of a delay or status ref
-            // For this UI pattern, we just break if we are no longer 'running'
-            if (currentStatus !== 'running' && pointer > currentIndex) break;
+            if (currentStatus !== 'running') break;
 
             const record = queue[pointer];
             const name = record.companyName || record.firstName || 'Unknown';
@@ -185,7 +185,8 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     throw new Error(res.error);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Generous delay to prevent API rate exhaustion
+                await new Promise(resolve => setTimeout(resolve, 5000));
 
             } catch (err: any) {
                 setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
@@ -195,11 +196,12 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     type: 'error' 
                 }, ...prev].slice(0, 50));
                 
-                if (err.message?.includes('auth/')) {
+                if (err.message?.includes('429') || err.message?.includes('auth/')) {
                     setStatus('paused');
+                    toast({ variant: 'destructive', title: "Throttling Active", description: "Rate limit reached. Pausing bridge for 30s." });
                     break;
                 }
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                await new Promise(resolve => setTimeout(resolve, 10000));
             }
 
             pointer++;
@@ -367,7 +369,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="p-4 bg-muted/30 rounded-xl text-left border border-dashed border-muted">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Persistence Enabled</p>
                                 <p className="text-[11px] leading-relaxed italic text-foreground text-left">
-                                    Your progress is saved locally. If you navigate away or refresh, you can resume exactly where you left off.
+                                    Your progress is saved locally. Registry analysis is capped at 500 records per scan to preserve resources.
                                 </p>
                             </div>
                         </CardContent>

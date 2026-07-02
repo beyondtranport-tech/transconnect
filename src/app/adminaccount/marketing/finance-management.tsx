@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -221,7 +222,7 @@ export default function FinanceManagement() {
     actions: true
   });
 
-  const fetchData = useCallback(async (limit: number = 20000) => {
+  const fetchData = useCallback(async (limit: number = 100) => {
     setIsLoading(true);
     try {
         const token = await getClientSideAuthToken();
@@ -304,7 +305,7 @@ export default function FinanceManagement() {
         }
     },
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
-    { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+    { id: 'actions', header: 'Actions', cell: ({ row }) => (
       <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
@@ -407,7 +408,19 @@ export default function FinanceManagement() {
                                 )}
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                        {isLoading ? <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6">
+                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                                {allRecords.length >= 100 && (
+                                     <div className="flex justify-center pt-4">
+                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
+                                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                            Load Next 100 Records
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                       </CardContent>
                   </Card>
               )}

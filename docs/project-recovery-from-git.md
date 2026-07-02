@@ -25,7 +25,7 @@ In your new, empty Firebase Studio project, open a terminal window. You can usua
 
 This is the most important step. You will use the `git clone` command, but with a special addition at the end to clone it into the *current* directory instead of a new folder.
 
-In the terminal, run the following command, replacing `[YOUR_REPO_URL]` with the URL you copied in Step 1:
+In the terminal, run the following command, replacing `[YOUR_REPO_URL]` with the URL you copied in Step 1:please check background usage. Resource exhausted
 
 ```bash
 git clone [YOUR_REPO_URL] .
