@@ -1,16 +1,16 @@
-
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2, Landmark, FileText, Globe, Zap, ArrowRight, ShieldCheck, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collectionGroup, query, orderBy, limit } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
@@ -18,111 +18,183 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
   matched: 'default',
   rejected: 'destructive',
   funded: 'default',
-  quote: 'outline',
-};
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number') return 'N/A';
-    return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(price);
-};
-
-const formatDate = (isoString: string | undefined) => {
-    if (!isoString) return 'N/A';
-    try {
-        return new Date(isoString).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' });
-    } catch (e) {
-        return 'Invalid Date';
-    }
 };
 
 export default function FundingDivisionContent() {
     const firestore = useFirestore();
+    const { user } = useUser();
 
-    const quotesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'quotes')) : null, [firestore]);
-    const enquiriesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'enquiries')) : null, [firestore]);
+    // Fetch all enquiries across the platform
+    const enquiriesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collectionGroup(firestore, 'enquiries'), orderBy('updatedAt', 'desc'), limit(500));
+    }, [firestore]);
     
-    const { data: quotes, isLoading: isLoadingQuotes, error: quotesError } = useCollection(quotesQuery);
-    const { data: enquiries, isLoading: isLoadingEnquiries, error: enquiriesError } = useCollection(enquiriesQuery);
+    const { data: allEnquiries, isLoading, error } = useCollection(enquiriesQuery);
 
-    const isLoading = isLoadingQuotes || isLoadingEnquiries;
-    const error = quotesError || enquiriesError;
+    const adminParams = useMemo(() => user?.companyData?.lendingParams, [user]);
 
-    const applications = useMemo(() => {
-        if (!quotes && !enquiries) return [];
-        const combined = [
-            ...(quotes || []).map((q: any) => ({ ...q, recordType: 'Quote' })),
-            ...(enquiries || []).map((e: any) => ({ ...e, recordType: 'Enquiry' })),
-        ];
-        return combined.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }, [quotes, enquiries]);
+    // Differentiate between Direct and Market channels
+    const streams = useMemo(() => {
+        if (!allEnquiries) return { direct: [], marketMatches: [] };
 
-    const stats = useMemo(() => {
-        if (!applications) return { applications: 0, totalRequested: 0, totalFunded: 0 };
-        const totalFunded = applications.filter((app: any) => app.status === 'funded').reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-        const totalRequested = applications.reduce((sum: number, app: any) => sum + (app.amountRequested || 0), 0);
-        return {
-            applications: applications.length,
-            totalRequested,
-            totalFunded,
-        };
-    }, [applications]);
+        const direct = allEnquiries.filter(e => e.originationType === 'direct');
+        
+        // Market matching logic for the Admin's internal division
+        const marketMatches = allEnquiries.filter(e => {
+            if (e.originationType !== 'market') return false;
+            if (!adminParams) return true; // If admin hasn't set focus, show all market ones as potential
 
+            const { productCriteria = {}, minAnnualTurnover, minYearsInBusiness } = adminParams;
+            const criteria = productCriteria[e.fundingNeed];
+
+            if (criteria && !criteria.enabled) return false;
+            if (criteria?.minAmount && e.amountRequested < criteria.minAmount) return false;
+            if (criteria?.maxAmount && e.amountRequested > criteria.maxAmount) return false;
+            
+            if (minAnnualTurnover && e.annualTurnover < minAnnualTurnover) return false;
+            if (minYearsInBusiness && e.yearsInBusiness < minYearsInBusiness) return false;
+
+            return true;
+        });
+
+        return { direct, marketMatches };
+    }, [allEnquiries, adminParams]);
 
     if (isLoading) {
-        return <div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-    }
-     if (error) {
-        return <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md"><h4 className="font-semibold">Error</h4><p>{error.message}</p></div>;
+        return (
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Synchronizing Capital Pipeline...</p>
+            </div>
+        );
     }
 
+    if (error) {
+        return (
+            <Alert variant="destructive" className="max-w-2xl mx-auto mt-10">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Registry Error</AlertTitle>
+                <AlertDescription>{error.message}</AlertDescription>
+            </Alert>
+        );
+    }
+
+    const renderTable = (data: any[], emptyMsg: string) => (
+        <div className="border rounded-xl overflow-hidden bg-white shadow-sm">
+            <Table>
+                <TableHeader className="bg-slate-50">
+                    <TableRow>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Submission Date</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Borrower Entity</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Product Category</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Requested Value</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-4">Risk Profile</TableHead>
+                        <TableHead className="text-[10px] font-black uppercase tracking-widest py-4 text-right">Pipeline Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {data.length > 0 ? data.map(app => (
+                        <TableRow key={app.id} className="hover:bg-slate-50/50 transition-colors">
+                            <TableCell className="text-[11px] font-mono text-muted-foreground">
+                                {formatDateSafe(app.updatedAt, "dd MMM yyyy, HH:mm")}
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex flex-col text-left">
+                                    <span className="font-bold text-sm">{app.companyLegalName || 'Individual / Sole Prop'}</span>
+                                    <span className="text-[9px] text-muted-foreground font-mono uppercase">{app.companyId}</span>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <Badge variant="outline" className="capitalize text-[10px] font-bold border-primary/20 text-primary">
+                                    {app.fundingNeed?.replace(/-/g, ' ')}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="font-black text-foreground">
+                                {formatCurrency(app.amountRequested)}
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex flex-col gap-1">
+                                    <Badge variant={app.hasJudgements ? "destructive" : "secondary"} className="text-[8px] h-3.5 uppercase px-1.5 font-black">
+                                        Judgements: {app.hasJudgements ? 'YES' : 'NO'}
+                                    </Badge>
+                                    <span className="text-[10px] text-muted-foreground font-bold">{app.yearsInBusiness}y Maturity</span>
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <Button asChild variant="ghost" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest gap-1.5">
+                                    <Link href={`/adminaccount?view=wallet&memberId=${app.companyId}`}>
+                                        Open Desk <ArrowRight className="h-3 w-3" />
+                                    </Link>
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    )) : (
+                        <TableRow>
+                            <TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic">
+                                {emptyMsg}
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
+            </Table>
+        </div>
+    );
+
     return (
-        <div className="space-y-8">
-            <h1 className="text-2xl font-bold">Funding Division Dashboard</h1>
-            <div className="grid gap-4 md:grid-cols-3">
-                <Card><CardHeader><CardTitle>Total Applications</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.applications}</div></CardContent></Card>
-                <Card><CardHeader><CardTitle>Total Value Requested</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalRequested)}</div></CardContent></Card>
-                <Card><CardHeader><CardTitle>Total Value Funded</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{formatPrice(stats.totalFunded)}</div></CardContent></Card>
+        <div className="space-y-8 text-left text-foreground">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight">Funding Division Oversight</h1>
+                    <p className="text-muted-foreground">Strategic deal-flow management for In-House and Market-Matched capital.</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button asChild variant="outline" size="sm" className="font-bold">
+                        <Link href="/lending?view=lending-focus">
+                            <Settings className="mr-2 h-4 w-4" /> Manage Investment appetite
+                        </Link>
+                    </Button>
+                </div>
             </div>
-             <Card>
-                <CardHeader>
-                    <CardTitle>All Funding Records (Quotes & Enquiries)</CardTitle>
-                    <CardDescription>A list of all quotes and formal enquiries generated by members across the platform.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader><TableRow><TableCell>Date</TableCell><TableCell>Member</TableCell><TableCell>Record Type</TableCell><TableCell>Funding Type</TableCell><TableCell>Amount</TableCell><TableCell>Status</TableCell><TableCell>Action</TableCell></TableRow></TableHeader>
-                            <TableBody>
-                                {applications.length > 0 ? applications.map(app => (
-                                    <TableRow key={`${app.recordType}-${app.id}`}>
-                                        <TableCell className="text-xs">{formatDate(app.createdAt)}</TableCell>
-                                        <TableCell className="font-mono text-xs max-w-[150px] truncate">
-                                            <Link href={`/backend?view=wallet&memberId=${app.companyId}`} className="hover:underline text-primary">{app.companyId}</Link>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={app.recordType === 'Quote' ? 'outline' : 'default'} className="capitalize">
-                                                {app.recordType}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="capitalize">{app.fundingType?.replace(/_/g, ' ')}</TableCell>
-                                        <TableCell>{formatPrice(app.amountRequested)}</TableCell>
-                                        <TableCell><Badge variant={statusColors[app.status] || 'secondary'} className="capitalize">{app.status?.replace(/_/g, ' ')}</Badge></TableCell>
-                                        <TableCell>
-                                            <Button asChild variant="outline" size="sm">
-                                                <Link href={`/backend?view=wallet&memberId=${app.companyId}`}>View Member</Link>
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">No funding records found.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+
+            <Tabs defaultValue="direct" className="w-full">
+                <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start border border-muted">
+                    <TabsTrigger value="direct" className="gap-2 px-6 py-2.5 font-black uppercase tracking-widest text-[10px]">
+                        <Landmark className="h-3.5 w-3.5" /> Direct In-House Queue
+                        <Badge className="ml-2 bg-primary text-white border-none">{streams.direct.length}</Badge>
+                    </TabsTrigger>
+                    <TabsTrigger value="market" className="gap-2 px-6 py-2.5 font-black uppercase tracking-widest text-[10px]">
+                        <Globe className="h-3.5 w-3.5" /> Market Broadcast Matches
+                        <Badge variant="secondary" className="ml-2">{streams.marketMatches.length}</Badge>
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="direct" className="mt-8 space-y-4 animate-in fade-in duration-500">
+                    <div className="bg-primary/5 border border-primary/20 p-4 rounded-xl flex items-start gap-3 mb-2">
+                        <ShieldCheck className="h-5 w-5 text-primary mt-0.5" />
+                        <div>
+                            <p className="text-sm font-bold text-primary uppercase tracking-widest">Primary Relationship Channel</p>
+                            <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                                These enquiries were submitted directly to your funding division. They are not visible to external CRM lenders unless later broadcasted.
+                            </p>
+                        </div>
                     </div>
-                </CardContent>
-            </Card>
+                    {renderTable(streams.direct, "No direct applications currently in queue.")}
+                </TabsContent>
+
+                <TabsContent value="market" className="mt-8 space-y-4 animate-in fade-in duration-500">
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl flex items-start gap-3 mb-2">
+                        <Zap className="h-5 w-5 text-blue-600 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-bold text-blue-900 uppercase tracking-widest">Comparative Intelligence channel</p>
+                            <p className="text-xs text-blue-800/70 leading-relaxed mt-1">
+                                These deals were originated via the Finance Mall broadcast. They appear here because they fit your **Lending Focus** criteria alongside other potential funders.
+                            </p>
+                        </div>
+                    </div>
+                    {renderTable(streams.marketMatches, "No market-originated deals match your current investment appetite.")}
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }
