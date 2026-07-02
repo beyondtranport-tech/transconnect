@@ -47,6 +47,8 @@ service cloud.firestore {
     match /{path=**}/walletPayments/{id} { allow read, list: if isAdmin(); }
     match /{path=**}/quotes/{id} { allow read, list: if isAdmin(); }
     match /{path=**}/searchLogs/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/payoutRequests/{id} { allow read, list: if isAdmin(); }
+    match /{path=**}/communications/{id} { allow read, list: if isAdmin(); }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -118,4 +120,4 @@ service cloud.firestore {
   }
 }
 
-// Rule Deployment Sync: 2026-03-14T16:15:00Z
+// Rule Deployment Sync: 2026-03-14T17:30:00Z
