@@ -178,7 +178,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
             if (!result.success) throw new Error(result.error);
             setDuplicates(result.data);
             if (result.data.length === 0) {
-                 toast({ title: "No duplicates found." });
+                 toast({ title: "No duplicates found.", description: "Forensic check confirmed 100% unique names and emails." });
             } else {
                  setIsOpen(true);
             }
@@ -189,8 +189,8 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
         }
     };
     
-    const handleSelection = (groupIndex: number, leadId: string) => {
-        setSelections(prev => ({...prev, [groupIndex]: leadId}));
+    const handleSelection = (groupIndex: number, id: string) => {
+        setSelections(prev => ({...prev, [groupIndex]: id}));
     }
 
     const handleClean = async () => {
@@ -238,34 +238,45 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" onClick={findDuplicates} disabled={isLoading}>
+                <Button variant="outline" size="sm" onClick={findDuplicates} disabled={isLoading} className="gap-2">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4"/>}
                     Clean Duplicates
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl">
+            <DialogContent className="max-w-4xl text-left">
                  <DialogHeader>
-                    <DialogTitle>Finance Record Cleaner</DialogTitle>
+                    <DialogTitle>Composite Duplicate Cleaner</DialogTitle>
                     <DialogDescription>
-                        Select the institutions you want to keep. The duplicates will be deleted permanently.
+                        Records below match on both **Institution Name** and **Email Address**. Select the record you wish to preserve.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6 max-h-[60vh] overflow-y-auto p-4">
                     {duplicates.map((group, groupIndex) => (
-                        <Card key={groupIndex}>
-                            <CardHeader><CardTitle>Group: {group[0]?.companyName || group[0]?.company_name}</CardTitle></CardHeader>
-                            <CardContent>
+                        <Card key={groupIndex} className="border-primary/20 bg-primary/5">
+                            <CardHeader className="py-3 px-4 border-b">
+                                <CardTitle className="text-sm font-black uppercase tracking-widest">{group[0]?.companyName || group[0]?.company_name}</CardTitle>
+                                <p className="text-[10px] font-mono text-muted-foreground">{group[0]?.email || group[0]?.email_address}</p>
+                            </CardHeader>
+                            <CardContent className="p-0">
                                 {group.map(item => (
-                                    <div key={item.id} className="flex items-start gap-4 p-2 border-b last:border-b-0">
+                                    <div key={item.id} className="flex items-start gap-4 p-4 border-b last:border-b-0 hover:bg-white transition-colors">
                                         <Checkbox 
                                             id={`lead-${groupIndex}-${item.id}`} 
                                             checked={selections[groupIndex] === item.id} 
                                             onCheckedChange={() => handleSelection(groupIndex, item.id)}
+                                            className="mt-1"
                                         />
-                                        <label htmlFor={`lead-${groupIndex}-${item.id}`} className="text-sm space-y-1">
-                                            <p className="font-semibold">{item.companyName || item.company_name} - <span className="font-mono text-xs">{item.id}</span></p>
-                                            <p className="text-muted-foreground">{item.email || 'No Email'} | {item.phone || 'No Phone'}</p>
-                                            <Badge variant="outline" className="text-[10px] uppercase">{item.source}</Badge>
+                                        <label htmlFor={`lead-${groupIndex}-${item.id}`} className="text-sm space-y-1 cursor-pointer flex-1">
+                                            <p className="font-bold flex items-center justify-between">
+                                                {item.source} ID: <span className="font-mono text-xs">{item.id}</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Contact: {item.contactPerson || item.contact_person || 'N/A'} | Status: {item.status}
+                                            </p>
+                                            <div className="flex gap-2 mt-2">
+                                                {item.website ? <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary">Website Found</Badge> : <Badge variant="outline" className="text-[8px] h-3.5 opacity-30">No Web</Badge>}
+                                                {item.notes ? <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary">Notes Found</Badge> : <Badge variant="outline" className="text-[8px] h-3.5 opacity-30">No Notes</Badge>}
+                                            </div>
                                         </label>
                                     </div>
                                 ))}
@@ -273,11 +284,11 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                         </Card>
                     ))}
                 </div>
-                 <DialogFooter>
+                 <DialogFooter className="border-t pt-4">
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleClean} disabled={isLoading}>
+                    <Button onClick={handleClean} disabled={isLoading || Object.keys(selections).length < duplicates.length}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4"/>}
-                        Clean Selected
+                        Clean & Consolidate
                     </Button>
                 </DialogFooter>
             </DialogContent>

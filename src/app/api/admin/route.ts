@@ -141,20 +141,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
-            case 'findDuplicateLeads': {
-                const snap = await db.collection('leads').get();
-                const records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                const groups: Record<string, any[]> = {};
-                records.forEach((r: any) => {
-                    const name = (r.companyName || '').toLowerCase().trim();
-                    if (!name) return;
-                    if (!groups[name]) groups[name] = [];
-                    groups[name].push(r);
-                });
-                const duplicates = Object.values(groups).filter(g => g.length > 1);
-                return NextResponse.json({ success: true, data: duplicates.map(serializeTimestamps) });
-            }
-
             case 'findDuplicates': {
                 const { type } = payload;
                 const [lSnap, pSnap] = await Promise.all([
@@ -165,13 +151,20 @@ export async function POST(req: NextRequest) {
                     ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
                     ...pSnap.docs.map(d => ({ id: d.id, source: 'Partner', ...d.data() }))
                 ];
+                
                 const groups: Record<string, any[]> = {};
                 records.forEach((r: any) => {
                     const name = (r.companyName || r.company_name || r.trading_name || '').toLowerCase().trim();
-                    if (!name) return;
-                    if (!groups[name]) groups[name] = [];
-                    groups[name].push(r);
+                    const email = (r.email || r.email_address || '').toLowerCase().trim();
+                    
+                    // Group only if we have both name and email for forensic certainty
+                    if (!name || !email) return;
+                    
+                    const compositeKey = `${name}|${email}`;
+                    if (!groups[compositeKey]) groups[compositeKey] = [];
+                    groups[compositeKey].push(r);
                 });
+                
                 const duplicates = Object.values(groups).filter(g => g.length > 1);
                 return NextResponse.json({ success: true, data: duplicates.map(serializeTimestamps) });
             }
@@ -196,8 +189,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getPlatformStaff':
-            case 'getStaff': {
+            case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
