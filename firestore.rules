@@ -32,8 +32,19 @@ service cloud.firestore {
 
     // --- RULES ---
 
+    // Cache-busting deployment comment: 2026-03-14T15:30:00Z
+    
     match /{allPaths=**} {
       allow read, write: if isAdmin();
+    }
+
+    // Explicit rules for collection group queries (required for /backend and /lending views)
+    match /{path=**}/enquiries/{enquiryId} {
+      allow read: if isAdmin();
+    }
+    
+    match /{path=**}/transactions/{txId} {
+      allow read: if isAdmin();
     }
 
     match /users/{userId} {
