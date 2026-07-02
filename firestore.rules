@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -31,7 +32,6 @@ service cloud.firestore {
 
     // --- COLLECTION GROUP RULES ---
     // These MUST be defined with the /{path=**} prefix to be valid for group queries.
-    // They explicitly authorize the administrator to perform global 'list' and 'get' operations.
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/agreements/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
@@ -136,4 +136,4 @@ service cloud.firestore {
   }
 }
 
-// Global Definitive Rule Sync Token: 2026-03-16T13:45:00Z
+// Global Definitive Rule Sync Token: 2026-03-16T15:00:00Z
