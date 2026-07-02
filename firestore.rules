@@ -53,6 +53,7 @@ service cloud.firestore {
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -121,7 +122,15 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
     }
+    
+    match /reconciliations/{id} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /platformTransactions/{id} {
+      allow read, write: if isAdmin();
+    }
   }
 }
 
-// Rule Sync Token: 2026-03-15T00:15:00Z
+// Rule Sync Token: 2026-03-15T10:30:00Z
