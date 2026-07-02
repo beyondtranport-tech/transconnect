@@ -32,11 +32,13 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { financeCategories } from './finance-discovery';
+import { Textarea } from '@/components/ui/textarea';
+
+// Internal components
+import FinanceDiscoveryEngine, { financeCategories } from './finance-discovery';
 import AudienceCommunicationsTable from './AudienceCommunicationsTable';
 import { BatchResearchDialog } from './BatchResearchDialog';
 import { AddCommunicationLogDialog } from './AddCommunicationLogDialog';
-import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
