@@ -13,6 +13,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { useMemoFirebase, useCollection } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
@@ -275,7 +276,7 @@ export default function AccountDashboard() {
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-primary/10">
                                     <Button asChild className="w-full font-bold h-11 shadow-lg" variant="default">
-                                        <Link href="/funding/apply?origination=direct">
+                                        <Link href="/funding">
                                             Direct Application <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
                                     </Button>

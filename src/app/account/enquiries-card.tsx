@@ -154,7 +154,7 @@ export default function EnquiriesCard() {
             <CardContent className="p-6 space-y-8">
                 <div className="flex flex-col sm:flex-row gap-4">
                     <Button asChild className="flex-1 h-12 font-bold gap-2 shadow-sm" variant="default">
-                        <Link href="/funding/apply?origination=direct">
+                        <Link href="/funding">
                             <Landmark className="h-4 w-4" /> Start In-House Application
                         </Link>
                     </Button>
