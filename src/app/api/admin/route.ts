@@ -136,12 +136,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'findDuplicates': {
+            case 'bulkDeduplicate': {
                 const { type } = payload;
                 const [lSnap, pSnap] = await Promise.all([
                     db.collection('leads').where('type', '==', type).get(),
@@ -156,8 +151,6 @@ export async function POST(req: NextRequest) {
                 records.forEach((r: any) => {
                     const name = (r.companyName || r.company_name || r.trading_name || '').toLowerCase().trim();
                     const email = (r.email || r.email_address || '').toLowerCase().trim();
-                    
-                    // Group only if we have both name and email for forensic certainty
                     if (!name || !email) return;
                     
                     const compositeKey = `${name}|${email}`;
@@ -165,8 +158,35 @@ export async function POST(req: NextRequest) {
                     groups[compositeKey].push(r);
                 });
                 
-                const duplicates = Object.values(groups).filter(g => g.length > 1);
-                return NextResponse.json({ success: true, data: duplicates.map(serializeTimestamps) });
+                const batch = db.batch();
+                let deleteCount = 0;
+
+                Object.values(groups).forEach(group => {
+                    if (group.length <= 1) return;
+                    
+                    // Prioritize: Partner (Registered Member) > Lead, then Oldest > Newest
+                    group.sort((a, b) => {
+                        if (a.source !== b.source) return a.source === 'Partner' ? -1 : 1;
+                        const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        return dateA - dateB;
+                    });
+
+                    const [keep, ...toDelete] = group;
+                    toDelete.forEach(item => {
+                        const coll = item.source === 'Lead' ? 'leads' : 'partners';
+                        batch.delete(db.collection(coll).doc(item.id));
+                        deleteCount++;
+                    });
+                });
+
+                if (deleteCount > 0) await batch.commit();
+                return NextResponse.json({ success: true, count: deleteCount });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
 
             case 'deleteLeads': {
@@ -295,19 +315,6 @@ export async function POST(req: NextRequest) {
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'getLendingData': {
-                const { collectionName } = payload;
-                const snap = await db.collection(collectionName).limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d:any) => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'saveLendingAgreement': {
-                const { agreement } = payload;
-                const id = agreement.id || db.collection('agreements').doc().id;
-                await db.collection('agreements').doc(id).set({ ...agreement, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id });
             }
 
             case 'approvePayout': {

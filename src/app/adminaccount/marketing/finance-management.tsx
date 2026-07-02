@@ -145,7 +145,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                             <FormMessage />
                         </FormItem> 
                     )} />
-                     <DialogFooter className="pt-4 border-t text-left">
+                     <DialogFooter className="pt-4 border-t text-left text-foreground">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
@@ -160,76 +160,25 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
 function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [duplicates, setDuplicates] = useState<any[][]>([]);
-    const [selections, setSelections] = useState<Record<number, string>>({});
     const { toast } = useToast();
 
-    const findDuplicates = async () => {
+    const handleAutoClean = async () => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
-            const response = await fetch('/api/admin', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'findDuplicates', payload: { type: 'finance' } }),
-            });
-            const result = await response.json();
-            if (!result.success) throw new Error(result.error);
-            setDuplicates(result.data);
-            if (result.data.length === 0) {
-                 toast({ title: "No duplicates found.", description: "Forensic check confirmed 100% unique names and emails." });
-            } else {
-                 setIsOpen(true);
-            }
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error finding duplicates", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    
-    const handleSelection = (groupIndex: number, id: string) => {
-        setSelections(prev => ({...prev, [groupIndex]: id}));
-    }
-
-    const handleClean = async () => {
-        setIsLoading(true);
-        const leadIdsToDelete: string[] = [];
-        const partnerIdsToDelete: string[] = [];
-
-        duplicates.forEach((group, index) => {
-            const idToKeep = selections[index];
-            if (!idToKeep) return;
-            group.filter(item => item.id !== idToKeep).forEach(item => {
-                if (item.source === 'Lead') leadIdsToDelete.push(item.id);
-                else partnerIdsToDelete.push(item.id);
-            });
-        });
-
-        if (leadIdsToDelete.length === 0 && partnerIdsToDelete.length === 0) {
-            toast({ title: "No duplicates selected for deletion." });
-            setIsLoading(false);
-            setIsOpen(false);
-            return;
-        }
-
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-
-            if (leadIdsToDelete.length > 0) {
-                await performAdminAction(token, 'deleteLeads', { leadIds: leadIdsToDelete });
-            }
-            if (partnerIdsToDelete.length > 0) {
-                await performAdminAction(token, 'deletePartners', { partnerIds: partnerIdsToDelete });
-            }
             
-            toast({ title: "Duplicates Cleaned!", description: "Duplicate records have been removed." });
+            const result = await performAdminAction(token, 'bulkDeduplicate', { type: 'finance' });
+            
+            if (result.count === 0) {
+                toast({ title: "Registry Clean", description: "No duplicates found based on Company Name + Email." });
+            } else {
+                toast({ title: "Deduplication Complete", description: `Successfully consolidated ${result.count} redundant records.` });
+            }
             onComplete();
             setIsOpen(false);
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error cleaning duplicates", description: e.message });
+            toast({ variant: 'destructive', title: "Cleanup Error", description: e.message });
         } finally {
             setIsLoading(false);
         }
@@ -238,57 +187,30 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" onClick={findDuplicates} disabled={isLoading} className="gap-2">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4"/>}
+                <Button variant="outline" size="sm" className="gap-2">
+                    <Trash2 className="mr-2 h-4 w-4"/>
                     Clean Duplicates
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl text-left">
+            <DialogContent className="max-w-md text-left">
                  <DialogHeader>
-                    <DialogTitle>Composite Duplicate Cleaner</DialogTitle>
+                    <DialogTitle>Auto-Clean Duplicates</DialogTitle>
                     <DialogDescription>
-                        Records below match on both **Institution Name** and **Email Address**. Select the record you wish to preserve.
+                        This tool will automatically identify and delete duplicates where the **Institution Name** and **Email Address** are identical. 
                     </DialogDescription>
                 </DialogHeader>
-                <div className="space-y-6 max-h-[60vh] overflow-y-auto p-4">
-                    {duplicates.map((group, groupIndex) => (
-                        <Card key={groupIndex} className="border-primary/20 bg-primary/5">
-                            <CardHeader className="py-3 px-4 border-b">
-                                <CardTitle className="text-sm font-black uppercase tracking-widest">{group[0]?.companyName || group[0]?.company_name}</CardTitle>
-                                <p className="text-[10px] font-mono text-muted-foreground">{group[0]?.email || group[0]?.email_address}</p>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                {group.map(item => (
-                                    <div key={item.id} className="flex items-start gap-4 p-4 border-b last:border-b-0 hover:bg-white transition-colors">
-                                        <Checkbox 
-                                            id={`lead-${groupIndex}-${item.id}`} 
-                                            checked={selections[groupIndex] === item.id} 
-                                            onCheckedChange={() => handleSelection(groupIndex, item.id)}
-                                            className="mt-1"
-                                        />
-                                        <label htmlFor={`lead-${groupIndex}-${item.id}`} className="text-sm space-y-1 cursor-pointer flex-1">
-                                            <p className="font-bold flex items-center justify-between">
-                                                {item.source} ID: <span className="font-mono text-xs">{item.id}</span>
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Contact: {item.contactPerson || item.contact_person || 'N/A'} | Status: {item.status}
-                                            </p>
-                                            <div className="flex gap-2 mt-2">
-                                                {item.website ? <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary">Website Found</Badge> : <Badge variant="outline" className="text-[8px] h-3.5 opacity-30">No Web</Badge>}
-                                                {item.notes ? <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary">Notes Found</Badge> : <Badge variant="outline" className="text-[8px] h-3.5 opacity-30">No Notes</Badge>}
-                                            </div>
-                                        </label>
-                                    </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    ))}
+                <div className="py-4 space-y-4 text-left">
+                    <div className="p-4 bg-muted/30 border rounded-xl space-y-3">
+                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Prioritizes Registered Members</p>
+                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Preserves Earliest Records</p>
+                        <p className="text-xs font-bold flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-600"/> Cleans Leads Database & Partner Registry</p>
+                    </div>
                 </div>
-                 <DialogFooter className="border-t pt-4">
+                 <DialogFooter>
                     <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button onClick={handleClean} disabled={isLoading || Object.keys(selections).length < duplicates.length}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4"/>}
-                        Clean & Consolidate
+                    <Button onClick={handleAutoClean} disabled={isLoading} className="bg-primary hover:bg-primary/90">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4"/>}
+                        Execute One-Click Clean
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -385,7 +307,7 @@ export default function FinanceManagement() {
     { 
         accessorKey: 'contactPerson',
         header: 'Key Contact',
-        cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || row.original.contact_person || 'N/A'}</div>
+        cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || row.original.contact_person || (row.original.firstName ? `${row.original.firstName} ${row.original.lastName}` : 'N/A')}</div>
     },
     { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email || row.original.email_address || 'N/A'}</div> },
     { 
@@ -412,7 +334,7 @@ export default function FinanceManagement() {
         cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
     },
     { id: 'actions', header: 'Actions', cell: ({ row }) => (
-      <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
+      <div className="flex justify-end items-center gap-1 text-left text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <AddCommunicationLogDialog 
@@ -449,7 +371,7 @@ export default function FinanceManagement() {
       <BatchResearchDialog open={dialog.type === 'research'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={dialog.data || []} onComplete={() => fetchData()} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground text-foreground">
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -459,28 +381,28 @@ export default function FinanceManagement() {
       </AlertDialog>
 
       <Tabs defaultValue="crm" className="w-full text-left text-foreground">
-          <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground text-foreground">
+          <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
               <TabsTrigger value="crm" className="gap-2"><Users className="h-4 w-4" /> Forensic Registry (CRM)</TabsTrigger>
               <TabsTrigger value="discovery" className="gap-2"><Database className="h-4 w-4" /> Automated Discovery (AI)</TabsTrigger>
               <TabsTrigger value="oversight" className="gap-2"><Clock className="h-4 w-4" /> Oversight Timeline</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="crm" className="mt-6 space-y-6 text-left text-foreground text-foreground">
+          <TabsContent value="crm" className="mt-6 space-y-6 text-left text-foreground">
               {!hasLoaded ? (
-                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-foreground text-left">
+                  <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left text-foreground">Finance Registry Scan</h2>
-                      <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
-                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
+                      <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Finance Registry Scan</h2>
+                      <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground">Scan the capital database. Identify niche lenders and institutional partners.</p>
+                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />} Execute Scan
                       </Button>
                   </Card>
               ) : (
                   <Card className="text-left text-foreground">
-                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6 text-foreground">
+                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6">
                           <div className="text-left text-foreground">
-                              <CardTitle className="text-xl font-bold flex items-center gap-2 text-left text-foreground"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
-                              <CardDescription className="text-left text-foreground">Managing {filteredRecords.length} verified funding nodes.</CardDescription>
+                              <CardTitle className="text-xl font-bold flex items-center gap-2 text-left"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
+                              <CardDescription className="text-left">Managing {filteredRecords.length} verified funding nodes.</CardDescription>
                           </div>
                           <div className="flex gap-2 text-left text-foreground">
                               <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={isLoading} className="text-foreground"><RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh</Button>
@@ -490,12 +412,12 @@ export default function FinanceManagement() {
                                 <PopoverTrigger asChild>
                                     <Button variant="outline" size="sm" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground">
+                                <PopoverContent className="w-56 p-2 text-left">
                                     <div className="space-y-1 text-left text-foreground">
                                         {Object.keys(visibleColumns).map(col => (
-                                            <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                            <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                                 <span>{col.replace(/([A-Z]|_)/g, ' $1').trim()}</span>
-                                                {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
+                                                {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                             </div>
                                         ))}
                                     </div>
@@ -508,28 +430,28 @@ export default function FinanceManagement() {
                           </div>
                       </CardHeader>
                       <CardContent className="pt-6 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                            <div className="space-y-1 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-foreground text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Tag className="h-3 w-3"/> Classification</Label>
+                            <div className="space-y-1 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Tag className="h-3 w-3"/> Classification</Label>
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Categories" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Categories</SelectItem>
                                         {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="space-y-1 text-left">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-foreground text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
@@ -539,18 +461,18 @@ export default function FinanceManagement() {
                             </div>
                             <div className="md:col-span-2 flex items-end gap-2 text-left">
                                 {selectedIds.length > 0 ? (
-                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2 text-left">
+                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2">
                                         <Button variant="secondary" onClick={() => handleEngage(null)} className="flex-1 h-9 font-bold text-xs gap-2"><Send className="h-3.5 w-3.5" /> Engage ({selectedIds.length})</Button>
                                         <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
                                     </div>
                                 ) : (
-                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                                 )}
                             </div>
                         </div>
 
                         {isLoading ? (
-                             <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+                             <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                         ) : (
                             <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                         )}
