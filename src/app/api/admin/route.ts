@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -64,7 +63,6 @@ export async function POST(req: NextRequest) {
 
             case 'getAudienceCommunications': {
                 if (!isAdmin) throw new Error("Admin access required.");
-                // Fetch latest interaction logs from across the platform
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
             }
@@ -123,6 +121,14 @@ export async function POST(req: NextRequest) {
                 const ref = db.collection(targetColl).doc(id);
                 await ref.set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true, id });
+            }
+
+            case 'deletePartner': {
+                if (!isAdmin) throw new Error("Admin access required.");
+                const { partnerId, source } = payload;
+                const coll = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(coll).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
             }
 
             case 'logCommunication': {

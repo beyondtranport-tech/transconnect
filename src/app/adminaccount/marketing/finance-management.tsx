@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Landmark, Edit, Trash2, Send, Globe, Search, Download, Save, 
   Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, UserCheck 
@@ -81,7 +81,8 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
-        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'finance' } });
+        const coll = partner?.source === 'Lead' ? 'leads' : 'partners';
+        await performAdminAction(token, 'savePartner', { collection: coll, partner: { id: partner?.id, ...values, type: 'finance' } });
         toast({ title: 'Finance Record Saved' });
         onSave();
         onOpenChange(false);
@@ -124,7 +125,7 @@ function FinanceDialog({ open, onOpenChange, partner, onSave }: { open: boolean;
                             <FormMessage />
                         </FormItem> 
                     )} />
-                     <DialogFooter className="pt-4 border-t text-left text-foreground text-left">
+                     <DialogFooter className="pt-4 border-t text-left">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
@@ -160,7 +161,7 @@ export default function FinanceManagement() {
     }
   }, [toast]);
 
-  useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
+  useEffect(() => { if (!hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -184,7 +185,7 @@ export default function FinanceManagement() {
     },
     { 
         accessorKey: 'contactPerson',
-        header: 'Key Decision Maker',
+        header: 'Key Contact',
         cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || 'N/A'}</div>
     },
     { accessorKey: 'email', header: 'Email' },
@@ -194,7 +195,7 @@ export default function FinanceManagement() {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             return (
                 <div className="flex flex-col text-left">
-                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
+                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] text-left border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
                             <UserCheck className="h-2.5 w-2.5" /> Read
@@ -227,8 +228,8 @@ export default function FinanceManagement() {
     try {
       const token = await getClientSideAuthToken();
       if (!token) return;
-      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id });
-      toast({ title: 'Deleted' });
+      await performAdminAction(token, 'deletePartner', { partnerId: dialog.data.id, source: dialog.data.source });
+      toast({ title: 'Record Deleted' });
       fetchData();
       setDialog({ type: null });
     } catch (e: any) {
@@ -263,12 +264,9 @@ export default function FinanceManagement() {
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                       <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
                       <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left">Scan the capital database. Identify niche lenders and institutional partners.</p>
-                      <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left text-foreground">
-                          <Input placeholder="Search name or keywords..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                          <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
-                              {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
-                          </Button>
-                      </div>
+                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                          {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
+                      </Button>
                   </Card>
               ) : (
                   <Card className="text-left text-foreground">
@@ -278,7 +276,8 @@ export default function FinanceManagement() {
                               <CardDescription className="text-left">Managing {allRecords.length} verified funding nodes.</CardDescription>
                           </div>
                           <div className="flex gap-2 text-left">
-                              <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)}><RotateCcw className="h-4 w-4 mr-2" /> New Search</Button>
+                              <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={isLoading}><RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh</Button>
+                              <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(allRecords, 'finance-registry-backup.csv')}><Download className="h-4 w-4 mr-2" /> Backup</Button>
                               <Button onClick={() => setDialog({ type: 'add' })} size="sm"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                           </div>
                       </CardHeader>
