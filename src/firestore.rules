@@ -38,6 +38,7 @@ service cloud.firestore {
     }
 
     // Explicit rules for collection group queries (Critical for Admin CRM oversight)
+    // These must match the collection ID regardless of its depth in the hierarchy
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
@@ -91,10 +92,6 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
-    match /sessions/{sessionId} {
-      allow read, write: if true;
-    }
-
     match /leads/{leadId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
@@ -124,4 +121,4 @@ service cloud.firestore {
   }
 }
 
-// Rule Sync Token: 2026-03-14T23:55:00Z
+// Rule Sync Token: 2026-03-14T23:55:01Z
