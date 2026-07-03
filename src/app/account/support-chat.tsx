@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -146,7 +147,7 @@ export default function SupportChatContent() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">
-                        Your account may be undergoing verification. If this persists, please refresh or contact technical support.
+                        Your account profile may be initializing. If this persists, please ensure your company profile is complete.
                     </p>
                     <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
                         Retry Connection
