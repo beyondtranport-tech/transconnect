@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Loader2, MessageSquare, Send, Bot, AlertTriangle } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Bot, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
@@ -135,26 +135,26 @@ export default function SupportChatContent() {
     if (permissionError) {
         return (
             <Card className="border-destructive bg-destructive/5 text-left">
-                <CardHeader>
-                    <CardTitle className="text-destructive flex items-center gap-2">
+                <CardHeader className="text-left">
+                    <CardTitle className="text-destructive flex items-center gap-2 text-left">
                         <AlertTriangle className="h-5 w-5" />
                         Access Restricted
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-left">
                         We encountered a permission error loading your support messages.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                        Your account profile may still be initializing in the industrial brain or you may not have sufficient permissions to view this company's messages. 
-                        If this persists, please ensure your company profile is complete and correctly associated with your login.
+                <CardContent className="space-y-4 text-left">
+                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
+                        Your account profile may still be initializing or you may not have sufficient permissions to view this company's history. 
+                        If this persists, please ensure your company profile is complete.
                     </p>
-                    <div className="flex gap-2">
-                        <Button variant="outline" size="sm" asChild>
+                    <div className="flex gap-2 text-left">
+                        <Button variant="outline" size="sm" asChild className="gap-2">
                             <Link href="/account?view=profile">Complete Profile</Link>
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
-                            Retry Connection
+                        <Button variant="ghost" size="sm" onClick={() => window.location.reload()} className="gap-2">
+                            <RefreshCcw className="h-3 w-3" /> Retry Connection
                         </Button>
                     </div>
                 </CardContent>
@@ -170,14 +170,14 @@ export default function SupportChatContent() {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
-                    <div className="space-y-4 pt-2">
+                    <div className="space-y-4 pt-2 text-left">
                         {isLoading && !messages ? (
                              <div className="flex justify-center items-center h-full py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                         ) : !companyId && !isUserLoading ? (
-                            <Alert variant="destructive" className="border-none bg-destructive/10">
+                            <Alert variant="destructive" className="border-none bg-destructive/10 text-left">
                                 <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="font-bold">Profile Incomplete</AlertTitle>
-                                <AlertDescription>
+                                <AlertTitle className="font-bold text-left">Profile Incomplete</AlertTitle>
+                                <AlertDescription className="text-left">
                                     Please complete your company profile to enable secure support chat.
                                     <Button asChild variant="link" className="p-0 h-auto ml-1">
                                         <Link href="/account?view=profile">Go to My Profile</Link>
@@ -205,8 +205,8 @@ export default function SupportChatContent() {
                                             isAI ? "bg-blue-100 text-blue-900 rounded-bl-none" :
                                             "bg-white border rounded-bl-none"
                                         )}>
-                                            <p className="font-bold text-[10px] mb-1 opacity-70 uppercase tracking-widest leading-none">{msg.senderName || 'Staff'}</p>
-                                            <p className="leading-relaxed">{msg.text}</p>
+                                            <p className="font-bold text-[10px] mb-1 opacity-70 uppercase tracking-widest leading-none text-left">{msg.senderName || 'Staff'}</p>
+                                            <p className="leading-relaxed text-left">{msg.text}</p>
                                             <p className="text-[9px] opacity-40 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>
                                         {isMember && (
@@ -229,7 +229,7 @@ export default function SupportChatContent() {
                         )}
                     </div>
                 </ScrollArea>
-                <div className="mt-auto flex items-center gap-2 pt-4 border-t">
+                <div className="mt-auto flex items-center gap-2 pt-4 border-t text-left">
                     <input 
                         placeholder={companyId ? "Ask the AI assistant..." : "Initializing profile..."}
                         value={inputFieldText}
