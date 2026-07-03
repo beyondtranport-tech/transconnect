@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Building2, Zap, Search } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Building2, Zap, Search, Truck, Handshake } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -32,19 +32,35 @@ export default function MembershipPage() {
         id: 'intelligence',
         name: 'Intelligence Access',
         price: 100,
-        isPopular: true,
         description: 'Full forensic data and industrial intelligence tools.',
         features: [
             "Unlimited Daily Searches",
             "Unlimited Record Access",
             "Full Forensic Data (CEO/MD Names)",
             "Direct E-mails & Mobile Numbers",
-            "Create & Publish Your Shop",
+            "Publish Your Shop Profile",
             "Unlock Wallet & Billing Tools",
-            "Apply for Business Funding",
             "Priority Support & Compliance",
         ],
         cta: "Get Full Access",
+        variant: "default" as const
+    },
+    {
+        id: 'loads_intelligence',
+        name: 'Loads Intelligence',
+        price: 500,
+        isPopular: true,
+        description: 'The Earning Tier. Unlock the ability to post and take freight loads.',
+        features: [
+            "Everything in Intelligence Access",
+            "Post Unlimited Loads as a Broker",
+            "Take Loads as a Haulier",
+            "Access Subcontractor Handshakes",
+            "Verified Fleet & Driver Registry",
+            "2.5% Success Fee Participation",
+            "Priority Load Matching",
+        ],
+        cta: "Unlock Earning Power",
         variant: "default" as const
     }
   ];
@@ -53,14 +69,14 @@ export default function MembershipPage() {
     <div className="bg-background min-h-screen text-left">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest">Pricing Strategy</Badge>
-          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-center">One Price. Total Intelligence.</h1>
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest">Membership Tiers</Badge>
+          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-center">Intelligence that Pays for Itself.</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground text-center">
-            Upgrade to the Intelligence Access tier to unlock the direct contacts of decision-makers across the industry.
+            From basic observation to full industrial earning power. Choose the level that matches your growth goals.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {plans.map((plan) => (
                 <Card key={plan.id} className={cn(
                     "flex flex-col shadow-xl transition-all duration-300 relative",
@@ -69,7 +85,7 @@ export default function MembershipPage() {
                     {plan.isPopular && (
                         <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-black uppercase rounded-full flex items-center gap-1 z-10">
                             <Star className="h-3 w-3 fill-current" />
-                            Recommended Access
+                            Most Popular for Growth
                         </div>
                     )}
                     <CardHeader className="text-center pb-2">
@@ -94,7 +110,7 @@ export default function MembershipPage() {
                     </CardContent>
                     <CardFooter className="pt-6">
                         <Button asChild className="w-full py-6 text-lg font-bold" variant={plan.variant}>
-                            <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/intelligence`}>
+                            <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${plan.id}`}>
                                 {plan.cta}
                             </Link>
                         </Button>
@@ -103,33 +119,33 @@ export default function MembershipPage() {
             ))}
         </div>
 
-        {/* Supplier Specific Value Prop */}
+        {/* Value Prop Sections */}
         <div className="mt-24 max-w-5xl mx-auto space-y-12">
             <div className="text-center">
-                <h2 className="text-3xl font-black font-headline">Why Suppliers Join</h2>
-                <p className="text-muted-foreground mt-2">Intelligence Access isn't just a membership; it's a sales velocity engine.</p>
+                <h2 className="text-3xl font-black font-headline">The Earning Pathway</h2>
+                <p className="text-muted-foreground mt-2">How our memberships generate ROI for your business.</p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
                 <div className="space-y-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Building2 className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold">Your Digital Branch</h3>
+                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Handshake className="h-6 w-6 text-primary"/></div>
+                    <h3 className="text-xl font-bold">Brokerage Nodes</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                        Create a high-fidelity shop profile. Showcase your inventory to a captive community of fleet owners actively searching for your parts.
+                        The **Loads Intelligence** tier allows you to act as an authorized subcontractor. Map loads you know of and earn a professional split on every completed delivery.
+                    </p>
+                </div>
+                <div className="space-y-4 text-left">
+                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Truck className="h-6 w-6 text-primary"/></div>
+                    <h3 className="text-xl font-bold">Priority Capacity</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Hauliers on the earning tier get first-look at high-value freight. Our AI matching engine prioritizes your fleet for loads that match your empty legs.
                     </p>
                 </div>
                 <div className="space-y-4 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><Search className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold">Forensic Lead Gen</h3>
+                    <h3 className="text-xl font-bold">Forensic Transparency</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                        Search for transporters by region or vehicle type. Get direct access to MD/Owner mobile numbers to bypass generic call-centers.
-                    </p>
-                </div>
-                <div className="space-y-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Zap className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold">Embedded Finance</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                        Close more deals. Your customers can use their platform wallet or apply for instant funding to buy your products directly.
+                        Access direct mobile numbers for MDs and Fleet Owners. Stop hitting generic support lines and start talking to the people who control the freight.
                     </p>
                 </div>
             </div>
@@ -138,9 +154,9 @@ export default function MembershipPage() {
         <div className="mt-20 max-w-3xl mx-auto">
              <Alert className="bg-primary/5 border-primary/20 p-6 text-left text-foreground">
                 <ShieldCheck className="h-6 w-6 text-primary" />
-                <AlertTitle className="text-lg font-bold ml-2">Why R100?</AlertTitle>
+                <AlertTitle className="text-lg font-bold ml-2">Data as a Currency</AlertTitle>
                 <AlertDescription className="mt-2 text-muted-foreground ml-2">
-                    Our mission is to break the constraint of the "Information Divide." By offering high-quality forensic data for just R100, we enable small and medium enterprises to compete on the same level as industrial giants. Your subscription funds the continuous AI discovery of new verified leads for the whole community.
+                    We incentivize contribution. By registering your fleet (RC1) and contributing supplier data, you earn points that can be used to lower your monthly subscription costs. We believe the community's data belongs to the community.
                 </AlertDescription>
             </Alert>
         </div>

@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -10,12 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Save, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, Lock, Sparkles } from 'lucide-react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 const loadSchema = z.object({
   agreementId: z.string().min(1, "Please select an authorized appointment."),
@@ -45,6 +45,8 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
+    const isEarningMember = user?.companyData?.membershipId === 'loads_intelligence' || user?.claims?.admin === true;
+
     const methods = useForm<z.infer<typeof loadSchema>>({
         resolver: zodResolver(loadSchema),
         defaultValues: { 
@@ -64,6 +66,8 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
     }, [methods.watch('totalValue'), methods.watch('brokerMargin')]);
 
     const onSubmit = async (values: z.infer<typeof loadSchema>) => {
+        if (!isEarningMember) return; // Shield check
+
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
@@ -160,7 +164,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                             {equipmentOptions.map(opt => (
                                                 <FormField key={opt} control={methods.control} name="requiredEquipment" render={({ field }) => (
                                                     <div className="flex items-center space-x-2 p-2 border rounded-md text-left">
-                                                        <input type="checkbox" checked={field.value.includes(opt)} onChange={e => e.target.checked ? field.onChange([...field.value, opt]) : field.onChange(field.value.filter((v:any) => v !== opt))} className="h-4 w-4" />
+                                                        <Checkbox checked={field.value.includes(opt)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, opt]) : field.onChange(field.value.filter((v:any) => v !== opt))} />
                                                         <span className="text-xs">{opt}</span>
                                                     </div>
                                                 )} />
@@ -174,7 +178,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
                                         <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono" {...field} /></FormControl><FormDescription>Total payout from provider.</FormDescription></FormItem>)} />
-                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Broker Margin (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={form.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Broker Margin (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                                     </div>
                                     
                                     <div className="bg-slate-50 p-6 rounded-2xl border-2 border-dashed space-y-4 text-left">
@@ -190,12 +194,29 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 3 && (
-                                <div className="text-center py-12 space-y-4">
-                                    <CheckCircle className="h-16 w-16 mx-auto text-primary" />
-                                    <div className="space-y-1">
-                                        <h3 className="text-xl font-bold">Ready to Broadcast</h3>
-                                        <p className="text-sm text-muted-foreground">Your load will be visible to all verified hauliers in the Loads Mall.</p>
-                                    </div>
+                                <div className="space-y-6 text-left">
+                                    {!isEarningMember ? (
+                                        <div className="text-center py-8 space-y-6 animate-in zoom-in-95 duration-500">
+                                            <div className="bg-amber-100 p-4 rounded-full w-fit mx-auto"><Lock className="h-10 w-10 text-amber-600" /></div>
+                                            <div className="space-y-2">
+                                                <h3 className="text-2xl font-black font-headline">Unlock Earning Power</h3>
+                                                <p className="text-muted-foreground max-w-sm mx-auto">
+                                                    You've mapped a load worth <strong>{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(methods.watch('totalValue'))}</strong>. To publish this to the board and earn your <strong>{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(commercials.brokerEarn)}</strong> commission, upgrade to the Loads Intelligence tier.
+                                                </p>
+                                            </div>
+                                            <Button asChild size="lg" className="h-14 px-12 font-black uppercase tracking-tight shadow-xl">
+                                                <Link href="/checkout/loads_intelligence">Activate Loads Node <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12 space-y-4">
+                                            <CheckCircle className="h-16 w-16 mx-auto text-primary" />
+                                            <div className="space-y-1">
+                                                <h3 className="text-xl font-bold">Ready to Broadcast</h3>
+                                                <p className="text-sm text-muted-foreground">Your load will be visible to all verified hauliers in the Loads Mall.</p>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -207,7 +228,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                 {currentStep < 3 ? (
                     <Button onClick={() => setCurrentStep(prev => prev + 1)}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
                 ) : (
-                    <Button onClick={methods.handleSubmit(onSubmit)} disabled={isLoading} className="gap-2 font-black uppercase shadow-lg h-12 px-8">
+                    <Button onClick={methods.handleSubmit(onSubmit)} disabled={isLoading || !isEarningMember} className="gap-2 font-black uppercase shadow-lg h-12 px-8">
                         {isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <CheckCircle className="h-4 w-4" />}
                         Broadcast Load
                     </Button>
