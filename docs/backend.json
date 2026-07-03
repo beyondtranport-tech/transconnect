@@ -14,27 +14,36 @@
         "phone": { "type": "string" },
         "companyId": { "type": ["string", "null"], "description": "The ID of the company this user belongs to in the /companies collection. Null for partners." },
         "role": { "type": "string", "enum": ["owner", "staff", "partner"], "description": "The user's role in the system." },
-        "permissions": { "type": "array", "items": { "type": "string" }, "description": "List of 'action:resource' permission strings." },
+        "passwordChangeRequired": { "type": "boolean", "description": "If true, the user must change their password on next login." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
       "required": ["id", "firstName", "lastName", "email", "role"]
     },
-    "BrokerAgreement": {
-      "title": "Broker Agreement",
+    "Partner": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Partner",
       "type": "object",
-      "description": "Formal appointment of a member as a subcontractor for a load provider.",
+      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter.",
       "properties": {
         "id": { "type": "string" },
-        "brokerId": { "type": "string", "description": "Company ID of the member acting as broker." },
-        "providerId": { "type": "string", "description": "ID of the company providing the work (from registry)." },
-        "providerName": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "verified", "rejected"] },
-        "agreementUrl": { "type": "string", "description": "URL to the signed appointment letter." },
-        "commissionRate": { "type": "number", "description": "Agreed percentage split for the broker." },
-        "createdAt": { "type": "object" }
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "mobile": { "type": "string" },
+        "companyName": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"] },
+        "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
+        "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
+        "address": { "type": "string" },
+        "website": { "type": "string" },
+        "assigneeId": { "type": "string", "description": "UID of the allocated platform staff member." },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
       },
-      "required": ["brokerId", "providerId", "status"]
+      "required": ["firstName", "lastName", "email", "type"]
     },
     "Load": {
       "title": "Load Listing",
@@ -42,20 +51,22 @@
       "description": "A specific freight load posted on the board.",
       "properties": {
         "id": { "type": "string" },
-        "brokerId": { "type": "string" },
+        "brokerId": { "type": "string", "description": "The Primary Contractor company ID." },
+        "brokerName": { "type": "string" },
         "origin": { "type": "string" },
         "destination": { "type": "string" },
         "cargoType": { "type": "string" },
         "requiredEquipment": { "type": "array", "items": { "type": "string" } },
         "weight": { "type": "number" },
-        "totalValue": { "type": "number", "description": "What the provider pays." },
-        "brokerFee": { "type": "number" },
-        "platformFee": { "type": "number" },
-        "haulierPayout": { "type": "number", "description": "What the haulier receives." },
-        "status": { "type": "string", "enum": ["active", "negotiating", "assigned", "completed", "cancelled"] },
-        "takerId": { "type": "string", "description": "Company ID of the haulier who accepted." },
-        "driverId": { "type": "string", "description": "ID of the allocated driver." },
-        "vehicleId": { "type": "string", "description": "ID of the allocated fleet asset." },
+        "totalValue": { "type": "number" },
+        "haulierPayout": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "assigned", "completed", "cancelled"] },
+        "collectionDetails": { "type": "string", "description": "Full address and contact for pickup." },
+        "deliveryDetails": { "type": "string", "description": "Full address and contact for drop-off." },
+        "demurrageConditions": { "type": "string", "description": "Penalties for delays." },
+        "instructionNumber": { "type": "string", "description": "Formal generated ID upon acceptance." },
+        "instructionDate": { "type": "object" },
+        "takerId": { "type": "string" },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
@@ -72,8 +83,8 @@
         "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" }, "description": "User profiles." }
       },
       {
-        "path": "/companies/{companyId}/brokerAgreements/{agreementId}",
-        "definition": { "entityName": "BrokerAgreement", "schema": { "$ref": "#/entities/BrokerAgreement" }, "description": "Member's subcontractor appointments." }
+        "path": "/partners/{partnerId}",
+        "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       },
       {
         "path": "/companies/{companyId}/loadBoard/loads/{loadId}",

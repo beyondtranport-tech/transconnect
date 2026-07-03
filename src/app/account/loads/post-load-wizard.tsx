@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -9,13 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Save, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, Lock, Sparkles } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, Lock, ClipboardList, Gavel } from 'lucide-react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 
 const loadSchema = z.object({
@@ -27,6 +29,11 @@ const loadSchema = z.object({
   weight: z.coerce.number().positive(),
   totalValue: z.coerce.number().positive("What is the total value of this load?"),
   brokerMargin: z.coerce.number().min(0).max(50, "Margin capped at 50%"),
+  collectionDetails: z.string().min(10, "Provide full collection address and contact."),
+  deliveryDetails: z.string().min(10, "Provide full delivery address and contact."),
+  demurrageConditions: z.string().min(5, "Specify delay penalties."),
+  collectionDate: z.string().min(1, "Required."),
+  deliveryDate: z.string().min(1, "Required."),
 });
 
 const cargoOptions = ["Containers", "Refrigerated", "General Freight", "Bulk Aggregates", "FMCG", "Hazmat"];
@@ -35,6 +42,7 @@ const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
 
 const steps = [
     { id: 'logistics', title: 'Logistics', icon: MapPin },
+    { id: 'execution', title: 'Execution', icon: ClipboardList },
     { id: 'cargo', title: 'Cargo & Specs', icon: Package },
     { id: 'commercials', title: 'Commercials', icon: DollarSign },
     { id: 'review', title: 'Publish', icon: ShieldCheck },
@@ -46,13 +54,15 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
     const [currentStep, setCurrentStep] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
-    const isEarningMember = user?.companyData?.membershipId === 'loads_intelligence' || user?.claims?.admin === true;
+    const isEarningMember = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
     const methods = useForm<z.infer<typeof loadSchema>>({
         resolver: zodResolver(loadSchema),
+        mode: 'onChange',
         defaultValues: { 
             requiredEquipment: [],
-            brokerMargin: agreements.find(a => a.status === 'verified')?.commissionRate || 5
+            brokerMargin: agreements.find(a => a.status === 'verified')?.commissionRate || 5,
+            demurrageConditions: 'R2500 per day standing fee if not offloaded within 4 hours of arrival.'
         }
     });
 
@@ -80,6 +90,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                     data: { 
                         ...values, 
                         brokerId: user!.companyId,
+                        brokerName: user?.companyData?.companyName || 'Primary Contractor',
                         ...commercials,
                         status: 'active',
                         createdAt: { _methodName: 'serverTimestamp' } 
@@ -103,7 +114,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                     <Truck className="h-6 w-6 text-primary" />
                     Load Distribution Wizard
                 </CardTitle>
-                <CardDescription className="text-slate-400">Post verified freight to the national haulier network.</CardDescription>
+                <CardDescription className="text-slate-400">Post verified freight instructions to the national haulier network.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 bg-white text-foreground">
                 <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
@@ -116,7 +127,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                         ))}
                     </div>
                     <FormProvider {...methods}>
-                        <div className="space-y-8 min-h-[400px] text-left text-foreground">
+                        <div className="space-y-8 min-h-[450px] text-left">
                             {currentStep === 0 && (
                                 <div className="space-y-6 text-left">
                                     <FormField control={methods.control} name="agreementId" render={({ field }) => (
@@ -128,6 +139,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                                     {agreements.filter(a => a.status === 'verified').map(a => <SelectItem key={a.id} value={a.id}>{a.providerName}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
+                                            <FormDescription>Verification ensures you have the legal right to subcontract this freight.</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
@@ -149,8 +161,27 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 1 && (
-                                <div className="space-y-6 text-left text-foreground">
-                                    <div className="grid grid-cols-2 gap-4 text-left">
+                                <div className="space-y-6 text-left">
+                                    <h3 className="font-bold text-lg flex items-center gap-2"><ClipboardList className="h-5 w-5 text-primary" /> Execution Logistics</h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField control={methods.control} name="collectionDate" render={({ field }) => (<FormItem><FormLabel>Collection Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="deliveryDate" render={({ field }) => (<FormItem><FormLabel>Target Delivery</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                                    </div>
+                                    <FormField control={methods.control} name="collectionDetails" render={({ field }) => (
+                                        <FormItem><FormLabel>Collection Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise pickup location and onsite contact name/number..." {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={methods.control} name="deliveryDetails" render={({ field }) => (
+                                        <FormItem><FormLabel>Delivery Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise offload location and receiver contact details..." {...field} /></FormControl><FormMessage /></FormItem>
+                                    )} />
+                                    <FormField control={methods.control} name="demurrageConditions" render={({ field }) => (
+                                        <FormItem><FormLabel>Demurrage & Penalties</FormLabel><FormControl><Input {...field} /></FormControl><FormDescription>Visible on the formal haulier instruction.</FormDescription></FormItem>
+                                    )} />
+                                </div>
+                            )}
+
+                            {currentStep === 2 && (
+                                <div className="space-y-6 text-left">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
                                             <FormItem className="text-left">
                                                 <FormLabel>Cargo Classification</FormLabel>
@@ -175,27 +206,27 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 </div>
                             )}
 
-                            {currentStep === 2 && (
-                                <div className="space-y-8 text-left text-foreground">
+                            {currentStep === 3 && (
+                                <div className="space-y-8 text-left">
                                     <div className="grid grid-cols-2 gap-6 text-left">
-                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono" {...field} /></FormControl><FormDescription>Total payout from provider.</FormDescription></FormItem>)} />
-                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Broker Participation (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono" {...field} /></FormControl><FormDescription>Total payout from your Debtor.</FormDescription></FormItem>)} />
+                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Your Participation (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                                     </div>
                                     
                                     <div className="bg-slate-50 p-6 rounded-2xl border-2 border-dashed space-y-4 text-left">
-                                        <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4">Earnings Breakdown</h4>
-                                        <div className="space-y-2 text-left">
-                                            <div className="flex justify-between text-sm">
-                                                <span>Your Broker Participation ({methods.watch('brokerMargin')}%)</span>
+                                        <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4">Settlement Breakdown</h4>
+                                        <div className="space-y-2 text-left text-sm">
+                                            <div className="flex justify-between">
+                                                <span>Your Broker Earning ({methods.watch('brokerMargin')}%)</span>
                                                 <span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span>
                                             </div>
-                                            <div className="flex justify-between text-sm">
+                                            <div className="flex justify-between">
                                                 <span>Platform Access Fee (2.5%)</span>
                                                 <span className="font-bold">{formatCurrency(commercials.platformFee)}</span>
                                             </div>
                                             <Separator />
                                             <div className="flex justify-between text-lg font-black text-primary pt-2">
-                                                <span>HAULIER PAYOUT</span>
+                                                <span>HAULIER DISBURSEMENT</span>
                                                 <span>{formatCurrency(commercials.haulierPayout)}</span>
                                             </div>
                                         </div>
@@ -203,19 +234,16 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 </div>
                             )}
 
-                            {currentStep === 3 && (
+                            {currentStep === 4 && (
                                 <div className="space-y-6 text-left">
                                     {!isEarningMember ? (
                                         <div className="text-center py-8 space-y-6 animate-in zoom-in-95 duration-500">
                                             <div className="bg-amber-100 p-4 rounded-full w-fit mx-auto"><Lock className="h-10 w-10 text-amber-600" /></div>
                                             <div className="space-y-2">
-                                                <h3 className="text-2xl font-black font-headline">Intelligence Upgrade Required</h3>
+                                                <h3 className="text-2xl font-black font-headline">Loads Intelligence Required</h3>
                                                 <p className="text-muted-foreground max-w-sm mx-auto">
-                                                    You've mapped a load with a <strong>{formatCurrency(commercials.brokerEarn)}</strong> earning potential. To publish this to the board and capture this revenue, activate the **Loads Intelligence** tier.
+                                                    You've mapped a load with a <strong>{formatCurrency(commercials.brokerEarn)}</strong> earning potential. To issue instructions and capture this revenue, activate the **Loads Intelligence** tier.
                                                 </p>
-                                            </div>
-                                            <div className="p-4 bg-muted/30 rounded-xl border border-dashed max-w-xs mx-auto text-sm italic">
-                                                Upgrade ROI: Your first load covers over 6 months of membership fees.
                                             </div>
                                             <Button asChild size="lg" className="h-14 px-12 font-black uppercase tracking-tight shadow-xl">
                                                 <Link href="/checkout/loads_intelligence">Activate Earning Power <ArrowRight className="ml-2 h-4 w-4"/></Link>
@@ -225,8 +253,8 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                         <div className="text-center py-12 space-y-4">
                                             <CheckCircle className="h-16 w-16 mx-auto text-primary" />
                                             <div className="space-y-1">
-                                                <h3 className="text-xl font-bold">Registry Ready</h3>
-                                                <p className="text-sm text-muted-foreground">Your load will be broadcasted to all verified hauliers matching the technical specs.</p>
+                                                <h3 className="text-xl font-bold">Execution Ready</h3>
+                                                <p className="text-sm text-muted-foreground">Once accepted, the platform will automatically issue a formal Instruction Document with your unique Ref # and Demurrage terms.</p>
                                             </div>
                                         </div>
                                     )}
@@ -238,12 +266,12 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
             </CardContent>
             <CardFooter className="p-8 bg-slate-50 border-t flex justify-between">
                 <Button variant="ghost" onClick={currentStep === 0 ? onComplete : () => setCurrentStep(prev => prev - 1)}><ArrowLeft className="mr-2 h-4 w-4"/> {currentStep === 0 ? 'Cancel' : 'Back'}</Button>
-                {currentStep < 3 ? (
+                {currentStep < 4 ? (
                     <Button onClick={() => setCurrentStep(prev => prev + 1)}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
                 ) : (
                     <Button onClick={methods.handleSubmit(onSubmit)} disabled={isLoading || !isEarningMember} className="gap-2 font-black uppercase shadow-lg h-12 px-8">
-                        {isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <CheckCircle className="h-4 w-4" />}
-                        Broadcast to Board
+                        {isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <ShieldCheck className="h-4 w-4" />}
+                        Broadcast & Issue Mandate
                     </Button>
                 )}
             </CardFooter>
