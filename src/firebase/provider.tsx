@@ -126,6 +126,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...authState,
       ...userData,
       companyData,
+      // Strategy: Flatten companyId for reliable subcollection path resolution
+      companyId: userData?.companyId || authState.uid
     };
   }, [authState, userData, companyData]);
 

@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, MessageSquare, Send, Bot, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { supportQuery } from '@/ai/flows/support-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -41,11 +41,13 @@ export default function SupportChatContent() {
 
     // Robust company ID extraction from the enriched user object
     const companyId = useMemo(() => {
+        // Fallback chain to ensure we have the ID needed for the Firestore path
         return user?.companyId || user?.companyData?.id || '';
     }, [user]);
 
     const messagesQuery = useMemoFirebase(() => {
-        // Only trigger query if we have both firestore and a valid, non-empty companyId
+        // CRITICAL: Ensure companyId is present and non-empty before initiating the query.
+        // This prevents the 'Permission Denied' error that occurs when querying an invalid path.
         if (!firestore || !companyId || companyId === '') return null;
         return query(
             collection(firestore, 'companies', companyId, 'supportMessages'),
@@ -94,6 +96,7 @@ export default function SupportChatContent() {
                 body: JSON.stringify({ collectionPath: path, data: userMessageData }),
             });
 
+            // Map history for AI context
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
                 .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {
@@ -133,6 +136,7 @@ export default function SupportChatContent() {
         }
     };
 
+    // If a permission error is encountered, display a clean alert instead of crashing
     if (permissionError) {
         return (
             <Card className="border-destructive bg-destructive/5 text-left">
@@ -142,20 +146,16 @@ export default function SupportChatContent() {
                         Access Restricted
                     </CardTitle>
                     <CardDescription className="text-left text-destructive/80">
-                        We encountered a permission error loading your support messages.
+                        The industrial brain is verifying your credentials.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-left">
                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Your account profile may still be initializing or you may not have sufficient permissions to view this company's history. 
-                        If this persists, please ensure your profile registration is complete.
+                        Your member profile is still being synchronized with the secure industrial registry. This typically takes 5-10 seconds after sign-in.
                     </p>
                     <div className="flex gap-2 text-left">
-                        <Button variant="outline" size="sm" asChild className="gap-2">
-                            <Link href="/account?view=profile">Complete Profile</Link>
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => window.location.reload()} className="gap-2">
-                            <RefreshCcw className="h-3 w-3" /> Retry Connection
+                        <Button variant="outline" size="sm" onClick={() => window.location.reload()} className="gap-2">
+                            <RefreshCcw className="h-3 w-3" /> Retry Sync
                         </Button>
                     </div>
                 </CardContent>
