@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -40,10 +40,13 @@ export default function SupportChatContent() {
     const [isSending, setIsSending] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    const companyId = user?.companyId;
+    // Robust company ID extraction from the enriched user object
+    const companyId = useMemo(() => {
+        return user?.companyId || user?.companyData?.id || '';
+    }, [user]);
 
     const messagesQuery = useMemoFirebase(() => {
-        // Only trigger query if we have both firestore and a valid companyId
+        // Only trigger query if we have both firestore and a valid, non-empty companyId
         if (!firestore || !companyId || companyId === '') return null;
         return query(
             collection(firestore, 'companies', companyId, 'supportMessages'),
@@ -75,7 +78,6 @@ export default function SupportChatContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // 1. Save user message via proxy API
             const path = `companies/${companyId}/supportMessages`;
             const userMessageData = {
                 text: userMessageText,
@@ -92,7 +94,6 @@ export default function SupportChatContent() {
                 body: JSON.stringify({ collectionPath: path, data: userMessageData }),
             });
 
-            // 2. Build history for AI
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
                 .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {
@@ -100,13 +101,11 @@ export default function SupportChatContent() {
                     return { role, content: [{ text: msg.text }] };
                 });
 
-            // 3. Call AI agent
             const aiResult = await supportQuery({ 
                 query: userMessageText, 
                 history: historyForApi
             });
 
-            // 4. Save AI response
             const aiMessageData = {
                 text: aiResult.response,
                 senderId: 'ai-assistant',
@@ -166,8 +165,8 @@ export default function SupportChatContent() {
     return (
         <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left">
             <CardHeader className="px-0 text-left">
-                <CardTitle className="flex items-center gap-2 text-left"><MessageSquare /> Support Chat</CardTitle>
-                <CardDescription className="text-left">Direct line to our AI assistant and platform support team.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-left text-foreground"><MessageSquare /> Support Chat</CardTitle>
+                <CardDescription className="text-left text-muted-foreground">Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
