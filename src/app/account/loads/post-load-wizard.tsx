@@ -13,8 +13,9 @@ import { Loader2, ArrowLeft, ArrowRight, Save, Truck, MapPin, Package, DollarSig
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 
 const loadSchema = z.object({
@@ -66,7 +67,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
     }, [methods.watch('totalValue'), methods.watch('brokerMargin')]);
 
     const onSubmit = async (values: z.infer<typeof loadSchema>) => {
-        if (!isEarningMember) return; // Shield check
+        if (!isEarningMember) return;
 
         setIsLoading(true);
         try {
@@ -96,15 +97,15 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
     };
 
     return (
-        <Card className="max-w-4xl mx-auto shadow-2xl border-none text-left">
-            <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8">
+        <Card className="max-w-4xl mx-auto shadow-2xl border-none text-left overflow-hidden">
+            <CardHeader className="bg-slate-900 text-white p-8">
                 <CardTitle className="text-2xl font-black font-headline flex items-center gap-3">
                     <Truck className="h-6 w-6 text-primary" />
                     Load Distribution Wizard
                 </CardTitle>
                 <CardDescription className="text-slate-400">Post verified freight to the national haulier network.</CardDescription>
             </CardHeader>
-            <CardContent className="p-8 bg-white">
+            <CardContent className="p-8 bg-white text-foreground">
                 <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                     <div className="space-y-2 border-r pr-4">
                         {steps.map((step, i) => (
@@ -178,16 +179,25 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
                                         <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono" {...field} /></FormControl><FormDescription>Total payout from provider.</FormDescription></FormItem>)} />
-                                        <FormField control={form.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Broker Margin (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Broker Participation (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                                     </div>
                                     
                                     <div className="bg-slate-50 p-6 rounded-2xl border-2 border-dashed space-y-4 text-left">
                                         <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4">Earnings Breakdown</h4>
                                         <div className="space-y-2 text-left">
-                                            <div className="flex justify-between text-sm"><span>Broker Participation ({methods.watch('brokerMargin')}%)</span><span className="font-bold">{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(commercials.brokerEarn)}</span></div>
-                                            <div className="flex justify-between text-sm"><span>Platform Fee (2.5%)</span><span className="font-bold">{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(commercials.platformFee)}</span></div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>Your Broker Participation ({methods.watch('brokerMargin')}%)</span>
+                                                <span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span>Platform Access Fee (2.5%)</span>
+                                                <span className="font-bold">{formatCurrency(commercials.platformFee)}</span>
+                                            </div>
                                             <Separator />
-                                            <div className="flex justify-between text-lg font-black text-primary pt-2"><span>HAULIER PAYOUT</span><span>{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(commercials.haulierPayout)}</span></div>
+                                            <div className="flex justify-between text-lg font-black text-primary pt-2">
+                                                <span>HAULIER PAYOUT</span>
+                                                <span>{formatCurrency(commercials.haulierPayout)}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -199,21 +209,24 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                         <div className="text-center py-8 space-y-6 animate-in zoom-in-95 duration-500">
                                             <div className="bg-amber-100 p-4 rounded-full w-fit mx-auto"><Lock className="h-10 w-10 text-amber-600" /></div>
                                             <div className="space-y-2">
-                                                <h3 className="text-2xl font-black font-headline">Unlock Earning Power</h3>
+                                                <h3 className="text-2xl font-black font-headline">Intelligence Upgrade Required</h3>
                                                 <p className="text-muted-foreground max-w-sm mx-auto">
-                                                    You've mapped a load worth <strong>{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(methods.watch('totalValue'))}</strong>. To publish this to the board and earn your <strong>{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(commercials.brokerEarn)}</strong> commission, upgrade to the Loads Intelligence tier.
+                                                    You've mapped a load with a <strong>{formatCurrency(commercials.brokerEarn)}</strong> earning potential. To publish this to the board and capture this revenue, activate the **Loads Intelligence** tier.
                                                 </p>
                                             </div>
+                                            <div className="p-4 bg-muted/30 rounded-xl border border-dashed max-w-xs mx-auto text-sm italic">
+                                                Upgrade ROI: Your first load covers over 6 months of membership fees.
+                                            </div>
                                             <Button asChild size="lg" className="h-14 px-12 font-black uppercase tracking-tight shadow-xl">
-                                                <Link href="/checkout/loads_intelligence">Activate Loads Node <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                                                <Link href="/checkout/loads_intelligence">Activate Earning Power <ArrowRight className="ml-2 h-4 w-4"/></Link>
                                             </Button>
                                         </div>
                                     ) : (
                                         <div className="text-center py-12 space-y-4">
                                             <CheckCircle className="h-16 w-16 mx-auto text-primary" />
                                             <div className="space-y-1">
-                                                <h3 className="text-xl font-bold">Ready to Broadcast</h3>
-                                                <p className="text-sm text-muted-foreground">Your load will be visible to all verified hauliers in the Loads Mall.</p>
+                                                <h3 className="text-xl font-bold">Registry Ready</h3>
+                                                <p className="text-sm text-muted-foreground">Your load will be broadcasted to all verified hauliers matching the technical specs.</p>
                                             </div>
                                         </div>
                                     )}
@@ -230,7 +243,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                 ) : (
                     <Button onClick={methods.handleSubmit(onSubmit)} disabled={isLoading || !isEarningMember} className="gap-2 font-black uppercase shadow-lg h-12 px-8">
                         {isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <CheckCircle className="h-4 w-4" />}
-                        Broadcast Load
+                        Broadcast to Board
                     </Button>
                 )}
             </CardFooter>

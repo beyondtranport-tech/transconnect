@@ -21,7 +21,7 @@ async function performAdminAction(token: string, action: string, payload?: any) 
         cache: 'no-store'
     });
     const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
     return result;
 }
 
@@ -110,7 +110,7 @@ export default function LoadsOversight() {
                 <div className="flex justify-end gap-2">
                     {row.original.status === 'pending' && (
                         <>
-                            <Button size="sm" className="h-8 bg-green-600 hover:bg-green-700" onClick={() => handleVerifyAgreement(row.original, 'verified')} disabled={!!isActionLoading}>
+                            <Button size="sm" className="h-8 bg-green-600 hover:bg-green-700 text-white" onClick={() => handleVerifyAgreement(row.original, 'verified')} disabled={!!isActionLoading}>
                                 {isActionLoading === row.original.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <CheckCircle className="h-4 w-4 mr-1" />}
                                 Verify
                             </Button>
