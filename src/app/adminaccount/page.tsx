@@ -47,6 +47,7 @@ import {
   HelpCircle,
   RefreshCcw,
   Globe,
+  ClipboardList,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,7 @@ import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import SocialStudio from '@/app/adminaccount/social-studio';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 import AdminGuides from '@/app/adminaccount/guides';
+import LoadsOversight from '@/app/adminaccount/loads-oversight';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -115,7 +117,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !uid || (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com' && email !== 'michael@logisticsflow.co.za')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground text-left">
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground text-left text-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-center text-foreground">Verifying Admin Permissions...</p>
             </div>
@@ -183,6 +185,7 @@ function AdminAccountContent() {
       case 'platform-staff': return <PlatformStaffManagement />;
       case 'associate-oversight': return <AssociateOversight />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
+      case 'loads-oversight': return <LoadsOversight />;
       case 'guides': return <AdminGuides />;
       default: return <AdminDashboardContent />;
     }
@@ -220,10 +223,11 @@ function AdminAccountContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView === 'associate-oversight' || activeView === 'market-origination'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView === 'associate-oversight' || activeView === 'market-origination' || activeView === 'loads-oversight'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><ClipboardList className="h-3.5 w-3.5" />Loads & Brokerage</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'associate-oversight'} onClick={() => navigate('associate-oversight')}><Eye className="h-3 w-3" />Associate Monitoring</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>

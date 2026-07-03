@@ -84,6 +84,43 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
+            case 'getBrokerAgreements': {
+                const snap = await db.collectionGroup('brokerAgreements').orderBy('createdAt', 'desc').limit(100).get();
+                const results = await Promise.all(snap.docs.map(async (d) => {
+                    const data = d.data();
+                    const brokerSnap = await db.collection('companies').doc(data.brokerId).get();
+                    return {
+                        id: d.id,
+                        path: d.ref.path,
+                        brokerName: brokerSnap.data()?.companyName || 'Unknown Broker',
+                        ...data
+                    };
+                }));
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
+            case 'updateBrokerAgreementStatus': {
+                const { path, status } = payload;
+                if (!path || !status) throw new Error("Path and status required.");
+                await db.doc(path).update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getGlobalLoads': {
+                const snap = await db.collectionGroup('loads').orderBy('createdAt', 'desc').limit(200).get();
+                const results = await Promise.all(snap.docs.map(async (d) => {
+                    const data = d.data();
+                    const brokerSnap = await db.collection('companies').doc(data.brokerId).get();
+                    return {
+                        id: d.id,
+                        path: d.ref.path,
+                        brokerName: brokerSnap.data()?.companyName || 'Unknown Broker',
+                        ...data
+                    };
+                }));
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
             case 'getPartnersByType': {
                 const { type } = payload;
                 const [lSnap, pSnap] = await Promise.all([
@@ -116,7 +153,6 @@ export async function POST(req: NextRequest) {
                         id, 
                         type: p.type || type, 
                         updatedAt: FieldValue.serverTimestamp(),
-                        // Forensic Data Shield: Clear tracking for new imports
                         lastOutreachAt: null,
                         lastOutreachSubject: null,
                         lastOpenedAt: null,
@@ -125,39 +161,6 @@ export async function POST(req: NextRequest) {
                 });
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'bulkDeduplicate': {
-                const { type } = payload;
-                const [lSnap, pSnap] = await Promise.all([
-                    db.collection('leads').where('type', '==', type).get(),
-                    db.collection('partners').where('type', '==', type).get()
-                ]);
-                const records = [
-                    ...lSnap.docs.map(d => ({ id: d.id, coll: 'leads', ...d.data() })),
-                    ...pSnap.docs.map(d => ({ id: d.id, coll: 'partners', ...d.data() }))
-                ];
-                const groups: Record<string, any[]> = {};
-                records.forEach((r: any) => {
-                    const key = `${(r.companyName || '').toLowerCase().trim()}|${(r.email || '').toLowerCase().trim()}`;
-                    if (!key.includes('|')) return;
-                    if (!groups[key]) groups[key] = [];
-                    groups[key].push(r);
-                });
-                const batch = db.batch();
-                let count = 0;
-                Object.values(groups).forEach(g => {
-                    if (g.length <= 1) return;
-                    // Prioritize partners (registered members) over leads
-                    g.sort((a, b) => (a.coll === 'partners' ? -1 : 1));
-                    const [keep, ...rest] = g;
-                    rest.forEach(item => {
-                        batch.delete(db.collection(item.coll).doc(item.id));
-                        count++;
-                    });
-                });
-                if (count > 0) await batch.commit();
-                return NextResponse.json({ success: true, count });
             }
 
             case 'getPlatformStaff': {
