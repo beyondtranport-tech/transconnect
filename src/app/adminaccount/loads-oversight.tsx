@@ -60,7 +60,7 @@ export default function LoadsOversight() {
             const token = await getClientSideAuthToken();
             if (!token) return;
 
-            await fetchFromAdminAPI(token, 'updateBrokerAgreementStatus', { 
+            await performAdminAction(token, 'updateBrokerAgreementStatus', { 
                 path: agreement.path, 
                 status 
             });
