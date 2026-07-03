@@ -19,18 +19,31 @@ service cloud.firestore {
       );
     }
 
-    // Robust check for membership using the user's own profile.
-    // Deterministic path lookups are much better for 'list' operations.
+    // Explicit check for membership that supports 'list' operations correctly.
+    // We use a deterministic path lookup to the user's own profile.
     function isMember(cid) {
-      return isSignedIn() && (
-        isAdmin() ||
-        cid == request.auth.uid || 
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
+      return isAdmin() || (
+        isSignedIn() && 
+        cid != null && (
+          cid == request.auth.uid || 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
+        )
+      );
+    }
+
+    // Helper to check ownership of a company document directly.
+    // This is more "atomic" and list-friendly for subcollection queries.
+    function isParentOwner(cid) {
+      return isAdmin() || (
+        isSignedIn() && (
+          cid == request.auth.uid ||
+          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+        )
       );
     }
 
     // --- COLLECTION GROUP RULES ---
-    // These MUST be defined with the /{path=**} prefix to be valid for group queries.
+    // Collection group rules are primarily for administrative oversight.
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
@@ -51,7 +64,7 @@ service cloud.firestore {
 
     // --- STANDARD PATH RULES ---
 
-    // Global Admin Override (Covers standard paths and root access)
+    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -72,25 +85,21 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // SUBCOLLECTION RULES: Use deterministic isMember check for atomic list operations
-      match /supportMessages/{id} { allow read, write: if isMember(companyId); }
-      match /transactions/{id} { allow read, write: if isMember(companyId); }
-      match /walletPayments/{id} { allow read, write: if isMember(companyId); }
-      match /enquiries/{id} { allow read, write: if isMember(companyId); }
-      match /payoutRequests/{id} { allow read, write: if isMember(companyId); }
-      match /searchLogs/{id} { allow read, write: if isMember(companyId); }
-      match /quotes/{id} { allow read, write: if isMember(companyId); }
-      match /tasks/{id} { allow read, write: if isMember(companyId); }
-
-      match /facilities/{id} { 
-        allow read: if isMember(companyId);
-        allow write: if isAdmin(); 
-      }
+      // SUBCOLLECTION RULES: Explicitly authorized using Parent Owner check for list stability.
+      match /supportMessages/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /transactions/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /walletPayments/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /enquiries/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /payoutRequests/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /searchLogs/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /quotes/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /tasks/{id} { allow get, list, write: if isParentOwner(companyId); }
+      match /facilities/{id} { allow get, list: if isParentOwner(companyId); allow write: if isAdmin(); }
 
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isMember(companyId);
-        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        allow write: if isParentOwner(companyId);
+        match /products/{prodId} { allow read: if true; allow write: if isParentOwner(companyId); }
       }
     }
 
@@ -133,4 +142,4 @@ service cloud.firestore {
   }
 }
 
-// Global Definitive Rule Sync Token: 2026-03-17T09:00:00Z
+// Global Definitive Rule Sync Token: 2026-03-17T11:00:00Z

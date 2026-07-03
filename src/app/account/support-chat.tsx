@@ -53,6 +53,7 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
+    // Use the error return from useCollection to handle permission states gracefully
     const { data: messages, isLoading: areMessagesLoading, error: permissionError } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading;
@@ -140,14 +141,14 @@ export default function SupportChatContent() {
                         <AlertTriangle className="h-5 w-5" />
                         Access Restricted
                     </CardTitle>
-                    <CardDescription className="text-left">
+                    <CardDescription className="text-left text-destructive/80">
                         We encountered a permission error loading your support messages.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-left">
                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
                         Your account profile may still be initializing or you may not have sufficient permissions to view this company's history. 
-                        If this persists, please ensure your company profile is complete.
+                        If this persists, please ensure your profile registration is complete.
                     </p>
                     <div className="flex gap-2 text-left">
                         <Button variant="outline" size="sm" asChild className="gap-2">
