@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -43,6 +44,25 @@
         "updatedAt": { "type": "object" }
       },
       "required": ["firstName", "lastName", "email", "type"]
+    },
+    "Load": {
+      "title": "Load Listing",
+      "type": "object",
+      "description": "A specific freight load handled through the fulfillment lifecycle.",
+      "properties": {
+        "id": { "type": "string" },
+        "brokerId": { "type": "string" },
+        "brokerName": { "type": "string" },
+        "takerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "assigned", "delivered", "completed", "cancelled"] },
+        "instructionNumber": { "type": "string" },
+        "podUrl": { "type": "string", "description": "Uploaded Proof of Delivery URL." },
+        "completionDate": { "type": "object" },
+        "haulierPayout": { "type": "number" },
+        "brokerEarn": { "type": "number" },
+        "platformFee": { "type": "number" }
+      },
+      "required": ["id", "status"]
     }
   },
   "auth": {
@@ -57,8 +77,11 @@
       {
         "path": "/partners/{partnerId}",
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
+      },
+      {
+        "path": "/companies/{companyId}/loadBoard/loads/{loadId}",
+        "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Execution and fulfillment registry." }
       }
-    ],
-    "reasoning": "Expanded collection group definitions to explicitly authorize administrator access for global aggregated queries like agreements and enquiries."
+    ]
   }
 }
