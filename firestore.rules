@@ -17,16 +17,15 @@ service cloud.firestore {
       );
     }
 
-    // --- ATOMIC IDENTITY CHECK ---
-    // Refactored to avoid get() deadlocks during collection queries.
-    // Checks if the user is the owner of the parent company document.
-    function isParentOwner(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid;
-    }
-
-    // Checks if the user's own profile doc links them to this company.
-    function isVerifiedMember(cid) {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid;
+    // Explicit check for membership that supports 'list' operations correctly.
+    function isMember(cid) {
+      return isAdmin() || (
+        isSignedIn() && 
+        cid != null && (
+          cid == request.auth.uid || 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
+        )
+      );
     }
 
     // --- STANDARD PATH RULES ---
@@ -56,44 +55,44 @@ service cloud.firestore {
       
       // SUBCOLLECTION RULES: Explicit authorization using parent-doc properties or user-doc properties
       match /supportMessages/{id} { 
-        allow get, list, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
       }
       match /transactions/{id} { 
-        allow get, list: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
         allow write: if isAdmin(); 
       }
       match /walletPayments/{id} { 
-        allow get, list, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
       }
       match /enquiries/{id} { 
-        allow get, list, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
       }
       match /payoutRequests/{id} { 
-        allow get, list, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
       }
       match /searchLogs/{id} { 
-        allow get, list, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
       }
       match /quotes/{id} { 
-        allow get, list, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
       }
       match /tasks/{id} { 
-        allow get, list, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
       }
       match /facilities/{id} { 
-        allow get, list: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
         allow write: if isAdmin(); 
       }
       match /staff/{id} { 
-        allow get, list: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
+        allow get, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
         allow write: if isAdmin(); 
       }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); }
-        match /agreements/{agId} { allow read, write: if isAdmin() || isParentOwner(companyId) || isVerifiedMember(companyId); }
+        allow write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
+        match /products/{prodId} { allow read: if true; allow write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
+        match /agreements/{agId} { allow read, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
       }
     }
 

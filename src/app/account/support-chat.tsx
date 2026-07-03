@@ -40,12 +40,10 @@ export default function SupportChatContent() {
     const [isRetrying, setIsRetrying] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    // Engineering Note: UID fallback removed to prevent premature "invalid path" queries 
-    // which trigger hard permission blocks in the rules engine.
+    // Identity Hydration Logic: Ensure we have a valid non-UID companyId before querying
     const companyId = useMemo(() => {
-        if (!user) return '';
-        const id = user.companyId || user.companyData?.id || '';
-        return (id && id !== user.uid) ? id : '';
+        if (!user) return null;
+        return user.companyId || null;
     }, [user]);
 
     const messagesQuery = useMemoFirebase(() => {
@@ -56,7 +54,7 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
-    // Localized error handling: Intercepting the error state to prevent global layout crash.
+    // Localized error handling: Intercept permission errors locally to prevent global crash
     const { data: messages, isLoading: areMessagesLoading, error: permissionError, forceRefresh } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading || isRetrying;
@@ -139,20 +137,23 @@ export default function SupportChatContent() {
         }
     };
 
-    // LOCAL PERMISSION UI: Prevents the global error boundary from triggering
+    // LOCAL FAULT ISOLATION: Prevents global boundary crash
     if (permissionError) {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] p-4 text-center animate-in fade-in duration-500">
                 <Card className="border-destructive bg-destructive/5 max-w-md w-full shadow-lg">
                     <CardHeader>
                         <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-4" />
-                        <CardTitle className="text-destructive font-black uppercase text-xl">Identity Verifying</CardTitle>
-                        <CardDescription>Our industrial brain is synchronizing your profile.</CardDescription>
+                        <CardTitle className="text-destructive font-black uppercase text-xl text-center">Identity Verifying</CardTitle>
+                        <CardDescription className="text-center">Our industrial brain is synchronizing your profile.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4 text-left">
                         <p className="text-sm text-muted-foreground leading-relaxed">
                             Your member node is being established in the registry. This handshake typically completes in a few moments as the rules engine updates.
                         </p>
+                        <div className="bg-muted p-3 rounded-md font-mono text-[10px] text-destructive overflow-x-auto text-left">
+                            Path: companies/{companyId}/supportMessages
+                        </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
                         <Button onClick={handleRetry} className="w-full gap-2 font-bold" disabled={isRetrying}>
