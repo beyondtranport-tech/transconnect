@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- HELPER FUNCTIONS ---
+    // --- CORE AUTHORIZATION HELPERS ---
     
     function isSignedIn() {
       return request.auth != null;
@@ -12,50 +12,12 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
-        request.auth.token.email == 'mkoton100@gmail.com' || 
-        request.auth.token.email == 'beyondtransport@gmail.com' ||
-        request.auth.token.email == 'michael@logisticsflow.co.za' ||
+        ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'].hasAny([request.auth.token.email]) ||
         (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
       );
     }
 
-    // Explicit check for membership that supports 'list' operations correctly.
-    function isMember(cid) {
-      return isAdmin() || (
-        isSignedIn() && 
-        cid != null && (
-          cid == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
-        )
-      );
-    }
-
-    // --- COLLECTION GROUP RULES ---
-    // These MUST be defined with the /{path=**} prefix to be valid for group queries.
-    match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/quotes/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/facilities/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/shops/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/products/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/vehicleListings/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/loads/{id} { allow read, write: if isAdmin(); }
-
     // --- STANDARD PATH RULES ---
-
-    // Global Admin Override (Covers standard paths and root access)
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
-    }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -69,26 +31,87 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow read, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
+      // ATOMIC AUTHORIZATION: Use parent doc properties to avoid rules deadlock during 'list' queries.
+      allow read, list: if isAdmin() || (isSignedIn() && (
+        request.auth.uid == companyId ||
+        get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+      ));
+      
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      match /supportMessages/{id} { allow read, write, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /transactions/{id} { allow read, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /walletPayments/{id} { allow read, write, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /enquiries/{id} { allow read, write, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /quotes/{id} { allow read, write, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /tasks/{id} { allow read, write, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /payoutRequests/{id} { allow read, write, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /searchLogs/{id} { allow read, write, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-      match /facilities/{id} { allow read, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); allow write: if isAdmin(); }
-      match /staff/{id} { allow read, list: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); allow write: if isAdmin(); }
+      match /supportMessages/{id} { 
+        allow read, write, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+      }
+      match /transactions/{id} { 
+        allow read, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+        allow write: if isAdmin(); 
+      }
+      match /walletPayments/{id} { 
+        allow read, write, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+      }
+      match /enquiries/{id} { 
+        allow read, write, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+      }
+      match /quotes/{id} { 
+        allow read, write, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+      }
+      match /tasks/{id} { 
+        allow read, write, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+      }
+      match /payoutRequests/{id} { 
+        allow read, write, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+      }
+      match /searchLogs/{id} { 
+        allow read, write, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+      }
+      match /facilities/{id} { 
+        allow read, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+        allow write: if isAdmin(); 
+      }
+      match /staff/{id} { 
+        allow read, list: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+        allow write: if isAdmin(); 
+      }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); 
-        match /products/{prodId} { allow read: if true; allow write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
-        match /agreements/{agId} { allow read, write: if isAdmin() || isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid); }
+        allow write: if isAdmin() || (isSignedIn() && (
+          request.auth.uid == companyId ||
+          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
+        )); 
+        match /products/{prodId} { allow read: if true; allow write: if isAdmin() || (isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid)); }
+        match /agreements/{agId} { allow read, write: if isAdmin() || (isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid)); }
       }
     }
 
@@ -102,10 +125,6 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-    
-    match /shops/{shopId}/{path=**} {
-      allow get, list: if true;
     }
     
     match /visitors/{visitorId} {
@@ -132,7 +151,28 @@ service cloud.firestore {
     match /platformTransactions/{id} {
       allow read, write: if isAdmin();
     }
+
+    // --- COLLECTION GROUP RULES ---
+    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/quotes/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/facilities/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/shops/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/products/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/vehicleListings/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/loads/{id} { allow read, write: if isAdmin(); }
+
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
   }
 }
-
-// Global Definitive Rule Sync Token: 2026-03-17T09:00:00Z
