@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
@@ -146,8 +145,9 @@ export default function SupportChatContent() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                        Your account profile may still be initializing in the industrial brain. If this persists, please ensure your company profile is complete.
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        Your account profile may still be initializing in the industrial brain or you may not have sufficient permissions to view this company's messages. 
+                        If this persists, please ensure your company profile is complete and correctly associated with your login.
                     </p>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" asChild>
@@ -165,18 +165,18 @@ export default function SupportChatContent() {
     return (
         <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left">
             <CardHeader className="px-0 text-left">
-                <CardTitle className="flex items-center gap-2 text-left text-foreground"><MessageSquare /> Support Chat</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline"><MessageSquare /> Support Chat</CardTitle>
                 <CardDescription className="text-left text-muted-foreground">Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
-                    <div className="space-y-4">
+                    <div className="space-y-4 pt-2">
                         {isLoading && !messages ? (
                              <div className="flex justify-center items-center h-full py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                         ) : !companyId && !isUserLoading ? (
-                            <Alert variant="destructive">
+                            <Alert variant="destructive" className="border-none bg-destructive/10">
                                 <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Profile Incomplete</AlertTitle>
+                                <AlertTitle className="font-bold">Profile Incomplete</AlertTitle>
                                 <AlertDescription>
                                     Please complete your company profile to enable secure support chat.
                                     <Button asChild variant="link" className="p-0 h-auto ml-1">
@@ -203,15 +203,15 @@ export default function SupportChatContent() {
                                             "rounded-2xl px-4 py-2 max-w-[85%] text-sm shadow-sm", 
                                             isMember ? "bg-primary text-primary-foreground rounded-br-none" : 
                                             isAI ? "bg-blue-100 text-blue-900 rounded-bl-none" :
-                                            "bg-muted rounded-bl-none"
+                                            "bg-white border rounded-bl-none"
                                         )}>
-                                            <p className="font-bold text-[10px] mb-1 opacity-70 uppercase tracking-widest">{msg.senderName || 'Staff'}</p>
+                                            <p className="font-bold text-[10px] mb-1 opacity-70 uppercase tracking-widest leading-none">{msg.senderName || 'Staff'}</p>
                                             <p className="leading-relaxed">{msg.text}</p>
-                                            <p className="text-[10px] opacity-60 mt-1 text-right">{formatDate(msg.timestamp)}</p>
+                                            <p className="text-[9px] opacity-40 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>
                                         {isMember && (
                                             <Avatar className="h-8 w-8">
-                                                <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                                                     {user?.displayName?.charAt(0) || 'U'}
                                                 </AvatarFallback>
                                             </Avatar>
@@ -221,24 +221,25 @@ export default function SupportChatContent() {
                             })
                         )}
                          {messages?.length === 0 && !isLoading && (
-                            <div className="text-center py-12 space-y-2 opacity-50">
-                                <MessageSquare className="h-10 w-10 mx-auto" />
-                                <p className="text-sm font-medium">No messages yet. Send a query to start.</p>
+                            <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30">
+                                <MessageSquare className="h-12 w-12 mx-auto mb-4" />
+                                <p className="text-sm font-bold uppercase tracking-[0.2em]">Secure Channel Active</p>
+                                <p className="text-xs mt-2">Your conversation will be logged for professional oversight.</p>
                             </div>
                         )}
                     </div>
                 </ScrollArea>
                 <div className="mt-auto flex items-center gap-2 pt-4 border-t">
                     <input 
-                        placeholder={companyId ? "Type your question..." : "Waiting for profile..."}
+                        placeholder={companyId ? "Ask the AI assistant..." : "Initializing profile..."}
                         value={inputFieldText}
                         onChange={e => setInputFieldText(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
                         disabled={isSending || !companyId}
-                        className="flex h-10 w-full rounded-full border border-input bg-slate-50 px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex h-12 w-full rounded-full border border-input bg-slate-100 px-6 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-inner"
                     />
-                    <Button onClick={handleSend} disabled={isSending || !companyId || !inputFieldText.trim()} size="icon" className="rounded-full h-10 w-10 shrink-0">
-                        {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
+                    <Button onClick={handleSend} disabled={isSending || !companyId || !inputFieldText.trim()} size="icon" className="rounded-full h-12 w-12 shrink-0 shadow-lg">
+                        {isSending ? <Loader2 className="h-5 w-5 animate-spin"/> : <Send className="h-5 w-5" />}
                     </Button>
                 </div>
             </CardContent>

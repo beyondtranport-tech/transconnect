@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -17,6 +16,15 @@ service cloud.firestore {
         request.auth.token.email == 'beyondtransport@gmail.com' ||
         request.auth.token.email == 'michael@logisticsflow.co.za' ||
         (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
+      );
+    }
+
+    // Direct check: Does the user own the parent company?
+    // This is the most robust check for sub-collection list operations.
+    function isParentOwner(cid) {
+      return isSignedIn() && (
+        cid == request.auth.uid || 
+        get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
       );
     }
 
@@ -65,57 +73,40 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // EXPLICIT SUBCOLLECTION RULES FOR MEMBERS
-      // This bypasses the complex 'get()' dependency during list operations
+      // SUBCOLLECTION RULES: Check parent ownership for atomic list operations
       match /supportMessages/{id} {
-        allow read, write: if isSignedIn() && (
-          isAdmin() || 
-          companyId == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
+        allow read, write: if isAdmin() || isParentOwner(companyId);
       }
       
       match /transactions/{id} {
-        allow read, write: if isSignedIn() && (
-          isAdmin() || 
-          companyId == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
+        allow read, write: if isAdmin() || isParentOwner(companyId);
       }
 
       match /walletPayments/{id} {
-        allow read, write: if isSignedIn() && (
-          isAdmin() || 
-          companyId == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
+        allow read, write: if isAdmin() || isParentOwner(companyId);
       }
 
       match /enquiries/{id} {
-        allow read, write: if isSignedIn() && (
-          isAdmin() || 
-          companyId == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
+        allow read, write: if isAdmin() || isParentOwner(companyId);
+      }
+      
+      match /payoutRequests/{id} {
+        allow read, write: if isAdmin() || isParentOwner(companyId);
+      }
+      
+      match /searchLogs/{id} {
+        allow read, write: if isAdmin() || isParentOwner(companyId);
       }
 
       match /facilities/{id} { 
-        allow read: if isSignedIn() && (
-          isAdmin() || 
-          companyId == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
+        allow read: if isAdmin() || isParentOwner(companyId);
         allow write: if isAdmin(); 
       }
 
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isSignedIn() && (
-          isAdmin() || 
-          companyId == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == companyId
-        );
-        match /products/{prodId} { allow read: if true; allow write: if isAdmin() || companyId == request.auth.uid; }
+        allow write: if isAdmin() || isParentOwner(companyId);
+        match /products/{prodId} { allow read: if true; allow write: if isAdmin() || isParentOwner(companyId); }
       }
     }
 
@@ -158,4 +149,4 @@ service cloud.firestore {
   }
 }
 
-// Global Definitive Rule Sync Token: 2026-03-16T18:00:00Z
+// Global Definitive Rule Sync Token: 2026-03-16T22:00:00Z
