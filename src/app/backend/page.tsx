@@ -148,9 +148,9 @@ function BackendContent() {
       case 'wallet-transactions': return <WalletTransactionsList />;
       case 'activity': return <ActivityFeed />;
       case 'support-inbox': return <SupportChatInbox />;
-      case 'market-origination': return <FundingDivisionContent mode="market" />;
+      case 'finance-mall': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
-      case 'buy-sell-oversight': return <div className="p-8 text-center"><Store className="mx-auto h-12 w-12 text-muted-foreground opacity-20 mb-4"/><h3 className="text-xl font-bold">Buy and Sell Oversight</h3><p className="text-muted-foreground">Inventory and listing management coming soon.</p></div>;
+      case 'buy-sell-oversight': return <div className="p-8 text-center text-foreground"><Store className="mx-auto h-12 w-12 text-muted-foreground opacity-20 mb-4"/><h3 className="text-xl font-bold">Buy and Sell Oversight</h3><p className="text-muted-foreground">Inventory and listing management coming soon.</p></div>;
       
       // Member Success & Growth
       case 'success-engine': return <MemberSuccessEngine />;
@@ -194,7 +194,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
-  const isMallsActive = ['market-origination', 'loads-oversight', 'buy-sell-oversight', 'success-engine'].includes(activeView);
+  const isMallsActive = ['finance-mall', 'loads-oversight', 'buy-sell-oversight', 'success-engine'].includes(activeView);
   const isSuccessActive = ['loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -237,12 +237,12 @@ function BackendContent() {
             </SidebarGroup>
 
             <SidebarGroup>
-                <SidebarGroupLabel>Malls</SidebarGroupLabel>
+                <SidebarGroupLabel>Malls Oversight</SidebarGroupLabel>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Finance Mall" isActive={activeView === 'market-origination' || activeView === 'success-engine'}><Landmark /><span>Finance Mall</span></SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Finance Mall" isActive={activeView === 'finance-mall' || activeView === 'success-engine'}><Landmark /><span>Finance Mall</span></SidebarMenuButton>
                         <SidebarMenuSub>
-                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'finance-mall'} onClick={() => navigate('finance-mall')}><Globe />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
                              <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'success-engine'} onClick={() => navigate('success-engine')}><PieChart />Conversion Engine</SidebarMenuSubButton></SidebarMenuSubItem>
                         </SidebarMenuSub>
                     </SidebarMenuItem>
@@ -305,7 +305,7 @@ function BackendContent() {
             </Button>
           </div>
           {user && (
-              <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+              <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               </Avatar>
@@ -332,7 +332,7 @@ function BackendContent() {
         </Sidebar>
         <SidebarInset>
             <div className="p-6 text-left">
-                <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+                <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
                     {renderContent()}
                 </Suspense>
             </div>

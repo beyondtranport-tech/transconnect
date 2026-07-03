@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -223,7 +222,7 @@ export default function LoadsOversight() {
                     <Card className="border-none shadow-xl">
                         <CardHeader className="border-b bg-muted/10">
                             <CardTitle className="text-lg flex items-center gap-2">
-                                <Search className="h-5 w-5 text-primary" />
+                                <Database className="h-5 w-5 text-primary" />
                                 National Freight Audit
                             </CardTitle>
                             <CardDescription>Comprehensive view of all loads currently active or historical in the ecosystem.</CardDescription>
