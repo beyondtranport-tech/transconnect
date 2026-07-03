@@ -1,19 +1,18 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Building2, Zap, Search, Truck, Handshake } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import * as React from 'react';
 
-export default function MembershipPage() {
-  const { user } = useUser();
-
-  const plans = [
+const defaultPlans = [
     {
         id: 'free',
         name: 'Free Observer',
@@ -48,7 +47,7 @@ export default function MembershipPage() {
     {
         id: 'loads_intelligence',
         name: 'Loads Intelligence',
-        price: 500,
+        price: 75,
         isPopular: true,
         description: 'The Earning Tier. Unlock the ability to post and take freight loads.',
         features: [
@@ -63,7 +62,34 @@ export default function MembershipPage() {
         cta: "Unlock Earning Power",
         variant: "default" as const
     }
-  ];
+];
+
+export default function MembershipPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const membershipsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'memberships'));
+  }, [firestore]);
+
+  const { data: dbPlans, isLoading } = useCollection(membershipsQuery);
+
+  const plans = React.useMemo(() => {
+    if (!dbPlans || dbPlans.length === 0) return defaultPlans;
+    
+    // Merge DB plans with defaults or just use DB plans if they exist
+    return dbPlans.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price) || 0,
+        description: p.description,
+        features: p.features || [],
+        isPopular: p.isPopular,
+        cta: p.id === 'free' ? "Start Free" : "Get Started",
+        variant: p.id === 'free' ? "outline" : "default"
+    })).sort((a,b) => a.price - b.price);
+  }, [dbPlans]);
 
   return (
     <div className="bg-background min-h-screen text-left">
@@ -76,50 +102,53 @@ export default function MembershipPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {plans.map((plan) => (
-                <Card key={plan.id} className={cn(
-                    "flex flex-col shadow-xl transition-all duration-300 relative",
-                    plan.isPopular ? "border-primary border-2 scale-105" : "border"
-                )}>
-                    {plan.isPopular && (
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-black uppercase rounded-full flex items-center gap-1 z-10">
-                            <Star className="h-3 w-3 fill-current" />
-                            Most Popular for Growth
-                        </div>
-                    )}
-                    <CardHeader className="text-center pb-2">
-                        <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                        <CardDescription className="mt-2 text-sm h-12 text-center">{plan.description}</CardDescription>
-                        <div className="py-6">
-                            <div className="flex items-baseline justify-center gap-1">
-                                <span className="text-5xl font-black tracking-tight">{formatCurrency(plan.price)}</span>
-                                <span className="text-muted-foreground font-medium">/month</span>
+        {isLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary"/></div>
+        ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                {plans.map((plan) => (
+                    <Card key={plan.id} className={cn(
+                        "flex flex-col shadow-xl transition-all duration-300 relative",
+                        plan.isPopular ? "border-primary border-2 scale-105" : "border"
+                    )}>
+                        {plan.isPopular && (
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-black uppercase rounded-full flex items-center gap-1 z-10">
+                                <Star className="h-3 w-3 fill-current" />
+                                Most Popular for Growth
                             </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                        <ul className="space-y-4">
-                            {plan.features.map((feature, i) => (
-                                <li key={i} className="flex items-start text-sm">
-                                    <Check className="h-4 w-4 text-green-500 mr-3 shrink-0 mt-0.5" />
-                                    <span className="font-medium">{feature}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                    <CardFooter className="pt-6">
-                        <Button asChild className="w-full py-6 text-lg font-bold" variant={plan.variant}>
-                            <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${plan.id}`}>
-                                {plan.cta}
-                            </Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            ))}
-        </div>
+                        )}
+                        <CardHeader className="text-center pb-2">
+                            <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                            <CardDescription className="mt-2 text-sm h-12 text-center">{plan.description}</CardDescription>
+                            <div className="py-6 text-center">
+                                <div className="flex items-baseline justify-center gap-1">
+                                    <span className="text-5xl font-black tracking-tight">{formatCurrency(plan.price)}</span>
+                                    <span className="text-muted-foreground font-medium">/month</span>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                            <ul className="space-y-4">
+                                {(plan.features as string[]).map((feature, i) => (
+                                    <li key={i} className="flex items-start text-sm">
+                                        <Check className="h-4 w-4 text-green-500 mr-3 shrink-0 mt-0.5" />
+                                        <span className="font-medium">{feature}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                        <CardFooter className="pt-6">
+                            <Button asChild className="w-full py-6 text-lg font-bold" variant={plan.variant as any}>
+                                <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${plan.id}`}>
+                                    {plan.id === 'loads_intelligence' ? 'Unlock Earning Power' : plan.cta}
+                                </Link>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        )}
 
-        {/* Value Prop Sections */}
         <div className="mt-24 max-w-5xl mx-auto space-y-12">
             <div className="text-center">
                 <h2 className="text-3xl font-black font-headline">The Earning Pathway</h2>
@@ -129,22 +158,22 @@ export default function MembershipPage() {
             <div className="grid md:grid-cols-3 gap-8">
                 <div className="space-y-4 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><Handshake className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold">Brokerage Nodes</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <h3 className="text-xl font-bold text-left">Brokerage Nodes</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
                         The **Loads Intelligence** tier allows you to act as an authorized subcontractor. Map loads you know of and earn a professional split on every completed delivery.
                     </p>
                 </div>
                 <div className="space-y-4 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><Truck className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold">Priority Capacity</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <h3 className="text-xl font-bold text-left">Priority Capacity</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
                         Hauliers on the earning tier get first-look at high-value freight. Our AI matching engine prioritizes your fleet for loads that match your empty legs.
                     </p>
                 </div>
                 <div className="space-y-4 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><Search className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold">Forensic Transparency</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <h3 className="text-xl font-bold text-left">Forensic Transparency</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
                         Access direct mobile numbers for MDs and Fleet Owners. Stop hitting generic support lines and start talking to the people who control the freight.
                     </p>
                 </div>
@@ -156,7 +185,7 @@ export default function MembershipPage() {
                 <ShieldCheck className="h-6 w-6 text-primary" />
                 <AlertTitle className="text-lg font-bold ml-2">Data as a Currency</AlertTitle>
                 <AlertDescription className="mt-2 text-muted-foreground ml-2">
-                    We incentivize contribution. By registering your fleet (RC1) and contributing supplier data, you earn points that can be used to lower your monthly subscription costs. We believe the community's data belongs to the community.
+                    We incentivize contribution. By registering your fleet (RC1) and contributing supplier data, you earn points that can be used to lower your monthly subscription costs.
                 </AlertDescription>
             </Alert>
         </div>
