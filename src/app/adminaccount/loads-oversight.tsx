@@ -7,7 +7,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Truck, Handshake, ShieldCheck, Search, FileText, CheckCircle, XCircle, ArrowRight, RefreshCcw, DollarSign } from 'lucide-react';
+import { Loader2, Truck, Handshake, ShieldCheck, Search, FileText, CheckCircle, XCircle, ArrowRight, RefreshCcw, DollarSign, Database } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
@@ -260,4 +260,3 @@ export default function LoadsOversight() {
         </div>
     );
 }
-
