@@ -42,6 +42,8 @@ import {
   Landmark,
   ArrowRightLeft,
   Globe,
+  Truck,
+  ClipboardList,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -84,6 +86,9 @@ import TierBenefits from '@/app/backend/tier-benefits';
 import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
+
+// Admin oversight components from AdminAccount
+const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -142,6 +147,7 @@ function BackendContent() {
       case 'activity': return <ActivityFeed />;
       case 'support-inbox': return <SupportChatInbox />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
+      case 'loads-oversight': return <LoadsOversight />;
       
       // Member Success & Growth
       case 'success-engine': return <MemberSuccessEngine />;
@@ -184,7 +190,7 @@ function BackendContent() {
 
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
-  const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox', 'market-origination'].includes(activeView);
+  const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox', 'market-origination', 'loads-oversight'].includes(activeView);
   const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
@@ -223,6 +229,7 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => navigate('wallet-transactions')}><Wallet />Wallet Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
+                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><Truck className="h-3.5 w-3.5" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
 
@@ -299,7 +306,7 @@ function BackendContent() {
         </Sidebar>
         <SidebarInset>
             <div className="p-6 text-left">
-                <Suspense fallback={<Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" />}>
+                <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
                     {renderContent()}
                 </Suspense>
             </div>
