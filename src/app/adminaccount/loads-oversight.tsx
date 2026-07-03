@@ -44,8 +44,8 @@ export default function LoadsOversight() {
                 fetchFromAdminAPI(token, 'getGlobalLoads')
             ]);
 
-            setAgreements(agreementsRes || []);
-            setLoads(loadsRes || []);
+            setAgreements(agreementsRes.data || []);
+            setLoads(loadsRes.data || []);
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Oversight Load Failed", description: e.message });
         } finally {
