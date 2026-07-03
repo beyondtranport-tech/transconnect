@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -22,7 +23,7 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
-    return result.data;
+    return result;
 }
 
 export default function LoadsOversight() {
