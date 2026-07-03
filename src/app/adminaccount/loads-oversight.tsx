@@ -190,26 +190,26 @@ export default function LoadsOversight() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-2 text-left">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pending Handshakes</p>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="text-left">
                         <div className="text-3xl font-black text-primary">{agreements.filter(a => a.status === 'pending').length}</div>
                     </CardContent>
                 </Card>
                 <Card className="bg-blue-50 border-blue-100">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-2 text-left">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Active Loads</p>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="text-left">
                         <div className="text-3xl font-black text-blue-700">{loads.filter(l => l.status === 'active').length}</div>
                     </CardContent>
                 </Card>
                 <Card className="bg-green-50 border-green-100">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-2 text-left">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Platform Yield</p>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="text-left">
                         <div className="text-3xl font-black text-green-700">
                             {formatCurrency(loads.reduce((sum, l) => sum + (l.platformFee || 0), 0))}
                         </div>
