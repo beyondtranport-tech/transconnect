@@ -17,14 +17,13 @@ service cloud.firestore {
       );
     }
 
-    // --- ATOMIC MEMBERSHIP CHECK ---
-    // Optimized for collection-level 'list' queries.
-    // Checks if the user is the owner of the company OR a verified member via their own profile.
+    // --- ATOMIC IDENTITY CHECK ---
+    // Refactored to avoid get() deadlocks during collection queries.
+    // Verifies if the authenticated user's profile document confirms membership to the target CID.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && (
             cid == request.auth.uid ||
-            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid ||
             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
@@ -44,7 +43,8 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow read: if isMember(companyId);
+      // Explicit allow for list and get based on atomic membership
+      allow get, list: if isMember(companyId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       

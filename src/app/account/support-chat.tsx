@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -43,8 +43,9 @@ export default function SupportChatContent() {
     // Filter out initial UID placeholders to prevent invalid path queries
     const companyId = useMemo(() => {
         if (!user) return '';
-        // If the profile is still being created/linked, companyId might temporarily be the UID
+        // If the profile is still being created/linked, companyId might temporarily be null or the UID
         const id = user.companyId || user.companyData?.id || '';
+        // CRITICAL: Only allow the query if we have a real company ID (not the UID fallback)
         return (id && id !== user.uid) ? id : '';
     }, [user]);
 
@@ -141,6 +142,7 @@ export default function SupportChatContent() {
         }
     };
 
+    // LOCAL ERROR HANDLING: Intercept permission errors to prevent global layout crash
     if (permissionError) {
         return (
             <div className="flex flex-col items-center justify-center h-[50vh] p-4 text-center">
@@ -172,19 +174,19 @@ export default function SupportChatContent() {
     return (
         <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left">
             <CardHeader className="px-0 text-left">
-                <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline"><MessageSquare /> Support Chat</CardTitle>
-                <CardDescription className="text-muted-foreground">Direct line to our AI assistant and platform support team.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left"><MessageSquare /> Support Chat</CardTitle>
+                <CardDescription className="text-muted-foreground text-left">Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0">
+            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
-                    <div className="space-y-4 pt-2">
+                    <div className="space-y-4 pt-2 text-left">
                         {isLoading && !messages ? (
                              <div className="flex justify-center items-center h-full py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                         ) : !companyId && !isUserLoading ? (
                             <Alert variant="destructive" className="border-none bg-destructive/10 text-left">
                                 <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="font-bold">Profile Incomplete</AlertTitle>
-                                <AlertDescription>
+                                <AlertTitle className="font-bold text-left">Profile Incomplete</AlertTitle>
+                                <AlertDescription className="text-left">
                                     Please complete your company profile to enable secure support chat.
                                     <Button asChild variant="link" className="p-0 h-auto ml-1">
                                         <Link href="/account?view=profile">Go to My Profile</Link>
@@ -207,13 +209,13 @@ export default function SupportChatContent() {
                                             </Avatar>
                                         )}
                                         <div className={cn(
-                                            "rounded-2xl px-4 py-2 max-w-[85%] text-sm shadow-sm", 
+                                            "rounded-2xl px-4 py-2 max-w-[85%] text-sm shadow-sm text-left", 
                                             isMember ? "bg-primary text-primary-foreground rounded-br-none" : 
                                             isAI ? "bg-blue-100 text-blue-900 rounded-bl-none" :
                                             "bg-white border rounded-bl-none"
                                         )}>
-                                            <p className="font-black text-[10px] mb-1 opacity-70 uppercase tracking-widest leading-none">{msg.senderName || 'Staff'}</p>
-                                            <p className="leading-relaxed">{msg.text}</p>
+                                            <p className="font-black text-[10px] mb-1 opacity-70 uppercase tracking-widest leading-none text-left">{msg.senderName || 'Staff'}</p>
+                                            <p className="leading-relaxed text-left">{msg.text}</p>
                                             <p className="text-[9px] opacity-40 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>
                                         {isMember && (
@@ -230,13 +232,13 @@ export default function SupportChatContent() {
                          {messages?.length === 0 && !isLoading && (
                             <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30">
                                 <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-                                <p className="text-sm font-bold uppercase tracking-[0.2em]">Secure Channel Active</p>
-                                <p className="text-xs mt-2">Your conversation will be logged for professional oversight.</p>
+                                <p className="text-sm font-bold uppercase tracking-[0.2em] text-center">Secure Channel Active</p>
+                                <p className="text-xs mt-2 text-center">Your conversation will be logged for professional oversight.</p>
                             </div>
                         )}
                     </div>
                 </ScrollArea>
-                <div className="mt-auto flex items-center gap-2 pt-4 border-t">
+                <div className="mt-auto flex items-center gap-2 pt-4 border-t text-left">
                     <input 
                         placeholder={companyId ? "Ask the AI assistant..." : "Initializing profile..."}
                         value={inputFieldText}

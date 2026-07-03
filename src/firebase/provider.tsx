@@ -126,8 +126,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...authState,
       ...userData,
       companyData,
-      // Strategy: Flatten companyId for reliable subcollection path resolution
-      companyId: userData?.companyId || authState.uid
+      // REMOVED Fallback to UID: companyId should be null until verified from profile doc
+      companyId: userData?.companyId || null
     };
   }, [authState, userData, companyData]);
 
