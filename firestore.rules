@@ -19,8 +19,8 @@ service cloud.firestore {
 
     // --- PARENT-FIRST OWNERSHIP MODEL ---
     // Specifically optimized for collection-level queries (list).
-    // Verifies the user against the parent company document.
-    function isCompanyOwner(cid) {
+    // Verifies the user against the parent company document's ownerId.
+    function isOwner(cid) {
       return isAdmin() || (
         isSignedIn() && (
             cid == request.auth.uid ||
@@ -43,27 +43,27 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow read: if isCompanyOwner(companyId);
+      allow read: if isOwner(companyId);
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
       // SUBCOLLECTION RULES: Explicit list/get authorization for data owners.
-      match /supportMessages/{id} { allow get, list, write: if isCompanyOwner(companyId); }
-      match /transactions/{id} { allow get, list: if isCompanyOwner(companyId); allow write: if isAdmin(); }
-      match /walletPayments/{id} { allow get, list, write: if isCompanyOwner(companyId); }
-      match /enquiries/{id} { allow get, list, write: if isCompanyOwner(companyId); }
-      match /payoutRequests/{id} { allow get, list, write: if isCompanyOwner(companyId); }
-      match /searchLogs/{id} { allow get, list, write: if isCompanyOwner(companyId); }
-      match /quotes/{id} { allow get, list, write: if isCompanyOwner(companyId); }
-      match /tasks/{id} { allow get, list, write: if isCompanyOwner(companyId); }
-      match /facilities/{id} { allow get, list: if isCompanyOwner(companyId); allow write: if isAdmin(); }
-      match /staff/{id} { allow get, list: if isCompanyOwner(companyId); allow write: if isAdmin(); }
+      match /supportMessages/{id} { allow get, list, write: if isOwner(companyId); }
+      match /transactions/{id} { allow get, list: if isOwner(companyId); allow write: if isAdmin(); }
+      match /walletPayments/{id} { allow get, list, write: if isOwner(companyId); }
+      match /enquiries/{id} { allow get, list, write: if isOwner(companyId); }
+      match /payoutRequests/{id} { allow get, list, write: if isOwner(companyId); }
+      match /searchLogs/{id} { allow get, list, write: if isOwner(companyId); }
+      match /quotes/{id} { allow get, list, write: if isOwner(companyId); }
+      match /tasks/{id} { allow get, list, write: if isOwner(companyId); }
+      match /facilities/{id} { allow get, list: if isOwner(companyId); allow write: if isAdmin(); }
+      match /staff/{id} { allow get, list: if isOwner(companyId); allow write: if isAdmin(); }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isCompanyOwner(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isCompanyOwner(companyId); }
-        match /agreements/{agId} { allow read, write: if isCompanyOwner(companyId); }
+        allow write: if isOwner(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isOwner(companyId); }
+        match /agreements/{agId} { allow read, write: if isOwner(companyId); }
       }
     }
 

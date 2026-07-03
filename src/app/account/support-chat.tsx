@@ -39,12 +39,14 @@ export default function SupportChatContent() {
     const [isSending, setIsSending] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+    // Filter out initial UID placeholders to prevent invalid path queries
     const companyId = useMemo(() => {
-        return user?.companyId || user?.companyData?.id || '';
+        const id = user?.companyId || user?.companyData?.id || '';
+        return (id && id !== user?.uid) ? id : '';
     }, [user]);
 
     const messagesQuery = useMemoFirebase(() => {
-        if (!firestore || !companyId || companyId === '') return null;
+        if (!firestore || !companyId) return null;
         return query(
             collection(firestore, 'companies', companyId, 'supportMessages'),
             orderBy('timestamp', 'asc')
@@ -142,7 +144,7 @@ export default function SupportChatContent() {
                         The industrial brain is verifying your member standing.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 text-left">
+                <CardContent className="space-y-4 text-left text-foreground">
                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
                         Your member profile is still being synchronized with the secure industrial registry. This typically takes 5-10 seconds after sign-in.
                     </p>
@@ -157,18 +159,18 @@ export default function SupportChatContent() {
     }
 
     return (
-        <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left">
+        <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left text-foreground">
             <CardHeader className="px-0 text-left">
                 <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline"><MessageSquare /> Support Chat</CardTitle>
                 <CardDescription className="text-left text-muted-foreground">Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left">
+            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left text-foreground">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
-                    <div className="space-y-4 pt-2 text-left">
+                    <div className="space-y-4 pt-2 text-left text-foreground">
                         {isLoading && !messages ? (
                              <div className="flex justify-center items-center h-full py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                         ) : !companyId && !isUserLoading ? (
-                            <Alert variant="destructive" className="border-none bg-destructive/10 text-left">
+                            <Alert variant="destructive" className="border-none bg-destructive/10 text-left text-foreground">
                                 <AlertTriangle className="h-4 w-4" />
                                 <AlertTitle className="font-bold text-left">Profile Incomplete</AlertTitle>
                                 <AlertDescription className="text-left">
@@ -215,7 +217,7 @@ export default function SupportChatContent() {
                             })
                         )}
                          {messages?.length === 0 && !isLoading && (
-                            <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30">
+                            <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30 text-foreground">
                                 <MessageSquare className="h-12 w-12 mx-auto mb-4" />
                                 <p className="text-sm font-bold uppercase tracking-[0.2em]">Secure Channel Active</p>
                                 <p className="text-xs mt-2">Your conversation will be logged for professional oversight.</p>
@@ -223,7 +225,7 @@ export default function SupportChatContent() {
                         )}
                     </div>
                 </ScrollArea>
-                <div className="mt-auto flex items-center gap-2 pt-4 border-t text-left">
+                <div className="mt-auto flex items-center gap-2 pt-4 border-t text-left text-foreground">
                     <input 
                         placeholder={companyId ? "Ask the AI assistant..." : "Initializing profile..."}
                         value={inputFieldText}
