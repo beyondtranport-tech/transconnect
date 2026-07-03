@@ -40,12 +40,11 @@ export default function SupportChatContent() {
     const [isRetrying, setIsRetrying] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    // CRITICAL: Filter out invalid IDs to prevent computational deadlocks in rules engine
+    // Engineering Note: UID fallback removed to prevent premature "invalid path" queries 
+    // which trigger hard permission blocks in the rules engine.
     const companyId = useMemo(() => {
         if (!user) return '';
-        // Prioritize the ID explicitly derived from the user document
         const id = user.companyId || user.companyData?.id || '';
-        // Only initiate query if we have a real Company ID (not the UID fallback)
         return (id && id !== user.uid) ? id : '';
     }, [user]);
 
@@ -57,7 +56,7 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
-    // Local error handling to suppress global layout crash
+    // Localized error handling: Intercepting the error state to prevent global layout crash.
     const { data: messages, isLoading: areMessagesLoading, error: permissionError, forceRefresh } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading || isRetrying;
@@ -74,7 +73,7 @@ export default function SupportChatContent() {
     const handleRetry = () => {
         setIsRetrying(true);
         forceRefresh();
-        setTimeout(() => setIsRetrying(false), 2000);
+        setTimeout(() => setIsRetrying(false), 1500);
     };
 
     const handleSend = async () => {
@@ -133,38 +132,32 @@ export default function SupportChatContent() {
 
         } catch (error: any) {
             console.error("Support chat error:", error);
-            const errorMessage = error.message?.includes('429') 
-                ? "AI Assistant is busy. Please wait a moment."
-                : error.message;
-            toast({ variant: 'destructive', title: 'Send Failed', description: errorMessage });
+            toast({ variant: 'destructive', title: 'Send Failed', description: error.message });
             setInputFieldText(userMessageText);
         } finally {
             setIsSending(false);
         }
     };
 
-    // LOCAL PERMISSION UI: Intercept permission errors to prevent layout crash
+    // LOCAL PERMISSION UI: Prevents the global error boundary from triggering
     if (permissionError) {
         return (
-            <div className="flex flex-col items-center justify-center h-[60vh] p-4 text-center">
+            <div className="flex flex-col items-center justify-center h-[60vh] p-4 text-center animate-in fade-in duration-500">
                 <Card className="border-destructive bg-destructive/5 max-w-md w-full shadow-lg">
                     <CardHeader>
                         <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-4" />
                         <CardTitle className="text-destructive font-black uppercase text-xl">Identity Verifying</CardTitle>
                         <CardDescription>Our industrial brain is synchronizing your profile.</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 text-left">
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            Your member node is being established in the registry. This handshake typically completes in a few moments.
+                            Your member node is being established in the registry. This handshake typically completes in a few moments as the rules engine updates.
                         </p>
-                        <div className="p-3 bg-white/50 rounded-lg font-mono text-[10px] text-destructive border border-destructive/10">
-                            Path: companies/{companyId}/supportMessages
-                        </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
                         <Button onClick={handleRetry} className="w-full gap-2 font-bold" disabled={isRetrying}>
                             {isRetrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-                            Retry Identity Sync
+                            Retry Connection
                         </Button>
                         <Button variant="ghost" asChild className="text-xs font-bold uppercase tracking-widest">
                             <Link href="/account">Return to Dashboard</Link>
@@ -232,13 +225,6 @@ export default function SupportChatContent() {
                                     </div>
                                 );
                             })
-                        )}
-                         {messages?.length === 0 && !isLoading && (
-                            <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30">
-                                <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-                                <p className="text-sm font-bold uppercase tracking-[0.2em] text-center">Secure Handshake Active</p>
-                                <p className="text-xs mt-2 text-center">Your conversation is logged for professional oversight.</p>
-                            </div>
                         )}
                     </div>
                 </ScrollArea>

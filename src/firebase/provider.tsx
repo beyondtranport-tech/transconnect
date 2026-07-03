@@ -126,12 +126,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...authState,
       ...userData,
       companyData,
-      // REMOVED Fallback to UID: companyId should be null until verified from profile doc
+      // Engineering Note: UID fallback removed to prevent invalid path queries
+      // during the transition between auth sign-in and profile doc hydration.
       companyId: userData?.companyId || null
     };
   }, [authState, userData, companyData]);
 
-  // Decoupled loading state to prevent hang
   const isUserLoading = useMemo(() => {
       if (isAuthLoading) return true;
       if (!authState) return false;

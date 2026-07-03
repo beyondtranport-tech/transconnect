@@ -86,12 +86,9 @@ export async function POST(req: NextRequest) {
     let companyRef;
     
     if (existingRecord?.id && recordSource === 'partner') {
-        // This person was invited as a Strategic Partner (ISA, Investor, etc.)
-        // Their ID is the Company ID
         companyIdToUse = existingRecord.id;
         companyRef = db.collection('companies').doc(companyIdToUse);
     } else {
-        // New signup or converted lead
         companyRef = db.collection('companies').doc();
         companyIdToUse = companyRef.id;
     }
