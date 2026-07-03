@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -85,8 +86,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getBrokerAgreements': {
-                // COMPOSITE INDEX ALIGNMENT: 
-                // Matches status (ASC) and createdAt (DESC) in firestore.indexes.json
                 const snap = await db.collectionGroup('brokerAgreements')
                     .orderBy('status', 'asc')
                     .orderBy('createdAt', 'desc')
@@ -114,8 +113,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getGlobalLoads': {
-                // COMPOSITE INDEX ALIGNMENT:
-                // Matches status (ASC) and createdAt (DESC) in firestore.indexes.json
                 const snap = await db.collectionGroup('loads')
                     .orderBy('status', 'asc')
                     .orderBy('createdAt', 'desc')
@@ -135,86 +132,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'getPartnersByType': {
-                const { type } = payload;
-                const [lSnap, pSnap] = await Promise.all([
-                    db.collection('leads').where('type', '==', type).limit(500).get(),
-                    db.collection('partners').where('type', '==', type).limit(500).get()
-                ]);
-                const results = [
-                    ...lSnap.docs.map(d => ({ id: d.id, source: 'Lead', ...d.data() })),
-                    ...pSnap.docs.map(d => ({ id: d.id, source: 'Member', ...d.data() }))
-                ];
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
-            }
-
-            case 'savePartner': {
-                const { partner, collection: coll = 'partners' } = payload;
-                const ref = db.collection(coll).doc(partner.id || db.collection(coll).doc().id);
-                await ref.set({ ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                const batch = db.batch();
-                const coll = type === 'lead' ? 'leads' : 'partners';
-                partners.forEach((p: any) => {
-                    const id = p.record_id || p.id || db.collection(coll).doc().id;
-                    const ref = db.collection(coll).doc(id);
-                    batch.set(ref, { 
-                        ...p, 
-                        id, 
-                        type: p.type || type, 
-                        updatedAt: FieldValue.serverTimestamp(),
-                        lastOutreachAt: null,
-                        lastOutreachSubject: null,
-                        lastOpenedAt: null,
-                        lastAccessedAt: null
-                    }, { merge: true });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
-            }
-
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, subject, notes, collection: providedColl, type: channel } = payload;
-                const targetColl = providedColl || 'partners';
-                const parentRef = db.collection(targetColl).doc(partnerId);
-                const logRef = parentRef.collection('communications').doc();
-                await logRef.set({ 
-                    id: logRef.id, 
-                    type: channel || 'Email', 
-                    subject, 
-                    notes: notes || '', 
-                    timestamp: FieldValue.serverTimestamp(), 
-                    adminId: decodedToken.uid 
-                });
-                await parentRef.update({ 
-                    lastOutreachAt: FieldValue.serverTimestamp(), 
-                    lastOutreachSubject: subject, 
-                    updatedAt: FieldValue.serverTimestamp() 
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'dispatchEngagement': {
-                const { partnerId, subject, audience } = payload;
-                const coll = (audience === 'transporters' || audience === 'suppliers' || audience === 'isa' || audience === 'finance' || audience === 'developers') ? 'partners' : 'leads';
-                const logRef = db.collection(coll).doc(partnerId).collection('communications').doc();
-                await logRef.set({
-                    id: logRef.id,
-                    type: 'Automated Dispatch',
-                    subject,
-                    timestamp: FieldValue.serverTimestamp(),
-                    notes: `Background dispatch initiated via Transactional API for ${audience}.`
-                });
-                return NextResponse.json({ success: true });
             }
 
             case 'getMembers': {
@@ -241,6 +161,27 @@ export async function POST(req: NextRequest) {
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...serializeTimestamps(d.data()) })) });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, subject, notes, collection: providedColl, type: channel } = payload;
+                const targetColl = providedColl || 'partners';
+                const parentRef = db.collection(targetColl).doc(partnerId);
+                const logRef = parentRef.collection('communications').doc();
+                await logRef.set({ 
+                    id: logRef.id, 
+                    type: channel || 'Email', 
+                    subject, 
+                    notes: notes || '', 
+                    timestamp: FieldValue.serverTimestamp(), 
+                    adminId: decodedToken.uid 
+                });
+                await parentRef.update({ 
+                    lastOutreachAt: FieldValue.serverTimestamp(), 
+                    lastOutreachSubject: subject, 
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
+                return NextResponse.json({ success: true });
             }
 
             default: return NextResponse.json({ success: false, error: "Action not supported." }, { status: 400 });

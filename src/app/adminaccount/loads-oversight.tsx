@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, Truck, Handshake, ShieldCheck, Search, FileText, CheckCircle, XCircle, ArrowRight, RefreshCcw, DollarSign, Database } from 'lucide-react';
+import { Loader2, Truck, Handshake, ShieldCheck, Search, FileText, CheckCircle, XCircle, ArrowRight, RefreshCcw, DollarSign, Database, Gavel } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
@@ -76,7 +77,7 @@ export default function LoadsOversight() {
 
     const agreementColumns: ColumnDef<any>[] = [
         { 
-            header: 'Member / Broker',
+            header: 'Member / Primary',
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground">{row.original.brokerName}</span>
@@ -84,15 +85,30 @@ export default function LoadsOversight() {
                 </div>
             )
         },
-        { accessorKey: 'providerName', header: 'Load Provider' },
         { 
-            header: 'Documents',
+            header: 'Legal Basis',
             cell: ({row}) => (
-                <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-black uppercase text-primary gap-1">
-                    <a href={row.original.agreementUrl} target="_blank" rel="noopener noreferrer">
-                        <FileText className="h-3 w-3" /> View Signed Letter
-                    </a>
-                </Button>
+                <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-foreground">{row.original.providerName}</span>
+                    <span className="text-[9px] text-primary font-black uppercase">Clause: {row.original.subcontractingClause || 'MISSING'}</span>
+                </div>
+            )
+        },
+        { 
+            header: 'Audit Documents',
+            cell: ({row}) => (
+                <div className="flex flex-col gap-1 text-left">
+                    <Button variant="ghost" size="sm" asChild className="h-7 text-[9px] font-black uppercase text-primary gap-1 justify-start">
+                        <a href={row.original.primaryContractUrl} target="_blank" rel="noopener noreferrer">
+                            <FileText className="h-3 w-3" /> Primary Contract
+                        </a>
+                    </Button>
+                    <Button variant="ghost" size="sm" asChild className="h-7 text-[9px] font-black uppercase text-primary gap-1 justify-start">
+                        <a href={row.original.subcontractorAgreementUrl} target="_blank" rel="noopener noreferrer">
+                            <ShieldCheck className="h-3 w-3" /> Trust Binding
+                        </a>
+                    </Button>
+                </div>
             )
         },
         { 
@@ -105,7 +121,7 @@ export default function LoadsOversight() {
         },
         {
             id: 'actions',
-            header: <div className="text-right">Authorization</div>,
+            header: <div className="text-right">Audit Action</div>,
             cell: ({ row }) => (
                 <div className="flex justify-end gap-2">
                     {row.original.status === 'pending' && (
@@ -127,7 +143,7 @@ export default function LoadsOversight() {
 
     const loadColumns: ColumnDef<any>[] = [
         { 
-            header: 'Route',
+            header: 'Freight Flow',
             cell: ({row}) => (
                 <div className="flex items-center gap-2 font-bold text-sm text-foreground text-left">
                     {row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}
@@ -139,21 +155,11 @@ export default function LoadsOversight() {
             cell: ({row}) => <span className="text-xs font-medium">{row.original.brokerName}</span>
         },
         { 
-            header: 'Yield (Platform)',
+            header: 'Platform Yield',
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-black text-green-700">{formatCurrency(row.original.platformFee)}</span>
                     <span className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">2.5% Success Fee</span>
-                </div>
-            )
-        },
-        { 
-            header: 'Technical Specs',
-            cell: ({row}) => (
-                <div className="flex flex-wrap gap-1 max-w-[150px]">
-                    {(row.original.requiredEquipment || []).map((eq: string) => (
-                        <Badge key={eq} variant="outline" className="text-[8px] h-3.5 px-1 border-primary/20 text-primary uppercase font-bold">{eq}</Badge>
-                    ))}
                 </div>
             )
         },
@@ -174,8 +180,8 @@ export default function LoadsOversight() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                <div className="text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
                         <Truck className="h-8 w-8 text-primary" />
                         Loads Mall Oversight
@@ -188,53 +194,24 @@ export default function LoadsOversight() {
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardHeader className="pb-2 text-left">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Pending Handshakes</p>
-                    </CardHeader>
-                    <CardContent className="text-left">
-                        <div className="text-3xl font-black text-primary">{agreements.filter(a => a.status === 'pending').length}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-blue-50 border-blue-100">
-                    <CardHeader className="pb-2 text-left">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Active Loads</p>
-                    </CardHeader>
-                    <CardContent className="text-left">
-                        <div className="text-3xl font-black text-blue-700">{loads.filter(l => l.status === 'active').length}</div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-green-50 border-green-100">
-                    <CardHeader className="pb-2 text-left">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Platform Yield</p>
-                    </CardHeader>
-                    <CardContent className="text-left">
-                        <div className="text-3xl font-black text-green-700">
-                            {formatCurrency(loads.reduce((sum, l) => sum + (l.platformFee || 0), 0))}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Tabs defaultValue="authorizations" className="w-full">
+            <Tabs defaultValue="authorizations" className="w-full text-left text-foreground">
                 <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start">
                     <TabsTrigger value="authorizations" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <ShieldCheck className="h-3.5 w-3.5" /> Broker Authorization Queue
+                        <Gavel className="h-3.5 w-3.5" /> Legal Rights Queue
                     </TabsTrigger>
                     <TabsTrigger value="registry" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                         <Database className="h-3.5 w-3.5" /> Global Loads Board
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="authorizations" className="mt-8">
+                <TabsContent value="authorizations" className="mt-8 text-left text-foreground">
                     <Card className="border-none shadow-xl">
                         <CardHeader className="border-b bg-muted/10">
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <Handshake className="h-5 w-5 text-primary" />
-                                Subcontractor Appointments
+                                Subcontractor Appointments Audit
                             </CardTitle>
-                            <CardDescription>Verify signed appointment letters to authorize load distribution.</CardDescription>
+                            <CardDescription>Verify primary contract rights and no-circumvention trust bindings.</CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6">
                             <DataTable columns={agreementColumns} data={agreements} />
@@ -242,7 +219,7 @@ export default function LoadsOversight() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="registry" className="mt-8">
+                <TabsContent value="registry" className="mt-8 text-left text-foreground text-foreground">
                     <Card className="border-none shadow-xl">
                         <CardHeader className="border-b bg-muted/10">
                             <CardTitle className="text-lg flex items-center gap-2">

@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, Truck, ClipboardList, Handshake, Search, ArrowRight, ShieldCheck, Zap, Globe } from 'lucide-react';
+import { Loader2, PlusCircle, Truck, ClipboardList, Handshake, Search, ArrowRight, ShieldCheck, Zap, Globe, Gavel, FileSignature } from 'lucide-react';
 import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, orderBy, collectionGroup, where } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -80,13 +81,13 @@ export default function LoadBoardContent() {
                 <div className="text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
                         <Truck className="h-8 w-8 text-primary" />
-                        Loads & Brokerage Mall
+                        Loads & Subcontracting
                     </h1>
-                    <p className="text-muted-foreground mt-1">Capture market capacity or distribute verified freight to our haulier network.</p>
+                    <p className="text-muted-foreground mt-1">Authorized freight distribution and capacity capture.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={() => setView('broker-wizard')} className="gap-2 font-bold">
-                        <Handshake className="h-4 w-4" /> Subcontractor Appointment
+                        <Gavel className="h-4 w-4" /> Subcontractor Authorization
                     </Button>
                     <Button onClick={() => setView('post-wizard')} disabled={!hasVerifiedAgreement} className="gap-2 font-bold shadow-lg">
                         <PlusCircle className="h-4 w-4" /> Post New Load
@@ -95,16 +96,16 @@ export default function LoadBoardContent() {
             </div>
 
             {!hasVerifiedAgreement && (
-                <Card className="bg-amber-50 border-amber-200 shadow-sm">
+                <Card className="bg-amber-50 border-amber-200 shadow-sm border-l-4 border-l-amber-500">
                     <CardContent className="p-6 flex items-start gap-4">
-                        <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
+                        <div className="bg-amber-100 p-2 rounded-lg"><Lock className="h-5 w-5 text-amber-600" /></div>
                         <div className="text-left">
-                            <h4 className="font-bold text-amber-900">Brokerage Authorization Required</h4>
+                            <h4 className="font-bold text-amber-900">Subcontracting Authorization Required</h4>
                             <p className="text-sm text-amber-800 leading-relaxed mt-1">
-                                To post loads to the board and earn commission, you must first upload a signed **Subcontractor Appointment Letter** from your provider.
+                                To distribute freight, you must provide your **Primary Contract** and standard **Subcontractor Agreement** (containing a No-Circumvention clause) for audit.
                             </p>
                             <Button variant="link" onClick={() => setView('broker-wizard')} className="p-0 h-auto text-amber-900 font-bold underline mt-2">
-                                Start Authorization Process <ArrowRight className="ml-1 h-3 w-3" />
+                                Start Legal Authorization <ArrowRight className="ml-1 h-3 w-3" />
                             </Button>
                         </div>
                     </CardContent>
@@ -114,21 +115,17 @@ export default function LoadBoardContent() {
             <Tabs defaultValue="marketplace" className="w-full">
                 <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start border border-muted">
                     <TabsTrigger value="marketplace" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <Globe className="h-3.5 w-3.5" /> Haulier Marketplace
+                        <Globe className="h-3.5 w-3.5" /> Haulier Board
                     </TabsTrigger>
                     <TabsTrigger value="my-loads" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                         <ClipboardList className="h-3.5 w-3.5" /> My Postings
                     </TabsTrigger>
                     <TabsTrigger value="agreements" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <ShieldCheck className="h-3.5 w-3.5" /> Appointments
+                        <FileSignature className="h-3.5 w-3.5" /> Legal Authorizations
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="marketplace" className="mt-8 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <div className="flex items-center gap-2 px-2">
-                        <Badge className="bg-green-600 text-white font-black uppercase text-[8px] tracking-widest">Live</Badge>
-                        <span className="text-xs font-bold text-muted-foreground">National Load Board</span>
-                    </div>
+                <TabsContent value="marketplace" className="mt-8 space-y-6">
                     <Card className="border-none shadow-xl bg-white overflow-hidden">
                         <CardContent className="pt-6">
                             {marketplaceLoads && marketplaceLoads.length > 0 ? (
@@ -150,19 +147,19 @@ export default function LoadBoardContent() {
                                                 </div>
                                             )
                                         },
-                                        { accessorKey: 'cargoType', header: 'Cargo Class' },
+                                        { accessorKey: 'cargoType', header: 'Cargo' },
                                         { 
                                             header: 'Haulier Payout', 
                                             cell: ({row}) => (
                                                 <div className="flex flex-col text-left">
                                                     <span className="font-black text-lg text-primary">{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(row.original.haulierPayout)}</span>
-                                                    <span className="text-[10px] text-muted-foreground uppercase font-bold">Guaranteed via Platform</span>
+                                                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 border-blue-200 text-blue-600 bg-blue-50 mt-1">Factoring Ready</Badge>
                                                 </div>
                                             )
                                         },
                                         { 
                                             id: 'actions',
-                                            header: <div className="text-right">Capture</div>,
+                                            header: <div className="text-right">Action</div>,
                                             cell: ({row}) => (
                                                 <div className="text-right">
                                                     <Button size="sm" className="font-black uppercase text-[10px] tracking-widest h-9 px-6 gap-2" onClick={() => { setSelectedLoad(row.original); setView('take-wizard'); }}>
@@ -176,7 +173,7 @@ export default function LoadBoardContent() {
                             ) : (
                                 <div className="py-24 text-center space-y-4">
                                     <Search className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest italic">Scanning the national board for active loads...</p>
+                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest italic">Scanning national board for authorized freight...</p>
                                 </div>
                             )}
                         </CardContent>
@@ -185,14 +182,14 @@ export default function LoadBoardContent() {
 
                 <TabsContent value="my-loads" className="mt-8 space-y-6">
                     <Card className="border-none shadow-xl bg-white overflow-hidden">
-                        <CardContent className="pt-6">
+                        <CardContent className="pt-6 text-left">
                             {myLoads && myLoads.length > 0 ? (
                                 <DataTable 
                                     data={myLoads}
                                     columns={[
                                         { header: 'Route', cell: ({row}) => <div className="font-bold flex items-center gap-2">{row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}</div> },
                                         { accessorKey: 'cargoType', header: 'Cargo' },
-                                        { header: 'My Broker Earn', cell: ({row}) => <span className="font-bold text-green-700">{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(row.original.brokerEarn)}</span> },
+                                        { header: 'My Margin', cell: ({row}) => <span className="font-bold text-green-700">{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(row.original.brokerEarn)}</span> },
                                         { header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px] font-black">{row.original.status}</Badge> }
                                     ]}
                                 />
@@ -203,29 +200,34 @@ export default function LoadBoardContent() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="agreements" className="mt-8">
+                <TabsContent value="agreements" className="mt-8 text-left">
                     <Card className="border-none shadow-xl bg-white overflow-hidden">
                         <CardContent className="pt-6">
                             {agreements && agreements.length > 0 ? (
                                 <DataTable 
                                     data={agreements}
                                     columns={[
-                                        { accessorKey: 'providerName', header: 'Load Provider' },
-                                        { header: 'Commission Share', cell: ({row}) => <span className="font-bold">{row.original.commissionRate}%</span> },
+                                        { header: 'Primary Provider', cell: ({row}) => <div className="flex flex-col"><span className="font-bold">{row.original.providerName}</span><span className="text-[9px] text-primary uppercase font-black">Clause: {row.original.subcontractingClause}</span></div> },
+                                        { header: 'Margin', cell: ({row}) => <span className="font-bold">{row.original.commissionRate}%</span> },
                                         { header: 'Status', cell: ({row}) => (
                                             <Badge variant={row.original.status === 'verified' ? 'default' : 'secondary'} className="capitalize text-[10px] font-black">
                                                 {row.original.status}
                                             </Badge>
                                         )},
-                                        { header: 'Authorization Doc', cell: ({row}) => (
-                                            <Button variant="ghost" size="sm" asChild className="h-7 text-[10px] font-black uppercase text-primary">
-                                                <a href={row.original.agreementUrl} target="_blank" rel="noopener noreferrer">View Signed Letter</a>
-                                            </Button>
+                                        { header: 'Legal Docs', cell: ({row}) => (
+                                            <div className="flex gap-1">
+                                                <Button variant="ghost" size="sm" asChild className="h-7 text-[8px] font-black uppercase text-primary">
+                                                    <a href={row.original.primaryContractUrl} target="_blank" rel="noopener noreferrer">Primary Contract</a>
+                                                </Button>
+                                                <Button variant="ghost" size="sm" asChild className="h-7 text-[8px] font-black uppercase text-primary">
+                                                    <a href={row.original.subcontractorAgreementUrl} target="_blank" rel="noopener noreferrer">Sub-Agreement</a>
+                                                </Button>
+                                            </div>
                                         )}
                                     ]}
                                 />
                             ) : (
-                                <div className="py-20 text-center text-muted-foreground italic">No appointment authorizations recorded.</div>
+                                <div className="py-20 text-center text-muted-foreground italic">No legal authorizations recorded.</div>
                             )}
                         </CardContent>
                     </Card>
