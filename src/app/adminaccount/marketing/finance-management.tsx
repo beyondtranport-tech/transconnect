@@ -188,7 +188,7 @@ function DuplicateCleaner({ onComplete }: { onComplete: () => void }) {
                 <div className="py-4 space-y-4 text-left text-foreground">
                     <div className="p-4 bg-muted/30 border rounded-xl space-y-3">
                         <p className="text-xs font-bold flex items-center gap-2 text-foreground"><CheckCircle className="h-4 w-4 text-green-600"/> Prioritizes Registered Members</p>
-                        <p className="text-xs font-bold flex items-center gap-2 text-foreground"><CheckCircle className="h-4 w-4 text-green-600"/> Matches Name + Email</p>
+                        <p className="text-xs font-bold flex items-center gap-2 text-foreground"><CheckCircle className="h-4 w-4 text-green-600"/> Preserves Earliest Records</p>
                     </div>
                 </div>
                  <DialogFooter>

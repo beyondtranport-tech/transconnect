@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { collection, query, orderBy, serverTimestamp, collectionGroup } from 'fi
 import { cn } from '@/lib/utils';
 import { format as formatDateFns } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useSearchParams } from 'next/navigation';
 
 interface SupportMessage {
   id: string;
@@ -41,7 +42,14 @@ export default function SupportChatInbox() {
     const firestore = useFirestore();
     const { user: adminUser } = useUser();
     const { toast } = useToast();
+    const searchParams = useSearchParams();
+    const externalSearch = searchParams.get('search');
+    
     const [searchTerm, setSearchTerm] = useState('');
+
+    useEffect(() => {
+        if (externalSearch) setSearchTerm(externalSearch);
+    }, [externalSearch]);
 
     // Fetch all support messages and companies
     const messagesQuery = useMemoFirebase(() => firestore ? query(collectionGroup(firestore, 'supportMessages')) : null, [firestore]);
@@ -85,7 +93,9 @@ export default function SupportChatInbox() {
             .filter(convo => {
                 if (!searchTerm) return true;
                 const name = convo.company?.companyName?.toLowerCase() || '';
-                return name.includes(searchTerm.toLowerCase());
+                const id = convo.company?.id?.toLowerCase() || '';
+                const lowerSearch = searchTerm.toLowerCase();
+                return name.includes(lowerSearch) || id.includes(lowerSearch);
             })
             .sort((a,b) => {
                 if (!a.messages.length || !b.messages.length) return 0;
@@ -154,7 +164,7 @@ export default function SupportChatInbox() {
                 <AccordionTrigger className="px-4 py-4 hover:bg-muted/30 hover:no-underline">
                     <div className="flex items-center gap-4 text-left">
                         <div className="bg-primary/10 p-2 rounded-full"><MessageSquare className="h-5 w-5 text-primary"/></div>
-                        <div>
+                        <div className="text-left">
                             <p className="font-bold text-base text-foreground">{convo.company?.companyName || 'Unknown Company'}</p>
                             <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">
                                 {convo.messages.length} message(s) • Last activity: {formatDate(convo.messages[convo.messages.length - 1].timestamp)}
@@ -243,7 +253,7 @@ export default function SupportChatInbox() {
                     <div className="relative w-full md:w-80">
                         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input 
-                            placeholder="Filter by company name..." 
+                            placeholder="Filter by company name or ID..." 
                             className="pl-9 h-10 bg-white" 
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}

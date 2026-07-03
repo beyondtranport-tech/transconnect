@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -91,7 +90,7 @@ export default function SupportChatContent() {
                 body: JSON.stringify({ collectionPath: path, data: userMessageData }),
             });
 
-            // 2. Build history for AI
+            // 2. Build history for AI (ensure roles match Genkit/Gemini expectations)
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
                 .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {

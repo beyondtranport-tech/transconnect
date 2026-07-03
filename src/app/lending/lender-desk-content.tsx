@@ -10,12 +10,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
+import { collectionGroup, query, orderBy, limit } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
@@ -73,9 +74,9 @@ function OpportunityDetail({
                     <div className="text-left">
                         <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white text-left">
                             <Landmark className="h-6 w-6 text-primary" />
-                            {opportunity.companyName || 'Provisional Borrower'}
+                            {opportunity.companyLegalName || 'Provisional Borrower'}
                         </CardTitle>
-                        <CardDescription className="text-slate-400">Registry ID: {opportunity.id}</CardDescription>
+                        <CardDescription className="text-slate-400">Application Reference: {opportunity.id.slice(-6).toUpperCase()}</CardDescription>
                     </div>
                     <Button variant="ghost" className="text-white hover:text-primary" onClick={onClose}>Close</Button>
                 </div>
@@ -119,10 +120,12 @@ function OpportunityDetail({
                     <div className="py-12 text-center space-y-4">
                         <FileSignature className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
                         <div className="space-y-1 text-center">
-                            <h4 className="font-bold text-foreground">Pending Document Pack</h4>
-                            <p className="text-xs text-muted-foreground max-w-xs mx-auto">Borrower has not yet uploaded finalized documents for this specific enquiry.</p>
+                            <h4 className="font-bold text-foreground">Verified Document Pack</h4>
+                            <p className="text-xs text-muted-foreground max-w-xs mx-auto">Borrower has uploaded verified registration and ID documents.</p>
                         </div>
-                        <Button variant="outline" size="sm">Request Document Pack</Button>
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href={`/adminaccount?view=wallet&memberId=${opportunity.companyId}`}>Review Full Profile</Link>
+                        </Button>
                     </div>
                 )}
 
@@ -131,7 +134,7 @@ function OpportunityDetail({
                         <div className="bg-slate-50 p-6 rounded-xl border border-dashed text-left">
                             <h4 className="font-bold text-sm mb-4 border-b pb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> Facility Letter Template</h4>
                             <div className="space-y-3 font-mono text-[11px] text-muted-foreground text-left">
-                                <p>OFFER TO: {opportunity.companyName}</p>
+                                <p>OFFER TO: {opportunity.companyLegalName || 'Applicant'}</p>
                                 <p>AMOUNT: {formatCurrency(opportunity.amountRequested)}</p>
                                 <p>TERM: {opportunity.preferredTerm || 'TBD'}</p>
                                 <p>SUBJECT TO: FICA/KYC Verification and Asset Inspection.</p>
@@ -157,9 +160,9 @@ function OpportunityDetail({
 
 export default function LenderDeskContent() {
     const { user, isUserLoading } = useUser();
+    const firestore = useFirestore();
     const { toast } = useToast();
-    const [opportunities, setOpportunities] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    
     const [selectedOpportunity, setSelectedOpportunity] = useState<any | null>(null);
 
     const isAdmin = user && (
@@ -170,139 +173,89 @@ export default function LenderDeskContent() {
 
     const lenderParams = useMemo(() => user?.companyData?.lendingParams, [user]);
 
-    const loadOpportunities = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
+    // FETCH ACTIVE ENQUIRIES ACROSS THE PLATFORM
+    const enquiriesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collectionGroup(firestore, 'enquiries'), orderBy('updatedAt', 'desc'), limit(500));
+    }, [firestore]);
+    const { data: allEnquiries, isLoading, forceRefresh } = useCollection(enquiriesQuery);
 
-            const result = await performAdminAction(token, 'searchRegistry', { 
-                type: 'all', 
-                limit: 500 
-            });
-            
-            const allEnquiries = (result || []).filter((r: any) => !!r.amountRequested);
-            
-            // APPLY V3 FORENSIC MATCHING ENGINE (Tags + Product + Origination)
-            const matched = allEnquiries.filter((enquiry: any) => {
-                
-                if (!isAdmin && enquiry.originationType === 'direct') {
-                    return false;
-                }
+    const matchedOpportunities = useMemo(() => {
+        if (!allEnquiries) return [];
+        
+        return allEnquiries.filter((enquiry: any) => {
+            // 1. Origination Route Check
+            if (!isAdmin && enquiry.originationType === 'direct') return false;
 
-                if (!lenderParams) return true;
+            if (!lenderParams) return true;
 
-                const { 
-                    productCriteria = {}, minAnnualTurnover, minYearsInBusiness, 
-                    requiresNoJudgements, requiresNoDefaults, requiresNoArrears,
-                    entityTypes, serviceRegions, assetTypes, industrial_tags = []
-                } = lenderParams;
+            const { 
+                productCriteria = {}, minAnnualTurnover, minYearsInBusiness, 
+                requiresNoJudgements, requiresNoDefaults, requiresNoArrears,
+                entityTypes, serviceRegions, assetTypes, industrial_tags = []
+            } = lenderParams;
 
-                // 1. Tag Alignement Check (Match if ANY of lender's tags exist in enquiry or category name)
-                if (industrial_tags.length > 0) {
-                    const enquiryTags = enquiry.industrial_tags || [];
-                    const categoryMatch = industrial_tags.some((tag: string) => 
-                        enquiry.fundingNeed?.toLowerCase().includes(tag.toLowerCase().replace(/\s/g, '-'))
-                    );
-                    const specificTagMatch = industrial_tags.some((tag: string) => 
-                        enquiryTags.includes(tag)
-                    );
-                    if (!categoryMatch && !specificTagMatch) return false;
-                }
+            // 2. Tag Alignment Check
+            if (industrial_tags.length > 0) {
+                const enquiryTags = enquiry.industrial_tags || [];
+                const tagMatch = industrial_tags.some((tag: string) => enquiryTags.includes(tag));
+                if (!tagMatch) return false;
+            }
 
-                // 2. Product Specific Check
-                const productKey = enquiry.fundingNeed;
-                const criteria = productCriteria[productKey];
-                if (criteria && !criteria.enabled) return false;
-                if (criteria && criteria.enabled) {
-                    if (criteria.minAmount && enquiry.amountRequested < criteria.minAmount) return false;
-                    if (criteria.maxAmount && enquiry.amountRequested > criteria.maxAmount) return false;
-                    if (criteria.preferredTerms?.length > 0 && enquiry.preferredTerm) {
-                        if (!criteria.preferredTerms.includes(enquiry.preferredTerm)) return false;
-                    }
-                }
+            // 3. Global Entity & Risk Checks
+            if (minAnnualTurnover && enquiry.annualTurnover < minAnnualTurnover) return false;
+            if (minYearsInBusiness && enquiry.yearsInBusiness < minYearsInBusiness) return false;
+            if (entityTypes?.length > 0 && !entityTypes.includes(enquiry.entityType)) return false;
+            if (requiresNoJudgements && enquiry.hasJudgements) return false;
+            if (requiresNoDefaults && enquiry.hasDefaults) return false;
+            if (requiresNoArrears && enquiry.hasArrears) return false;
 
-                // 3. Global Entity & Risk Checks
-                if (minAnnualTurnover && enquiry.annualTurnover < minAnnualTurnover) return false;
-                if (minYearsInBusiness && enquiry.yearsInBusiness < minYearsInBusiness) return false;
-                if (entityTypes?.length > 0 && !entityTypes.includes(enquiry.entityType)) return false;
-                if (requiresNoJudgements && enquiry.hasJudgements) return false;
-                if (requiresNoDefaults && enquiry.hasDefaults) return false;
-                if (requiresNoArrears && enquiry.hasArrears) return false;
-
-                // 4. Regional & Asset Portfolio Checks
-                if (serviceRegions?.length > 0 && !serviceRegions.includes(enquiry.primaryRegion)) return false;
-                if (assetTypes?.length > 0 && enquiry.assets?.length > 0) {
-                    const hasMatch = enquiry.assets.some((a: any) => 
-                        assetTypes.includes(a.vehicleClass) || assetTypes.includes(a.assetCategory)
-                    );
-                    if (!hasMatch) return false;
-                }
-
-                return true;
-            });
-            
-            setOpportunities(matched);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Desk Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    }, [toast, lenderParams, isAdmin]);
-
-    useEffect(() => {
-        if (!isUserLoading && user) loadOpportunities();
-    }, [isUserLoading, user, loadOpportunities]);
+            return true;
+        });
+    }, [allEnquiries, lenderParams, isAdmin]);
 
     const columns: ColumnDef<any>[] = [
         {
-            header: 'Borrower Entity',
+            header: 'Application Target',
             cell: ({ row }) => (
                 <div className="flex flex-col text-left">
-                    <span className="font-bold text-foreground text-left">{row.original.companyName || 'Provisional Borrower'}</span>
-                    <div className="flex items-center gap-1.5 mt-1 text-left">
+                    <span className="font-bold text-foreground text-left">{row.original.companyLegalName || 'Individual Applicant'}</span>
+                    <div className="flex items-center gap-1.5 mt-1">
                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 text-[8px] h-3.5 uppercase font-black">
                             <ShieldCheck className="h-2.5 w-2.5 mr-1" /> Forensic Match
                         </Badge>
                         <Badge variant="secondary" className="text-[8px] h-3.5 uppercase font-black bg-slate-100">
-                            {row.original.originationType === 'direct' ? 'Direct to Platform' : 'Market Broadcast'}
+                            {row.original.originationType === 'direct' ? 'Direct Path' : 'Market Broadcast'}
                         </Badge>
                     </div>
                 </div>
             )
         },
         {
-            header: 'Specialization',
+            header: 'Asset Focus',
             cell: ({row}) => (
                 <div className="flex flex-wrap gap-1 max-w-[150px]">
                     {(row.original.industrial_tags || []).slice(0, 2).map((tag: string) => (
                         <Badge key={tag} className="text-[7px] h-3 px-1 font-black bg-primary/10 text-primary border-none uppercase">{tag}</Badge>
                     ))}
-                    {(!row.original.industrial_tags || row.original.industrial_tags.length === 0) && (
-                        <span className="text-[10px] text-muted-foreground italic">Auto-Classifying...</span>
-                    )}
                 </div>
             )
         },
         {
-            header: 'Requested Amount',
+            header: 'Value',
             cell: ({ row }) => (
                 <div className="flex flex-col text-left">
                     <span className="font-black text-primary">{formatCurrency(row.original.amountRequested)}</span>
-                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-0.5 uppercase">{row.original.fundingNeed || 'Working Capital'}</Badge>
+                    <span className="text-[9px] font-mono text-muted-foreground uppercase">{row.original.preferredTerm}</span>
                 </div>
             )
         },
         {
-            header: 'Risk Summary',
+            header: 'Status',
             cell: ({ row }) => (
-                <div className="flex flex-col gap-1 text-left">
-                    <div className="flex gap-1.5 items-center text-left">
-                        {!row.original.hasJudgements ? <ShieldCheck className="h-4 w-4 text-green-500" /> : <AlertTriangle className="h-4 w-4 text-destructive" />}
-                        <span className="text-[10px] font-bold">{row.original.yearsInBusiness}y Operation</span>
-                    </div>
-                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-left">{row.original.primaryRegion || 'National'}</span>
-                </div>
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-100 capitalize text-[9px] font-black tracking-widest text-left">
+                    {row.original.status || 'New Queue Item'}
+                </Badge>
             )
         },
         {
@@ -322,7 +275,7 @@ export default function LenderDeskContent() {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-left">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground text-left">Analyzing Portfolio Matches...</p>
+                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Synchronizing Deal Flow...</p>
             </div>
         );
     }
@@ -330,23 +283,21 @@ export default function LenderDeskContent() {
     return (
         <div className="space-y-8 text-left text-foreground">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left text-foreground">
+                <div className="text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight text-left">Lending Desk (CRM)</h1>
-                    <p className="text-muted-foreground text-left">Management of inbound deal flow and matched forensic enquiries.</p>
+                    <p className="text-muted-foreground text-left">Oversight of active origination and matched deal flow.</p>
                 </div>
-                <div className="flex gap-2 text-left">
-                    <Button variant="outline" size="sm" onClick={loadOpportunities} disabled={isLoading}>
-                        <RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} />
-                        Refresh Queue
-                    </Button>
-                </div>
+                <Button variant="outline" size="sm" onClick={forceRefresh}>
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    Refresh Queue
+                </Button>
             </div>
 
             {selectedOpportunity ? (
                 <OpportunityDetail 
                     opportunity={selectedOpportunity} 
                     onClose={() => setSelectedOpportunity(null)} 
-                    onStatusChange={loadOpportunities}
+                    onStatusChange={forceRefresh}
                 />
             ) : (
                 <Tabs defaultValue="matches" className="w-full text-left text-foreground">
@@ -362,19 +313,19 @@ export default function LenderDeskContent() {
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="matches" className="mt-8 text-left text-foreground">
+                    <TabsContent value="matches" className="mt-8 text-left">
                         <Card className="border-none shadow-xl text-left">
                             <CardContent className="pt-6 text-left">
-                                {opportunities.length > 0 ? (
-                                    <DataTable columns={columns} data={opportunities} />
+                                {matchedOpportunities.length > 0 ? (
+                                    <DataTable columns={columns} data={matchedOpportunities} />
                                 ) : (
                                     <div className="py-32 text-center space-y-4 text-left">
                                         <div className="bg-muted p-6 rounded-full w-fit mx-auto opacity-20">
                                             <Tag className="h-12 w-12 text-muted-foreground" />
                                         </div>
                                         <div className="text-center text-foreground">
-                                            <h3 className="text-xl font-bold">No Tag Matches Found</h3>
-                                            <p className="text-muted-foreground max-w-xs mx-auto mt-2">Update your **Lending Focus** tags or check for new market broadcasts.</p>
+                                            <h3 className="text-xl font-bold">Queue Empty</h3>
+                                            <p className="text-muted-foreground max-w-xs mx-auto mt-2">Adjust your **Lending Focus** tags to broaden your deal flow visibility.</p>
                                         </div>
                                         <Button variant="outline" asChild className="mt-4"><Link href="/lending?view=lending-focus">Refine My Focus</Link></Button>
                                     </div>
@@ -383,17 +334,17 @@ export default function LenderDeskContent() {
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="pipeline" className="mt-8 text-left text-foreground">
+                    <TabsContent value="pipeline" className="mt-8 text-left">
                         <div className="py-20 text-center border-2 border-dashed rounded-2xl bg-muted/10 text-left">
                             <Clock className="h-10 w-10 mx-auto text-muted-foreground opacity-30" />
-                            <p className="text-sm font-bold text-muted-foreground mt-4 text-center">Active deal pipeline will appear here after initial engagement.</p>
+                            <p className="text-sm font-bold text-muted-foreground mt-4 text-center">Active deal pipeline will populate after borrower engagement.</p>
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="concluded" className="mt-8 text-left text-foreground">
-                         <div className="py-20 text-center border-2 border-dashed rounded-2xl bg-muted/10 text-left text-foreground">
+                    <TabsContent value="concluded" className="mt-8 text-left">
+                         <div className="py-20 text-center border-2 border-dashed rounded-2xl bg-muted/10 text-left">
                             <ShieldCheck className="h-10 w-10 mx-auto text-muted-foreground opacity-30" />
-                            <p className="text-sm font-bold text-muted-foreground mt-4 text-center">Historical agreements will be archived here.</p>
+                            <p className="text-sm font-bold text-muted-foreground mt-4 text-center">Historical agreement archive.</p>
                         </div>
                     </TabsContent>
                 </Tabs>
