@@ -20,13 +20,20 @@ service cloud.firestore {
       );
     }
 
-    // Robust check for membership that supports both document and collection level access.
+    // Direct check if the user is the owner of a company based on parent data
+    function isCompanyOwner(cid) {
+      return isSignedIn() && (
+        cid == request.auth.uid ||
+        get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+      );
+    }
+
+    // Check membership via the user profile document
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
           cid == request.auth.uid || 
-          // Fallback to profile check for cross-collection integrity
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
@@ -54,7 +61,7 @@ service cloud.firestore {
 
     // --- STANDARD PATH RULES ---
 
-    // Global Admin Override (Covers standard paths and root access)
+    // Global Admin Override
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -71,29 +78,51 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Explicitly allow members to read their own company document
-      allow get: if isMember(companyId);
+      // Members can get their own company doc
+      allow get: if isMember(companyId) || isCompanyOwner(companyId);
       allow list: if isAdmin();
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collection rules with explicit member authorization
-      match /supportMessages/{id} { allow read, write: if isMember(companyId); }
-      match /transactions/{id} { allow read, write: if isMember(companyId); }
-      match /walletPayments/{id} { allow read, write: if isMember(companyId); }
-      match /enquiries/{id} { allow read, write: if isMember(companyId); }
-      match /quotes/{id} { allow read, write: if isMember(companyId); }
-      match /tasks/{id} { allow read, write: if isMember(companyId); }
-      match /payoutRequests/{id} { allow read, write: if isMember(companyId); }
-      match /searchLogs/{id} { allow read, write: if isMember(companyId); }
-      match /facilities/{id} { allow read: if isMember(companyId); allow write: if isAdmin(); }
-      match /staff/{id} { allow read: if isMember(companyId); allow write: if isAdmin(); }
+      // Explicit rules for sub-collections to ensure 'list' works for members
+      match /supportMessages/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /transactions/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /walletPayments/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /enquiries/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /quotes/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /tasks/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /payoutRequests/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /searchLogs/{id} { 
+        allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
+      }
+      match /facilities/{id} { 
+        allow read: if isMember(companyId) || isCompanyOwner(companyId); 
+        allow write: if isAdmin(); 
+      }
+      match /staff/{id} { 
+        allow read: if isMember(companyId) || isCompanyOwner(companyId); 
+        allow write: if isAdmin(); 
+      }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isMember(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
-        match /agreements/{agId} { allow read, write: if isMember(companyId); }
+        allow write: if isMember(companyId) || isCompanyOwner(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId) || isCompanyOwner(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId) || isCompanyOwner(companyId); }
       }
     }
 
@@ -139,5 +168,3 @@ service cloud.firestore {
     }
   }
 }
-
-// Global Definitive Rule Sync Token: 2026-03-16T17:00:00Z

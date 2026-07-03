@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, MessageSquare, Send, Bot, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { supportQuery } from '@/ai/flows/support-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -91,7 +91,7 @@ export default function SupportChatContent() {
                 body: JSON.stringify({ collectionPath: path, data: userMessageData }),
             });
 
-            // 2. Build history for AI (ensure roles match Genkit/Gemini expectations)
+            // 2. Build history for AI
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
                 .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {
@@ -133,7 +133,7 @@ export default function SupportChatContent() {
         }
     };
 
-    if (permissionError) {
+    if (permissionError && hasSearchedOnce) {
         return (
             <Card className="border-destructive bg-destructive/5 text-left">
                 <CardHeader>
