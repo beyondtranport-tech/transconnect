@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -32,19 +31,24 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
     const [noCircumventionAccepted, setNoCircumventionAccepted] = useState(false);
     const [acceptedLoadData, setAcceptedLoadData] = useState<any>(null);
 
-    // 1. INTELLIGENCE AUDIT
+    // 1. INTELLIGENCE AUDIT: Check for paid membership
     const isIntelligenceMember = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
 
-    // 2. FLEET COMPLIANCE AUDIT
-    const fleetQuery = useMemoFirebase(() => {
-        if (!firestore || !user?.companyId) return null;
-        return query(collection(firestore, `companies/${user.companyId}/facilities`), where('status', '==', 'active'));
-    }, [firestore, user?.companyId]);
-    const { data: fleet, isLoading: isFleetLoading } = useCollection(fleetQuery);
+    // 2. FLEET COMPLIANCE AUDIT: Check verified profile data
+    const hasRequiredAsset = useMemo(() => {
+        if (!user?.companyData?.fleet) return false;
+        const { poweredUnits = [], trailers = [] } = user.companyData.fleet;
+        
+        // If load requires specific equipment (e.g. Reefer), check haulier profile
+        if (load.requiredEquipment?.length > 0) {
+            return load.requiredEquipment.some((req: string) => 
+                trailers.includes(req) || poweredUnits.includes(req)
+            );
+        }
+        return poweredUnits.length > 0;
+    }, [user, load]);
 
-    const hasRequiredAsset = useMemo(() => !!(fleet && fleet.length > 0), [fleet]);
-
-    // 3. DRIVER AUDIT
+    // 3. DRIVER AUDIT: Check workforce roster
     const staffQuery = useMemoFirebase(() => {
         if (!firestore || !user?.companyId) return null;
         return query(collection(firestore, `companies/${user.companyId}/staff`), where('status', '==', 'confirmed'));
@@ -67,7 +71,6 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
             const token = await getClientSideAuthToken();
             if (!token) return;
 
-            // Generate formal Instruction details
             const instructionNumber = `INS-${Date.now().toString().slice(-6)}`;
             const update = {
                 status: 'assigned',
@@ -105,15 +108,15 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
         );
     }
 
-    if (isFleetLoading || isStaffLoading) {
+    if (isStaffLoading) {
         return <div className="py-32 text-center flex flex-col items-center gap-4"><Loader2 className="animate-spin h-12 w-12 text-primary" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Compliance Audit in Progress...</p></div>;
     }
 
     return (
         <div className="animate-in fade-in duration-500 text-left text-foreground">
-            <Card className="max-w-4xl mx-auto shadow-2xl border-none overflow-hidden">
-                <CardHeader className="bg-slate-900 text-white p-10">
-                    <div className="flex justify-between items-start">
+            <Card className="max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left">
+                <CardHeader className="bg-slate-900 text-white p-10 text-left">
+                    <div className="flex justify-between items-start text-left">
                         <div className="text-left">
                             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white">
                                 <ShieldCheck className="h-10 w-10 text-primary" />
@@ -124,8 +127,8 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                         <Badge variant="outline" className="border-primary text-primary">OFFER REF: {load.id.slice(-4)}</Badge>
                     </div>
                 </CardHeader>
-                <CardContent className="p-10 space-y-10 bg-white">
-                    <div className="p-8 rounded-3xl border-2 border-primary bg-primary/5 shadow-sm">
+                <CardContent className="p-10 space-y-10 bg-white text-left text-foreground">
+                    <div className="p-8 rounded-3xl border-2 border-primary bg-primary/5 shadow-sm text-left">
                         <div className="flex justify-between items-start mb-6">
                             <div className="text-left">
                                 <h3 className="font-black text-xl flex items-center gap-2"><Gavel className="h-6 w-6 text-primary" /> 1. Trust Binding</h3>
@@ -133,18 +136,18 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                             </div>
                             <Badge className="bg-primary text-white font-black uppercase text-[10px] tracking-widest">Required</Badge>
                         </div>
-                        <div className="p-6 bg-white rounded-2xl border border-primary/20 space-y-4 shadow-inner">
-                             <div className="flex items-start gap-4">
+                        <div className="p-6 bg-white rounded-2xl border border-primary/20 space-y-4 shadow-inner text-left">
+                             <div className="flex items-start gap-4 text-left">
                                 <Checkbox id="cc-check" checked={noCircumventionAccepted} onCheckedChange={(c) => setNoCircumventionAccepted(!!c)} className="mt-1 h-5 w-5" />
-                                <Label htmlFor="cc-check" className="text-sm font-medium leading-relaxed cursor-pointer">
+                                <Label htmlFor="cc-check" className="text-sm font-medium leading-relaxed cursor-pointer text-left">
                                     I hereby agree to the **Non-Circumvention Clause**. I am prohibited from directly approaching or engaging the Debtor ({load.providerName || 'The Client'}) for this load or future work without written consent from the Primary Contractor.
                                 </Label>
                              </div>
                         </div>
                     </div>
 
-                    <div className={cn("p-8 rounded-3xl border-2 transition-all shadow-sm", !isIntelligenceMember ? "border-amber-200 bg-amber-50" : "border-green-100 bg-green-50")}>
-                        <div className="flex justify-between items-start">
+                    <div className={cn("p-8 rounded-3xl border-2 transition-all shadow-sm text-left", !isIntelligenceMember ? "border-amber-200 bg-amber-50" : "border-green-100 bg-green-50")}>
+                        <div className="flex justify-between items-start text-left">
                             <div className="text-left">
                                 <h3 className="font-black text-xl flex items-center gap-2"><Landmark className="h-6 w-6 text-primary" /> 2. Intelligence Activation</h3>
                                 <p className="text-sm text-muted-foreground">Only authorized nodes can engage in commercial handshakes.</p>
@@ -152,8 +155,8 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                             {isIntelligenceMember ? <CheckCircle className="h-8 w-8 text-green-600" /> : <Lock className="h-8 w-8 text-amber-600" />}
                         </div>
                         {!isIntelligenceMember && (
-                            <div className="mt-8 p-6 bg-white rounded-2xl border border-amber-200 space-y-4 shadow-inner">
-                                <p className="text-sm font-medium text-amber-800 leading-relaxed">
+                            <div className="mt-8 p-6 bg-white rounded-2xl border border-amber-200 space-y-4 shadow-inner text-left">
+                                <p className="text-sm font-medium text-amber-800 leading-relaxed text-left">
                                     This load has a verified payout of **{formatCurrency(load.haulierPayout)}**. To accept and start earning, activate your **Loads Intelligence** node.
                                 </p>
                                 <Button asChild size="lg" className="w-full bg-amber-600 hover:bg-amber-700 font-bold h-14"><Link href="/checkout/loads_intelligence">Unlock Earning Power <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
@@ -161,8 +164,8 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                         )}
                     </div>
 
-                    <div className={cn("p-8 rounded-3xl border-2 transition-all shadow-sm", !hasRequiredAsset ? "border-destructive/20 bg-destructive/5" : "border-green-100 bg-green-50")}>
-                        <div className="flex justify-between items-start">
+                    <div className={cn("p-8 rounded-3xl border-2 transition-all shadow-sm text-left", !hasRequiredAsset ? "border-destructive/20 bg-destructive/5" : "border-green-100 bg-green-50")}>
+                        <div className="flex justify-between items-start text-left">
                             <div className="text-left">
                                 <h3 className="font-black text-xl flex items-center gap-2"><Truck className="h-6 w-6 text-primary" /> 3. Verified Fleet Asset</h3>
                                 <p className="text-sm text-muted-foreground">Required: {load.requiredEquipment?.join(', ')}</p>
@@ -170,14 +173,30 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                             {hasRequiredAsset ? <CheckCircle className="h-8 w-8 text-green-600" /> : <AlertTriangle className="h-8 w-8 text-destructive" />}
                         </div>
                         {!hasRequiredAsset && (
-                            <div className="mt-6 p-6 bg-white rounded-2xl border border-destructive/20 space-y-4 shadow-inner">
-                                <p className="text-xs text-muted-foreground leading-relaxed">You have not registered any verified **RC1 assets** in your node. Forensic proof of capacity is required before engagement.</p>
-                                <Button asChild variant="outline" size="lg" className="w-full border-destructive/20 text-destructive font-bold h-12"><Link href="/contribute">Upload RC1 Verified Fleet Data</Link></Button>
+                            <div className="mt-6 p-6 bg-white rounded-2xl border border-destructive/20 space-y-4 shadow-inner text-left">
+                                <p className="text-xs text-muted-foreground leading-relaxed text-left">You have not registered the required verified **RC1 assets** in your node. Forensic proof of capacity is required before engagement.</p>
+                                <Button asChild variant="outline" size="lg" className="w-full border-destructive/20 text-destructive font-bold h-12"><Link href="/account?view=fleet">Complete Fleet Profile</Link></Button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className={cn("p-8 rounded-3xl border-2 transition-all shadow-sm text-left", !hasConfirmedDriver ? "border-destructive/20 bg-destructive/5" : "border-green-100 bg-green-50")}>
+                        <div className="flex justify-between items-start text-left">
+                            <div className="text-left">
+                                <h3 className="font-black text-xl flex items-center gap-2"><Users className="h-6 w-6 text-primary" /> 4. Confirmed Workforce</h3>
+                                <p className="text-sm text-muted-foreground">Valid PrDP Driver required.</p>
+                            </div>
+                            {hasConfirmedDriver ? <CheckCircle className="h-8 w-8 text-green-600" /> : <AlertTriangle className="h-8 w-8 text-destructive" />}
+                        </div>
+                        {!hasConfirmedDriver && (
+                            <div className="mt-6 p-6 bg-white rounded-2xl border border-destructive/20 space-y-4 shadow-inner text-left">
+                                <p className="text-xs text-muted-foreground leading-relaxed text-left">No confirmed driver found in your roster. Onboard your logistics staff to satisfy compliance.</p>
+                                <Button asChild variant="outline" size="lg" className="w-full border-destructive/20 text-destructive font-bold h-12"><Link href="/account?view=staff">Manage Staff</Link></Button>
                             </div>
                         )}
                     </div>
                 </CardContent>
-                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6">
+                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left text-foreground">
                     <Button variant="ghost" onClick={onCancel} className="font-bold text-muted-foreground">Cancel Transaction</Button>
                     <Button onClick={handleAcceptLoad} disabled={!isIntelligenceMember || !hasRequiredAsset || !hasConfirmedDriver || !noCircumventionAccepted || isLoading} className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white">
                         {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Accept & Issue Instruction"}
