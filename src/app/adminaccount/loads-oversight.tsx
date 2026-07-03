@@ -172,7 +172,7 @@ export default function LoadsOversight() {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Synchronizing Loads Mall Data...</p>
+                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground text-left">Synchronizing Loads Mall Data...</p>
             </div>
         );
     }
@@ -181,20 +181,20 @@ export default function LoadsOversight() {
         <div className="space-y-8 text-left text-foreground">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Truck className="h-8 w-8 text-primary" />
                         Loads Mall Oversight
                     </h1>
-                    <p className="text-muted-foreground mt-1">Management of subcontractor authorizations and national freight registry.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Management of subcontractor authorizations and national freight registry.</p>
                 </div>
-                <Button variant="outline" onClick={loadData} className="gap-2">
+                <Button variant="outline" onClick={loadData} className="gap-2 text-left">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     Refresh Mall Data
                 </Button>
             </div>
 
             <Tabs defaultValue="authorizations" className="w-full text-left text-foreground">
-                <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start">
+                <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start text-left">
                     <TabsTrigger value="authorizations" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                         <Gavel className="h-3.5 w-3.5" /> Legal Rights Queue
                     </TabsTrigger>
@@ -204,30 +204,30 @@ export default function LoadsOversight() {
                 </TabsList>
 
                 <TabsContent value="authorizations" className="mt-8 text-left text-foreground">
-                    <Card className="border-none shadow-xl">
-                        <CardHeader className="border-b bg-muted/10">
-                            <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+                    <Card className="border-none shadow-xl text-left">
+                        <CardHeader className="border-b bg-muted/10 text-left">
+                            <CardTitle className="text-lg flex items-center gap-2 text-foreground text-left">
                                 <Handshake className="h-5 w-5 text-primary" />
                                 Subcontractor Appointments Audit
                             </CardTitle>
-                            <CardDescription>Verify primary contract rights and no-circumvention trust bindings.</CardDescription>
+                            <CardDescription className="text-left">Verify primary contract rights and no-circumvention trust bindings.</CardDescription>
                         </CardHeader>
-                        <CardContent className="pt-6">
+                        <CardContent className="pt-6 text-left">
                             <DataTable columns={agreementColumns} data={agreements} />
                         </CardContent>
                     </Card>
                 </TabsContent>
 
                 <TabsContent value="registry" className="mt-8 text-left text-foreground">
-                    <Card className="border-none shadow-xl">
-                        <CardHeader className="border-b bg-muted/10">
-                            <CardTitle className="text-lg flex items-center gap-2 text-foreground">
+                    <Card className="border-none shadow-xl text-left">
+                        <CardHeader className="border-b bg-muted/10 text-left">
+                            <CardTitle className="text-lg flex items-center gap-2 text-foreground text-left">
                                 <Database className="h-5 w-5 text-primary" />
                                 National Freight Audit
                             </CardTitle>
-                            <CardDescription>Comprehensive view of all loads currently active or historical in the ecosystem.</CardDescription>
+                            <CardDescription className="text-left">Comprehensive view of all loads currently active or historical in the ecosystem.</CardDescription>
                         </CardHeader>
-                        <CardContent className="pt-6">
+                        <CardContent className="pt-6 text-left">
                             <DataTable columns={loadColumns} data={loads} />
                         </CardContent>
                     </Card>
