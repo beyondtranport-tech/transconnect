@@ -206,7 +206,7 @@ export default function LoadsOversight() {
                 <TabsContent value="authorizations" className="mt-8 text-left text-foreground">
                     <Card className="border-none shadow-xl">
                         <CardHeader className="border-b bg-muted/10">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                                 <Handshake className="h-5 w-5 text-primary" />
                                 Subcontractor Appointments Audit
                             </CardTitle>
@@ -218,10 +218,10 @@ export default function LoadsOversight() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="registry" className="mt-8 text-left text-foreground text-foreground">
+                <TabsContent value="registry" className="mt-8 text-left text-foreground">
                     <Card className="border-none shadow-xl">
                         <CardHeader className="border-b bg-muted/10">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex items-center gap-2 text-foreground">
                                 <Database className="h-5 w-5 text-primary" />
                                 National Freight Audit
                             </CardTitle>

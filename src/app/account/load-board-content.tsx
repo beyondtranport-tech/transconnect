@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
@@ -133,7 +132,7 @@ export default function LoadBoardContent() {
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="marketplace" className="mt-8 space-y-6">
+                <TabsContent value="marketplace" className="mt-8 space-y-6 text-left">
                     <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
                         <CardContent className="pt-6">
                             {marketplaceLoads && marketplaceLoads.length > 0 ? (
@@ -178,14 +177,14 @@ export default function LoadBoardContent() {
                             ) : (
                                 <div className="py-24 text-center space-y-4">
                                     <Search className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest italic">Scanning national board for authorized freight...</p>
+                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest italic text-center">Scanning national board for authorized freight...</p>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="assignments" className="mt-8 space-y-6">
+                <TabsContent value="assignments" className="mt-8 space-y-6 text-left">
                     <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
                         <CardContent className="pt-6">
                             {myAssignments && myAssignments.length > 0 ? (
@@ -212,13 +211,13 @@ export default function LoadBoardContent() {
                                     ]}
                                 />
                             ) : (
-                                <div className="py-20 text-center text-muted-foreground italic">You have no active assignments awaiting execution.</div>
+                                <div className="py-20 text-center text-muted-foreground italic text-center">You have no active assignments awaiting execution.</div>
                             )}
                         </CardContent>
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="settlement" className="mt-8 space-y-6">
+                <TabsContent value="settlement" className="mt-8 space-y-6 text-left">
                      <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
                         <CardHeader className="bg-slate-50 border-b">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
@@ -246,7 +245,7 @@ export default function LoadBoardContent() {
                                     ]}
                                 />
                             ) : (
-                                <div className="py-20 text-center text-muted-foreground italic">No settled or delivered loads recorded yet.</div>
+                                <div className="py-20 text-center text-muted-foreground italic text-center">No settled or delivered loads recorded yet.</div>
                             )}
                         </CardContent>
                     </Card>
