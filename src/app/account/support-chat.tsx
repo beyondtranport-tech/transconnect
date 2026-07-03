@@ -43,7 +43,8 @@ export default function SupportChatContent() {
     const companyId = user?.companyId;
 
     const messagesQuery = useMemoFirebase(() => {
-        if (!firestore || !companyId) return null;
+        // Only trigger query if we have both firestore and a valid companyId
+        if (!firestore || !companyId || companyId === '') return null;
         return query(
             collection(firestore, 'companies', companyId, 'supportMessages'),
             orderBy('timestamp', 'asc')
@@ -133,7 +134,7 @@ export default function SupportChatContent() {
         }
     };
 
-    if (permissionError && hasSearchedOnce) {
+    if (permissionError) {
         return (
             <Card className="border-destructive bg-destructive/5 text-left">
                 <CardHeader>
@@ -142,16 +143,21 @@ export default function SupportChatContent() {
                         Access Restricted
                     </CardTitle>
                     <CardDescription>
-                        We encountered a permission error loading your messages.
+                        We encountered a permission error loading your support messages.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
                     <p className="text-sm text-muted-foreground">
-                        Your account profile may be initializing. If this persists, please ensure your company profile is complete.
+                        Your account profile may still be initializing in the industrial brain. If this persists, please ensure your company profile is complete.
                     </p>
-                    <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
-                        Retry Connection
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                            <Link href="/account?view=profile">Complete Profile</Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => window.location.reload()}>
+                            Retry Connection
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
         );

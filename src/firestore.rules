@@ -20,7 +20,7 @@ service cloud.firestore {
       );
     }
 
-    // Direct check if the user is the owner of a company based on parent data
+    // Direct check if the user is the owner of a company
     function isCompanyOwner(cid) {
       return isSignedIn() && (
         cid == request.auth.uid ||
@@ -40,7 +40,6 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // These MUST be defined with the /{path=**} prefix to be valid for group queries.
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
@@ -84,7 +83,7 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Explicit rules for sub-collections to ensure 'list' works for members
+      // Explicit sub-collection rules to ensure list/get/write work for owners and members
       match /supportMessages/{id} { 
         allow read, write: if isMember(companyId) || isCompanyOwner(companyId); 
       }
