@@ -1,213 +1,145 @@
 
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, PlusCircle, AlertTriangle, Truck, Edit, ArrowLeft, Eye } from 'lucide-react';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
-import { useToast } from '@/hooks/use-toast';
-import { usePermissions } from '@/hooks/use-permissions';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { LoadWizard } from './load-wizard';
+import { Loader2, PlusCircle, Truck, ClipboardList, Handshake, Search, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { useUser, useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
+import { doc, collection, query, orderBy } from 'firebase/firestore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PostLoadWizard } from './loads/post-load-wizard';
+import { BrokerAppointmentWizard } from './loads/broker-appointment-wizard';
+import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-
-const statusColors: { [key: string]: 'default' | 'secondary' } = {
-    active: 'default',
-    inactive: 'secondary',
-};
 
 export default function LoadBoardContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
-    const { toast } = useToast();
-    const router = useRouter();
-    const searchParams = useSearchParams();
+    const [view, setView] = useState<'overview' | 'post-wizard' | 'broker-wizard'>('overview');
 
-    const [view, setView] = useState<'overview' | 'wizard'>('overview');
-    const [isCreating, setIsCreating] = useState(false);
-    const { can, isLoading: arePermissionsLoading } = usePermissions();
-
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, `users/${user.uid}`);
-    }, [firestore, user]);
-    const { data: userData, isLoading: isUserDataLoading, forceRefresh: forceRefreshUser } = useDoc(userDocRef);
-
-    const companyDocRef = useMemoFirebase(() => {
-        if (!firestore || !userData?.companyId) return null;
-        return doc(firestore, `companies/${userData.companyId}`);
-    }, [firestore, userData?.companyId]);
-    const { data: companyData, isLoading: isCompanyLoading, forceRefresh: forceRefreshCompany } = useDoc(companyDocRef);
-    
-    const loadBoardRef = useMemoFirebase(() => {
-        if (!firestore || !companyData?.loadBoardId || !userData?.companyId) return null;
-        return doc(firestore, `companies/${userData.companyId}/loadBoards/${companyData.loadBoardId}`);
-    }, [firestore, companyData?.loadBoardId, userData?.companyId]);
-    
-    const { data: userLoadBoard, isLoading: isLoadBoardLoading, forceRefresh: forceRefreshLoadBoard } = useDoc(loadBoardRef);
-
-    const loadsQuery = useMemoFirebase(() => {
-      if (!firestore || !companyData?.loadBoardId || !userData?.companyId) return null;
-      return collection(firestore, `companies/${userData.companyId}/loadBoards/${companyData.loadBoardId}/loads`);
-    }, [firestore, companyData?.loadBoardId, userData?.companyId]);
-    const { data: loads } = useCollection(loadsQuery);
-
-    useEffect(() => {
-        if (searchParams.get('created') === 'true' && companyData?.loadBoardId) {
-            setView('wizard');
-            router.replace('/account?view=load-board', { scroll: false });
-        }
-    }, [searchParams, companyData, router]);
-
-    const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading || arePermissionsLoading;
-
-    const forceRefreshAll = useCallback(() => {
-        forceRefreshUser();
-        forceRefreshCompany();
-        if (forceRefreshLoadBoard) {
-          forceRefreshLoadBoard();
-        }
-    }, [forceRefreshUser, forceRefreshCompany, forceRefreshLoadBoard]);
-
-    const handleCreateLoadBoard = async () => {
-        if (!user || !userData?.companyId) {
-            toast({ variant: 'destructive', title: 'User or company not found.' });
-            return;
-        }
-        setIsCreating(true);
-
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error('Authentication token not found.');
-
-            const response = await fetch('/api/createLoadBoard', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to create load board.');
-
-            toast({ title: 'Load Board Created!', description: "You can now start posting loads." });
-            await forceRefreshAll();
-            router.push('/account?view=load-board&created=true');
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Error', description: e.message });
-        } finally {
-            setIsCreating(false);
-        }
-    };
-
-    const canPostLoad = can('create', 'loads');
-    const loadBoardExists = !!companyData?.loadBoardId;
-    
-    const handleBackToOverview = () => {
-        setView('overview');
-        forceRefreshAll();
-    }
-    
-    const renderContent = () => {
-        if (view === 'wizard' && userLoadBoard) {
-            return <LoadWizard loadBoard={userLoadBoard} onUpdate={forceRefreshAll} />;
-        }
-
-        if (loadBoardExists) {
-            if (isLoadBoardLoading || !userLoadBoard) {
-                return <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /><p className="ml-4">Loading your load board...</p></div>;
-            }
-
-            const boardStatus = userLoadBoard.status || 'inactive';
-
-            return (
-                 <div className="space-y-6">
-                    <div className="p-6 border rounded-lg bg-muted/50">
-                        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                            <div>
-                                <h3 className="text-xl font-semibold">{userLoadBoard.boardName}</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">Status:</span>
-                                <Badge variant={statusColors[boardStatus] || 'secondary'} className="capitalize text-base">
-                                    {boardStatus.replace(/_/g, ' ')}
-                                </Badge>
-                            </div>
-                        </div>
-                        <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t">
-                            <div>
-                                <p className="text-sm font-medium">Loads Posted</p>
-                                <p className="text-2xl font-bold">{loads?.length || 0}</p>
-                            </div>
-                            <div className="flex gap-2">
-                               {userLoadBoard.status === 'active' && (
-                                    <Button asChild variant="outline">
-                                        <Link href={`/mall/loads`} target="_blank">
-                                            <Eye className="mr-2 h-4 w-4" /> View Live Load Board
-                                        </Link>
-                                    </Button>
-                                )}
-                                <Button onClick={() => setView('wizard')}>
-                                    <Edit className="mr-2 h-4 w-4" /> Manage Load Board
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        return (
-            <div className="text-center py-20 border-2 border-dashed rounded-lg">
-                <Truck className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-xl font-semibold">You don't have a load board yet.</h3>
-                <p className="mt-2 text-muted-foreground">To post loads to the marketplace, you first need to activate your public load board.</p>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="inline-block mt-4">
-                                <Button onClick={handleCreateLoadBoard} disabled={isCreating || !canPostLoad}>
-                                    {isCreating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                    Create My Load Board
-                                </Button>
-                            </div>
-                        </TooltipTrigger>
-                        {!canPostLoad && (
-                            <TooltipContent>
-                                <p className="flex items-center gap-2"><AlertTriangle className="h-4 w-4" /> Your plan does not include this feature. Please upgrade.</p>
-                            </TooltipContent>
-                        )}
-                    </Tooltip>
-                </TooltipProvider>
-            </div>
+    // Fetch verified broker agreements
+    const agreementsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.companyId) return null;
+        return query(
+            collection(firestore, `companies/${user.companyId}/brokerAgreements`),
+            orderBy('createdAt', 'desc')
         );
-    };
+    }, [firestore, user?.companyId]);
+    const { data: agreements, isLoading: areAgreementsLoading } = useCollection(agreementsQuery);
+
+    // Fetch posted loads
+    const loadsQuery = useMemoFirebase(() => {
+        if (!firestore || !user?.companyId) return null;
+        return query(
+            collection(firestore, `companies/${user.companyId}/loadBoard/loads`),
+            orderBy('createdAt', 'desc')
+        );
+    }, [firestore, user?.companyId]);
+    const { data: myLoads, isLoading: areLoadsLoading } = useCollection(loadsQuery);
+
+    const hasVerifiedAgreement = agreements?.some(a => a.status === 'verified');
+
+    if (isUserLoading || areAgreementsLoading || areLoadsLoading) {
+        return <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
+    }
+
+    if (view === 'post-wizard') {
+        return <PostLoadWizard agreements={agreements || []} onComplete={() => setView('overview')} />;
+    }
+
+    if (view === 'broker-wizard') {
+        return <BrokerAppointmentWizard onComplete={() => setView('overview')} />;
+    }
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="flex items-center gap-2"><Truck /> My Load Board</CardTitle>
-                        <CardDescription>
-                            {loadBoardExists ? `Manage your load board: ${userLoadBoard?.boardName || '...'}` : "Create and manage your public-facing load board."}
-                        </CardDescription>
-                    </div>
-                     {view === 'wizard' && (
-                        <Button variant="outline" onClick={handleBackToOverview}>
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Overview
-                        </Button>
-                    )}
+        <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                        <Truck className="h-8 w-8 text-primary" />
+                        Loads & Brokerage Mall
+                    </h1>
+                    <p className="text-muted-foreground mt-1">Manage your subcontractor appointments and professional load postings.</p>
                 </div>
-            </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-20">
-                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    </div>
-                ) : renderContent()}
-            </CardContent>
-        </Card>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setView('broker-wizard')} className="gap-2 font-bold">
+                        <Handshake className="h-4 w-4" /> Subcontractor Appointment
+                    </Button>
+                    <Button onClick={() => setView('post-wizard')} disabled={!hasVerifiedAgreement} className="gap-2 font-bold shadow-lg">
+                        <PlusCircle className="h-4 w-4" /> Post New Load
+                    </Button>
+                </div>
+            </div>
+
+            {!hasVerifiedAgreement && (
+                <Card className="bg-amber-50 border-amber-200">
+                    <CardContent className="p-6 flex items-start gap-4">
+                        <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
+                        <div className="text-left">
+                            <h4 className="font-bold text-amber-900">Brokerage Authorization Required</h4>
+                            <p className="text-sm text-amber-800 leading-relaxed mt-1">
+                                To post loads to the board, you must first upload a signed **Subcontractor Appointment Letter** from your load provider. This allows the platform to verify the source of the work.
+                            </p>
+                            <Button variant="link" onClick={() => setView('broker-wizard')} className="p-0 h-auto text-amber-900 font-bold underline mt-2">
+                                Start Appointment Process <ArrowRight className="ml-1 h-3 w-3" />
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
+            <Tabs defaultValue="my-loads" className="w-full">
+                <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start">
+                    <TabsTrigger value="my-loads" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                        <ClipboardList className="h-3.5 w-3.5" /> My Posted Loads
+                    </TabsTrigger>
+                    <TabsTrigger value="agreements" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                        <ShieldCheck className="h-3.5 w-3.5" /> Appointments
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="my-loads" className="mt-8">
+                    <Card className="border-none shadow-xl">
+                        <CardContent className="pt-6">
+                            {myLoads && myLoads.length > 0 ? (
+                                <DataTable 
+                                    data={myLoads}
+                                    columns={[
+                                        { header: 'Route', cell: ({row}) => <div className="font-bold flex items-center gap-2">{row.original.origin} <ArrowRight className="h-3 w-3 opacity-50" /> {row.original.destination}</div> },
+                                        { accessorKey: 'cargoType', header: 'Cargo' },
+                                        { header: 'Payout', cell: ({row}) => <span className="font-black text-primary">{new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(row.original.haulierPayout)}</span> },
+                                        { header: 'Status', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px] font-black">{row.original.status}</Badge> }
+                                    ]}
+                                />
+                            ) : (
+                                <div className="py-20 text-center text-muted-foreground italic">No loads posted yet.</div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="agreements" className="mt-8">
+                    <Card className="border-none shadow-xl">
+                        <CardContent className="pt-6">
+                            {agreements && agreements.length > 0 ? (
+                                <DataTable 
+                                    data={agreements}
+                                    columns={[
+                                        { accessorKey: 'providerName', header: 'Load Provider' },
+                                        { header: 'Commission', cell: ({row}) => <span className="font-bold">{row.original.commissionRate}%</span> },
+                                        { header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'verified' ? 'default' : 'secondary'} className="capitalize">{row.original.status}</Badge> },
+                                        { header: 'Signed Doc', cell: ({row}) => <Button variant="ghost" size="sm" asChild className="h-7 text-[10px] font-black uppercase"><a href={row.original.agreementUrl} target="_blank">View File</a></Button> }
+                                    ]}
+                                />
+                            ) : (
+                                <div className="py-20 text-center text-muted-foreground italic">No appointments recorded.</div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
     );
 }

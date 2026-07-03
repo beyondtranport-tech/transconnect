@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -13,38 +14,52 @@
         "phone": { "type": "string" },
         "companyId": { "type": ["string", "null"], "description": "The ID of the company this user belongs to in the /companies collection. Null for partners." },
         "role": { "type": "string", "enum": ["owner", "staff", "partner"], "description": "The user's role in the system." },
-        "passwordChangeRequired": { "type": "boolean", "description": "If true, the user must change their password on next login." },
+        "permissions": { "type": "array", "items": { "type": "string" }, "description": "List of 'action:resource' permission strings." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
       "required": ["id", "firstName", "lastName", "email", "role"]
     },
-    "Partner": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Partner",
+    "BrokerAgreement": {
+      "title": "Broker Agreement",
       "type": "object",
-      "description": "Represents a strategic partner, ISA, Investor, Developer, Supplier, Finance Co or Transporter.",
+      "description": "Formal appointment of a member as a subcontractor for a load provider.",
       "properties": {
         "id": { "type": "string" },
-        "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "phone": { "type": "string" },
-        "mobile": { "type": "string" },
-        "companyName": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"] },
-        "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
-        "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
-        "address": { "type": "string" },
-        "website": { "type": "string" },
-        "assigneeId": { "type": "string", "description": "UID of the allocated platform staff member." },
-        "lastOpenedAt": { "type": "object", "description": "Timestamp of the last email open event." },
-        "lastAccessedAt": { "type": "object", "description": "Timestamp of the last app landing event." },
+        "brokerId": { "type": "string", "description": "Company ID of the member acting as broker." },
+        "providerId": { "type": "string", "description": "ID of the company providing the work (from registry)." },
+        "providerName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "verified", "rejected"] },
+        "agreementUrl": { "type": "string", "description": "URL to the signed appointment letter." },
+        "commissionRate": { "type": "number", "description": "Agreed percentage split for the broker." },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["brokerId", "providerId", "status"]
+    },
+    "Load": {
+      "title": "Load Listing",
+      "type": "object",
+      "description": "A specific freight load posted on the board.",
+      "properties": {
+        "id": { "type": "string" },
+        "brokerId": { "type": "string" },
+        "origin": { "type": "string" },
+        "destination": { "type": "string" },
+        "cargoType": { "type": "string" },
+        "requiredEquipment": { "type": "array", "items": { "type": "string" } },
+        "weight": { "type": "number" },
+        "totalValue": { "type": "number", "description": "What the provider pays." },
+        "brokerFee": { "type": "number" },
+        "platformFee": { "type": "number" },
+        "haulierPayout": { "type": "number", "description": "What the haulier receives." },
+        "status": { "type": "string", "enum": ["active", "negotiating", "assigned", "completed", "cancelled"] },
+        "takerId": { "type": "string", "description": "Company ID of the haulier who accepted." },
+        "driverId": { "type": "string", "description": "ID of the allocated driver." },
+        "vehicleId": { "type": "string", "description": "ID of the allocated fleet asset." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
-      "required": ["firstName", "lastName", "email", "type"]
+      "required": ["brokerId", "origin", "destination", "cargoType", "status"]
     }
   },
   "auth": {
@@ -57,10 +72,13 @@
         "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" }, "description": "User profiles." }
       },
       {
-        "path": "/partners/{partnerId}",
-        "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
+        "path": "/companies/{companyId}/brokerAgreements/{agreementId}",
+        "definition": { "entityName": "BrokerAgreement", "schema": { "$ref": "#/entities/BrokerAgreement" }, "description": "Member's subcontractor appointments." }
+      },
+      {
+        "path": "/companies/{companyId}/loadBoard/loads/{loadId}",
+        "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Private load registry." }
       }
-    ],
-    "reasoning": "Synchronized rules to explicitly support collection group queries for administrators across all platform data nodes."
+    ]
   }
 }
