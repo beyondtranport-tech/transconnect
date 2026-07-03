@@ -229,13 +229,13 @@ export default function SupportChatContent() {
                     </div>
                 </ScrollArea>
                 <div className="mt-auto flex items-center gap-2 pt-4 border-t">
-                    <Input 
+                    <input 
                         placeholder={companyId ? "Type your question..." : "Waiting for profile..."}
                         value={inputFieldText}
                         onChange={e => setInputFieldText(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
                         disabled={isSending || !companyId}
-                        className="rounded-full bg-slate-50"
+                        className="flex h-10 w-full rounded-full border border-input bg-slate-50 px-4 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <Button onClick={handleSend} disabled={isSending || !companyId || !inputFieldText.trim()} size="icon" className="rounded-full h-10 w-10 shrink-0">
                         {isSending ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4" />}
