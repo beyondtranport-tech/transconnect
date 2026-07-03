@@ -48,6 +48,7 @@ export default function SupportChatContent() {
 
     const messagesQuery = useMemoFirebase(() => {
         if (!firestore || !companyId) return null;
+        // The path MUST be companies/{id}/supportMessages to match the new rules
         return query(
             collection(firestore, 'companies', companyId, 'supportMessages'),
             orderBy('timestamp', 'asc')

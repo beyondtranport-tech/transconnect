@@ -126,8 +126,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       ...authState,
       ...userData,
       companyData,
-      // Engineering Note: UID fallback removed to prevent invalid path queries
-      // during the transition between auth sign-in and profile doc hydration.
+      // Engineering Note: Deterministic ID provided only when verified.
+      // Removed UID fallback to prevent incorrect path queries during rule evaluation.
       companyId: userData?.companyId || null
     };
   }, [authState, userData, companyData]);

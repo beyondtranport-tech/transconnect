@@ -17,6 +17,18 @@ service cloud.firestore {
       );
     }
 
+    // Atomic membership check: Verifies identity against the user's own profile doc.
+    // This is verifiable during collection-wide 'list' operations.
+    function isMember(cid) {
+      return isAdmin() || (
+        isSignedIn() && 
+        cid != null && (
+          cid == request.auth.uid || 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
+        )
+      );
+    }
+
     // --- STANDARD PATH RULES ---
 
     match /users/{userId} {
@@ -31,89 +43,27 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // ATOMIC AUTHORIZATION: Use parent doc properties to avoid rules deadlock during 'list' queries.
-      // We check if the user matches the companyId (for UID-as-ID cases) or the explicit ownerId field.
-      allow read, list: if isAdmin() || (isSignedIn() && (
-        request.auth.uid == companyId ||
-        get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-      ));
-      
+      allow read: if isMember(companyId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // SUBCOLLECTION RULES: Explicitly inheriting atomic parent-doc authorization
-      match /supportMessages/{id} { 
-        allow read, write, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-      }
-      match /transactions/{id} { 
-        allow read, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-        allow write: if isAdmin(); 
-      }
-      match /walletPayments/{id} { 
-        allow read, write, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-      }
-      match /enquiries/{id} { 
-        allow read, write, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-      }
-      match /quotes/{id} { 
-        allow read, write, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-      }
-      match /tasks/{id} { 
-        allow read, write, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-      }
-      match /payoutRequests/{id} { 
-        allow read, write, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-      }
-      match /searchLogs/{id} { 
-        allow read, write, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-      }
-      match /facilities/{id} { 
-        allow read, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-        allow write: if isAdmin(); 
-      }
-      match /staff/{id} { 
-        allow read, list: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-        allow write: if isAdmin(); 
-      }
+      // Sub-collection matches using explicit isMember authorization
+      match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
+      match /transactions/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
+      match /enquiries/{id} { allow read, write, list: if isMember(companyId); }
+      match /quotes/{id} { allow read, write, list: if isMember(companyId); }
+      match /tasks/{id} { allow read, write, list: if isMember(companyId); }
+      match /payoutRequests/{id} { allow read, write, list: if isMember(companyId); }
+      match /searchLogs/{id} { allow read, write, list: if isMember(companyId); }
+      match /facilities/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /staff/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isAdmin() || (isSignedIn() && (
-          request.auth.uid == companyId ||
-          get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid
-        )); 
-        match /products/{prodId} { allow read: if true; allow write: if isAdmin() || (isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid)); }
-        match /agreements/{agId} { allow read, write: if isAdmin() || (isSignedIn() && (request.auth.uid == companyId || get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid)); }
+        allow write: if isMember(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
     }
 
