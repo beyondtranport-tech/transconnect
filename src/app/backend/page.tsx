@@ -6,6 +6,8 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
@@ -45,7 +47,7 @@ import {
   Truck,
   ClipboardList,
 } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -148,6 +150,7 @@ function BackendContent() {
       case 'support-inbox': return <SupportChatInbox />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
+      case 'buy-sell-oversight': return <div className="p-8 text-center"><Store className="mx-auto h-12 w-12 text-muted-foreground opacity-20 mb-4"/><h3 className="text-xl font-bold">Buy and Sell Oversight</h3><p className="text-muted-foreground">Inventory and listing management coming soon.</p></div>;
       
       // Member Success & Growth
       case 'success-engine': return <MemberSuccessEngine />;
@@ -190,8 +193,9 @@ function BackendContent() {
 
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
-  const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox', 'market-origination', 'loads-oversight'].includes(activeView);
-  const isSuccessActive = ['success-engine', 'loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
+  const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
+  const isMallsActive = ['market-origination', 'loads-oversight', 'buy-sell-oversight', 'success-engine'].includes(activeView);
+  const isSuccessActive = ['loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
   const isRevenueActive = [
     'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
     'commissions-malls', 'commissions-isa', 'incentives-sales'
@@ -228,15 +232,37 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'members'} onClick={() => navigate('members')}><Users />Member Roster</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'wallet-transactions'} onClick={() => navigate('wallet-transactions')}><Wallet />Wallet Ledger</SidebarMenuSubButton></SidebarMenuSubItem>
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
-                    <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><Truck className="h-3.5 w-3.5" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
+            </SidebarGroup>
 
+            <SidebarGroup>
+                <SidebarGroupLabel>Malls</SidebarGroupLabel>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Finance Mall" isActive={activeView === 'market-origination' || activeView === 'success-engine'}><Landmark /><span>Finance Mall</span></SidebarMenuButton>
+                        <SidebarMenuSub>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
+                             <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'success-engine'} onClick={() => navigate('success-engine')}><PieChart />Conversion Engine</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Loads Mall" isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}>
+                            <Truck /><span>Loads Mall</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Buy and Sell" isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}>
+                            <Store /><span>Buy and Sell</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarGroup>
+
+            <SidebarGroup>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Member Success" isActive={isSuccessActive}><TrendingUp /><span>Success Engine</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Member Success" isActive={isSuccessActive}><TrendingUp /><span>Engagement</span></SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'success-engine'} onClick={() => navigate('success-engine')}><PieChart />Conversion Engine</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-overview'} onClick={() => navigate('loyalty-overview')}><Award />Loyalty & Tiers</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Data Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shop Management</SidebarMenuSubButton></SidebarMenuSubItem>
