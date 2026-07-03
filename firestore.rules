@@ -17,14 +17,15 @@ service cloud.firestore {
       );
     }
 
-    // --- PARENT-FIRST OWNERSHIP MODEL ---
-    // Specifically optimized for collection-level queries (list).
-    // Verifies the user against the parent company document's ownerId.
-    function isOwner(cid) {
+    // --- ATOMIC MEMBERSHIP CHECK ---
+    // Optimized for collection-level 'list' queries.
+    // Checks if the user is the owner of the company OR a verified member via their own profile.
+    function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && (
             cid == request.auth.uid ||
-            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid ||
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
     }
@@ -43,27 +44,27 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow read: if isOwner(companyId);
+      allow read: if isMember(companyId);
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // SUBCOLLECTION RULES: Explicit list/get authorization for data owners.
-      match /supportMessages/{id} { allow get, list, write: if isOwner(companyId); }
-      match /transactions/{id} { allow get, list: if isOwner(companyId); allow write: if isAdmin(); }
-      match /walletPayments/{id} { allow get, list, write: if isOwner(companyId); }
-      match /enquiries/{id} { allow get, list, write: if isOwner(companyId); }
-      match /payoutRequests/{id} { allow get, list, write: if isOwner(companyId); }
-      match /searchLogs/{id} { allow get, list, write: if isOwner(companyId); }
-      match /quotes/{id} { allow get, list, write: if isOwner(companyId); }
-      match /tasks/{id} { allow get, list, write: if isOwner(companyId); }
-      match /facilities/{id} { allow get, list: if isOwner(companyId); allow write: if isAdmin(); }
-      match /staff/{id} { allow get, list: if isOwner(companyId); allow write: if isAdmin(); }
+      // SUBCOLLECTION RULES: Explicit authorization for members/owners
+      match /supportMessages/{id} { allow get, list, write: if isMember(companyId); }
+      match /transactions/{id} { allow get, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /walletPayments/{id} { allow get, list, write: if isMember(companyId); }
+      match /enquiries/{id} { allow get, list, write: if isMember(companyId); }
+      match /payoutRequests/{id} { allow get, list, write: if isMember(companyId); }
+      match /searchLogs/{id} { allow get, list, write: if isMember(companyId); }
+      match /quotes/{id} { allow get, list, write: if isMember(companyId); }
+      match /tasks/{id} { allow get, list, write: if isMember(companyId); }
+      match /facilities/{id} { allow get, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /staff/{id} { allow get, list: if isMember(companyId); allow write: if isAdmin(); }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isOwner(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isOwner(companyId); }
-        match /agreements/{agId} { allow read, write: if isOwner(companyId); }
+        allow write: if isMember(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
     }
 
@@ -123,11 +124,8 @@ service cloud.firestore {
     match /{path=**}/vehicleListings/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/loads/{id} { allow read, write: if isAdmin(); }
 
-    // Global Admin Override (Final Safety)
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
   }
 }
-
-// Atomic Identity Token: 2026-03-20T12:00:00Z

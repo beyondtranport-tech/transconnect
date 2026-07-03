@@ -37,12 +37,15 @@ export default function SupportChatContent() {
     const { toast } = useToast();
     const [inputFieldText, setInputFieldText] = useState('');
     const [isSending, setIsSending] = useState(false);
+    const [isRetrying, setIsRetrying] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     // Filter out initial UID placeholders to prevent invalid path queries
     const companyId = useMemo(() => {
-        const id = user?.companyId || user?.companyData?.id || '';
-        return (id && id !== user?.uid) ? id : '';
+        if (!user) return '';
+        // If the profile is still being created/linked, companyId might temporarily be the UID
+        const id = user.companyId || user.companyData?.id || '';
+        return (id && id !== user.uid) ? id : '';
     }, [user]);
 
     const messagesQuery = useMemoFirebase(() => {
@@ -53,9 +56,9 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
-    const { data: messages, isLoading: areMessagesLoading, error: permissionError } = useCollection<SupportMessage>(messagesQuery);
+    const { data: messages, isLoading: areMessagesLoading, error: permissionError, forceRefresh } = useCollection<SupportMessage>(messagesQuery);
 
-    const isLoading = isUserLoading || areMessagesLoading;
+    const isLoading = isUserLoading || areMessagesLoading || isRetrying;
     
     useEffect(() => {
         if (scrollAreaRef.current) {
@@ -65,6 +68,12 @@ export default function SupportChatContent() {
             }
         }
     }, [messages]);
+
+    const handleRetry = () => {
+        setIsRetrying(true);
+        forceRefresh();
+        setTimeout(() => setIsRetrying(false), 2000);
+    };
 
     const handleSend = async () => {
         if (!inputFieldText.trim() || !user || !companyId) return;
@@ -134,46 +143,48 @@ export default function SupportChatContent() {
 
     if (permissionError) {
         return (
-            <Card className="border-destructive bg-destructive/5 text-left">
-                <CardHeader className="text-left">
-                    <CardTitle className="text-destructive flex items-center gap-2 text-left">
-                        <AlertTriangle className="h-5 w-5" />
-                        Access Restricted
-                    </CardTitle>
-                    <CardDescription className="text-left text-destructive/80">
-                        The industrial brain is verifying your member standing.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4 text-left text-foreground">
-                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Your member profile is still being synchronized with the secure industrial registry. This typically takes 5-10 seconds after sign-in.
-                    </p>
-                    <div className="flex gap-2 text-left">
-                        <Button variant="outline" size="sm" onClick={() => window.location.reload()} className="gap-2">
-                            <RefreshCcw className="h-3 w-3" /> Retry Sync
+            <div className="flex flex-col items-center justify-center h-[50vh] p-4 text-center">
+                <Card className="border-destructive bg-destructive/5 max-w-md w-full">
+                    <CardHeader>
+                        <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-4" />
+                        <CardTitle className="text-destructive font-black uppercase text-xl">Access Restricted</CardTitle>
+                        <CardDescription>The industrial brain is verifying your member standing.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground leading-relaxed">
+                            Your member profile is still being synchronized with the secure industrial registry. This typically takes a few moments after sign-in.
+                        </p>
+                    </CardContent>
+                    <CardFooter className="flex flex-col gap-2">
+                        <Button onClick={handleRetry} className="w-full gap-2 font-bold" disabled={isRetrying}>
+                            {isRetrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
+                            Retry Connection
                         </Button>
-                    </div>
-                </CardContent>
-            </Card>
+                        <Button variant="ghost" asChild className="text-xs font-bold uppercase tracking-widest">
+                            <Link href="/account">Return to Dashboard</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
         );
     }
 
     return (
-        <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left text-foreground">
+        <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left">
             <CardHeader className="px-0 text-left">
-                <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline"><MessageSquare /> Support Chat</CardTitle>
-                <CardDescription className="text-left text-muted-foreground">Direct line to our AI assistant and platform support team.</CardDescription>
+                <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline"><MessageSquare /> Support Chat</CardTitle>
+                <CardDescription className="text-muted-foreground">Direct line to our AI assistant and platform support team.</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left text-foreground">
+            <CardContent className="flex-1 flex flex-col min-h-[0px] p-0">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
-                    <div className="space-y-4 pt-2 text-left text-foreground">
+                    <div className="space-y-4 pt-2">
                         {isLoading && !messages ? (
                              <div className="flex justify-center items-center h-full py-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
                         ) : !companyId && !isUserLoading ? (
-                            <Alert variant="destructive" className="border-none bg-destructive/10 text-left text-foreground">
+                            <Alert variant="destructive" className="border-none bg-destructive/10 text-left">
                                 <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="font-bold text-left">Profile Incomplete</AlertTitle>
-                                <AlertDescription className="text-left">
+                                <AlertTitle className="font-bold">Profile Incomplete</AlertTitle>
+                                <AlertDescription>
                                     Please complete your company profile to enable secure support chat.
                                     <Button asChild variant="link" className="p-0 h-auto ml-1">
                                         <Link href="/account?view=profile">Go to My Profile</Link>
@@ -201,8 +212,8 @@ export default function SupportChatContent() {
                                             isAI ? "bg-blue-100 text-blue-900 rounded-bl-none" :
                                             "bg-white border rounded-bl-none"
                                         )}>
-                                            <p className="font-bold text-[10px] mb-1 opacity-70 uppercase tracking-widest leading-none text-left">{msg.senderName || 'Staff'}</p>
-                                            <p className="leading-relaxed text-left">{msg.text}</p>
+                                            <p className="font-black text-[10px] mb-1 opacity-70 uppercase tracking-widest leading-none">{msg.senderName || 'Staff'}</p>
+                                            <p className="leading-relaxed">{msg.text}</p>
                                             <p className="text-[9px] opacity-40 mt-1 text-right">{formatDate(msg.timestamp)}</p>
                                         </div>
                                         {isMember && (
@@ -217,7 +228,7 @@ export default function SupportChatContent() {
                             })
                         )}
                          {messages?.length === 0 && !isLoading && (
-                            <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30 text-foreground">
+                            <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30">
                                 <MessageSquare className="h-12 w-12 mx-auto mb-4" />
                                 <p className="text-sm font-bold uppercase tracking-[0.2em]">Secure Channel Active</p>
                                 <p className="text-xs mt-2">Your conversation will be logged for professional oversight.</p>
@@ -225,7 +236,7 @@ export default function SupportChatContent() {
                         )}
                     </div>
                 </ScrollArea>
-                <div className="mt-auto flex items-center gap-2 pt-4 border-t text-left text-foreground">
+                <div className="mt-auto flex items-center gap-2 pt-4 border-t">
                     <input 
                         placeholder={companyId ? "Ask the AI assistant..." : "Initializing profile..."}
                         value={inputFieldText}
