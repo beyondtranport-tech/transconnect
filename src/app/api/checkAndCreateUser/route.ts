@@ -1,13 +1,16 @@
-
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
+/**
+ * STRATEGIC REGISTRATION API
+ * Performs forensic registry lookups to ensure invited partners and leads 
+ * are correctly linked to their existing company nodes.
+ */
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
   if (initError || !app) {
-    console.error("Admin SDK init error in checkAndCreateUser:", initError);
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 });
   }
 
@@ -36,25 +39,39 @@ export async function POST(req: NextRequest) {
     try {
       const body = await req.json();
       referrerId = body.referrerId;
-      declaredPosition = body.role; // Accept the declared position from the frontend
+      declaredPosition = body.role;
     } catch (e) {}
 
     const db = getFirestore(app);
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const userDocSnap = await userDocRef.get();
 
+    // 1. Check if profile already exists
     if (userDocSnap.exists && userDocSnap.data()?.companyId) {
       return NextResponse.json({ success: true, message: 'User already exists.' });
     }
     
-    const leadsSnap = await db.collection('leads')
-        .where('email', '==', firebaseUser.email.toLowerCase())
-        .limit(1)
-        .get();
+    // 2. FORENSIC LOOKUP: Check Leads AND Partners registries
+    const emailLower = firebaseUser.email.toLowerCase();
+    const [leadsSnap, partnersSnap] = await Promise.all([
+        db.collection('leads').where('email', '==', emailLower).limit(1).get(),
+        db.collection('partners').where('email', '==', emailLower).limit(1).get()
+    ]);
         
-    let leadData = null;
-    if (!leadsSnap.empty) {
-        leadData = leadsSnap.docs[0].data();
+    let existingRecord = null;
+    let recordSource = '';
+
+    if (!partnersSnap.empty) {
+        existingRecord = partnersSnap.docs[0].data();
+        recordSource = 'partner';
+        await partnersSnap.docs[0].ref.update({
+            status: 'active',
+            invitationStatus: 'registered',
+            updatedAt: FieldValue.serverTimestamp()
+        });
+    } else if (!leadsSnap.empty) {
+        existingRecord = leadsSnap.docs[0].data();
+        recordSource = 'lead';
         await leadsSnap.docs[0].ref.update({
             status: 'active',
             convertedAt: FieldValue.serverTimestamp(),
@@ -63,20 +80,28 @@ export async function POST(req: NextRequest) {
     }
 
     const batch = db.batch();
-    const companyRef = db.collection('companies').doc();
     
-    const displayName = firebaseUser.displayName.trim();
-    const companyName = leadData?.companyName || (displayName ? `${displayName}'s Company` : 'My Company');
+    // 3. Resolve Company ID (Use existing from registry or create new)
+    let companyIdToUse: string;
+    let companyRef;
+    
+    if (existingRecord?.id && recordSource === 'partner') {
+        // This person was invited as a Strategic Partner (ISA, Investor, etc.)
+        // Their ID is the Company ID
+        companyIdToUse = existingRecord.id;
+        companyRef = db.collection('companies').doc(companyIdToUse);
+    } else {
+        // New signup or converted lead
+        companyRef = db.collection('companies').doc();
+        companyIdToUse = companyRef.id;
+    }
 
-    /**
-     * Strategic Branching:
-     * Transporters use a 'service' profile structure.
-     * All others (Vendors, Partners, etc.) use the standard 'vendor' structure for now.
-     */
+    const displayName = firebaseUser.displayName.trim();
+    const companyName = existingRecord?.companyName || (displayName ? `${displayName}'s Company` : 'My Company');
     const shopType = declaredPosition === 'transporter' ? 'transporter' : 'vendor';
 
     const newCompanyData: any = {
-        id: companyRef.id,
+        id: companyIdToUse,
         ownerId: firebaseUser.uid,
         companyName: companyName,
         membershipId: 'free',
@@ -88,23 +113,23 @@ export async function POST(req: NextRequest) {
         status: 'active',
         shopType: shopType, 
         declaredRole: declaredPosition,
-        leadId: leadData?.id || null,
+        leadId: existingRecord?.id || null,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
     
-    if (referrerId) {
-        newCompanyData.referrerId = referrerId;
+    if (referrerId || existingRecord?.referrerId) {
+        newCompanyData.referrerId = referrerId || existingRecord?.referrerId;
     }
 
     const nameParts = (firebaseUser.displayName || '').split(' ');
     const newUserData = {
         id: firebaseUser.uid,
-        firstName: leadData?.firstName || userDocSnap.data()?.firstName || nameParts[0] || 'New',
-        lastName: leadData?.lastName || userDocSnap.data()?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
+        firstName: existingRecord?.firstName || userDocSnap.data()?.firstName || nameParts[0] || 'New',
+        lastName: existingRecord?.lastName || userDocSnap.data()?.lastName || (nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'User'),
         email: firebaseUser.email,
-        phone: leadData?.phone || userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
-        companyId: companyRef.id,
+        phone: existingRecord?.phone || userDocSnap.data()?.phone || firebaseUser.phoneNumber || '',
+        companyId: companyIdToUse,
         role: 'owner',
         declaredPosition: declaredPosition,
         updatedAt: FieldValue.serverTimestamp(),
@@ -117,9 +142,10 @@ export async function POST(req: NextRequest) {
             const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
             newCompanyData.rewardPoints = signupPoints;
             
-            if (referrerId) {
+            const finalRefId = referrerId || existingRecord?.referrerId;
+            if (finalRefId) {
                 const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
-                const referrerCompanyRef = db.collection('companies').doc(referrerId);
+                const referrerCompanyRef = db.collection('companies').doc(finalRefId);
                 batch.set(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) }, { merge: true });
             }
         } catch (pointError) {
@@ -127,12 +153,12 @@ export async function POST(req: NextRequest) {
         }
     }
     
-    batch.set(companyRef, newCompanyData);
+    batch.set(companyRef, newCompanyData, { merge: true });
     batch.set(userDocRef, newUserData, { merge: true });
     
     await batch.commit();
 
-    return NextResponse.json({ success: true, message: 'Member account created and branched by role.' });
+    return NextResponse.json({ success: true, message: 'Member account verified and synchronized.' });
 
   } catch (error: any) {
     console.error(`Error in checkAndCreateUser:`, error);

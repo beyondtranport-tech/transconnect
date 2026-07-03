@@ -19,7 +19,15 @@ service cloud.firestore {
 
     // --- ATOMIC IDENTITY CHECK ---
     // Refactored to avoid get() deadlocks during collection queries.
-    // Verifies if the authenticated user's profile document confirms membership to the target CID.
+    // Verifies access by checking the parent company document directly.
+    function isCompanyOwner(cid) {
+      return isSignedIn() && (
+        cid == request.auth.uid ||
+        get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+      );
+    }
+
+    // Checks membership via the user's own profile document (Atomic for list operations)
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && (
@@ -43,28 +51,28 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Explicit allow for list and get based on atomic membership
-      allow get, list: if isMember(companyId);
+      // Allow read/list based on membership or ownership
+      allow get, list: if isMember(companyId) || isCompanyOwner(companyId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // SUBCOLLECTION RULES: Explicit authorization for members/owners
-      match /supportMessages/{id} { allow get, list, write: if isMember(companyId); }
-      match /transactions/{id} { allow get, list: if isMember(companyId); allow write: if isAdmin(); }
-      match /walletPayments/{id} { allow get, list, write: if isMember(companyId); }
-      match /enquiries/{id} { allow get, list, write: if isMember(companyId); }
-      match /payoutRequests/{id} { allow get, list, write: if isMember(companyId); }
-      match /searchLogs/{id} { allow get, list, write: if isMember(companyId); }
-      match /quotes/{id} { allow get, list, write: if isMember(companyId); }
-      match /tasks/{id} { allow get, list, write: if isMember(companyId); }
-      match /facilities/{id} { allow get, list: if isMember(companyId); allow write: if isAdmin(); }
-      match /staff/{id} { allow get, list: if isMember(companyId); allow write: if isAdmin(); }
+      // SUBCOLLECTION RULES: Explicit authorization for members/owners using parent-doc properties
+      match /supportMessages/{id} { allow get, list, write: if isMember(companyId) || isCompanyOwner(companyId); }
+      match /transactions/{id} { allow get, list: if isMember(companyId) || isCompanyOwner(companyId); allow write: if isAdmin(); }
+      match /walletPayments/{id} { allow get, list, write: if isMember(companyId) || isCompanyOwner(companyId); }
+      match /enquiries/{id} { allow get, list, write: if isMember(companyId) || isCompanyOwner(companyId); }
+      match /payoutRequests/{id} { allow get, list, write: if isMember(companyId) || isCompanyOwner(companyId); }
+      match /searchLogs/{id} { allow get, list, write: if isMember(companyId) || isCompanyOwner(companyId); }
+      match /quotes/{id} { allow get, list, write: if isMember(companyId) || isCompanyOwner(companyId); }
+      match /tasks/{id} { allow get, list, write: if isMember(companyId) || isCompanyOwner(companyId); }
+      match /facilities/{id} { allow get, list: if isMember(companyId) || isCompanyOwner(companyId); allow write: if isAdmin(); }
+      match /staff/{id} { allow get, list: if isMember(companyId) || isCompanyOwner(companyId); allow write: if isAdmin(); }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isMember(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
-        match /agreements/{agId} { allow read, write: if isMember(companyId); }
+        allow write: if isMember(companyId) || isCompanyOwner(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId) || isCompanyOwner(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId) || isCompanyOwner(companyId); }
       }
     }
 

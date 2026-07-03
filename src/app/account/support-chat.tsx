@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, MessageSquare, Send, Bot, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { supportQuery } from '@/ai/flows/support-flow';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -40,12 +40,12 @@ export default function SupportChatContent() {
     const [isRetrying, setIsRetrying] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    // Filter out initial UID placeholders to prevent invalid path queries
+    // CRITICAL: Filter out invalid IDs to prevent computational deadlocks in rules engine
     const companyId = useMemo(() => {
         if (!user) return '';
-        // If the profile is still being created/linked, companyId might temporarily be null or the UID
+        // Prioritize the ID explicitly derived from the user document
         const id = user.companyId || user.companyData?.id || '';
-        // CRITICAL: Only allow the query if we have a real company ID (not the UID fallback)
+        // Only initiate query if we have a real Company ID (not the UID fallback)
         return (id && id !== user.uid) ? id : '';
     }, [user]);
 
@@ -57,6 +57,7 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
+    // Local error handling to suppress global layout crash
     const { data: messages, isLoading: areMessagesLoading, error: permissionError, forceRefresh } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading || isRetrying;
@@ -142,25 +143,28 @@ export default function SupportChatContent() {
         }
     };
 
-    // LOCAL ERROR HANDLING: Intercept permission errors to prevent global layout crash
+    // LOCAL PERMISSION UI: Intercept permission errors to prevent layout crash
     if (permissionError) {
         return (
-            <div className="flex flex-col items-center justify-center h-[50vh] p-4 text-center">
-                <Card className="border-destructive bg-destructive/5 max-w-md w-full">
+            <div className="flex flex-col items-center justify-center h-[60vh] p-4 text-center">
+                <Card className="border-destructive bg-destructive/5 max-w-md w-full shadow-lg">
                     <CardHeader>
                         <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-4" />
-                        <CardTitle className="text-destructive font-black uppercase text-xl">Access Restricted</CardTitle>
-                        <CardDescription>The industrial brain is verifying your member standing.</CardDescription>
+                        <CardTitle className="text-destructive font-black uppercase text-xl">Identity Verifying</CardTitle>
+                        <CardDescription>Our industrial brain is synchronizing your profile.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground leading-relaxed">
-                            Your member profile is still being synchronized with the secure industrial registry. This typically takes a few moments after sign-in.
+                            Your member node is being established in the registry. This handshake typically completes in a few moments.
                         </p>
+                        <div className="p-3 bg-white/50 rounded-lg font-mono text-[10px] text-destructive border border-destructive/10">
+                            Path: companies/{companyId}/supportMessages
+                        </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-2">
                         <Button onClick={handleRetry} className="w-full gap-2 font-bold" disabled={isRetrying}>
                             {isRetrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCcw className="h-4 w-4" />}
-                            Retry Connection
+                            Retry Identity Sync
                         </Button>
                         <Button variant="ghost" asChild className="text-xs font-bold uppercase tracking-widest">
                             <Link href="/account">Return to Dashboard</Link>
@@ -175,7 +179,7 @@ export default function SupportChatContent() {
         <Card className="h-[calc(100vh-10rem)] flex flex-col border-none shadow-none text-left">
             <CardHeader className="px-0 text-left">
                 <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left"><MessageSquare /> Support Chat</CardTitle>
-                <CardDescription className="text-muted-foreground text-left">Direct line to our AI assistant and platform support team.</CardDescription>
+                <CardDescription className="text-muted-foreground text-left">Direct line to our AI assistant and support team.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col min-h-[0px] p-0 text-left">
                 <ScrollArea className="flex-1 pr-4 -mr-4 mb-4" ref={scrollAreaRef as any}>
@@ -185,11 +189,11 @@ export default function SupportChatContent() {
                         ) : !companyId && !isUserLoading ? (
                             <Alert variant="destructive" className="border-none bg-destructive/10 text-left">
                                 <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle className="font-bold text-left">Profile Incomplete</AlertTitle>
+                                <AlertTitle className="font-bold text-left">Node Uninitialized</AlertTitle>
                                 <AlertDescription className="text-left">
-                                    Please complete your company profile to enable secure support chat.
+                                    Please complete your profile details to authorize this communication channel.
                                     <Button asChild variant="link" className="p-0 h-auto ml-1">
-                                        <Link href="/account?view=profile">Go to My Profile</Link>
+                                        <Link href="/account?view=profile">Edit Profile</Link>
                                     </Button>
                                 </AlertDescription>
                             </Alert>
@@ -232,15 +236,15 @@ export default function SupportChatContent() {
                          {messages?.length === 0 && !isLoading && (
                             <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30">
                                 <MessageSquare className="h-12 w-12 mx-auto mb-4" />
-                                <p className="text-sm font-bold uppercase tracking-[0.2em] text-center">Secure Channel Active</p>
-                                <p className="text-xs mt-2 text-center">Your conversation will be logged for professional oversight.</p>
+                                <p className="text-sm font-bold uppercase tracking-[0.2em] text-center">Secure Handshake Active</p>
+                                <p className="text-xs mt-2 text-center">Your conversation is logged for professional oversight.</p>
                             </div>
                         )}
                     </div>
                 </ScrollArea>
                 <div className="mt-auto flex items-center gap-2 pt-4 border-t text-left">
                     <input 
-                        placeholder={companyId ? "Ask the AI assistant..." : "Initializing profile..."}
+                        placeholder={companyId ? "Ask a question..." : "Node initializing..."}
                         value={inputFieldText}
                         onChange={e => setInputFieldText(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !isSending && handleSend()}
