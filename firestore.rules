@@ -45,7 +45,7 @@ service cloud.firestore {
     match /companies/{companyId} {
       allow read: if isCompanyOwner(companyId);
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
       // SUBCOLLECTION RULES: Explicit list/get authorization for data owners.
       match /supportMessages/{id} { allow get, list, write: if isCompanyOwner(companyId); }
