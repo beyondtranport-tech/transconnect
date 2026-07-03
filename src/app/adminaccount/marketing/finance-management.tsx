@@ -293,7 +293,7 @@ export default function FinanceManagement() {
         cell: ({row}) => (
             <div className="flex flex-wrap gap-1 max-w-[200px]">
                 {(row.original.industrial_tags || []).map((tag: string) => (
-                    <Badge key={tag} variant="outline" className="text-[8px] h-3.5 px-1 font-bold bg-muted/50 text-foreground border-none uppercase">{tag}</Badge>
+                    <Badge key={tag} variant="outline" className="text-[8px] h-3.5 px-1 font-black bg-muted/50 text-foreground border-none uppercase">{tag}</Badge>
                 ))}
             </div>
         )
@@ -321,7 +321,7 @@ export default function FinanceManagement() {
     { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
     },
     { id: 'actions', header: 'Actions', cell: ({ row }) => (
-      <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
+      <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground text-foreground">
         <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
         <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
         <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -348,12 +348,12 @@ export default function FinanceManagement() {
   }
 
   return (
-    <div className="space-y-6 text-left text-foreground text-left">
+    <div className="space-y-6 text-left text-foreground text-left text-foreground text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="finance" onEngageSuccess={() => fetchData()} />
       <BatchResearchDialog open={dialog.type === 'research'} onOpenChange={(o) => !o && setDialog({ type: null })} selectedLeads={dialog.data || []} onComplete={() => fetchData()} />
       <FinanceDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
+        <AlertDialogContent className="text-left text-foreground text-foreground">
           <AlertDialogHeader><AlertDialogTitle className="text-left">Delete Record?</AlertDialogTitle></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -362,41 +362,41 @@ export default function FinanceManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Tabs defaultValue="crm" className="w-full text-left text-foreground">
+      <Tabs defaultValue="crm" className="w-full text-left text-foreground text-foreground text-foreground">
           <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
               <TabsTrigger value="crm" className="gap-2"><Users className="h-4 w-4" /> Forensic Registry (CRM)</TabsTrigger>
               <TabsTrigger value="discovery" className="gap-2"><Database className="h-4 w-4" /> Automated Discovery (AI)</TabsTrigger>
               <TabsTrigger value="oversight" className="gap-2"><RefreshCcw className="h-4 w-4" /> Oversight Timeline</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="crm" className="mt-6 space-y-6 text-left text-foreground">
+          <TabsContent value="crm" className="mt-6 space-y-6 text-left text-foreground text-foreground">
               {!hasLoaded ? (
                   <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                       <Landmark className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                       <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Finance Registry Scan</h2>
                       <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Scan the capital database. Identify niche lenders and institutional partners.</p>
-                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
+                      <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground text-foreground">
                           {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />} Execute Scan
                       </Button>
                   </Card>
               ) : (
-                  <Card className="text-left text-foreground text-left">
-                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6 text-foreground">
+                  <Card className="text-left text-foreground text-left text-foreground">
+                      <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b text-left p-6 text-foreground text-foreground">
                           <div className="text-left text-foreground text-left">
-                              <CardTitle className="text-xl font-bold flex items-center gap-2 text-left text-foreground"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
+                              <CardTitle className="text-xl font-bold flex items-center gap-2 text-left text-foreground text-foreground"><Landmark className="h-5 w-5 text-primary" /> Forensic Finance Registry</CardTitle>
                               <CardDescription className="text-left text-muted-foreground">Managing {filteredRecords.length} verified funding nodes.</CardDescription>
                           </div>
-                          <div className="flex gap-2 text-left text-foreground">
+                          <div className="flex gap-2 text-left text-foreground text-foreground">
                               <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={isLoading} className="text-foreground text-left"><RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh</Button>
                               <DuplicateCleaner onComplete={() => fetchData()} />
                               <BulkImportDialog type="finance" onComplete={() => fetchData()}><Button variant="outline" size="sm" className="text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                               <Button onClick={() => setDialog({ type: 'add' })} size="sm" className="text-foreground text-left"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                           </div>
                       </CardHeader>
-                      <CardContent className="pt-6 text-left text-foreground text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                      <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
+                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
@@ -406,33 +406,33 @@ export default function FinanceManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Tag className="h-3 w-3"/> Category</Label>
+                            <div className="space-y-1 text-left text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground"><Tag className="h-3 w-3"/> Category</Label>
                                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Categories" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Categories</SelectItem>
                                         {financeCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground text-foreground">
+                            <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground text-foreground text-foreground">
                                 {selectedIds.length > 0 ? (
-                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2 text-foreground text-foreground">
+                                    <div className="flex gap-2 w-full animate-in fade-in slide-in-from-right-2 text-foreground text-foreground text-foreground">
                                         <Button variant="secondary" onClick={() => handleEngage(null)} className="flex-1 h-9 font-bold text-xs gap-2 text-foreground"><Send className="h-3.5 w-3.5" /> Engage ({selectedIds.length})</Button>
                                         <Button variant="outline" onClick={handleResearch} className="flex-1 h-9 font-bold text-xs gap-2 text-foreground text-foreground text-foreground"><Sparkles className="h-3.5 w-3.5 text-primary" /> AI Research</Button>
                                     </div>
                                 ) : (
-                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
+                                    <Button variant="outline" onClick={() => setHasLoaded(false)} className="w-full h-9 text-xs font-bold uppercase tracking-widest text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button>
                                 )}
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center p-12 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left">
+                        {isLoading ? <div className="flex justify-center p-12 text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground">
+                                     <div className="flex justify-center pt-4 text-foreground">
+                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records
                                         </Button>
@@ -445,11 +445,11 @@ export default function FinanceManagement() {
               )}
           </TabsContent>
 
-          <TabsContent value="discovery" className="mt-6 text-left text-foreground">
+          <TabsContent value="discovery" className="mt-6 text-left text-foreground text-foreground">
               <FinanceDiscoveryEngine />
           </TabsContent>
 
-          <TabsContent value="oversight" className="mt-6 text-left text-foreground">
+          <TabsContent value="oversight" className="mt-6 text-left text-foreground text-foreground">
               <AudienceCommunicationsTable audience="finance" />
           </TabsContent>
       </Tabs>

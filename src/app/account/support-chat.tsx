@@ -39,15 +39,11 @@ export default function SupportChatContent() {
     const [isSending, setIsSending] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    // Robust company ID extraction from the enriched user object
     const companyId = useMemo(() => {
-        // Fallback chain to ensure we have the ID needed for the Firestore path
         return user?.companyId || user?.companyData?.id || '';
     }, [user]);
 
     const messagesQuery = useMemoFirebase(() => {
-        // CRITICAL: Ensure companyId is present and non-empty before initiating the query.
-        // This prevents the 'Permission Denied' error that occurs when querying an invalid path.
         if (!firestore || !companyId || companyId === '') return null;
         return query(
             collection(firestore, 'companies', companyId, 'supportMessages'),
@@ -55,7 +51,6 @@ export default function SupportChatContent() {
         );
     }, [firestore, companyId]);
 
-    // Use the error return from useCollection to handle permission states gracefully
     const { data: messages, isLoading: areMessagesLoading, error: permissionError } = useCollection<SupportMessage>(messagesQuery);
 
     const isLoading = isUserLoading || areMessagesLoading;
@@ -96,7 +91,6 @@ export default function SupportChatContent() {
                 body: JSON.stringify({ collectionPath: path, data: userMessageData }),
             });
 
-            // Map history for AI context
             const historyForApi: { role: 'user' | 'model'; content: { text: string; }[] }[] = (messages || [])
                 .filter(m => !!m && typeof m === 'object' && m.senderId && m.text)
                 .map(msg => {
@@ -127,7 +121,7 @@ export default function SupportChatContent() {
         } catch (error: any) {
             console.error("Support chat error:", error);
             const errorMessage = error.message?.includes('429') 
-                ? "AI Assistant is busy. Please wait a moment before sending another message."
+                ? "AI Assistant is busy. Please wait a moment."
                 : error.message;
             toast({ variant: 'destructive', title: 'Send Failed', description: errorMessage });
             setInputFieldText(userMessageText);
@@ -136,7 +130,6 @@ export default function SupportChatContent() {
         }
     };
 
-    // If a permission error is encountered, display a clean alert instead of crashing
     if (permissionError) {
         return (
             <Card className="border-destructive bg-destructive/5 text-left">
@@ -146,7 +139,7 @@ export default function SupportChatContent() {
                         Access Restricted
                     </CardTitle>
                     <CardDescription className="text-left text-destructive/80">
-                        The industrial brain is verifying your credentials.
+                        The industrial brain is verifying your member standing.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4 text-left">
