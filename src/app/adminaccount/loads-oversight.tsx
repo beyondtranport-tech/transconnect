@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
 import Link from 'next/link';
 
-async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
+async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -39,8 +39,8 @@ export default function LoadsOversight() {
             if (!token) return;
 
             const [agreementsRes, loadsRes] = await Promise.all([
-                fetchFromAdminAPI(token, 'getBrokerAgreements'),
-                fetchFromAdminAPI(token, 'getGlobalLoads')
+                performAdminAction(token, 'getBrokerAgreements'),
+                performAdminAction(token, 'getGlobalLoads')
             ]);
 
             setAgreements(agreementsRes.data || []);

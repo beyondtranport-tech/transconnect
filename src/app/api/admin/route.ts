@@ -85,7 +85,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getBrokerAgreements': {
-                // COMPOSITE INDEX ALIGNMENT: Ordering by createdAt DESC across collection group
+                // COMPOSITE INDEX ALIGNMENT: Simplified to only order by createdAt
+                // Matches firestore.indexes.json definition
                 const snap = await db.collectionGroup('brokerAgreements')
                     .orderBy('createdAt', 'desc')
                     .limit(100)
@@ -112,7 +113,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getGlobalLoads': {
-                // COMPOSITE INDEX ALIGNMENT: Ordering by createdAt DESC across collection group
+                // COMPOSITE INDEX ALIGNMENT: Simplified to match single-sort requirement
                 const snap = await db.collectionGroup('loads')
                     .orderBy('createdAt', 'desc')
                     .limit(200)
