@@ -21,7 +21,7 @@ function serializeTimestamps(docData: any): any {
 /**
  * ADMIN MASTER API
  * Centralized authority for platform operations.
- * Optimized with strict limits (500 cap) to prevent Resource Exhaustion.
+ * Enforces composite index compliance for collection group queries.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -85,7 +85,12 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getBrokerAgreements': {
-                const snap = await db.collectionGroup('brokerAgreements').orderBy('createdAt', 'desc').limit(100).get();
+                // COMPOSITE INDEX ALIGNMENT: Ordering by createdAt DESC across collection group
+                const snap = await db.collectionGroup('brokerAgreements')
+                    .orderBy('createdAt', 'desc')
+                    .limit(100)
+                    .get();
+
                 const results = await Promise.all(snap.docs.map(async (d) => {
                     const data = d.data();
                     const brokerSnap = await db.collection('companies').doc(data.brokerId).get();
@@ -107,7 +112,12 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getGlobalLoads': {
-                const snap = await db.collectionGroup('loads').orderBy('createdAt', 'desc').limit(200).get();
+                // COMPOSITE INDEX ALIGNMENT: Ordering by createdAt DESC across collection group
+                const snap = await db.collectionGroup('loads')
+                    .orderBy('createdAt', 'desc')
+                    .limit(200)
+                    .get();
+
                 const results = await Promise.all(snap.docs.map(async (d) => {
                     const data = d.data();
                     const brokerSnap = await db.collection('companies').doc(data.brokerId).get();

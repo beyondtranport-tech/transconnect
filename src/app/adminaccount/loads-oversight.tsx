@@ -129,7 +129,7 @@ export default function LoadsOversight() {
         { 
             header: 'Route',
             cell: ({row}) => (
-                <div className="flex items-center gap-2 font-bold text-sm text-foreground">
+                <div className="flex items-center gap-2 font-bold text-sm text-foreground text-left">
                     {row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}
                 </div>
             )
