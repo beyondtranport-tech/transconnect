@@ -43,6 +43,10 @@ const permissionHierarchy: { [key in Action]: Action[] } = {
     publish: ['publish'],
 };
 
+/**
+ * INTELLIGENCE NODE PERMISSIONS
+ * Logic refined to handle the specialized industrial membership strategy.
+ */
 export function usePermissions() {
     const { user, isUserLoading } = useUser();
     
@@ -62,51 +66,60 @@ export function usePermissions() {
             return new Set<string>(['manage:all']);
         }
         
-        // Handle staff members first, as they have explicit, limited permissions
+        // Handle staff members first (Explicit Granular Permissions)
         if (user.role === 'staff' && Array.isArray(user.permissions)) {
              user.permissions.forEach((p: string) => perms.add(p));
              return perms;
         }
 
-        // Default owner/member permissions
+        // Default Owner Permissions (Internal Management)
         perms.add('view:account');
         perms.add('manage:staff');
         perms.add('edit:staff');
         perms.add('delete:staff');
         perms.add('create:staff');
+        perms.add('view:wallet');
 
-        // Check for premium or specific roles
-        const isWctaMember = user.companyData?.referrerId === 'WCTA';
-        const isPaidMember = user.companyData?.membershipId && user.companyData.membershipId !== 'free';
+        const membershipId = user.companyData?.membershipId || 'free';
+        const isPaidIntelligence = membershipId !== 'free';
         const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
         const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
 
-        // Associate Specific Permissions
+        // 1. FOUNDATION: INTELLIGENCE ACCESS (Applies to all paid nodes)
+        if (isPaidIntelligence || isAssociate) {
+            perms.add('create:shop');
+            perms.add('edit:shop');
+            perms.add('publish:shop');
+            perms.add('manage:products');
+            perms.add('view:quotes');
+            perms.add('create:quotes');
+            perms.add('view:enquiries');
+            perms.add('create:enquiries');
+        }
+
+        // 2. SPECIALIZED NODE: LOADS INTELLIGENCE
+        if (membershipId === 'loads_intelligence' || membershipId === 'premium') {
+            perms.add('create:loads');
+            perms.add('manage:loads');
+        }
+
+        // 3. SPECIALIZED NODE: BUY & SELL INTELLIGENCE
+        if (membershipId === 'buy_sell_intelligence' || membershipId === 'premium') {
+            perms.add('manage:buySellMall');
+        }
+
+        // 4. ROLE SPECIFIC: DIGITAL ASSOCIATE
         if (isAssociate) {
             perms.add('view:social');
             perms.add('manage:marketing-studio');
             perms.add('manage:social');
-            perms.add('manage:shop');
-            perms.add('manage:products');
         }
 
-        // Transporters/Suppliers get Shop access
-        if (user.declaredPosition === 'transporter' || user.declaredPosition === 'vendor' || isLender) {
-            perms.add('create:shop');
-            perms.add('edit:shop');
-            perms.add('manage:products');
-        }
-
+        // 5. ROLE SPECIFIC: LENDER
         if (isLender) {
             perms.add('manage:lending-focus');
         }
 
-        if (isPaidMember || isWctaMember) {
-            perms.add('publish:shop');
-            perms.add('create:loads');
-            perms.add('manage:loads');
-        }
-        
         return perms;
 
     }, [user]);
