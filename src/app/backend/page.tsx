@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -46,6 +47,7 @@ import {
   Globe,
   Truck,
   ClipboardList,
+  ShoppingCart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -58,11 +60,10 @@ import dynamic from 'next/dynamic';
 import React from 'react';
 import Link from 'next/link';
 
-// --- Static Imports for Member Success Focus ---
+// --- Static Imports ---
 import AdminDashboardContent from '@/app/backend/dashboard-content';
 import MemberWallet from '@/app/backend/wallet/[memberId]/member-wallet';
 import WalletTransactionsList from '@/app/backend/wallet-transactions-list';
-import ShopsList from '@/app/backend/shops-list';
 import ReconciliationPage from '@/app/backend/reconciliation/page';
 import ContributionsList from '@/app/backend/contributions-list';
 import ActivityFeed from '@/app/backend/activity-feed';
@@ -74,7 +75,11 @@ import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 
-// Platform Settings
+// Admin oversight components
+const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BuySellOversight = dynamic(() => import('@/app/adminaccount/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+
+// Settings
 import PermissionsContent from '@/app/backend/permissions-content';
 import PricingManagement from '@/app/backend/revenue/pricing-management';
 import ConnectPlanPricing from '@/app/backend/revenue/connect-plan-pricing';
@@ -88,9 +93,6 @@ import TierBenefits from '@/app/backend/tier-benefits';
 import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
-
-// Admin oversight components from AdminAccount
-const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -150,17 +152,12 @@ function BackendContent() {
       case 'support-inbox': return <SupportChatInbox />;
       case 'finance-mall': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
-      case 'buy-sell-oversight': return <div className="p-8 text-center text-foreground"><Store className="mx-auto h-12 w-12 text-muted-foreground opacity-20 mb-4"/><h3 className="text-xl font-bold">Buy and Sell Oversight</h3><p className="text-muted-foreground">Inventory and listing management coming soon.</p></div>;
-      
-      // Member Success & Growth
+      case 'buy-sell-oversight': return <BuySellOversight />;
       case 'success-engine': return <MemberSuccessEngine />;
       case 'loyalty-overview': return <MemberLoyaltyStatus />;
       case 'contributions': return <ContributionsList />;
-      case 'shops': return <ShopsList />;
       case 'commercial-negotiations': return <CommercialNegotiations />;
       case 'reconciliation': return <ReconciliationPage />;
-      
-      // Platform Settings
       case 'permissions': return <PermissionsContent />;
       case 'action-plan': return <ActionPlanSettings />;
       case 'loyalty-plan': return <TierBenefits />;
@@ -183,26 +180,12 @@ function BackendContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  if (isUserLoading || !user) {
-    return (
-        <div className="flex justify-center items-center py-40">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        </div>
-    );
-  }
-
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
   const isMallsActive = ['finance-mall', 'loads-oversight', 'buy-sell-oversight', 'success-engine'].includes(activeView);
-  const isSuccessActive = ['loyalty-overview', 'contributions', 'shops', 'commercial-negotiations'].includes(activeView);
-  const isRevenueActive = [
-    'pricing-memberships', 'pricing-connect', 'pricing-tech', 'pricing-marketplace',
-    'commissions-malls', 'commissions-isa', 'incentives-sales'
-  ].includes(activeView);
-  const isPlatformSettingsActive = [
-    'permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'
-  ].includes(activeView);
+  const isSuccessActive = ['loyalty-overview', 'contributions', 'commercial-negotiations'].includes(activeView);
+  const isPlatformSettingsActive = ['permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -211,9 +194,7 @@ function BackendContent() {
           <SidebarHeader>
             <div className="flex items-center gap-2 p-2 text-left">
               <Shield className="h-6 w-6 text-primary" />
-              <h2 className="text-lg font-semibold text-sidebar-foreground text-left">
-                Admin Center
-              </h2>
+              <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Center</h2>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -223,7 +204,6 @@ function BackendContent() {
                         <LayoutDashboard /><span>Overview</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
-                
                 <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Operations" isActive={isOperationsActive}><Wrench /><span>Operations</span></SidebarMenuButton>
                   <SidebarMenuSub>
@@ -247,14 +227,10 @@ function BackendContent() {
                         </SidebarMenuSub>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Loads Mall" isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}>
-                            <Truck /><span>Loads Mall</span>
-                        </SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Loads Mall" isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><Truck /><span>Loads Mall</span></SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Buy and Sell" isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}>
-                            <Store /><span>Buy and Sell</span>
-                        </SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Buy and Sell" isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart /><span>Buy and Sell</span></SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarGroup>
@@ -265,13 +241,12 @@ function BackendContent() {
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loyalty-overview'} onClick={() => navigate('loyalty-overview')}><Award />Loyalty & Tiers</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'contributions'} onClick={() => navigate('contributions')}><ListTodo />Data Contributions</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shops'} onClick={() => navigate('shops')}><Store />Shop Management</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commercial-negotiations'} onClick={() => navigate('commercial-negotiations')}><Handshake />Commercials</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Revenue & Pricing" isActive={activeView.includes('pricing') || activeView.includes('commissions')}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}>Membership Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-connect'} onClick={() => navigate('pricing-connect')}>Connect Plan Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -297,33 +272,16 @@ function BackendContent() {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-          <div className="border-t p-2">
-            <Button variant="outline" className="w-full justify-start gap-2 h-9 text-xs" asChild>
-                <Link href="/lending">
-                    <ArrowRightLeft className="h-3.5 w-3.5" /> Lending Portal
-                </Link>
-            </Button>
-          </div>
           {user && (
               <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col truncate text-left">
-                  <span className="text-sm font-medium text-sidebar-foreground truncate text-left">
-                  {user.displayName || 'Super Admin'}
-                  </span>
-                  <span className="text-xs text-sidebar-foreground/70 truncate text-left">
-                  {user.email}
-                  </span>
+                  <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user.displayName || 'Super Admin'}</span>
+                  <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user.email}</span>
               </div>
-              <Button
-                  variant="ghost"
-                  size="icon"
-                  className="ml-auto"
-                  onClick={onLogout}
-                  title="Sign Out"
-              >
+              <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                   <LogOut className="h-5 w-5" />
               </Button>
               </div>
@@ -341,7 +299,6 @@ function BackendContent() {
     </AdminAuthGuard>
   );
 }
-
 
 export default function BackendPage() {
   return (

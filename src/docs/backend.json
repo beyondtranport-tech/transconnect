@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -66,20 +67,36 @@
       },
       "required": ["id", "status"]
     },
-    "BrokerAgreement": {
-      "title": "Broker Authorization",
+    "VehicleListing": {
+      "title": "Vehicle Inventory",
       "type": "object",
-      "description": "Legal right to subcontract freight from a specific Debtor.",
       "properties": {
         "id": { "type": "string" },
-        "brokerId": { "type": "string" },
-        "providerName": { "type": "string" },
-        "subcontractingClause": { "type": "string" },
-        "primaryContractUrl": { "type": "string" },
-        "subcontractorAgreementUrl": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "verified", "rejected"] }
-      },
-      "required": ["brokerId", "providerName", "status"]
+        "companyId": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "string" },
+        "price": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "pending_review", "sold", "draft"] },
+        "mileage": { "type": "number" },
+        "photos": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "VehicleSale": {
+      "title": "Vehicle Transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["negotiating", "finance_pending", "paid", "delivered", "concluded"] },
+        "agreedPrice": { "type": "number" },
+        "commissionAmount": { "type": "number" },
+        "otpUrl": { "type": "string" },
+        "invoiceUrl": { "type": "string" },
+        "deliveryNoteUrl": { "type": "string" }
+      }
     }
   },
   "auth": {
@@ -100,8 +117,12 @@
         "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Execution and fulfillment registry." }
       },
       {
-        "path": "/companies/{companyId}/brokerAgreements/{agreementId}",
-        "definition": { "entityName": "BrokerAgreement", "schema": { "$ref": "#/entities/BrokerAgreement" }, "description": "Subcontracting rights registry." }
+        "path": "/companies/{companyId}/vehicleListings/{vehicleId}",
+        "definition": { "entityName": "VehicleListing", "schema": { "$ref": "#/entities/VehicleListing" }, "description": "Member vehicle inventory." }
+      },
+      {
+        "path": "/sales/{saleId}",
+        "definition": { "entityName": "VehicleSale", "schema": { "$ref": "#/entities/VehicleSale" }, "description": "Global sales ledger." }
       }
     ]
   }
