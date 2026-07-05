@@ -1,19 +1,16 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { usePermissions, type Resource } from '@/hooks/use-permissions';
 import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
 import { 
     PackageSearch, Warehouse, Truck, Network, Building2, Landmark, 
-    ShoppingCart, Scale, Search, PlusCircle, ArrowRight, Info, ShieldCheck, Zap,
-    Loader2
+    ShoppingCart, Search, PlusCircle, ArrowRight, Info, Loader2
 } from 'lucide-react';
-import { useUser } from '@/firebase';
-import Link from 'next/link';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useRouter } from 'next/navigation';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface MallConfig {
     id: string;
@@ -27,8 +24,6 @@ interface MallConfig {
     buyDesc: string;
     sellLabel: string;
     sellDesc: string;
-    sellView: string;
-    role: string;
 }
 
 const mallConfigs: Record<string, MallConfig> = {
@@ -42,10 +37,8 @@ const mallConfigs: Record<string, MallConfig> = {
         upgradePlan: 'loads_intelligence',
         buyLabel: 'Search for Loads',
         buyDesc: 'Find available freight and match your capacity.',
-        sellLabel: 'Post a Load',
-        sellDesc: 'List your available freight for the community.',
-        sellView: 'load-board',
-        role: 'transporter'
+        sellLabel: 'Setup Brokerage Node',
+        sellDesc: 'Authorize your node to post and clear freight.',
     },
     warehouse: {
         id: 'warehouse',
@@ -57,10 +50,8 @@ const mallConfigs: Record<string, MallConfig> = {
         upgradePlan: 'warehouse_intelligence',
         buyLabel: 'Source Storage',
         buyDesc: 'Find warehousing hubs and calculate storage costs.',
-        sellLabel: 'List Capacity',
-        sellDesc: 'Configure your warehouse branch in your industrial node.',
-        sellView: 'shop',
-        role: 'warehouse'
+        sellLabel: 'Setup Warehouse Node',
+        sellDesc: 'List your available pallet positions and handling fees.',
     },
     transporter: {
         id: 'transporter',
@@ -72,25 +63,8 @@ const mallConfigs: Record<string, MallConfig> = {
         upgradePlan: 'loads_intelligence',
         buyLabel: 'Source Capacity',
         buyDesc: 'Scan the forensic haulier registry.',
-        sellLabel: 'List My Fleet',
-        sellDesc: 'Complete your fleet profile to receive matches.',
-        sellView: 'shop',
-        role: 'transporter'
-    },
-    distribution: {
-        id: 'distribution',
-        title: 'Distribution Mall',
-        description: 'Urban spoke networks. Vetted fleet registry for inner-city collection and final-mile delivery.',
-        icon: Network,
-        resource: 'distributionMall',
-        permission: 'view',
-        upgradePlan: 'loads_intelligence',
-        buyLabel: 'Source Spokes',
-        buyDesc: 'Find inner-city distribution partners.',
-        sellLabel: 'List My Node',
-        sellDesc: 'Complete your hub profile for local distribution.',
-        sellView: 'shop',
-        role: 'distributor'
+        sellLabel: 'Setup Fleet Node',
+        sellDesc: 'Declare your fleet and service corridors.',
     },
     supplier: {
         id: 'supplier',
@@ -102,40 +76,8 @@ const mallConfigs: Record<string, MallConfig> = {
         upgradePlan: 'intelligence',
         buyLabel: 'Search Suppliers',
         buyDesc: 'Find parts and services by category.',
-        sellLabel: 'Publish Shop',
-        sellDesc: 'Set up your digital vendor storefront.',
-        sellView: 'shop',
-        role: 'vendor'
-    },
-    finance: {
-        id: 'finance',
-        title: 'Finance Mall',
-        description: 'Direct in-house funding and specialized market lenders understanding industrial risk.',
-        icon: Landmark,
-        resource: 'financeMall',
-        permission: 'view',
-        upgradePlan: 'intelligence',
-        buyLabel: 'Source Capital',
-        buyDesc: 'Search lenders and start applications.',
-        sellLabel: 'I am a Funder',
-        sellDesc: 'Join our lending network as a co-funder.',
-        sellView: 'lending-focus',
-        role: 'lender'
-    },
-    'buy-sell': {
-        id: 'buy-sell',
-        title: 'Buy & Sell Mall',
-        description: 'Marketplace for vehicle trading and secure commercial handshakes with document automation.',
-        icon: ShoppingCart,
-        resource: 'buySellMall',
-        permission: 'transact',
-        upgradePlan: 'buy_sell_intelligence',
-        buyLabel: 'Browse Inventory',
-        buyDesc: 'Search vehicles and equipment listed for sale.',
-        sellLabel: 'List Asset',
-        sellDesc: 'Sell your commercial vehicles to the network.',
-        sellView: 'vehicle-listings',
-        role: 'vendor'
+        sellLabel: 'Setup Supplier Node',
+        sellDesc: 'Publish your digital branch to the community.',
     },
 };
 
@@ -145,11 +87,10 @@ export function MallGate({ mallId }: { mallId: string }) {
     const config = mallConfigs[mallId];
     const [intent, setIntent] = useState<'select' | 'buy' | 'sell' | null>('select');
 
-    if (!config) return <div className="p-12 text-center italic">Mall ID "{mallId}" not found in registry.</div>;
+    if (!config) return <div className="p-12 text-center italic text-muted-foreground">Mall configuration "{mallId}" not found.</div>;
 
     const hasAccess = can(config.permission as any, config.resource);
 
-    // 1. ACCESS CHECK (The Activation Mechanism)
     if (!hasAccess) {
         return (
             <div className="max-w-4xl mx-auto py-12 animate-in fade-in zoom-in duration-500">
@@ -163,7 +104,6 @@ export function MallGate({ mallId }: { mallId: string }) {
         );
     }
 
-    // 2. INTENT SELECTION (Post-Activation)
     if (intent === 'select') {
         return (
             <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-500 text-left">
@@ -176,7 +116,7 @@ export function MallGate({ mallId }: { mallId: string }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => setIntent('buy')}>
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(`/mall/${config.id}`)}>
                         <CardHeader className="p-8 pb-4">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
                                 <Search className="h-8 w-8 text-foreground group-hover:text-white" />
@@ -189,7 +129,7 @@ export function MallGate({ mallId }: { mallId: string }) {
                         </CardFooter>
                     </Card>
 
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => setIntent('sell')}>
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(`/account?view=shop&subview=wizard`)}>
                         <CardHeader className="p-8 pb-4">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
                                 <PlusCircle className="h-8 w-8 text-foreground group-hover:text-white" />
@@ -203,12 +143,12 @@ export function MallGate({ mallId }: { mallId: string }) {
                     </Card>
                 </div>
 
-                <Alert className="bg-primary/5 border-primary/20 p-6 text-left">
+                <Alert className="bg-primary/5 border-primary/20 p-6 text-left shadow-sm">
                     <Info className="h-6 w-6 text-primary" />
                     <div className="ml-2 text-left">
-                        <AlertTitle className="font-bold text-lg text-foreground">Operational Intelligence</AlertTitle>
+                        <AlertTitle className="font-bold text-lg text-foreground">Industrial Node Integration</AlertTitle>
                         <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
-                            Your interactions in this mall are protected by secure industrial handshakes. When you find a match or list an asset, the system manages the documentation and escrow flow automatically.
+                            Your Node is the engine that powers your presence in this mall. Setting up your node once ensures your capacity is correctly mapped for all relevant community searches.
                         </AlertDescription>
                     </div>
                 </Alert>
@@ -216,18 +156,10 @@ export function MallGate({ mallId }: { mallId: string }) {
         );
     }
 
-    // 3. ACTION VIEWS
-    if (intent === 'buy') {
-        // Redirect to the internal Mall board or search terminal
-        router.push(config.id === 'buy-sell' ? '/mall/buy-sell' : `/mall/${config.id}`);
-        return <div className="text-center py-20 flex flex-col items-center gap-4"><Loader2 className="animate-spin" /><p>Opening Mall...</p></div>;
-    }
-
-    if (intent === 'sell') {
-        // Uniform redirect to Node Terminal with setup subview
-        router.push(`/account?view=shop&subview=wizard`);
-        return <div className="text-center py-20 flex flex-col items-center gap-4"><Loader2 className="animate-spin" /><p>Opening Node Terminal...</p></div>;
-    }
-
-    return null;
+    return (
+        <div className="text-center py-20 flex flex-col items-center gap-4">
+            <Loader2 className="animate-spin h-8 w-8 text-primary" />
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Opening Hub...</p>
+        </div>
+    );
 }

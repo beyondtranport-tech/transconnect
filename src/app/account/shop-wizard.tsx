@@ -1,27 +1,25 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-    Loader2, Save, CheckCircle, PlusCircle, Send, Truck, MapPin, 
-    DollarSign, ArrowRight, ArrowLeft, Info, Sparkles, ImageIcon, 
+    Loader2, Save, CheckCircle, Send, Truck, MapPin, 
+    DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
-    Globe, LayoutTemplate, ClipboardList, Gavel, Package
+    ClipboardList, Gavel, Sparkles
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
@@ -29,7 +27,6 @@ import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engin
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 // ====== SCHEMAS ======
 
@@ -51,13 +48,13 @@ const nodeFormSchema = z.object({
   placementFee: z.coerce.number().optional(),
   monthlyStorageFee: z.coerce.number().optional(),
   availablePallets: z.coerce.number().optional(),
-  // Transport specific (Fleet Node)
+  // Transport specific
   poweredUnits: z.array(z.string()).optional().default([]),
   trailers: z.array(z.string()).optional().default([]),
   primaryRegions: z.array(z.string()).optional().default([]),
   cargoTypes: z.array(z.string()).optional().default([]),
   fleetSummary: z.string().optional(),
-  // Loads / Brokerage specific
+  // Brokerage specific
   brokerageMargin: z.coerce.number().min(0).max(50).default(5),
   loadPostingTerms: z.string().optional().default("Standard 30-day payment terms after POD verification."),
   haulierVerificationRequired: z.boolean().default(true),
@@ -78,11 +75,13 @@ function StepIdentity() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-6 text-left">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2"><UserCheck className="h-6 w-6 text-primary" /> Industrial Identity</h3>
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
+                <UserCheck className="h-6 w-6 text-primary" /> Node Identity
+            </h3>
             <div className="space-y-4 text-left">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem>
-                        <FormLabel>Public Label / Node Name</FormLabel>
+                        <FormLabel>Public Identity Label</FormLabel>
                         <FormControl><Input placeholder="e.g. Cape Town Logistics Hub" {...field} className="h-11 border-2" /></FormControl>
                         <FormMessage />
                     </FormItem> 
@@ -120,19 +119,21 @@ function StepBranding() {
     return (
         <div className="space-y-8 text-left">
             <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black font-headline flex items-center gap-2"><ImageIcon className="h-6 w-6 text-primary" /> Visual Branding</h3>
+                <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
+                    <ImageIcon className="h-6 w-6 text-primary" /> Node Branding
+                </h3>
                 <AIToolModal type="generate" targetField="logoUrl" onResult={(url: string) => setValue('logoUrl', url)} initialPrompt="Professional modern industrial logistics logo, minimalist vector style." />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Logo</Label>
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Node Logo</Label>
                     <div className="aspect-square w-48 border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner">
                         {logo ? <Image src={logo} alt="Logo" fill className="object-contain p-4" /> : <p className="text-xs italic text-muted-foreground">No Logo Uploaded</p>}
                     </div>
                 </div>
                 <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Marketplace Hero Banner</Label>
+                    <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Marketplace Banner</Label>
                     <div className="aspect-video w-full border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner">
                         {banner ? <Image src={banner} alt="Banner" fill className="object-cover" /> : <p className="text-xs italic text-muted-foreground text-center px-4">Generate or upload a high-fidelity industrial banner.</p>}
                     </div>
@@ -147,23 +148,25 @@ function StepWarehouse() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-8 text-left">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2"><Warehouse className="h-6 w-6 text-primary" /> Storage Node Parameters</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
+                <Warehouse className="h-6 w-6 text-primary" /> Storage Hub Parameters
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="space-y-4">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
-                        <FormItem><FormLabel>Total Positions (Available)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Total pallet slots currently unallocated.</FormDescription></FormItem>
+                        <FormItem className="text-left"><FormLabel>Total Pallet Slots</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Total capacity currently unallocated.</FormDescription></FormItem>
                     )} />
                     <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
-                        <FormItem><FormLabel>Base Storage Rate (R/mo)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Recurring monthly rental per pallet.</FormDescription></FormItem>
+                        <FormItem className="text-left"><FormLabel>Storage Rate (R/plt/mo)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Monthly recurring fee.</FormDescription></FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2"><Banknote className="h-4 w-4" /> Handling & Logic</h4>
+                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2"><Banknote className="h-4 w-4" /> Handling Logic</h4>
                     <FormField control={control} name="upliftFee" render={({ field }) => (
-                        <FormItem><FormLabel>Uplift Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl><FormDescription>Offloading and verification fee.</FormDescription></FormItem>
+                        <FormItem className="text-left"><FormLabel>Inbound Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
                     )} />
                     <FormField control={control} name="placementFee" render={({ field }) => (
-                        <FormItem><FormLabel>Placement Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl><FormDescription>Racking and system registration fee.</FormDescription></FormItem>
+                        <FormItem className="text-left"><FormLabel>Outbound Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
                     )} />
                 </div>
             </div>
@@ -175,12 +178,13 @@ function StepTransport() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2"><Truck className="h-6 w-6 text-primary" /> Transport Node Parameters</h3>
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
+                <Truck className="h-6 w-6 text-primary" /> Fleet Node Parameters
+            </h3>
             <div className="space-y-10">
                 <div className="space-y-4">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
-                        <ShieldCheck className="h-4 w-4" />
-                        Verified Capacity (Fleet)
+                        <ShieldCheck className="h-4 w-4" /> Verified Capacity (Fleet)
                     </Label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {fleetOptions.powered.map(item => (
@@ -196,8 +200,7 @@ function StepTransport() {
 
                 <div className="space-y-4">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
-                        <MapPin className="h-4 w-4" />
-                        Service Corridors (Regions)
+                        <MapPin className="h-4 w-4" /> Primary Service Lanes
                     </Label>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                         {fleetOptions.regions.map(item => (
@@ -213,9 +216,9 @@ function StepTransport() {
 
                 <FormField control={control} name="fleetSummary" render={({ field }) => (
                     <FormItem className="text-left">
-                        <FormLabel>Professional Service Summary</FormLabel>
-                        <FormControl><Textarea placeholder="Describe your specialized routes, handling capabilities, and fleet standing..." {...field} className="min-h-[120px] border-2" /></FormControl>
-                        <FormDescription>This text is used for high-fidelity matching with shippers.</FormDescription>
+                        <FormLabel>Technical Profile Summary</FormLabel>
+                        <FormControl><Textarea placeholder="Describe your specialized capabilities and corridors..." {...field} className="min-h-[120px] border-2" /></FormControl>
+                        <FormDescription>This text is used for high-fidelity matching.</FormDescription>
                     </FormItem>
                 )} />
             </div>
@@ -227,51 +230,43 @@ function StepLoads() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black font-headline flex items-center gap-2"><PackageSearch className="h-6 w-6 text-primary" /> Brokerage Hub Configuration</h3>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 uppercase font-black text-[10px] tracking-widest">Earning Node Active</Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
+                <PackageSearch className="h-6 w-6 text-primary" /> Brokerage Terminal Config
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-6 text-left">
                     <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
                         <div className="flex items-center gap-2 text-primary">
                             <DollarSign className="h-5 w-5" />
-                            <h4 className="font-bold text-sm uppercase tracking-widest">Revenue Participation</h4>
+                            <h4 className="font-bold text-sm uppercase tracking-widest">Revenue Flow</h4>
                         </div>
                         <FormField control={control} name="brokerageMargin" render={({ field }) => (
                             <FormItem className="text-left">
                                 <FormLabel>Default Clearing Margin (%)</FormLabel>
                                 <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                                <FormDescription className="text-xs">The percentage deducted from the total load value before haulier payout.</FormDescription>
+                                <FormDescription className="text-xs">Your participation percentage on posted freight.</FormDescription>
                             </FormItem>
                         )} />
                     </div>
 
-                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50 text-left text-foreground">
-                        <div className="flex items-center gap-2 text-slate-800">
-                            <Gavel className="h-5 w-5" />
-                            <h4 className="font-bold text-sm uppercase tracking-widest">Risk & Compliance</h4>
-                        </div>
+                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50 text-left">
                          <FormField control={control} name="haulierVerificationRequired" render={({ field }) => (
                             <FormItem className="flex items-center justify-between space-y-0 text-left">
-                                <FormLabel className="text-xs font-bold uppercase tracking-tight">Enforce RC1 Verification</FormLabel>
+                                <FormLabel className="text-xs font-bold uppercase tracking-tight">Enforce RC1 Compliance</FormLabel>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                             </FormItem>
                          )} />
-                         <p className="text-[10px] text-muted-foreground leading-tight italic">When enabled, only hauliers with verified RC1 documents can accept your posted loads.</p>
+                         <p className="text-[10px] text-muted-foreground leading-tight italic">Restricts load acceptance to verified fleet nodes only.</p>
                     </div>
                 </div>
 
-                <div className="space-y-4 text-left">
-                    <FormField control={control} name="loadPostingTerms" render={({ field }) => (
-                        <FormItem className="text-left">
-                            <FormLabel className="flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" /> Settlement Terms</FormLabel>
-                            <FormControl><Textarea placeholder="Describe your payment cycle (e.g. 14 days after original POD)..." {...field} className="min-h-[150px] border-2 bg-white" /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                </div>
+                <FormField control={control} name="loadPostingTerms" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel className="flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" /> Settlement Ledger Terms</FormLabel>
+                        <FormControl><Textarea placeholder="e.g. Payments processed 30 days from original POD submission..." {...field} className="min-h-[150px] border-2 bg-white" /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )} />
             </div>
         </div>
     );
@@ -300,13 +295,13 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
                 <CheckCircle className="h-16 w-16 text-primary" />
             </div>
-            <div className="space-y-2 text-center">
-                <h3 className="text-3xl font-black font-headline text-center">Setup Complete</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial node is configured and ready for the forensic audit. Once approved, your capacity and clearing hub will be visible in the malls.</p>
+            <div className="space-y-2 text-center text-foreground">
+                <h3 className="text-3xl font-black font-headline text-center">Node Configured</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                 {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
-                Activate Hub Node
+                Activate Commercial Hub
             </Button>
         </div>
     );
@@ -326,9 +321,9 @@ function AIToolModal({ initialPrompt, onResult, targetField }: any) {
             if (!token) throw new Error("Auth failed.");
 
             let result = await generateImage({ prompt });
-            if (!result.imageDataUri) throw new Error("AI failed to return image.");
+            if (!result.imageDataUri) throw new Error("AI error.");
 
-            const folder = `user-assets/${user!.uid}/shop-ai`;
+            const folder = `user-assets/${user!.uid}/node-ai`;
             const fileName = `ai_${targetField}_${Date.now()}.png`;
             
             const uploadRes = await fetch('/api/uploadImageAsset', {
@@ -341,7 +336,7 @@ function AIToolModal({ initialPrompt, onResult, targetField }: any) {
 
             onResult(uploadData.url);
             setIsOpen(false);
-            toast({ title: "Branding Ready!" });
+            toast({ title: "Asset Ready" });
         } catch (e: any) {
             toast({ variant: 'destructive', title: "AI Error", description: e.message });
         } finally {
@@ -353,34 +348,28 @@ function AIToolModal({ initialPrompt, onResult, targetField }: any) {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2 font-bold border-primary/20 text-primary hover:bg-primary/5">
-                    <Sparkles className="h-4 w-4" /> AI Creator
+                    <Sparkles className="h-4 w-4" /> AI Tool
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-xl text-left">
+            <DialogContent className="sm:max-w-xl text-left text-foreground">
                 <DialogHeader>
-                    <DialogTitle className="text-left">AI Branding Terminal</DialogTitle>
-                    <DialogDescription className="text-left">Generate high-fidelity assets for your commercial node.</DialogDescription>
+                    <DialogTitle>AI Branding Tool</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
-                    <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className="bg-slate-50 border-2 text-left"/>
-                    <div className="bg-muted aspect-video rounded-3xl flex flex-col items-center justify-center border-4 border-dashed border-muted-foreground/20 shadow-inner">
+                    <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className="bg-slate-50 border-2" />
+                    <div className="bg-muted aspect-video rounded-3xl flex flex-col items-center justify-center border-4 border-dashed shadow-inner">
                         {isLoading ? (
                             <div className="text-center space-y-2">
                                 <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse text-center">Rendering Asset...</p>
+                                <p className="text-[10px] font-black uppercase text-muted-foreground">Rendering...</p>
                             </div>
-                        ) : (
-                            <div className="text-center opacity-30">
-                                <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                                <p className="text-xs font-bold uppercase text-center">Asset will appear here</p>
-                            </div>
-                        )}
+                        ) : <ImageIcon className="h-12 w-12 opacity-20" />}
                     </div>
                 </div>
                 <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
                     <Button onClick={handleAction} disabled={isLoading} className="w-full h-12 font-black uppercase shadow-lg">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} 
-                        Trigger Generation
+                        Generate Asset
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -396,9 +385,8 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
 
-    // Node Type Detection based on active plans
-    const hasWarehouse = shop.shopType === 'warehouse' || user?.companyData?.hasWarehousePlan || user?.companyData?.membershipId === 'warehouse_intelligence' || user?.declaredPosition === 'warehouse';
-    const hasTransport = shop.shopType === 'transporter' || user?.companyData?.hasLoadsPlan || user?.companyData?.membershipId === 'loads_intelligence' || user?.declaredPosition === 'transporter';
+    const hasWarehouse = shop.shopType === 'warehouse' || user?.companyData?.hasWarehousePlan || user?.declaredPosition === 'warehouse';
+    const hasTransport = shop.shopType === 'transporter' || user?.companyData?.hasLoadsPlan || user?.declaredPosition === 'transporter';
     const hasLoads = user?.companyData?.hasLoadsPlan || user?.companyData?.membershipId === 'loads_intelligence';
 
     const methods = useForm<NodeFormValues>({
@@ -420,7 +408,7 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
                     data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
                 }),
             });
-            toast({ title: 'Local Sync Complete' });
+            toast({ title: 'Draft Synced' });
             onUpdate();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Sync Failed' });
@@ -434,20 +422,10 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             { id: 'identity', name: 'Identity', component: <StepIdentity />, fields: ['shopName', 'category'] },
             { id: 'branding', name: 'Branding', component: <StepBranding />, fields: [] },
         ];
-        
-        if (hasWarehouse) {
-            base.push({ id: 'warehouse', name: 'Storage Node', component: <StepWarehouse />, fields: ['availablePallets'] });
-        }
-        
-        if (hasTransport) {
-            base.push({ id: 'transport', name: 'Fleet Node', component: <StepTransport />, fields: ['fleetSummary'] });
-        }
-
-        if (hasLoads) {
-            base.push({ id: 'loads', name: 'Brokerage Hub', component: <StepLoads />, fields: ['brokerageMargin'] });
-        }
-
-        base.push({ id: 'publish', name: 'Finalize', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] });
+        if (hasWarehouse) base.push({ id: 'warehouse', name: 'Storage Node', component: <StepWarehouse />, fields: ['availablePallets'] });
+        if (hasTransport) base.push({ id: 'transport', name: 'Fleet Node', component: <StepTransport />, fields: ['fleetSummary'] });
+        if (hasLoads) base.push({ id: 'loads', name: 'Brokerage', component: <StepLoads />, fields: ['brokerageMargin'] });
+        base.push({ id: 'publish', name: 'Activate', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] });
         return base;
     }, [shop, hasWarehouse, hasTransport, hasLoads, onUpdate]);
 
@@ -458,32 +436,24 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     };
     
     return (
-        <Card className="border-none shadow-xl bg-white text-left overflow-hidden">
+        <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6">
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2" />
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 text-left">
                 <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
+                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
                                     key={step.id} 
                                     type="button" 
                                     variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                    className={cn(
-                                        "w-full justify-start gap-3 h-12 px-4 transition-all text-left",
-                                        currentStep === index && "bg-white shadow-md ring-1 ring-primary/20"
-                                    )} 
+                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-md ring-1 ring-primary/20")} 
                                     onClick={() => setCurrentStep(index)}
                                 >
-                                    <div className={cn(
-                                        "h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", 
-                                        currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                                    )}>
-                                        {index + 1}
-                                    </div>
-                                    <span className="font-bold text-xs uppercase tracking-widest text-left">{step.name}</span>
+                                    <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
+                                    <span className="font-bold text-xs uppercase tracking-widest">{step.name}</span>
                                 </Button>
                             ))}
                         </div>
@@ -497,17 +467,14 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             </CardContent>
             <CardFooter className="bg-slate-50 border-t p-6 flex justify-between">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Previous Step
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
                 <div className="flex gap-3">
                     <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold">
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 mr-2" />} 
-                        Sync Draft
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 mr-2" />} Sync
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
-                        <Button type="button" onClick={handleNext} className="font-bold px-8">
-                            Continue <ArrowRight className="ml-2 h-4 w-4"/>
-                        </Button>
+                        <Button type="button" onClick={handleNext} className="font-bold px-8">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
                     )}
                 </div>
             </CardFooter>
