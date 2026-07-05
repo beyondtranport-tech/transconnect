@@ -10,7 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-    Loader2, Save, CheckCircle, Send, Truck, MapPin, 
+    Loader2, Save, CheckCircle, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Gavel, Sparkles
@@ -78,7 +78,7 @@ function StepIdentity() {
             <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
                 <UserCheck className="h-6 w-6 text-primary" /> Node Identity
             </h3>
-            <div className="space-y-4 text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem>
                         <FormLabel>Public Identity Label</FormLabel>
@@ -160,8 +160,8 @@ function StepWarehouse() {
                         <FormItem className="text-left"><FormLabel>Storage Rate (R/plt/mo)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Monthly recurring fee.</FormDescription></FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2"><Banknote className="h-4 w-4" /> Handling Logic</h4>
+                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left text-foreground">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2 text-left"><Banknote className="h-4 w-4" /> Handling Logic</h4>
                     <FormField control={control} name="upliftFee" render={({ field }) => (
                         <FormItem className="text-left"><FormLabel>Inbound Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
                     )} />
@@ -181,15 +181,15 @@ function StepTransport() {
             <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
                 <Truck className="h-6 w-6 text-primary" /> Fleet Node Parameters
             </h3>
-            <div className="space-y-10">
-                <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
+            <div className="space-y-10 text-left">
+                <div className="space-y-4 text-left">
+                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left">
                         <ShieldCheck className="h-4 w-4" /> Verified Capacity (Fleet)
                     </Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                         {fleetOptions.powered.map(item => (
                             <FormField key={item} control={control} name="poweredUnits" render={({ field }) => (
-                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-xl hover:bg-muted/50 transition-all cursor-pointer">
+                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-xl hover:bg-muted/50 transition-all cursor-pointer text-left">
                                     <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
                                     <FormLabel className="font-bold text-xs cursor-pointer">{item}</FormLabel>
                                 </FormItem>
@@ -198,11 +198,11 @@ function StepTransport() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                <div className="space-y-4 text-left">
+                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left">
                         <MapPin className="h-4 w-4" /> Primary Service Lanes
                     </Label>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-left text-foreground">
                         {fleetOptions.regions.map(item => (
                             <FormField key={item} control={control} name="primaryRegions" render={({ field }) => (
                                 <FormItem className="flex items-center space-x-2 space-y-0 p-2 border rounded-lg hover:bg-muted/50 transition-all cursor-pointer">
@@ -215,7 +215,7 @@ function StepTransport() {
                 </div>
 
                 <FormField control={control} name="fleetSummary" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Technical Profile Summary</FormLabel>
                         <FormControl><Textarea placeholder="Describe your specialized capabilities and corridors..." {...field} className="min-h-[120px] border-2" /></FormControl>
                         <FormDescription>This text is used for high-fidelity matching.</FormDescription>
@@ -235,13 +235,13 @@ function StepLoads() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-6 text-left">
-                    <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                    <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
                         <div className="flex items-center gap-2 text-primary">
                             <DollarSign className="h-5 w-5" />
-                            <h4 className="font-bold text-sm uppercase tracking-widest">Revenue Flow</h4>
+                            <h4 className="font-bold text-sm uppercase tracking-widest text-left text-foreground">Revenue Flow</h4>
                         </div>
                         <FormField control={control} name="brokerageMargin" render={({ field }) => (
-                            <FormItem className="text-left">
+                            <FormItem className="text-left text-foreground">
                                 <FormLabel>Default Clearing Margin (%)</FormLabel>
                                 <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
                                 <FormDescription className="text-xs">Your participation percentage on posted freight.</FormDescription>
@@ -249,19 +249,19 @@ function StepLoads() {
                         )} />
                     </div>
 
-                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50 text-left">
+                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50 text-left text-foreground">
                          <FormField control={control} name="haulierVerificationRequired" render={({ field }) => (
                             <FormItem className="flex items-center justify-between space-y-0 text-left">
-                                <FormLabel className="text-xs font-bold uppercase tracking-tight">Enforce RC1 Compliance</FormLabel>
+                                <FormLabel className="text-xs font-bold uppercase tracking-tight text-left">Enforce RC1 Compliance</FormLabel>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                             </FormItem>
                          )} />
-                         <p className="text-[10px] text-muted-foreground leading-tight italic">Restricts load acceptance to verified fleet nodes only.</p>
+                         <p className="text-[10px] text-muted-foreground leading-tight italic text-left">Restricts load acceptance to verified fleet nodes only.</p>
                     </div>
                 </div>
 
                 <FormField control={control} name="loadPostingTerms" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel className="flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" /> Settlement Ledger Terms</FormLabel>
                         <FormControl><Textarea placeholder="e.g. Payments processed 30 days from original POD submission..." {...field} className="min-h-[150px] border-2 bg-white" /></FormControl>
                         <FormMessage />
@@ -297,7 +297,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             </div>
             <div className="space-y-2 text-center text-foreground">
                 <h3 className="text-3xl font-black font-headline text-center">Node Configured</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                 {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
@@ -440,9 +440,9 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             <CardHeader className="bg-slate-50 border-b p-6">
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2" />
             </CardHeader>
-            <CardContent className="p-0 text-left">
+            <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
+                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -457,8 +457,8 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px] text-left">
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
+                        <div className="p-10 min-h-[500px] text-left text-foreground">
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
                                 {wizardSteps[currentStep].component}
                             </div>
                         </div>
@@ -471,7 +471,7 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
                 </Button>
                 <div className="flex gap-3">
                     <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold">
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 mr-2" />} Sync
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4 mr-2" />} Sync
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
                         <Button type="button" onClick={handleNext} className="font-bold px-8">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
