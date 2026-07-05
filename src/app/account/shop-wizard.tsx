@@ -13,7 +13,8 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
     Loader2, Save, CheckCircle, PlusCircle, Send, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, Info, Sparkles, ImageIcon, 
-    Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone
+    Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
+    Tags, Globe, LayoutTemplate
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -28,7 +29,7 @@ import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engin
 
 // ====== SCHEMAS ======
 
-const shopFormSchema = z.object({
+const nodeFormSchema = z.object({
   shopName: z.string().min(1, "Identity label is required."),
   category: z.string().min(1, "Please select a forensic category."),
   websiteUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
@@ -46,11 +47,14 @@ const shopFormSchema = z.object({
   placementFee: z.coerce.number().optional(),
   monthlyStorageFee: z.coerce.number().optional(),
   availablePallets: z.coerce.number().optional(),
+  // Transport specific
+  operatingRegions: z.array(z.string()).optional().default([]),
+  fleetSummary: z.string().optional(),
 });
 
 // ====== COMPONENTS ======
 
-function StepDetails() {
+function StepIdentity() {
     const { control } = useFormContext();
     return (
         <div className="space-y-6 text-left">
@@ -58,7 +62,7 @@ function StepDetails() {
             <div className="space-y-4 text-left text-foreground">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem className="text-left text-foreground">
-                        <FormLabel>Public Label / Business Name</FormLabel>
+                        <FormLabel>Public Label / Node Name</FormLabel>
                         <FormControl><Input placeholder="e.g. Cape Town Logistics Hub" {...field} className="h-11 border-2" /></FormControl>
                         <FormMessage />
                     </FormItem> 
@@ -88,35 +92,7 @@ function StepDetails() {
     );
 }
 
-function StepWarehouseCapacity() {
-    const { control } = useFormContext();
-    return (
-        <div className="space-y-8 text-left">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2"><Warehouse className="h-6 w-6 text-primary" /> Handling & Storage Parameters</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="space-y-4 text-left text-foreground">
-                    <FormField control={control} name="availablePallets" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Total Positions (Available)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Total pallet slots currently unallocated.</FormDescription></FormItem>
-                    )} />
-                    <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
-                        <FormItem className="text-left text-foreground"><FormLabel>Base Storage Rate (R/mo)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Recurring monthly rental per pallet.</FormDescription></FormItem>
-                    )} />
-                </div>
-                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left text-foreground">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2"><Banknote className="h-4 w-4" /> Inbound Logistics Fees</h4>
-                    <FormField control={control} name="upliftFee" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Uplift Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl><FormDescription>Offloading and verification fee.</FormDescription></FormItem>
-                    )} />
-                    <FormField control={control} name="placementFee" render={({ field }) => (
-                        <FormItem className="text-left text-foreground"><FormLabel>Placement Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl><FormDescription>Racking and system registration fee.</FormDescription></FormItem>
-                    )} />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StepMedia() {
+function StepBranding() {
     const { setValue, watch } = useFormContext();
     const logo = watch('logoUrl');
     const banner = watch('heroBannerUrl');
@@ -141,6 +117,64 @@ function StepMedia() {
                         {banner ? <Image src={banner} alt="Banner" fill className="object-cover" /> : <p className="text-xs italic text-muted-foreground text-center px-4">Generate or upload a high-fidelity industrial banner.</p>}
                     </div>
                     <AIToolModal type="generate" targetField="heroBannerUrl" onResult={(url:any) => setValue('heroBannerUrl', url)} initialPrompt="Wide angle cinematic shot of an ultra-modern logistics warehouse interior at night, blue glowing data lines on the floor." />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function StepWarehouse() {
+    const { control } = useFormContext();
+    return (
+        <div className="space-y-8 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2"><Warehouse className="h-6 w-6 text-primary" /> Storage Node Parameters</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="space-y-4 text-left text-foreground">
+                    <FormField control={control} name="availablePallets" render={({ field }) => (
+                        <FormItem className="text-left"><FormLabel>Total Positions (Available)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Total pallet slots currently unallocated.</FormDescription></FormItem>
+                    )} />
+                    <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
+                        <FormItem className="text-left text-foreground"><FormLabel>Base Storage Rate (R/mo)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Recurring monthly rental per pallet.</FormDescription></FormItem>
+                    )} />
+                </div>
+                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left text-foreground">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2"><Banknote className="h-4 w-4" /> Handling & Logic</h4>
+                    <FormField control={control} name="upliftFee" render={({ field }) => (
+                        <FormItem className="text-left"><FormLabel>Uplift Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl><FormDescription>Offloading and verification fee.</FormDescription></FormItem>
+                    )} />
+                    <FormField control={control} name="placementFee" render={({ field }) => (
+                        <FormItem className="text-left text-foreground"><FormLabel>Placement Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl><FormDescription>Racking and system registration fee.</FormDescription></FormItem>
+                    )} />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function StepTransport() {
+    const { control } = useFormContext();
+    return (
+        <div className="space-y-8 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2"><Truck className="h-6 w-6 text-primary" /> Transport Node Parameters</h3>
+            <div className="space-y-6 text-left text-foreground">
+                <FormField control={control} name="fleetSummary" render={({ field }) => (
+                    <FormItem className="text-left text-foreground">
+                        <FormLabel>Fleet Capabilities Summary</FormLabel>
+                        <FormControl><Textarea placeholder="e.g. Specialized 34-ton Superlink fleet with Hazmat authorization..." {...field} className="min-h-[120px] border-2" /></FormControl>
+                        <FormDescription>Describe your equipment and specialized service standing.</FormDescription>
+                    </FormItem>
+                )} />
+                
+                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left text-foreground">
+                    <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        <h4 className="font-bold text-sm uppercase tracking-widest text-primary">Service Corridors</h4>
+                    </div>
+                    <p className="text-xs text-muted-foreground">List your primary routes and hubs. This helps the matching engine reduce empty miles.</p>
+                    <div className="bg-white p-4 rounded-xl border">
+                        <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Coming Soon: Interactive Hub Mapping</p>
+                        <p className="text-xs italic">Route-specific rates and live GPS hub syncing is currently being integrated into the Transport Mall.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -190,17 +224,17 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
 
-    const isTransporter = shop.shopType === 'transporter' || user?.declaredPosition === 'transporter';
-    const isWarehouse = shop.shopType === 'warehouse' || user?.declaredPosition === 'warehouse';
-    const isAssociate = user?.declaredPosition === 'associate' || user?.role === 'associate';
+    // Node Type Detection based on active plans
+    const hasWarehouse = shop.shopType === 'warehouse' || user?.companyData?.hasWarehousePlan || user?.companyData?.membershipId === 'warehouse_intelligence' || user?.declaredPosition === 'warehouse';
+    const hasTransport = shop.shopType === 'transporter' || user?.companyData?.hasLoadsPlan || user?.companyData?.membershipId === 'loads_intelligence' || user?.declaredPosition === 'transporter';
 
-    const methods = useForm<z.infer<typeof shopFormSchema>>({
-        resolver: zodResolver(shopFormSchema),
+    const methods = useForm<z.infer<typeof nodeFormSchema>>({
+        resolver: zodResolver(nodeFormSchema),
         mode: 'onChange',
         defaultValues: { ...shop }
     });
 
-    const onSubmit = async (values: z.infer<typeof shopFormSchema>) => {
+    const onSubmit = async (values: z.infer<typeof nodeFormSchema>) => {
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
@@ -224,21 +258,30 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
 
     const wizardSteps = useMemo(() => {
         const base = [
-            { id: 'details', name: 'Identity', component: <StepDetails />, fields: ['shopName', 'category', 'contactEmail'] },
-            { id: 'media', name: 'Branding', component: <StepMedia />, fields: [] },
+            { id: 'identity', name: 'Identity', component: <StepIdentity />, fields: ['shopName', 'category'] },
+            { id: 'branding', name: 'Branding', component: <StepBranding />, fields: [] },
         ];
         
-        if (isWarehouse) {
-            base.push({ id: 'capacity', name: 'Flow Logic', component: <StepWarehouseCapacity />, fields: ['upliftFee', 'monthlyStorageFee', 'availablePallets'] });
+        if (hasWarehouse) {
+            base.push({ id: 'warehouse', name: 'Storage Node', component: <StepWarehouse />, fields: ['upliftFee', 'availablePallets'] });
+        }
+        
+        if (hasTransport) {
+            base.push({ id: 'transport', name: 'Transport Node', component: <StepTransport />, fields: ['fleetSummary'] });
+        }
+
+        // Always add catalog for Suppliers/Vendors
+        if (!hasWarehouse && !hasTransport) {
+             base.push({ id: 'catalog', name: 'Catalog', component: <div className="p-12 text-center border-2 border-dashed rounded-3xl opacity-30"><LayoutTemplate className="h-12 w-12 mx-auto mb-2" /><p className="font-bold">Catalog Tools Active</p></div>, fields: [] });
         }
 
         base.push({ id: 'publish', name: 'Finalize', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] });
         return base;
-    }, [shop, isTransporter, isAssociate, isWarehouse, onUpdate]);
+    }, [shop, hasWarehouse, hasTransport, onUpdate]);
 
     const handleNext = async () => {
         const step = wizardSteps[currentStep];
-        const isValid = step.fields.length > 0 ? await methods.trigger(step.fields as any) : true;
+        const isValid = step.fields && step.fields.length > 0 ? await methods.trigger(step.fields as any) : true;
         if (isValid && currentStep < wizardSteps.length - 1) setCurrentStep(prev => prev + 1);
     };
     

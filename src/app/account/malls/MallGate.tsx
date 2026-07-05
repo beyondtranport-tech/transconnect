@@ -7,11 +7,13 @@ import { usePermissions, type Resource } from '@/hooks/use-permissions';
 import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
 import { 
     PackageSearch, Warehouse, Truck, Network, Building2, Landmark, 
-    ShoppingCart, Scale, Search, PlusCircle, ArrowRight, Info, ShieldCheck, Zap
+    ShoppingCart, Scale, Search, PlusCircle, ArrowRight, Info, ShieldCheck, Zap,
+    Loader2
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useRouter } from 'next/navigation';
 
 interface MallConfig {
     id: string;
@@ -56,7 +58,7 @@ const mallConfigs: Record<string, MallConfig> = {
         buyLabel: 'Source Storage',
         buyDesc: 'Find warehousing hubs and calculate storage costs.',
         sellLabel: 'List Capacity',
-        sellDesc: 'List your excess storage space and services.',
+        sellDesc: 'Configure your warehouse branch in your industrial node.',
         sellView: 'shop',
         role: 'warehouse'
     },
@@ -72,7 +74,7 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Scan the forensic haulier registry.',
         sellLabel: 'List My Fleet',
         sellDesc: 'Complete your fleet profile to receive matches.',
-        sellView: 'fleet',
+        sellView: 'shop',
         role: 'transporter'
     },
     distribution: {
@@ -87,7 +89,7 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Find inner-city distribution partners.',
         sellLabel: 'List My Node',
         sellDesc: 'Complete your hub profile for local distribution.',
-        sellView: 'fleet',
+        sellView: 'shop',
         role: 'distributor'
     },
     supplier: {
@@ -139,6 +141,7 @@ const mallConfigs: Record<string, MallConfig> = {
 
 export function MallGate({ mallId }: { mallId: string }) {
     const { can } = usePermissions();
+    const router = useRouter();
     const config = mallConfigs[mallId];
     const [intent, setIntent] = useState<'select' | 'buy' | 'sell' | null>('select');
 
@@ -203,9 +206,9 @@ export function MallGate({ mallId }: { mallId: string }) {
                 <Alert className="bg-primary/5 border-primary/20 p-6 text-left">
                     <Info className="h-6 w-6 text-primary" />
                     <div className="ml-2 text-left">
-                        <AlertTitle className="font-bold text-lg">Earning Integrity</AlertTitle>
+                        <AlertTitle className="font-bold text-lg text-foreground">Operational Intelligence</AlertTitle>
                         <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1">
-                            Your interactions in this mall are protected by secure handshakes. When you find a match or list an asset, the system manages the documentation flow automatically.
+                            Your interactions in this mall are protected by secure industrial handshakes. When you find a match or list an asset, the system manages the documentation and escrow flow automatically.
                         </AlertDescription>
                     </div>
                 </Alert>
@@ -215,30 +218,15 @@ export function MallGate({ mallId }: { mallId: string }) {
 
     // 3. ACTION VIEWS
     if (intent === 'buy') {
-        return <div className="text-center italic py-20 flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="font-bold uppercase text-[10px] tracking-widest">Opening {config.title} Terminal...</p>
-        </div>;
+        // Redirect to the internal Mall board or search terminal
+        router.push(config.id === 'buy-sell' ? '/mall/buy-sell' : `/mall/${config.id}`);
+        return <div className="text-center py-20 flex flex-col items-center gap-4"><Loader2 className="animate-spin" /><p>Opening Mall...</p></div>;
     }
 
     if (intent === 'sell') {
-        const subview = (config.sellView === 'shop' || config.sellView === 'fleet') ? '&subview=wizard' : '';
-        return (
-            <div className="max-w-4xl mx-auto py-20 text-center space-y-6">
-                <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
-                    <config.icon className="h-16 w-16 text-primary opacity-50" />
-                </div>
-                <h3 className="text-2xl font-black">Node Authorization Required</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto text-center leading-relaxed">
-                    To list your capabilities in the {config.title}, you need to complete the commercial configuration wizard for your node.
-                </p>
-                <Button size="lg" asChild className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
-                    <Link href={`/account?view=shop&subview=wizard`}>
-                        Launch Configuration Wizard <ArrowRight className="ml-2 h-6 w-6"/>
-                    </Link>
-                </Button>
-            </div>
-        );
+        // Uniform redirect to Node Terminal with setup subview
+        router.push(`/account?view=shop&subview=wizard`);
+        return <div className="text-center py-20 flex flex-col items-center gap-4"><Loader2 className="animate-spin" /><p>Opening Node Terminal...</p></div>;
     }
 
     return null;

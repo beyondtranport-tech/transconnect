@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   Loader2,
   Truck,
+  Box,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -98,24 +99,23 @@ function AccountPageContent() {
     router.push(`/account?view=${view}`, { scroll: false });
   };
 
-  // Role Detection
-  const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
-  const isWarehouse = user?.declaredPosition === 'warehouse' || user?.companyData?.shopType === 'warehouse';
-  const isDistributor = user?.declaredPosition === 'distributor' || user?.companyData?.shopType === 'distributor';
-  const isAssociate = user?.declaredPosition === 'associate' || user?.role === 'associate';
+  // Role Detection for Industrial Node Labeling
+  const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.hasLoadsPlan;
+  const isWarehouse = user?.declaredPosition === 'warehouse' || user?.companyData?.hasWarehousePlan;
+  const isSupplier = user?.declaredPosition === 'vendor' || user?.companyData?.membershipId === 'intelligence';
 
-  const shopLabel = useMemo(() => {
-      if (isWarehouse) return "My Warehouse Branch";
-      if (isTransporter || isDistributor) return "My Fleet / Node";
-      if (isAssociate) return "My Creator Profile";
-      return "My Shop / Profile";
-  }, [isWarehouse, isTransporter, isDistributor, isAssociate]);
+  const nodeLabel = useMemo(() => {
+      if (isWarehouse) return "My Warehouse Hub";
+      if (isTransporter) return "My Fleet Node";
+      if (isSupplier) return "My Supplier Node";
+      return "My Industrial Node";
+  }, [isWarehouse, isTransporter, isSupplier]);
 
-  const shopIcon = useMemo(() => {
+  const nodeIcon = useMemo(() => {
       if (isWarehouse) return Warehouse;
-      if (isTransporter || isDistributor) return Truck;
-      return Store;
-  }, [isWarehouse, isTransporter, isDistributor]);
+      if (isTransporter) return Truck;
+      return Landmark;
+  }, [isWarehouse, isTransporter]);
 
   if (isUserLoading || !user) {
     return (
@@ -158,8 +158,8 @@ function AccountPageContent() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2">
-            <div className="bg-primary/10 p-2 rounded-full"><User className="h-6 w-6 text-primary" /></div>
-            <h2 className="text-lg font-semibold text-sidebar-foreground">{isAssociate ? 'Partner Area' : 'Member Area'}</h2>
+            <div className="bg-primary/10 p-2 rounded-full"><Box className="h-6 w-6 text-primary" /></div>
+            <h2 className="text-lg font-semibold text-sidebar-foreground">Member Hub</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -170,7 +170,7 @@ function AccountPageContent() {
           </SidebarGroup>
 
           <SidebarGroup>
-              <SidebarGroupLabel>Industrial Malls</SidebarGroupLabel>
+              <SidebarGroupLabel>Forensic Malls</SidebarGroupLabel>
               <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Loads Mall" isActive={activeView === 'mall-loads'} onClick={() => navigate('mall-loads')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
@@ -200,9 +200,9 @@ function AccountPageContent() {
               <SidebarGroupLabel>Node Management</SidebarGroupLabel>
               <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip={shopLabel} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
-                        {React.createElement(shopIcon)}
-                        <span>{shopLabel}</span>
+                    <SidebarMenuButton tooltip={nodeLabel} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
+                        {React.createElement(nodeIcon)}
+                        <span>{nodeLabel}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
@@ -212,33 +212,13 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}><User /><span>My Profile</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Company Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><Users /><span>Company Staff</span></SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Wallet & Payouts" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet & Payouts</span></SidebarMenuButton>
-                  </SidebarMenuItem>
-                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Search History" isActive={activeView === 'search-history'} onClick={() => navigate('search-history')}><Search /><span>Search History</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Support Chat" isActive={activeView === 'support-chat'} onClick={() => navigate('support-chat')}><MessageSquare /><span>Support Chat</span></SidebarMenuButton>
                   </SidebarMenuItem>
               </SidebarMenu>
           </SidebarGroup>
-
-          {isAssociate && (
-            <SidebarGroup>
-                <SidebarGroupLabel>Associate Toolkit</SidebarGroupLabel>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Marketing Studio</span></SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="My Referrals" isActive={activeView === 'network'} onClick={() => navigate('network')}><Handshake /><span>My Referrals</span></SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarGroup>
-          )}
         </SidebarContent>
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
