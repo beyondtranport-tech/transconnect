@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart, Zap, Landmark } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart, Zap, Landmark, Warehouse } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -57,6 +58,23 @@ const defaultPlans = [
             "Access Subcontractor Handshakes",
             "Verified Fleet & Driver Registry",
             "Fulfillment & Settlement Ledger",
+        ],
+        cta: "Activate Node",
+        variant: "default" as const
+    },
+    {
+        id: 'warehouse_intelligence',
+        name: 'Warehouse Intelligence',
+        price: 125,
+        type: 'earning',
+        description: 'The Storage Tier. List capacity and manage storage agreements.',
+        features: [
+            "Everything in Intelligence Access",
+            "List Warehouse Capacity",
+            "Calculate Handling & Storage Fees",
+            "Manage Inbound/Outbound Logic",
+            "Track Recurring Storage Revenue",
+            "Integrated VAS Billing (Packing/Barcoding)",
         ],
         cta: "Activate Node",
         variant: "default" as const
@@ -141,10 +159,10 @@ export default function MembershipPage() {
                     <div className="flex items-center gap-4 border-l-4 border-amber-500 pl-6">
                         <div className="text-left">
                             <h2 className="text-2xl font-black uppercase tracking-tight">02. Industrial Earning Nodes</h2>
-                            <p className="text-muted-foreground text-sm">Transactional access for fulfillment, brokerage, and asset sales.</p>
+                            <p className="text-muted-foreground text-sm">Transactional access for fulfillment, storage, and asset sales.</p>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {plans.filter(p => p.type === 'earning').map((plan) => (
                              <PlanCard key={plan.id} plan={plan} user={user} />
                         ))}
@@ -161,10 +179,10 @@ export default function MembershipPage() {
             
             <div className="grid md:grid-cols-3 gap-12">
                 <div className="space-y-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Zap className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold text-left">Frictionless Brokerage</h3>
+                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Warehouse className="h-6 w-6 text-primary"/></div>
+                    <h3 className="text-xl font-bold text-left">Dynamic Storage</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Loads Intelligence provides the legal and technical framework to act as a subcontractor. Issue professional instructions and track fulfillment with zero manual paperwork.
+                        Warehouse Intelligence allows you to monetize empty shelf space or find flexible storage. Automated calculation of handling and storage fees eliminates billing friction.
                     </p>
                 </div>
                 <div className="space-y-4 text-left">

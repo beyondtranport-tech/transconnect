@@ -45,57 +45,38 @@
       },
       "required": ["firstName", "lastName", "email", "type"]
     },
-    "Load": {
-      "title": "Load Listing",
-      "type": "object",
-      "description": "A specific freight load handled through the fulfillment lifecycle.",
-      "properties": {
-        "id": { "type": "string" },
-        "brokerId": { "type": "string" },
-        "brokerName": { "type": "string" },
-        "takerId": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "assigned", "delivered", "completed", "cancelled"] },
-        "instructionNumber": { "type": "string" },
-        "podUrl": { "type": "string", "description": "Uploaded Proof of Delivery URL." },
-        "completionDate": { "type": "object" },
-        "haulierPayout": { "type": "number" },
-        "brokerEarn": { "type": "number" },
-        "platformFee": { "type": "number" },
-        "collectionDetails": { "type": "string" },
-        "deliveryDetails": { "type": "string" },
-        "demurrageConditions": { "type": "string" }
-      },
-      "required": ["id", "status"]
-    },
-    "VehicleListing": {
-      "title": "Vehicle Inventory",
+    "WarehouseListing": {
+      "title": "Warehouse Capacity",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "companyId": { "type": "string" },
-        "make": { "type": "string" },
-        "model": { "type": "string" },
-        "year": { "type": "string" },
-        "price": { "type": "number" },
-        "status": { "type": "string", "enum": ["active", "pending_review", "sold", "draft"] },
-        "mileage": { "type": "number" },
-        "photos": { "type": "array", "items": { "type": "object" } }
+        "providerType": { "type": "string", "enum": ["primary_operator", "excess_capacity"] },
+        "facilityName": { "type": "string" },
+        "location": { "type": "string" },
+        "totalSqm": { "type": "number" },
+        "availablePallets": { "type": "number" },
+        "upliftFee": { "type": "number" },
+        "placementFee": { "type": "number" },
+        "monthlyStorageFee": { "type": "number" },
+        "status": { "type": "string", "enum": ["active", "full", "draft"] }
       }
     },
-    "VehicleSale": {
-      "title": "Vehicle Transaction",
+    "WarehouseBooking": {
+      "title": "Warehouse Transaction",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "vehicleId": { "type": "string" },
-        "sellerId": { "type": "string" },
-        "buyerId": { "type": "string" },
-        "status": { "type": "string", "enum": ["negotiating", "finance_pending", "paid", "delivered", "concluded"] },
-        "agreedPrice": { "type": "number" },
-        "commissionAmount": { "type": "number" },
-        "otpUrl": { "type": "string" },
-        "invoiceUrl": { "type": "string" },
-        "deliveryNoteUrl": { "type": "string" }
+        "listingId": { "type": "string" },
+        "clientCompanyId": { "type": "string" },
+        "palletCount": { "type": "number" },
+        "startDate": { "type": "object" },
+        "estimatedDurationMonths": { "type": "number" },
+        "requiresPacking": { "type": "boolean" },
+        "requiresBarcoding": { "type": "boolean" },
+        "totalInitialFees": { "type": "number" },
+        "recurringMonthlyFee": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "authorized", "completed"] }
       }
     }
   },
@@ -113,16 +94,12 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       },
       {
-        "path": "/companies/{companyId}/loadBoard/loads/{loadId}",
-        "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Execution and fulfillment registry." }
+        "path": "/warehouseListings/{listingId}",
+        "definition": { "entityName": "WarehouseListing", "schema": { "$ref": "#/entities/WarehouseListing" }, "description": "Global storage capacity registry." }
       },
       {
-        "path": "/companies/{companyId}/vehicleListings/{vehicleId}",
-        "definition": { "entityName": "VehicleListing", "schema": { "$ref": "#/entities/VehicleListing" }, "description": "Member vehicle inventory." }
-      },
-      {
-        "path": "/sales/{saleId}",
-        "definition": { "entityName": "VehicleSale", "schema": { "$ref": "#/entities/VehicleSale" }, "description": "Global sales ledger." }
+        "path": "/companies/{companyId}/warehouseBookings/{bookingId}",
+        "definition": { "entityName": "WarehouseBooking", "schema": { "$ref": "#/entities/WarehouseBooking" }, "description": "Specific member storage agreements." }
       }
     ]
   }

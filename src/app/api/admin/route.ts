@@ -129,6 +129,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            // WAREHOUSE MALL OVERSIGHT
+            case 'getWarehouseListings': {
+                const snap = await db.collection('warehouseListings').orderBy('status', 'asc').limit(100).get();
+                const results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
             // REGISTRY & ENRICHMENT
             case 'getLeads': {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
@@ -154,4 +161,3 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
-
