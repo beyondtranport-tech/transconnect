@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -7,9 +8,9 @@ export const dynamic = 'force-dynamic';
 
 /**
  * FORENSIC SEARCH ENGINE - REVENUE PROTECTED
- * Enforces "Transactional Masking":
- * 1. Base Intelligence members see Names/Addresses.
- * 2. ONLY specific Earning Node members see Direct Emails, Mobiles, and mined Service wording.
+ * Implements granular "Intelligence Depth" based on Modular Nodes:
+ * 1. Foundational Intelligence (R100): Sees Company Names, Addresses, Tally Badges.
+ * 2. Specialized Nodes (R75-R150): See Direct Emails, Mobiles, MD Names, and Mined Service Wording.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -30,50 +31,48 @@ export async function POST(req: NextRequest) {
         const uid = decodedToken.uid;
         const db = getFirestore(app);
 
-        // 1. Get Member Status & Tier
+        // 1. Resolve Member Permission Context
         const userDoc = await db.collection('users').doc(uid).get();
         const companyId = userDoc.data()?.companyId;
-        if (!companyId) throw new Error("Member profile not found.");
+        if (!companyId) throw new Error("Member node not synchronized.");
 
-        const companyRef = db.collection('companies').doc(companyId);
-        const companyDoc = await companyRef.get();
+        const companyDoc = await db.collection('companies').doc(companyId).get();
         const companyData = companyDoc.data()!;
         
         const membershipId = companyData.membershipId || 'free';
-        const isBasePaid = membershipId !== 'free';
+        const isFoundationPaid = membershipId === 'intelligence' || membershipId === 'premium';
 
-        // REVENUE GUARD: Check for specific Earning Node
-        const hasLoadsNode = membershipId === 'loads_intelligence' || membershipId === 'premium';
-        const hasMarketplaceNode = membershipId === 'buy_sell_intelligence' || membershipId === 'premium';
-        const hasWarehouseNode = membershipId === 'warehouse_intelligence' || membershipId === 'premium';
+        // 2. Identify Active Earning Nodes
+        const hasLoadsNode = companyData.hasLoadsPlan || membershipId === 'premium' || membershipId === 'loads_intelligence';
+        const hasWarehouseNode = companyData.hasWarehousePlan || membershipId === 'premium' || membershipId === 'warehouse_intelligence';
+        const hasMarketplaceNode = companyData.hasBuySellPlan || membershipId === 'premium' || membershipId === 'buy_sell_intelligence';
 
-        // 2. Execute Registry Scan
+        // 3. Define Access Depth for this search type
+        let authorizedForDirectContacts = false;
+        if (type === 'transporter' || type === 'driver') authorizedForDirectContacts = hasLoadsNode;
+        else if (type === 'warehouse') authorizedForDirectContacts = hasWarehouseNode;
+        else if (type === 'supplier' || type === 'finance') authorizedForDirectContacts = isFoundationPaid; // Foundational value
+
+        // 4. Execute Scan
         let collectionName = 'leads';
-        if (['driver', 'transporter', 'supplier', 'finance', 'warehouse'].includes(type)) collectionName = 'partners';
+        if (['driver', 'transporter', 'supplier', 'finance', 'warehouse', 'distributor'].includes(type)) collectionName = 'partners';
         
         const snapshot = await db.collection(collectionName)
             .orderBy('updatedAt', 'desc')
-            .limit(500) 
+            .limit(100) 
             .get();
 
-        let results = snapshot.docs.map((doc: any) => {
+        const finalResults = snapshot.docs.map(doc => {
             const item = doc.data();
             const normalized = {
                 id: doc.id,
-                companyName: item.companyName || item.company_name || item.trading_name || item.service_handle || 'Industrial Entity',
+                companyName: item.companyName || item.company_name || item.service_handle || 'Industrial Entity',
                 address: item.address || item.physicalAddress || 'South Africa',
                 entryType: item.industrial_category || item.category || 'General',
+                researchStatus: item.minedServiceWording ? 'completed' : 'pending'
             };
 
-            // RESOLVE DATA DEPTH based on the specific Mall Node
-            let canSeeDirectDetails = false;
-            if (type === 'transporter') canSeeDirectDetails = hasLoadsNode;
-            else if (type === 'supplier') canSeeDirectDetails = isBasePaid; // Suppliers are open to all paid
-            else if (type === 'finance') canSeeDirectDetails = isBasePaid; // Capital access is core value
-            else if (type === 'warehouse') canSeeDirectDetails = hasWarehouseNode;
-            else if (type === 'driver') canSeeDirectDetails = hasLoadsNode;
-
-            if (canSeeDirectDetails) {
+            if (authorizedForDirectContacts) {
                 return {
                     ...normalized,
                     contactPerson: item.contactPerson || item.contact_person || 'Identity Verified',
@@ -83,8 +82,8 @@ export async function POST(req: NextRequest) {
                     website: item.website || item.url || 'N/A',
                     minedServiceWording: item.minedServiceWording || item.notes || '',
                 };
-            } else if (isBasePaid) {
-                // R100 Foundation: See metadata but mask the high-value "Transactional" contacts
+            } else if (isFoundationPaid) {
+                // Foundation (R100): Masking high-value contacts
                 return {
                     ...normalized,
                     contactPerson: 'Locked (Earning Node Required)',
@@ -92,12 +91,11 @@ export async function POST(req: NextRequest) {
                     phone: '0XX XXX XXXX',
                     mobile: '0XX XXX XXXX',
                     website: 'www.locked.co.za',
-                    minedServiceWording: 'Transactional intelligence is restricted to specific Mall subscribers.',
                     isMasked: true,
                     nodeRequired: type === 'transporter' ? 'loads_intelligence' : type === 'warehouse' ? 'warehouse_intelligence' : 'buy_sell_intelligence'
                 };
             } else {
-                // Free: Standard deep masking
+                // Free: Deep Masking
                 return {
                     ...normalized,
                     contactPerson: 'Locked',
@@ -107,19 +105,8 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        // 3. Filter results
-        if (searchTerm || category) {
-            const lowSearch = searchTerm?.toLowerCase() || '';
-            results = results.filter((item: any) => 
-                item.companyName.toLowerCase().includes(lowSearch) || 
-                item.entryType.toLowerCase().includes(lowSearch)
-            );
-        }
-
-        const finalResults = results.slice(0, 100);
-
-        // 4. Log Search for Audit
-        await companyRef.collection('searchLogs').add({
+        // 5. Log Search for Member Audit
+        await db.collection('companies').doc(companyId).collection('searchLogs').add({
             userId: uid,
             type,
             searchTerm: searchTerm || '',
@@ -130,7 +117,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, data: finalResults });
 
     } catch (error: any) {
-        console.error(`Search API Error:`, error);
+        console.error(`Forensic Search API Error:`, error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }

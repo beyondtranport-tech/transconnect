@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser } from '@/firebase';
@@ -61,7 +62,8 @@ export function usePermissions() {
 
         const isAdmin = user.email === 'mkoton100@gmail.com' || 
                         user.email === 'beyondtransport@gmail.com' ||
-                        user.email === 'michael@logisticsflow.co.za';
+                        user.email === 'michael@logisticsflow.co.za' ||
+                        user.claims?.admin === true;
 
         if (isAdmin) {
             perms.add('manage:all');

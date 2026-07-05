@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -8,10 +9,10 @@ import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, ArrowLeft, Wallet, AlertCircle, CheckCircle, ShieldCheck, Zap, Heart, Gift } from 'lucide-react';
+import { Loader2, ArrowLeft, Wallet, AlertCircle, CheckCircle, ShieldCheck, Zap, Heart, Gift, Truck, Landmark, Warehouse, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useMemoFirebase } from '@/hooks/use-memo-firebase';
+import { useMemoFirebase } from '@/firebase';
 import { formatCurrency } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +22,10 @@ const iconMap: Record<string, any> = {
     rewards: Gift,
     actions: Zap,
     intelligence: ShieldCheck,
+    loads_intelligence: Truck,
+    warehouse_intelligence: Warehouse,
+    buy_sell_intelligence: ShoppingCart,
+    finance_intelligence: Landmark,
 };
 
 function CheckoutComponent() {
@@ -34,12 +39,17 @@ function CheckoutComponent() {
   
   const planId = params.planId as string;
   const cycle = searchParams.get('cycle') || 'monthly';
-  const isConnectPlan = ['loyalty', 'rewards', 'actions'].includes(planId);
   
+  // Categorize plan type
+  const isConnectPlan = ['loyalty', 'rewards', 'actions'].includes(planId);
+  const isEarningNode = ['loads_intelligence', 'warehouse_intelligence', 'buy_sell_intelligence', 'finance_intelligence'].includes(planId);
+  const isFoundationTier = planId === 'intelligence';
+
+  // Refs
   const membershipRef = useMemoFirebase(() => {
-      if (!firestore || !planId || isConnectPlan) return null;
+      if (!firestore || !planId) return null;
       return doc(firestore, 'memberships', planId);
-  }, [firestore, planId, isConnectPlan]);
+  }, [firestore, planId]);
 
   const connectConfigRef = useMemoFirebase(() => {
       if (!firestore || !isConnectPlan) return null;
@@ -68,6 +78,7 @@ function CheckoutComponent() {
   }, [user, isUserLoading, router, planId, cycle]);
   
   const planDisplay = useMemo(() => {
+    // 1. Handle Connect Plans
     if (isConnectPlan && connectConfig) {
         const priceKey = `${planId}PlanPrice`;
         return {
@@ -77,6 +88,8 @@ function CheckoutComponent() {
             type: 'connect'
         };
     }
+    
+    // 2. Handle Foundation Tier or Earning Nodes
     if (membershipPlan) {
         const monthlyPrice = (typeof membershipPlan.price === 'object' && membershipPlan.price !== null)
             ? membershipPlan.price.monthly || 0
@@ -92,18 +105,18 @@ function CheckoutComponent() {
                 name: membershipPlan.name,
                 price: baseAnnualPrice * (1 - (specialOfferDiscount / 100)),
                 description: membershipPlan.description,
-                type: 'membership'
+                type: isFoundationTier ? 'membership' : 'node'
             };
         }
         return {
             name: membershipPlan.name,
             price: finalMonthlyPrice,
             description: membershipPlan.description,
-            type: 'membership'
+            type: isFoundationTier ? 'membership' : 'node'
         };
     }
     return null;
-  }, [planId, isConnectPlan, connectConfig, membershipPlan, cycle]);
+  }, [planId, isConnectPlan, isFoundationTier, connectConfig, membershipPlan, cycle]);
 
   const handlePurchase = async () => {
     if (!user || !planDisplay || !companyData || !firestore) {
@@ -111,8 +124,9 @@ function CheckoutComponent() {
         return;
     }
     
-    if (companyData.availableBalance < planDisplay.price) {
-        toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Please top-up your wallet to complete this purchase.' });
+    const balance = companyData.availableBalance || 0;
+    if (balance < planDisplay.price) {
+        toast({ variant: 'destructive', title: 'Insufficient Funds', description: 'Please top-up your wallet to complete this activation.' });
         return;
     }
 
@@ -125,7 +139,7 @@ function CheckoutComponent() {
             companyId: companyData.id,
             amount: planDisplay.price,
             description: `Plan Activation: ${planDisplay.name} (${cycle})`,
-            planType: planDisplay.type,
+            planType: planDisplay.type, // 'membership', 'connect', or 'node'
             planId: planId,
             cycle: cycle,
         };
@@ -137,17 +151,17 @@ function CheckoutComponent() {
         });
 
         const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Payment failed.');
+        if (!response.ok) throw new Error(result.error || 'Activation failed.');
 
         toast({
             title: 'Activation Successful!',
-            description: `The ${planDisplay.name} is now active on your account.`,
+            description: `Your ${planDisplay.name} is now active.`,
         });
         
         router.push('/account?view=dashboard');
 
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Purchase Failed', description: error.message });
+        toast({ variant: 'destructive', title: 'Process Failed', description: error.message });
     } finally {
         setIsProcessing(false);
     }
@@ -160,7 +174,7 @@ function CheckoutComponent() {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Preparing Checkout...</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Preparing Secure Checkout...</p>
         </div>
       );
   }
@@ -169,87 +183,93 @@ function CheckoutComponent() {
     return (
         <div className="container mx-auto max-w-md py-20 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h2 className="text-2xl font-bold">Plan Configuration Error</h2>
-            <p className="text-muted-foreground mt-2">We couldn't retrieve the details for this plan.</p>
+            <h2 className="text-2xl font-bold">Node Metadata Missing</h2>
+            <p className="text-muted-foreground mt-2">We couldn't retrieve the configuration for this industrial node.</p>
             <Button asChild className="mt-6" variant="outline"><Link href="/pricing">Return to Pricing</Link></Button>
         </div>
     );
   }
 
-  const hasSufficientFunds = companyData && companyData.availableBalance >= planDisplay.price;
+  const hasSufficientFunds = companyData && (companyData.availableBalance || 0) >= planDisplay.price;
 
   return (
     <div className="container mx-auto px-4 py-16 flex justify-center text-left">
-        <Card className="w-full max-w-xl shadow-2xl border-none overflow-hidden text-left">
-            <CardHeader className="bg-slate-900 text-white p-8 text-left">
-                <div className="flex items-center gap-4 text-left">
-                    <div className="bg-primary/20 p-3 rounded-xl"><PlanIcon className="h-8 w-8 text-primary" /></div>
-                    <div className="text-left text-foreground">
-                        <CardTitle className="text-2xl font-black font-headline text-white text-left">Finalize Activation</CardTitle>
-                        <CardDescription className="text-slate-400 text-left">Review your plan details and confirm payment.</CardDescription>
+        <Card className="w-full max-w-xl shadow-2xl border-none overflow-hidden text-left bg-white">
+            <CardHeader className="bg-slate-900 text-white p-10 text-left">
+                <div className="flex items-center gap-6 text-left">
+                    <div className="bg-primary/20 p-4 rounded-2xl shadow-inner">
+                        <PlanIcon className="h-10 w-10 text-primary" />
+                    </div>
+                    <div className="text-left">
+                        <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.2em] border-primary/50 text-primary px-3 h-5">
+                                {isEarningNode ? 'Industrial Node' : 'Ecosystem Foundation'}
+                            </Badge>
+                        </div>
+                        <CardTitle className="text-3xl font-black font-headline text-white text-left leading-tight">Activate Intelligence</CardTitle>
                     </div>
                 </div>
             </CardHeader>
             
-            <CardContent className="p-8 space-y-8 text-left">
+            <CardContent className="p-10 space-y-8 text-left text-foreground">
                 <div className="space-y-4 text-left">
-                    <div className="flex justify-between items-baseline text-left text-foreground">
-                        <h3 className="text-xl font-bold text-left">{planDisplay.name}</h3>
-                        <p className="text-2xl font-black text-primary text-left">{formatCurrency(planDisplay.price)}</p>
+                    <div className="flex justify-between items-baseline text-left">
+                        <h3 className="text-2xl font-black text-left">{planDisplay.name}</h3>
+                        <p className="text-3xl font-black text-primary text-left">{formatCurrency(planDisplay.price)}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed text-left">{planDisplay.description}</p>
-                    <Badge variant="secondary" className="capitalize">{cycle} billing cycle</Badge>
+                    <p className="text-base text-muted-foreground leading-relaxed text-left">{planDisplay.description}</p>
+                    <Badge variant="secondary" className="capitalize px-3 py-1 font-bold text-[10px] uppercase tracking-widest">{cycle} billing cycle</Badge>
                 </div>
 
                 <Separator />
 
-                <div className="space-y-4 text-left text-foreground">
+                <div className="space-y-4 text-left">
                     <div className="flex justify-between items-center text-left">
-                        <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-left">Available Wallet Balance</span>
-                        <span className="font-mono font-bold text-left">{formatCurrency(companyData?.availableBalance)}</span>
+                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground text-left">Account Available Balance</span>
+                        <span className="font-mono font-bold text-lg text-left">{formatCurrency(companyData?.availableBalance)}</span>
                     </div>
                     
                     {!hasSufficientFunds && (
                         <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-left">
                             <AlertCircle className="h-5 w-5" />
-                            <AlertTitle className="font-bold text-left">Insufficient Funds</AlertTitle>
-                            <AlertDescription className="text-xs mt-1 text-left">
-                                You need an additional **{formatCurrency(planDisplay.price - (companyData?.availableBalance || 0))}** to complete this activation.
+                            <AlertTitle className="font-bold text-left">Activation Blocked: Low Balance</AlertTitle>
+                            <AlertDescription className="text-sm mt-1 text-left">
+                                You require an additional **{formatCurrency(planDisplay.price - (companyData?.availableBalance || 0))}** in your wallet to activate this node.
                             </AlertDescription>
                         </Alert>
                     )}
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-2xl border border-dashed text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-2 text-left">
-                        <ShieldCheck className="h-4 w-4 text-primary"/>
-                        Ecosystem Agreement
+                <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200 text-left">
+                    <h4 className="font-black text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2 text-left">
+                        <ShieldCheck className="h-4 w-4 fill-current"/>
+                        Handshake Verification
                     </h4>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
-                        By clicking "Confirm & Activate", you authorize Logistics Flow to debit {formatCurrency(planDisplay.price)} from your wallet.
+                    <p className="text-xs text-muted-foreground leading-relaxed text-left">
+                        By confirming, you authorize a direct wallet debit. This activation is final and grants immediate access to the forensic registry and transactional terminals associated with this node.
                     </p>
                 </div>
             </CardContent>
 
-            <CardFooter className="p-8 bg-muted/20 border-t flex flex-col gap-4 text-left">
+            <CardFooter className="p-10 bg-muted/20 border-t flex flex-col gap-4 text-left">
                 <Button 
                     onClick={handlePurchase} 
                     disabled={isProcessing || !hasSufficientFunds} 
-                    className="w-full h-14 text-lg font-black uppercase tracking-tight shadow-xl"
+                    className="w-full h-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white"
                 >
-                    {isProcessing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Wallet className="mr-2 h-5 w-5" />}
-                    {hasSufficientFunds ? `Confirm & Activate Plan` : 'Top-up Required'}
+                    {isProcessing ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Zap className="mr-2 h-6 w-6" />}
+                    {hasSufficientFunds ? `Confirm & Activate Node` : 'Insufficient Funds'}
                 </Button>
                 
-                {!hasSufficientFunds && (
+                {!hasSufficientFunds ? (
                     <Button asChild variant="outline" className="w-full h-12 font-bold">
-                        <Link href="/account?view=wallet">Go to Wallet to Top-up</Link>
+                        <Link href="/account?view=wallet">Go to Wallet & Top-up</Link>
+                    </Button>
+                ) : (
+                    <Button variant="ghost" className="text-xs text-muted-foreground font-bold uppercase tracking-widest text-center" asChild>
+                        <Link href="/pricing">Cancel and return to plans</Link>
                     </Button>
                 )}
-                
-                <Button variant="ghost" className="text-xs text-muted-foreground font-bold uppercase tracking-widest" asChild>
-                    <Link href="/pricing">Cancel and go back</Link>
-                </Button>
             </CardFooter>
         </Card>
     </div>
