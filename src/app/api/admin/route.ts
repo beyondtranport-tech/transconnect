@@ -83,8 +83,12 @@ export async function POST(req: NextRequest) {
             // BUY & SELL MALL
             case 'searchListings': {
                 const { term } = payload;
-                // Matches firestore.indexes.json: status ASC (equality/ordering check)
-                const snap = await db.collectionGroup('vehicleListings').where('status', '==', 'active').get();
+                // Updated to match 2-field composite index: status ASC, createdAt DESC
+                const snap = await db.collectionGroup('vehicleListings')
+                    .where('status', '==', 'active')
+                    .orderBy('createdAt', 'desc')
+                    .get();
+                    
                 let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (term) {
                     const low = term.toLowerCase();
