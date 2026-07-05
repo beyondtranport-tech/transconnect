@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -51,7 +50,7 @@ import {
   MapPin,
   Scale
 } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -78,6 +77,7 @@ import IntelligenceHistory from './intelligence-history';
 import SocialStudio from '@/app/adminaccount/social-studio';
 import MarketingStudio from './marketing-studio';
 import MyFacilitiesContent from './facilities-content';
+import ShopContent from './shop-content';
 
 // Mall Gate Components
 import { MallGate } from './malls/MallGate';
@@ -141,6 +141,7 @@ function AccountPageContent() {
       case 'dashboard': return <AccountDashboard />;
       case 'profile': return <ProfileContent />;
       case 'company': return <CompanyContent />;
+      case 'shop': return <ShopContent />;
       case 'staff': return <StaffContent />;
       case 'wallet': return <WalletContent />;
       case 'billing': return <BillingContent />;
@@ -208,6 +209,9 @@ function AccountPageContent() {
               <SidebarGroupLabel>Account & Settings</SidebarGroupLabel>
               <SidebarMenu>
                   <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>My Shop / Profile</span></SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Company Profile" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company Profile</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
@@ -244,9 +248,9 @@ function AccountPageContent() {
                 </SidebarMenu>
             </SidebarGroup>
           )}
-        </SidebarContent>
+        </Sidebar>
         <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
