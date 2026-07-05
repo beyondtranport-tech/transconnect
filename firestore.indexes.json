@@ -70,24 +70,10 @@
       ]
     },
     {
-      "collectionId": "loads",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionId": "brokerAgreements",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "brokerAgreements",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },

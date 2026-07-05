@@ -63,12 +63,14 @@ export async function POST(req: NextRequest) {
 
             // LOADS MALL OVERSIGHT
             case 'getBrokerAgreements': {
-                const snap = await db.collectionGroup('brokerAgreements').orderBy('createdAt', 'desc').get();
+                // Matches firestore.indexes.json: status ASC, createdAt DESC
+                const snap = await db.collectionGroup('brokerAgreements').orderBy('status', 'asc').orderBy('createdAt', 'desc').get();
                 const agreements = snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }));
                 return NextResponse.json({ success: true, data: agreements.map(serializeTimestamps) });
             }
             case 'getGlobalLoads': {
-                const snap = await db.collectionGroup('loads').orderBy('createdAt', 'desc').limit(200).get();
+                // Matches firestore.indexes.json: status ASC, createdAt DESC
+                const snap = await db.collectionGroup('loads').orderBy('status', 'asc').orderBy('createdAt', 'desc').limit(200).get();
                 const loads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: loads.map(serializeTimestamps) });
             }
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
             // BUY & SELL MALL
             case 'searchListings': {
                 const { term } = payload;
+                // Matches firestore.indexes.json: status ASC (equality/ordering check)
                 const snap = await db.collectionGroup('vehicleListings').where('status', '==', 'active').get();
                 let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 if (term) {
