@@ -50,6 +50,9 @@ import {
   ShoppingCart,
   HelpCircle,
   Warehouse,
+  Network,
+  PackageSearch,
+  Building,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -76,11 +79,14 @@ import CommercialNegotiations from '@/app/backend/commercial-negotiations';
 import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
+import ShopsList from '@/app/backend/shops-list';
 
 // Admin oversight components
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const WarehouseOversight = dynamic(() => import('@/app/backend/warehouse-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const TransportOversight = dynamic(() => import('@/app/backend/transport-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const DistributionOversight = dynamic(() => import('@/app/backend/distribution-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Settings
 import PermissionsContent from '@/app/backend/permissions-content';
@@ -119,7 +125,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest text-center">Verifying Admin Credentials...</p>
+                <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest text-center">Verifying Admin Permissions...</p>
             </div>
         );
     }
@@ -156,6 +162,9 @@ function BackendContent() {
       case 'support-inbox': return <SupportChatInbox />;
       case 'finance-mall': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
+      case 'supplier-mall': return <ShopsList />;
+      case 'transport-oversight': return <TransportOversight />;
+      case 'distribution-oversight': return <DistributionOversight />;
       case 'buy-sell-oversight': return <BuySellOversight />;
       case 'warehouse-oversight': return <WarehouseOversight />;
       case 'success-engine': return <MemberSuccessEngine />;
@@ -189,7 +198,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
-  const isMallsActive = ['finance-mall', 'loads-oversight', 'buy-sell-oversight', 'warehouse-oversight', 'success-engine'].includes(activeView);
+  const isMallsActive = ['finance-mall', 'loads-oversight', 'supplier-mall', 'transport-oversight', 'distribution-oversight', 'warehouse-oversight', 'buy-sell-oversight', 'success-engine'].includes(activeView);
   const isSuccessActive = ['loyalty-overview', 'contributions', 'commercial-negotiations'].includes(activeView);
   const isPlatformSettingsActive = ['permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'].includes(activeView);
 
@@ -233,13 +242,22 @@ function BackendContent() {
                         </SidebarMenuSub>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Loads Mall" isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><Truck /><span>Loads Mall</span></SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Loads Mall" isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Buy and Sell" isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart /><span>Buy and Sell</span></SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Supplier Mall" isActive={activeView === 'supplier-mall'} onClick={() => navigate('supplier-mall')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Transport Mall" isActive={activeView === 'transport-oversight'} onClick={() => navigate('transport-oversight')}><Truck /><span>Transport Mall</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Distribution Mall" isActive={activeView === 'distribution-oversight'} onClick={() => navigate('distribution-oversight')}><Network /><span>Distribution Mall</span></SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton tooltip="Warehouse Mall" isActive={activeView === 'warehouse-oversight'} onClick={() => navigate('warehouse-oversight')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Buy & Sell Mall" isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart /><span>Buy & Sell Mall</span></SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarGroup>
