@@ -27,10 +27,12 @@ service cloud.firestore {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          // Path 1: User's profile document explicitly links to this company
-          get(/databases/$(database)/documents/users/$(uid)).data.companyId == cid ||
-          // Path 2: The company document explicitly lists this user as the owner
-          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == uid
+          // Path 1: Direct ownership check on the company document (Fastest for new members)
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == uid) ||
+          // Path 2: User profile mapping (Used for staff/partners)
+          (exists(/databases/$(database)/documents/users/$(uid)) && 
+           get(/databases/$(database)/documents/users/$(uid)).data.companyId == cid)
         )
       );
     }
@@ -84,9 +86,8 @@ service cloud.firestore {
       }
       
       match /loadBoard/{allBoard=**} {
-        // Broad read for authenticated members (The Haulier Board), restricted write
-        allow read: if isSignedIn();
-        allow write: if isMember(companyId);
+        // Restricted to members/owners
+        allow read, write: if isMember(companyId);
       }
     }
 
