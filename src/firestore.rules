@@ -12,34 +12,33 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
-        ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'].hasAny([request.auth.token.email]) ||
+        request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
         (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
       );
     }
 
     /**
      * IS MEMBER / OWNER CHECK
-     * High-speed verification for company-level data.
-     * Accounts for new-member latency by checking direct ownership.
+     * Simplified and optimized for high-speed verification.
      */
     function isMember(cid) {
-      let uid = request.auth.uid;
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          // Path 1: Direct ownership check on the company document (Fastest for new members)
-          (exists(/databases/$(database)/documents/companies/$(cid)) && 
-           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == uid) ||
-          // Path 2: User profile mapping (Used for staff/partners)
-          (exists(/databases/$(database)/documents/users/$(uid)) && 
-           get(/databases/$(database)/documents/users/$(uid)).data.companyId == cid)
+          // Check 1: User document explicitly links to this company
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
+          // Check 2: Direct ownership check on the company document
+          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
         )
       );
     }
 
     function isSaleParticipant(sale) {
-        let userCid = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId;
-        return sale != null && (sale.buyerId == userCid || sale.sellerId == userCid);
+        return isSignedIn() && (
+            isAdmin() || 
+            sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
+            sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
+        );
     }
 
     // --- STANDARD PATH RULES ---
@@ -56,13 +55,14 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Robust read check allowing users to see their own newly created company
-      allow read: if isMember(companyId) || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      // Allow the owner to read the doc even before companyId is set on their profile
+      allow read: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
+      // Sub-collections: Explicitly grant list/read to members
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
-      match /transactions/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /transactions/{id} { allow read, list: if isMember(companyId); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
       match /enquiries/{id} { allow read, write, list: if isMember(companyId); }
       match /quotes/{id} { allow read, write, list: if isMember(companyId); }
@@ -86,7 +86,6 @@ service cloud.firestore {
       }
       
       match /loadBoard/{allBoard=**} {
-        // Restricted to members/owners
         allow read, write: if isMember(companyId);
       }
     }
@@ -141,13 +140,11 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // Universal read access for community boards
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
     
-    // Private operational groups
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
