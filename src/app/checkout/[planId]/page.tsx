@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -57,6 +56,7 @@ const defaultPlans = [
         id: 'buy_sell_intelligence',
         name: 'Buy & Sell Intelligence',
         price: 150,
+        isPopular: true,
         type: 'node',
         description: 'The Marketplace Node. Secure vehicle trading and document automation.',
         icon: ShoppingCart
@@ -197,7 +197,13 @@ function CheckoutComponent() {
             body: JSON.stringify(payload),
         });
 
-        const result = await response.json();
+        let result;
+        try {
+            result = await response.json();
+        } catch (jsonError) {
+            throw new Error('The server returned an invalid response. Please contact support if this persists.');
+        }
+
         if (!response.ok) throw new Error(result.error || 'Activation failed.');
 
         toast({
