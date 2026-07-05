@@ -17,12 +17,18 @@ service cloud.firestore {
       );
     }
 
+    /**
+     * IS MEMBER / OWNER CHECK
+     * High-speed verification for company-level data.
+     * Checks user profile mapping AND direct ownership on the company record.
+     */
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
           cid == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
+          (exists(/databases/$(database)/documents/companies/$(cid)) && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }
@@ -48,8 +54,9 @@ service cloud.firestore {
     match /companies/{companyId} {
       allow read: if isMember(companyId);
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
+      // Sub-collection matches using explicit isMember authorization
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
