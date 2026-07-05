@@ -7,10 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { 
     Loader2, Truck, Handshake, ShieldCheck, Search, FileText, CheckCircle, 
-    XCircle, ArrowRight, RefreshCcw, DollarSign, Database, Gavel, Scale, Settings2
+    XCircle, ArrowRight, RefreshCcw, DollarSign, Database, Gavel, Scale, Settings2, ShoppingCart, Tag
 } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -245,7 +245,7 @@ export default function BuySellOversight() {
 
                 <TabsContent value="inventory" className="mt-8 text-left text-foreground">
                     <Card className="border-none shadow-xl text-left text-foreground">
-                        <CardHeader className="border-b bg-muted/10 text-left text-foreground text-foreground text-left">
+                        <CardHeader className="border-b bg-muted/10 text-left text-foreground text-left">
                             <CardTitle className="text-lg flex items-center gap-2 text-foreground text-left text-foreground">
                                 <Database className="h-5 w-5 text-primary" />
                                 National Vehicle Registry
