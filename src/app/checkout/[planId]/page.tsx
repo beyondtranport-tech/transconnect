@@ -75,10 +75,8 @@ function CheckoutComponent() {
   const planId = params.planId as string;
   const cycle = searchParams.get('cycle') || 'monthly';
   
-  // Categorize plan type
   const isConnectPlan = ['loyalty', 'rewards', 'actions'].includes(planId);
 
-  // Refs
   const membershipRef = useMemoFirebase(() => {
       if (!firestore || !planId) return null;
       return doc(firestore, 'memberships', planId);
@@ -111,7 +109,6 @@ function CheckoutComponent() {
   }, [user, isUserLoading, router, planId, cycle]);
   
   const planDisplay = useMemo(() => {
-    // 1. Handle Connect Plans
     if (isConnectPlan && connectConfig) {
         const priceKey = `${planId}PlanPrice`;
         return {
@@ -122,7 +119,6 @@ function CheckoutComponent() {
         };
     }
     
-    // 2. Handle Foundation Tier or Earning Nodes (Firestore Priority)
     if (membershipPlan) {
         const monthlyPrice = (typeof membershipPlan.price === 'object' && membershipPlan.price !== null)
             ? membershipPlan.price.monthly || 0
@@ -151,7 +147,6 @@ function CheckoutComponent() {
         };
     }
 
-    // 3. Fallback to Defaults (If not in DB yet)
     const fallback = defaultPlans.find(p => p.id === planId);
     if (fallback) {
         return {
@@ -186,7 +181,7 @@ function CheckoutComponent() {
             companyId: companyData.id,
             amount: planDisplay.price,
             description: `Plan Activation: ${planDisplay.name} (${cycle})`,
-            planType: planDisplay.type, // 'membership', 'connect', or 'node'
+            planType: planDisplay.type, 
             planId: planId,
             cycle: cycle,
         };
@@ -197,21 +192,18 @@ function CheckoutComponent() {
             body: JSON.stringify(payload),
         });
 
-        let result;
-        try {
-            result = await response.json();
-        } catch (jsonError) {
-            throw new Error('The server returned an invalid response. Please contact support if this persists.');
+        if (!response.ok) {
+            const result = await response.json().catch(() => ({ error: 'Communication error.' }));
+            throw new Error(result.error || 'Activation failed.');
         }
-
-        if (!response.ok) throw new Error(result.error || 'Activation failed.');
 
         toast({
             title: 'Activation Successful!',
-            description: `Your ${planDisplay.name} is now active.`,
+            description: `Your ${planDisplay.name} is now active. Opening setup wizard...`,
         });
         
-        router.push('/account?view=dashboard');
+        // REDIRECT TO NODE WIZARD INSTEAD OF DASHBOARD
+        router.push('/account?view=shop&subview=wizard');
 
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Process Failed', description: error.message });
@@ -249,7 +241,7 @@ function CheckoutComponent() {
     <div className="container mx-auto px-4 py-16 flex justify-center text-left">
         <Card className="w-full max-w-xl shadow-2xl border-none overflow-hidden text-left bg-white">
             <CardHeader className="bg-slate-900 text-white p-10 text-left">
-                <div className="flex items-center gap-6 text-left">
+                <div className="flex items-center gap-6 text-left text-white">
                     <div className="bg-primary/20 p-4 rounded-2xl shadow-inner">
                         <PlanIcon className="h-10 w-10 text-primary" />
                     </div>
@@ -299,7 +291,7 @@ function CheckoutComponent() {
                         Handshake Verification
                     </h4>
                     <p className="text-xs text-muted-foreground leading-relaxed text-left">
-                        By confirming, you authorize a direct wallet debit. This activation is final and grants immediate access to the forensic registry and transactional terminals associated with this node.
+                        By confirming, you authorize a direct wallet debit. This activation is final and grants immediate access to the setup terminal for this node.
                     </p>
                 </div>
             </CardContent>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,18 +14,19 @@ import {
     Loader2, Save, CheckCircle, PlusCircle, Send, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, Info, Sparkles, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
-    Tags, Globe, LayoutTemplate
+    Tags, Globe, LayoutTemplate, ClipboardList, ShieldAlert, Gavel
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
+import { Label } from '@/components/ui/label';
 
 // ====== SCHEMAS ======
 
@@ -50,7 +51,13 @@ const nodeFormSchema = z.object({
   // Transport specific
   operatingRegions: z.array(z.string()).optional().default([]),
   fleetSummary: z.string().optional(),
+  // Loads / Brokerage specific
+  brokerageMargin: z.coerce.number().min(0).max(50).default(5),
+  loadPostingTerms: z.string().optional().default("Standard 30-day payment terms after POD verification."),
+  haulierVerificationRequired: z.boolean().default(true),
 });
+
+type NodeFormValues = z.infer<typeof nodeFormSchema>;
 
 // ====== COMPONENTS ======
 
@@ -84,7 +91,7 @@ function StepIdentity() {
                         <FormItem className="text-left text-foreground"><FormLabel>Operations E-mail</FormLabel><FormControl><Input {...field} className="h-11 border-2" /></FormControl><FormMessage /></FormItem> 
                     )} />
                     <FormField control={control} name="contactPhone" render={({ field }) => ( 
-                        <FormItem className="text-left text-foreground"><FormLabel>Operations Number</FormLabel><FormControl><Input {...field} className="h-11 border-2" /></FormControl><FormMessage /></FormItem> 
+                        <FormItem className="text-left text-foreground"><FormLabel>Operations Number</FormLabel><FormControl><Input {...field} className="h-11 border-2" /></FormControl><FormMessage /></FormMessage> 
                     )} />
                 </div>
             </div>
@@ -107,13 +114,13 @@ function StepBranding() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Company Logo</Label>
-                    <div className="aspect-square w-48 border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner text-left">
+                    <div className="aspect-square w-48 border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner text-left text-foreground">
                         {logo ? <Image src={logo} alt="Logo" fill className="object-contain p-4" /> : <p className="text-xs italic text-muted-foreground">No Logo Uploaded</p>}
                     </div>
                 </div>
-                <div className="space-y-4 text-left">
+                <div className="space-y-4 text-left text-foreground">
                     <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Marketplace Hero Banner</Label>
-                    <div className="aspect-video w-full border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner text-left">
+                    <div className="aspect-video w-full border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner text-left text-foreground">
                         {banner ? <Image src={banner} alt="Banner" fill className="object-cover" /> : <p className="text-xs italic text-muted-foreground text-center px-4">Generate or upload a high-fidelity industrial banner.</p>}
                     </div>
                     <AIToolModal type="generate" targetField="heroBannerUrl" onResult={(url:any) => setValue('heroBannerUrl', url)} initialPrompt="Wide angle cinematic shot of an ultra-modern logistics warehouse interior at night, blue glowing data lines on the floor." />
@@ -173,8 +180,68 @@ function StepTransport() {
                     <p className="text-xs text-muted-foreground">List your primary routes and hubs. This helps the matching engine reduce empty miles.</p>
                     <div className="bg-white p-4 rounded-xl border">
                         <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Coming Soon: Interactive Hub Mapping</p>
-                        <p className="text-xs italic">Route-specific rates and live GPS hub syncing is currently being integrated into the Transport Mall.</p>
+                        <p className="text-xs italic">Route-specific rates and live GPS hub syncing is currently being integrated.</p>
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function StepLoads() {
+    const { control, watch } = useFormContext<NodeFormValues>();
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <div className="flex items-center justify-between">
+                <h3 className="text-xl font-black font-headline flex items-center gap-2"><PackageSearch className="h-6 w-6 text-primary" /> Brokerage Hub Configuration</h3>
+                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 uppercase font-black text-[10px] tracking-widest">Earning Node Active</Badge>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                <div className="space-y-6 text-left">
+                    <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                        <div className="flex items-center gap-2 text-primary">
+                            <DollarSign className="h-5 w-5" />
+                            <h4 className="font-bold text-sm uppercase tracking-widest">Revenue Participation</h4>
+                        </div>
+                        <FormField control={control} name="brokerageMargin" render={({ field }) => (
+                            <FormItem className="text-left">
+                                <FormLabel>Default Clearing Margin (%)</FormLabel>
+                                <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
+                                <FormDescription className="text-xs">The percentage deducted from the total load value before haulier payout.</FormDescription>
+                            </FormItem>
+                        )} />
+                    </div>
+
+                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50 text-left text-foreground">
+                        <div className="flex items-center gap-2 text-slate-800">
+                            <Gavel className="h-5 w-5" />
+                            <h4 className="font-bold text-sm uppercase tracking-widest">Risk & Compliance</h4>
+                        </div>
+                         <FormField control={control} name="haulierVerificationRequired" render={({ field }) => (
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold uppercase tracking-tight">Enforce RC1 Verification</span>
+                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            </div>
+                         )} />
+                         <p className="text-[10px] text-muted-foreground leading-tight italic">When enabled, only hauliers with verified RC1 documents can accept your posted loads.</p>
+                    </div>
+                </div>
+
+                <div className="space-y-4 text-left">
+                    <FormField control={control} name="loadPostingTerms" render={({ field }) => (
+                        <FormItem className="text-left text-foreground">
+                            <FormLabel className="flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" /> Settlement Terms</FormLabel>
+                            <FormControl><Textarea placeholder="Describe your payment cycle (e.g. 14 days after original POD)..." {...field} className="min-h-[150px] border-2 bg-white" /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )} />
+                    <Alert className="bg-blue-50 border-blue-200">
+                        <Info className="h-4 w-4 text-blue-600" />
+                        <AlertDescription className="text-[11px] text-blue-800 leading-relaxed text-left">
+                            <strong>Note:</strong> These terms are legally binding upon haulier acceptance. The platform handles the digital document vault for POD management automatically.
+                        </AlertDescription>
+                    </Alert>
                 </div>
             </div>
         </div>
@@ -201,16 +268,16 @@ function StepPublish({ shop, onSave }: any) {
     };
     return (
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left text-foreground">
-            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
+            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm text-left">
                 <CheckCircle className="h-16 w-16 text-primary" />
             </div>
             <div className="space-y-2 text-center text-foreground">
                 <h3 className="text-3xl font-black font-headline">Setup Complete</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial node is configured and ready for the forensic audit. Once approved, your capacity will be visible in the malls.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial node is configured and ready for the forensic audit. Once approved, your capacity and clearing hub will be visible in the malls.</p>
             </div>
-            <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-2xl">
+            <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                 {loading ? <Loader2 className="animate-spin mr-2 h-6 w-6"/> : <Smartphone className="mr-2 h-6 w-6"/>}
-                Activate Node
+                Activate Hub Node
             </Button>
         </div>
     );
@@ -227,14 +294,15 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     // Node Type Detection based on active plans
     const hasWarehouse = shop.shopType === 'warehouse' || user?.companyData?.hasWarehousePlan || user?.companyData?.membershipId === 'warehouse_intelligence' || user?.declaredPosition === 'warehouse';
     const hasTransport = shop.shopType === 'transporter' || user?.companyData?.hasLoadsPlan || user?.companyData?.membershipId === 'loads_intelligence' || user?.declaredPosition === 'transporter';
+    const hasLoads = user?.companyData?.hasLoadsPlan || user?.companyData?.membershipId === 'loads_intelligence';
 
-    const methods = useForm<z.infer<typeof nodeFormSchema>>({
+    const methods = useForm<NodeFormValues>({
         resolver: zodResolver(nodeFormSchema),
         mode: 'onChange',
         defaultValues: { ...shop }
     });
 
-    const onSubmit = async (values: z.infer<typeof nodeFormSchema>) => {
+    const onSubmit = async (values: NodeFormValues) => {
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
@@ -267,17 +335,21 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
         }
         
         if (hasTransport) {
-            base.push({ id: 'transport', name: 'Transport Node', component: <StepTransport />, fields: ['fleetSummary'] });
+            base.push({ id: 'transport', name: 'Fleet Node', component: <StepTransport />, fields: ['fleetSummary'] });
         }
 
-        // Always add catalog for Suppliers/Vendors
+        if (hasLoads) {
+            base.push({ id: 'loads', name: 'Brokerage Hub', component: <StepLoads />, fields: ['brokerageMargin', 'loadPostingTerms'] });
+        }
+
+        // Always add catalog for Suppliers/Vendors who aren't primarily transport/warehouse
         if (!hasWarehouse && !hasTransport) {
              base.push({ id: 'catalog', name: 'Catalog', component: <div className="p-12 text-center border-2 border-dashed rounded-3xl opacity-30"><LayoutTemplate className="h-12 w-12 mx-auto mb-2" /><p className="font-bold">Catalog Tools Active</p></div>, fields: [] });
         }
 
         base.push({ id: 'publish', name: 'Finalize', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] });
         return base;
-    }, [shop, hasWarehouse, hasTransport, onUpdate]);
+    }, [shop, hasWarehouse, hasTransport, hasLoads, onUpdate]);
 
     const handleNext = async () => {
         const step = wizardSteps[currentStep];
@@ -287,10 +359,10 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     
     return (
         <Card className="border-none shadow-xl bg-white text-left text-foreground overflow-hidden">
-            <CardHeader className="bg-slate-50 border-b p-6">
+            <CardHeader className="bg-slate-50 border-b p-6 text-left">
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2" />
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 text-left">
                 <FormProvider {...methods}>
                     <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
@@ -306,12 +378,12 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
                                     onClick={() => setCurrentStep(index)}
                                 >
                                     <div className={cn(
-                                        "h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", 
+                                        "h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0 text-left", 
                                         currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                                     )}>
                                         {index + 1}
                                     </div>
-                                    <span className="font-bold text-xs uppercase tracking-widest">{step.name}</span>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-left">{step.name}</span>
                                 </Button>
                             ))}
                         </div>
@@ -324,16 +396,16 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
                 </FormProvider>
             </CardContent>
             <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
-                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
+                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-left">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous Step
                 </Button>
-                <div className="flex gap-3">
-                    <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold">
+                <div className="flex gap-3 text-left">
+                    <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold text-left">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="h-4 w-4 mr-2" />} 
                         Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
-                        <Button type="button" onClick={handleNext} className="font-bold px-8">
+                        <Button type="button" onClick={handleNext} className="font-bold px-8 text-left">
                             Continue <ArrowRight className="ml-2 h-4 w-4"/>
                         </Button>
                     )}
