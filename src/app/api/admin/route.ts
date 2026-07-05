@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -63,13 +64,11 @@ export async function POST(req: NextRequest) {
 
             // LOADS MALL OVERSIGHT
             case 'getBrokerAgreements': {
-                // Matches firestore.indexes.json: status ASC, createdAt DESC
                 const snap = await db.collectionGroup('brokerAgreements').orderBy('status', 'asc').orderBy('createdAt', 'desc').get();
                 const agreements = snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }));
                 return NextResponse.json({ success: true, data: agreements.map(serializeTimestamps) });
             }
             case 'getGlobalLoads': {
-                // Matches firestore.indexes.json: status ASC, createdAt DESC
                 const snap = await db.collectionGroup('loads').orderBy('status', 'asc').orderBy('createdAt', 'desc').limit(200).get();
                 const loads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: loads.map(serializeTimestamps) });
@@ -83,7 +82,6 @@ export async function POST(req: NextRequest) {
             // BUY & SELL MALL
             case 'searchListings': {
                 const { term } = payload;
-                // Updated to match 2-field composite index: status ASC, createdAt DESC
                 const snap = await db.collectionGroup('vehicleListings')
                     .where('status', '==', 'active')
                     .orderBy('createdAt', 'desc')
@@ -106,16 +104,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
             case 'finalizeSale': {
-                const { saleId } = payload;
+                const { saleId, commissionRate: overrideRate } = payload;
                 const saleRef = db.collection('sales').doc(saleId);
                 const saleSnap = await saleRef.get();
                 if (!saleSnap.exists) throw new Error("Sale not found.");
                 const saleData = saleSnap.data()!;
-                const commission = saleData.agreedPrice * (saleData.commissionRate / 100);
+                
+                const rate = overrideRate || saleData.commissionRate || 2.5;
+                const commission = saleData.agreedPrice * (rate / 100);
                 const sellerNet = saleData.agreedPrice - commission;
 
                 await db.runTransaction(async (transaction) => {
-                    transaction.update(saleRef, { status: 'concluded', updatedAt: FieldValue.serverTimestamp() });
+                    transaction.update(saleRef, { status: 'concluded', updatedAt: FieldValue.serverTimestamp(), commissionRate: rate });
                     const sellerRef = db.collection('companies').doc(saleData.sellerId);
                     transaction.update(sellerRef, {
                         walletBalance: FieldValue.increment(sellerNet),
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
                     });
                     const platformTxRef = db.collection('platformTransactions').doc();
                     transaction.set(platformTxRef, {
-                        type: 'credit', amount: commission, description: `Vehicle Sale Commission: ${saleId}`, timestamp: FieldValue.serverTimestamp()
+                        type: 'credit', amount: commission, description: `Vehicle Sale Commission: ${saleId}`, timestamp: FieldValue.serverTimestamp(), companyId: saleData.sellerId
                     });
                 });
                 return NextResponse.json({ success: true });
@@ -154,3 +154,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
+

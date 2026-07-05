@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -60,7 +61,7 @@ import { signOut } from 'firebase/auth';
 import React from 'react';
 import dynamic from 'next/dynamic';
 
-// Component Imports
+// Static Imports for reliability in prototype environment
 import AdminDashboardContent from '@/app/backend/dashboard-content';
 import ActivityFeed from '@/app/backend/activity-feed';
 import LeadsAgent from '@/app/adminaccount/leads-agent';
@@ -96,7 +97,7 @@ import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 import AdminGuides from '@/app/adminaccount/guides';
 
-// DEFINITIVE CORRECTED DYNAMIC IMPORTS
+// Dynamic Imports with CORRECT PATHS for the backend directory
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
@@ -329,3 +330,4 @@ export default function AdminAccountPage() {
     </AdminAuthGuard>
   );
 }
+

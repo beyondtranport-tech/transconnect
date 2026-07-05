@@ -6,11 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { 
     Loader2, ShoppingCart, Landmark, ArrowLeft, ArrowRight, MessageSquare, 
-    FileCheck, ShieldCheck, Scale, FileText, Send, Building, Info, CheckCircle, Banknote, Zap
+    FileCheck, ShieldCheck, Scale, FileText, Send, Building, Info, CheckCircle, Banknote, Zap, Download, Lock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
-import { useUser, useFirestore, useDoc, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, getClientSideAuthToken, useCollection } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -18,11 +18,12 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import Link from 'next/link';
 
 const steps = [
     { id: 'negotiation', title: 'Handshake & Price', icon: MessageSquare },
     { id: 'funding', title: 'Financial Lock', icon: Landmark },
-    { id: 'legal', title: 'Contract Vault', icon: FileCheck },
+    { id: 'legal', title: 'Document Vault', icon: FileCheck },
     { id: 'fulfillment', title: 'Delivery & Release', icon: CheckCircle },
 ];
 
@@ -39,12 +40,28 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
 
     // 1. Establish/Fetch the Sale Handshake
     const saleId = `SALE_${vehicle.id}_${user?.companyId}`;
-    const saleRef = useMemoFirebase(() => doc(firestore, 'sales', saleId), [firestore, saleId]);
+    const saleRef = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return doc(firestore, 'sales', saleId);
+    }, [firestore, saleId]);
     const { data: sale, isLoading: isSaleLoading } = useDoc(saleRef);
 
     // 2. Fetch Messages
-    const msgsQuery = useMemoFirebase(() => query(collection(saleRef, 'messages'), orderBy('timestamp', 'asc')), [saleRef]);
-    const { data: messages, isLoading: areMsgsLoading } = useCollection(msgsQuery);
+    const msgsQuery = useMemoFirebase(() => {
+        if (!firestore || !saleId) return null;
+        return query(collection(firestore, `sales/${saleId}/messages`), orderBy('timestamp', 'asc'));
+    }, [firestore, saleId]);
+    const { data: messages } = useCollection(msgsQuery);
+
+    const currentStatus = sale?.status || 'negotiating';
+
+    // Step Resolution
+    useEffect(() => {
+        if (currentStatus === 'negotiating') setCurrentStep(0);
+        else if (currentStatus === 'finance_pending') setCurrentStep(1);
+        else if (currentStatus === 'paid') setCurrentStep(2);
+        else if (currentStatus === 'delivered' || currentStatus === 'concluded') setCurrentStep(3);
+    }, [currentStatus]);
 
     const handleSendMessage = async () => {
         if (!chatMessage.trim()) return;
@@ -70,22 +87,23 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
             
             if (action === 'negotiate') {
                 data.agreedPrice = Number(offerAmount);
-                data.status = 'negotiating';
-                data.buyerId = user.companyId;
-                data.sellerId = vehicle.companyId;
-                data.vehicleId = vehicle.id;
-                data.commissionRate = 2.5; // Platform Standard
-            } else if (action === 'accept_commercials') {
                 data.status = 'finance_pending';
-            } else if (action === 'deliver') {
-                data.status = 'concluded';
-                data.deliveryDate = serverTimestamp();
+                data.buyerId = user.companyId;
+                data.buyerName = user.companyData?.companyName || 'Buyer';
+                data.sellerId = vehicle.companyId;
+                data.sellerName = vehicle.sellerName || 'Seller';
+                data.vehicleId = vehicle.id;
+                data.vehicleName = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+                data.commissionRate = 2.5; // Platform Standard
+                data.createdAt = serverTimestamp();
+            } else if (action === 'confirm_delivery') {
+                data.status = 'delivered';
             }
 
-            await setDoc(saleRef, data, { merge: true });
+            await setDoc(saleRef!, data, { merge: true });
             toast({ title: "Workflow Updated" });
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Failed to update workflow" });
+            toast({ variant: 'destructive', title: "Action Failed", description: e.message });
         } finally {
             setIsProcessing(false);
         }
@@ -93,14 +111,12 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
 
     if (isSaleLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" /></div>;
 
-    const currentStatus = sale?.status || 'negotiating';
-
     return (
         <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
             <div className="flex justify-between items-center text-left">
                 <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Return to Mall</Button>
                 <Badge variant="outline" className="h-7 px-4 border-primary text-primary font-black uppercase text-[10px] tracking-widest">
-                    Live Transaction Console
+                    Live Handshake Terminal
                 </Badge>
             </div>
 
@@ -109,10 +125,10 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                     <div className="flex justify-between items-start text-left">
                         <div className="text-left">
                             <CardTitle className="text-3xl font-black font-headline text-white">{vehicle.year} {vehicle.make} {vehicle.model}</CardTitle>
-                            <CardDescription className="text-slate-400 mt-1">Concluding sale with <strong>{isSeller ? 'Matched Buyer' : 'Verified Seller'}</strong></CardDescription>
+                            <CardDescription className="text-slate-400 mt-1">HANDSHAKE ID: <span className="font-mono">{saleId}</span></CardDescription>
                         </div>
-                        <div className="text-right text-foreground">
-                            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Valuation (Excl. VAT)</p>
+                        <div className="text-right">
+                            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Agreed Value</p>
                             <p className="text-3xl font-black text-primary">{formatCurrency(sale?.agreedPrice || vehicle.price)}</p>
                         </div>
                     </div>
@@ -122,69 +138,117 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                     <div className="border-r bg-slate-50/50 p-6 space-y-2 text-left">
                         {steps.map((step, i) => (
                             <div key={step.id} className={cn(
-                                "flex items-center gap-3 p-3 rounded-xl transition-all",
+                                "flex items-center gap-3 p-4 rounded-xl transition-all",
                                 currentStep === i ? "bg-white shadow-md ring-1 ring-primary/20" : "opacity-40"
                             )}>
-                                <div className={cn("h-8 w-8 rounded-full flex items-center justify-center", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>
+                                <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>
                                     {React.createElement(step.icon, { className: "h-4 w-4" })}
                                 </div>
-                                <span className="text-xs font-bold uppercase tracking-tight">{step.title}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest">{step.title}</span>
                             </div>
                         ))}
                     </div>
 
                     <CardContent className="p-8 space-y-8 text-left text-foreground">
-                        {currentStatus === 'negotiating' && (
+                        {currentStep === 0 && (
                             <div className="space-y-6 text-left">
-                                <div className="p-6 bg-primary/5 border-2 border-primary/20 rounded-2xl space-y-4 text-left">
-                                    <h3 className="font-black text-xl flex items-center gap-2"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Handshake</h3>
-                                    <div className="space-y-2 text-left text-foreground">
-                                        <Label className="font-bold text-xs">Agreed Sales Price (ZAR)</Label>
-                                        <Input type="number" value={offerAmount} onChange={e => setOfferAmount(Number(e.target.value))} className="h-12 text-xl font-black border-2" />
-                                        <p className="text-[10px] text-muted-foreground">Platform commission of 2.5% ({formatCurrency(Number(offerAmount) * 0.025)}) will be isolated upon settlement.</p>
+                                <div className="p-6 bg-primary/5 border-2 border-primary/20 rounded-3xl space-y-6 text-left">
+                                    <div className="space-y-1">
+                                        <h3 className="font-black text-xl flex items-center gap-2 text-foreground"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Negotiation</h3>
+                                        <p className="text-sm text-muted-foreground">Submit your offer to the seller. Locking the price initiates the legal documentation phase.</p>
                                     </div>
-                                    <Button className="w-full h-12 font-bold" onClick={() => handleAction('accept_commercials')}>Accept Commercials & Lock Price</Button>
+                                    <div className="space-y-2 text-left">
+                                        <Label className="font-black uppercase text-[10px] text-muted-foreground ml-1">Proposed Sales Price (Excl. VAT)</Label>
+                                        <Input 
+                                            type="number" 
+                                            value={offerAmount} 
+                                            onChange={e => setOfferAmount(Number(e.target.value))} 
+                                            className="h-14 text-2xl font-black border-2 border-primary/20 focus-visible:ring-primary" 
+                                        />
+                                    </div>
+                                    <Button className="w-full h-14 font-black uppercase tracking-tight text-lg shadow-lg" onClick={() => handleAction('negotiate')}>
+                                        Lock Price & Initiate Handshake
+                                    </Button>
                                 </div>
                             </div>
                         )}
 
-                        {currentStatus === 'finance_pending' && (
+                        {currentStep === 1 && (
                             <div className="space-y-8 text-left text-foreground">
-                                <Alert className="bg-amber-50 border-amber-200 text-left">
-                                    <Landmark className="h-5 w-5 text-amber-600" />
-                                    <AlertTitle className="font-bold text-amber-900 text-left">Funding Activation Required</AlertTitle>
-                                    <AlertDescription className="text-xs text-amber-800 leading-relaxed text-left">
-                                        Price locked at **{formatCurrency(sale.agreedPrice)}**. Buyer must now finalize payment or trigger an in-house finance enquiry.
-                                    </AlertDescription>
+                                <Alert className="bg-amber-50 border-amber-200 p-6 rounded-2xl">
+                                    <Landmark className="h-6 w-6 text-amber-600" />
+                                    <div className="ml-2 text-left">
+                                        <AlertTitle className="font-black text-lg text-amber-900">Capital Commitment Required</AlertTitle>
+                                        <AlertDescription className="text-sm text-amber-800 leading-relaxed mt-1">
+                                            Price is locked at **{formatCurrency(sale.agreedPrice)}**. {isSeller ? 'Awaiting buyer payment or finance approval.' : 'Finalize payment or trigger a finance mall enquiry to move to documentation.'}
+                                        </AlertDescription>
+                                    </div>
                                 </Alert>
-                                <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-                                    <Button variant="outline" className="h-16 flex-col gap-1 text-left" asChild>
-                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}`}>
-                                            <span className="font-black text-sm text-left text-foreground">Apply for Finance</span>
-                                            <span className="text-[10px] text-muted-foreground text-left">Match with 85+ specialized lenders</span>
-                                        </Link>
-                                    </Button>
-                                    <Button className="h-16 flex-col gap-1 text-left" onClick={() => handleAction('conclude')}>
-                                        <span className="font-black text-sm text-left text-foreground">Pay with Wallet</span>
-                                        <span className="text-[10px] opacity-80 text-left text-foreground">Immediate settlement</span>
-                                    </Button>
+                                {!isSeller && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                        <Card className="border-2 border-primary/20 hover:border-primary transition-colors cursor-pointer group" asChild>
+                                            <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`}>
+                                                <CardContent className="p-6 space-y-2">
+                                                    <div className="bg-primary/10 p-2 rounded-lg w-fit group-hover:bg-primary group-hover:text-white transition-colors"><Landmark className="h-5 w-5" /></div>
+                                                    <p className="font-black text-sm uppercase">Apply for Finance</p>
+                                                    <p className="text-xs text-muted-foreground leading-tight">Broadcast this transaction to our specialized lending network.</p>
+                                                </CardContent>
+                                            </Link>
+                                        </Card>
+                                        <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors cursor-pointer" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
+                                            <CardContent className="p-6 space-y-2">
+                                                <div className="bg-slate-100 p-2 rounded-lg w-fit"><Banknote className="h-5 w-5" /></div>
+                                                <p className="font-black text-sm uppercase">Pay with Wallet</p>
+                                                <p className="text-xs text-muted-foreground leading-tight">Use available funds for immediate asset release.</p>
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {currentStep >= 2 && (
+                            <div className="space-y-6 text-left text-foreground">
+                                <div className="space-y-4 text-left">
+                                    <h3 className="font-black text-xl flex items-center gap-2 text-foreground"><FileCheck className="h-6 w-6 text-primary" /> Transaction Document Vault</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2" onClick={() => toast({ title: "OTP Generated", description: "Offer to Purchase is ready for download." })}>
+                                            <div className="bg-blue-100 p-2 rounded-lg"><FileText className="h-5 w-5 text-blue-600" /></div>
+                                            <div className="text-left"><p className="font-black text-xs uppercase">Offer to Purchase</p><p className="text-[10px] text-muted-foreground">Legally Binding Contract</p></div>
+                                        </Button>
+                                        <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2" onClick={() => toast({ title: "Invoice Generated", description: "VAT Invoice has been isolated." })}>
+                                            <div className="bg-green-100 p-2 rounded-lg"><Banknote className="h-5 w-5 text-green-600" /></div>
+                                            <div className="text-left"><p className="font-black text-xs uppercase">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground">Financial Settlement Record</p></div>
+                                        </Button>
+                                    </div>
                                 </div>
+                                
+                                {currentStatus === 'paid' && (
+                                    <div className="p-6 bg-green-50 border-2 border-green-200 rounded-3xl space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <ShieldCheck className="h-6 w-6 text-green-600" />
+                                            <p className="font-black text-green-900">Funds Secured in Escrow</p>
+                                        </div>
+                                        <p className="text-sm text-green-800 leading-relaxed">The platform has secured the full amount. Seller must now coordinate delivery and the buyer must confirm receipt to release funds.</p>
+                                        <Button className="w-full h-12 bg-green-600 font-bold" onClick={() => handleAction('confirm_delivery')}>Confirm Physical Delivery</Button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
                         <Separator />
 
                         <div className="space-y-4 text-left text-foreground">
-                            <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                                 <MessageSquare className="h-4 w-4 text-primary" />
-                                Deal Negotiation Stream
+                                Handshake Direct Chat
                             </h4>
-                            <div className="bg-slate-50 border rounded-2xl p-4 h-64 flex flex-col text-left">
-                                <ScrollArea className="flex-1 pr-4 text-left text-foreground">
-                                    <div className="space-y-3 text-left text-foreground">
+                            <div className="bg-slate-50 border rounded-3xl p-6 h-80 flex flex-col shadow-inner">
+                                <ScrollArea className="flex-1 pr-4">
+                                    <div className="space-y-4">
                                         {messages?.map((msg: any) => (
-                                            <div key={msg.id} className={cn("flex flex-col text-left", msg.senderId === user.uid ? "items-end" : "items-start")}>
-                                                <div className={cn("px-4 py-2 rounded-2xl text-sm shadow-sm", msg.senderId === user.uid ? "bg-primary text-white" : "bg-white border")}>
+                                            <div key={msg.id} className={cn("flex flex-col", msg.senderId === user.uid ? "items-end" : "items-start")}>
+                                                <div className={cn("px-4 py-2 rounded-2xl text-sm shadow-sm", msg.senderId === user.uid ? "bg-primary text-white rounded-br-none" : "bg-white border rounded-bl-none")}>
                                                     <p className="font-black text-[9px] uppercase opacity-70 mb-1">{msg.senderName}</p>
                                                     <p>{msg.text}</p>
                                                 </div>
@@ -192,9 +256,15 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                         ))}
                                     </div>
                                 </ScrollArea>
-                                <div className="mt-4 flex gap-2 pt-4 border-t text-left text-foreground">
-                                    <Input placeholder="Type message..." value={chatMessage} onChange={e => setChatMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSendMessage()} className="bg-white" />
-                                    <Button size="icon" onClick={handleSendMessage}><Send className="h-4 w-4" /></Button>
+                                <div className="mt-4 flex gap-2 pt-4 border-t">
+                                    <Input 
+                                        placeholder="Discuss logistics or terms..." 
+                                        value={chatMessage} 
+                                        onChange={e => setChatMessage(e.target.value)} 
+                                        onKeyDown={e => e.key === 'Enter' && handleSendMessage()} 
+                                        className="bg-white rounded-full h-11 px-6 shadow-sm" 
+                                    />
+                                    <Button size="icon" className="rounded-full h-11 w-11 shadow-md" onClick={handleSendMessage}><Send className="h-4 w-4" /></Button>
                                 </div>
                             </div>
                         </div>
@@ -202,15 +272,15 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                 </div>
 
                 <CardFooter className="bg-slate-50 border-t p-8 flex justify-between items-center text-left text-foreground">
-                    <div className="flex gap-4 text-left text-foreground">
-                        <Button variant="outline" size="sm" className="gap-2 font-bold"><FileText className="h-4 w-4"/> Draft OTP</Button>
-                        <Button variant="outline" size="sm" className="gap-2 font-bold"><ShieldCheck className="h-4 w-4"/> Inspection Log</Button>
+                    <div className="flex gap-4">
+                        <Button variant="ghost" size="sm" className="gap-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground"><Info className="h-3.5 w-3.5"/> Handshake Integrity Shield Active</Button>
                     </div>
                     {currentStatus === 'concluded' && (
-                        <Badge className="bg-green-600 text-white font-black uppercase py-2 px-6 rounded-full">Transaction Finalized</Badge>
+                        <Badge className="bg-green-600 text-white font-black uppercase py-2 px-8 rounded-full shadow-lg">Handshake Concluded</Badge>
                     )}
                 </CardFooter>
             </Card>
         </div>
     );
 }
+
