@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Store, RefreshCcw } from 'lucide-react';
+import { Loader2, Store, RefreshCcw, AlertTriangle } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import type { ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -57,8 +56,20 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
         body: JSON.stringify({ action, payload }),
     });
 
+    if (!response.ok) {
+        const errorText = await response.text();
+        let message = `API Error ${response.status}`;
+        try {
+            const errorJson = JSON.parse(errorText);
+            message = errorJson.error || message;
+        } catch (e) {
+            // Not JSON
+        }
+        throw new Error(message);
+    }
+
     const result = await response.json();
-    if (!response.ok || !result.success) {
+    if (!result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
@@ -95,7 +106,7 @@ export default function ShopsList() {
         { 
             accessorKey: 'shopName', 
             header: 'Shop Name',
-            cell: ({ row }) => <div>{row.original.shopName}</div>,
+            cell: ({ row }) => <div className="font-bold">{row.original.shopName}</div>,
         },
         { 
             accessorKey: 'category', 
@@ -109,8 +120,8 @@ export default function ShopsList() {
         },
         { 
             accessorKey: 'createdAt', 
-            header: 'Date', 
-            cell: ({row}) => formatDate(row.original.createdAt) 
+            header: 'Date Created', 
+            cell: ({row}) => <div className="text-xs text-muted-foreground">{formatDate(row.original.createdAt)}</div> 
         },
         {
             id: 'actions',
@@ -119,35 +130,46 @@ export default function ShopsList() {
         }
     ], [loadData]);
     
-    if (error) {
-        return (
-            <div className="text-destructive-foreground bg-destructive/90 p-4 rounded-md">
-                <h4 className="font-semibold">Error loading data</h4>
-                <p className="text-sm">{error}</p>
-                 <Button onClick={loadData} variant="destructive" className="mt-2">Try Again</Button>
-            </div>
-        );
-    }
-    
     return (
-        <Card>
-            <CardHeader className="flex-row justify-between items-start">
-                 <div>
-                    <CardTitle className="flex items-center gap-2"><Store /> All Shops</CardTitle>
-                    <CardDescription>Review and manage all shops on the platform.</CardDescription>
+        <div className="space-y-6 text-left">
+            <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
+                 <div className="text-left">
+                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Store /> Supplier Mall Registry</CardTitle>
+                    <CardDescription className="text-left">
+                        Oversight of all member digital branches and catalog submissions.
+                    </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
                     <RefreshCcw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
-                    Refresh
+                    Refresh Mall
                 </Button>
             </CardHeader>
-            <CardContent>
-                {isLoading ? (
-                    <div className="flex justify-center items-center py-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-                ) : (
-                    <DataTable columns={columns} data={shops} />
-                )}
-            </CardContent>
-        </Card>
+            
+            {error ? (
+                <Card className="border-destructive bg-destructive/5">
+                    <CardContent className="p-8 text-center space-y-4">
+                        <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+                        <div className="space-y-1">
+                            <h3 className="font-bold text-destructive">Load Error</h3>
+                            <p className="text-sm text-muted-foreground">{error}</p>
+                        </div>
+                        <Button onClick={loadData} variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-white">Retry Connection</Button>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card className="text-left border-none shadow-xl">
+                    <CardContent className="pt-6 text-left">
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Retrieving Mall Nodes...</p>
+                            </div>
+                        ) : (
+                            <DataTable columns={columns} data={shops} />
+                        )}
+                    </CardContent>
+                </Card>
+            )}
+        </div>
     );
 }

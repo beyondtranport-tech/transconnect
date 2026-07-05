@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -23,12 +22,13 @@ function serializeTimestamps(docData: any): any {
 }
 
 export async function POST(req: NextRequest) {
+    let currentAction = 'initialization';
     try {
         const { app, error: initError } = getAdminApp();
         if (initError || !app) throw new Error(`Admin SDK failed: ${initError}`);
 
         const authHeader = req.headers.get('authorization');
-        if (!authHeader?.startsWith('Bearer ')) throw new Error('Unauthorized.');
+        if (!authHeader?.startsWith('Bearer ')) throw new Error('Unauthorized: Missing token.');
         const token = authHeader.split('Bearer ')[1];
         
         const adminAuth = getAuth(app);
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json();
         const { action, payload } = body;
+        currentAction = action;
 
         switch (action) {
             // --- MEMBER & USER OVERSIGHT ---
@@ -95,19 +96,14 @@ export async function POST(req: NextRequest) {
                 await db.collection(coll).doc(partnerId).delete();
                 return NextResponse.json({ success: true });
             }
-            case 'invitePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).update({ 
-                    invitationStatus: 'invited', 
-                    status: 'invited', 
-                    updatedAt: FieldValue.serverTimestamp() 
-                });
-                return NextResponse.json({ success: true });
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
 
             // --- SUPPLIER MALL (SHOPS) ---
             case 'getShops': {
-                const snap = await db.collectionGroup('shops').orderBy('updatedAt', 'desc').get();
+                const snap = await db.collectionGroup('shops').get();
                 const shops = snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }));
                 return NextResponse.json({ success: true, data: shops.map(serializeTimestamps) });
             }
@@ -132,53 +128,72 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            // --- LOADS MALL ---
-            case 'getBrokerAgreements': {
-                const snap = await db.collectionGroup('brokerAgreements').orderBy('status', 'asc').orderBy('createdAt', 'desc').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() })).map(serializeTimestamps) });
-            }
-            case 'getGlobalLoads': {
-                const snap = await db.collectionGroup('loads').orderBy('status', 'asc').orderBy('createdAt', 'desc').limit(200).get();
+            // --- BUY & SELL MALL ---
+            case 'getGlobalSales': {
+                const snap = await db.collection('sales').orderBy('updatedAt', 'desc').limit(200).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
+            case 'searchListings': {
+                const { term } = payload;
+                const snap = await db.collectionGroup('vehicleListings').where('status', '==', 'active').get();
+                let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (term) {
+                    const lowTerm = term.toLowerCase();
+                    results = results.filter((r: any) => 
+                        r.make?.toLowerCase().includes(lowTerm) || 
+                        r.model?.toLowerCase().includes(lowTerm) || 
+                        r.description?.toLowerCase().includes(lowTerm)
+                    );
+                }
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+            case 'finalizeSale': {
+                const { saleId, commissionRate } = payload;
+                const saleRef = db.collection('sales').doc(saleId);
+                
+                await db.runTransaction(async (transaction) => {
+                    const saleSnap = await transaction.get(saleRef);
+                    if (!saleSnap.exists) throw new Error("Sale record not found.");
+                    const saleData = saleSnap.data()!;
+                    
+                    const price = saleData.agreedPrice;
+                    const commission = price * (commissionRate / 100);
+                    const sellerNet = price - commission;
 
-            // --- FORENSIC OVERSIGHT & COMMUNICATION ---
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes, collection = 'partners' } = payload;
-                const logRef = db.collection(collection).doc(partnerId).collection('communications').doc();
-                await logRef.set({ 
-                    id: logRef.id, 
-                    type, 
-                    subject, 
-                    notes, 
-                    adminId: decodedToken.uid, 
-                    timestamp: FieldValue.serverTimestamp() 
-                });
-                await db.collection(collection).doc(partnerId).update({ 
-                    lastOutreachAt: FieldValue.serverTimestamp(), 
-                    lastOutreachSubject: subject, 
-                    updatedAt: FieldValue.serverTimestamp() 
+                    const sellerRef = db.collection('companies').doc(saleData.sellerId);
+                    
+                    // Disburse to seller
+                    transaction.update(sellerRef, {
+                        walletBalance: FieldValue.increment(sellerNet),
+                        availableBalance: FieldValue.increment(sellerNet),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+
+                    // Log seller transaction
+                    const sellerTxRef = sellerRef.collection('transactions').doc();
+                    transaction.set(sellerTxRef, {
+                        transactionId: sellerTxRef.id,
+                        type: 'credit',
+                        amount: sellerNet,
+                        description: `Sale proceeds: ${saleData.vehicleName}`,
+                        status: 'allocated',
+                        date: FieldValue.serverTimestamp()
+                    });
+
+                    // Isolate commission
+                    const platTxRef = db.collection('platformTransactions').doc();
+                    transaction.set(platTxRef, {
+                        transactionId: platTxRef.id,
+                        type: 'credit',
+                        amount: commission,
+                        description: `Commission from ${saleData.sellerName} on vehicle sale`,
+                        companyId: saleData.sellerId,
+                        date: FieldValue.serverTimestamp()
+                    });
+
+                    transaction.update(saleRef, { status: 'concluded', updatedAt: FieldValue.serverTimestamp() });
                 });
                 return NextResponse.json({ success: true });
-            }
-            case 'getAudienceCommunications': {
-                const { type } = payload; // e.g. 'transporter'
-                const partnersSnap = await db.collection('partners').where('type', '==', type).get();
-                const partnerIds = partnersSnap.docs.map(d => d.id);
-                
-                if (partnerIds.length === 0) return NextResponse.json({ success: true, data: [] });
-
-                const commsPromises = partnerIds.map(id => 
-                    db.collection('partners').doc(id).collection('communications').orderBy('timestamp', 'desc').get()
-                );
-                const results = await Promise.all(commsPromises);
-                const allComms = results.flatMap((snap, i) => snap.docs.map(d => ({
-                    ...d.data(),
-                    partnerName: partnersSnap.docs[i].data().companyName || partnersSnap.docs[i].data().firstName,
-                    partnerType: type
-                })));
-
-                return NextResponse.json({ success: true, data: allComms.sort((a:any, b:any) => b.timestamp - a.timestamp).map(serializeTimestamps) });
             }
 
             // --- STAFF MANAGEMENT ---
@@ -193,10 +208,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            default: return NextResponse.json({ success: false, error: "Action not supported." }, { status: 400 });
+            default: return NextResponse.json({ success: false, error: `Action "${action}" not supported.` }, { status: 400 });
         }
     } catch (error: any) {
-        console.error(`Admin API Failure [${action}]:`, error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        console.error(`Admin API Failure [${currentAction}]:`, error);
+        return NextResponse.json({ 
+            success: false, 
+            error: error.message || 'Internal Server Error' 
+        }, { status: 500 });
     }
 }

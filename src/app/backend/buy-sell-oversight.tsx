@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -10,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { 
     Loader2, Truck, Handshake, ShieldCheck, Search, FileText, CheckCircle, 
-    XCircle, ArrowRight, RefreshCcw, DollarSign, Database, Gavel, Scale, Settings2, ShoppingCart, Tag
+    XCircle, ArrowRight, RefreshCcw, DollarSign, Database, Gavel, Scale, Settings2, ShoppingCart, Tag, AlertTriangle
 } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -20,15 +19,30 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
-async function performAdminAction(token: string, action: string, payload?: any) {
+async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ action, payload }),
-        cache: 'no-store'
     });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        let message = `API Error ${response.status}`;
+        try {
+            const errorJson = JSON.parse(errorText);
+            message = errorJson.error || message;
+        } catch (e) {}
+        throw new Error(message);
+    }
+
     const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+    if (!result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
     return result;
 }
 
@@ -39,22 +53,25 @@ export default function BuySellOversight() {
     const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
     const [negotiateSale, setNegotiateSale] = useState<any | null>(null);
     const [newCommissionRate, setNewCommissionRate] = useState<number>(2.5);
+    const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
 
     const loadData = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const token = await getClientSideAuthToken();
             if (!token) return;
 
             const [salesRes, inventoryRes] = await Promise.all([
-                performAdminAction(token, 'getGlobalSales'),
-                performAdminAction(token, 'searchListings', { term: '' })
+                fetchFromAdminAPI(token, 'getGlobalSales'),
+                fetchFromAdminAPI(token, 'searchListings', { term: '' })
             ]);
 
             setSales(salesRes.data || []);
             setInventory(inventoryRes.data || []);
         } catch (e: any) {
+            setError(e.message);
             toast({ variant: 'destructive', title: "Load Failed", description: e.message });
         } finally {
             setIsLoading(false);
@@ -67,9 +84,9 @@ export default function BuySellOversight() {
         setIsActionLoading(sale.id);
         try {
             const token = await getClientSideAuthToken();
-            await performAdminAction(token, 'finalizeSale', { 
+            await fetchFromAdminAPI(token, 'finalizeSale', { 
                 saleId: sale.id,
-                commissionRate: sale.commissionRate // Pass adjusted rate
+                commissionRate: sale.commissionRate || 2.5
             });
             toast({ title: "Sale Concluded", description: "Funds disbursed and commission isolated." });
             loadData();
@@ -85,6 +102,7 @@ export default function BuySellOversight() {
         setIsActionLoading(negotiateSale.id);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) return;
             await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -168,8 +186,6 @@ export default function BuySellOversight() {
         }
     ];
 
-    if (isLoading) return <div className="flex justify-center p-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-
     return (
         <div className="space-y-8 text-left text-foreground">
             <Dialog open={!!negotiateSale} onOpenChange={(o) => !o && setNegotiateSale(null)}>
@@ -179,7 +195,7 @@ export default function BuySellOversight() {
                         <DialogDescription className="text-left">Override the standard 2.5% commission rate for this transaction.</DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4 text-left text-foreground">
-                        <div className="space-y-2 text-left text-foreground text-foreground">
+                        <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Negotiated Rate (%)</Label>
                             <Input type="number" step="0.1" value={newCommissionRate} onChange={e => setNewCommissionRate(Number(e.target.value))} className="h-12 text-xl font-black" />
                         </div>
@@ -205,8 +221,8 @@ export default function BuySellOversight() {
             </Dialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left text-foreground text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground text-left">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <ShoppingCart className="h-8 w-8 text-primary" />
                         Buy & Sell Mall Oversight
                     </h1>
@@ -218,59 +234,73 @@ export default function BuySellOversight() {
                 </Button>
             </div>
 
-            <Tabs defaultValue="ledger" className="w-full text-left text-foreground">
-                <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start text-left text-foreground">
-                    <TabsTrigger value="ledger" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <FileText className="h-3.5 w-3.5" /> Global Handshake Ledger
-                    </TabsTrigger>
-                    <TabsTrigger value="inventory" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <Truck className="h-3.5 w-3.5" /> Community Inventory
-                    </TabsTrigger>
-                </TabsList>
+            {error ? (
+                <Card className="border-destructive bg-destructive/5">
+                    <CardContent className="p-8 text-center space-y-4">
+                        <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+                        <div className="space-y-1">
+                            <h3 className="font-bold text-destructive">Registry Connection Failed</h3>
+                            <p className="text-sm text-muted-foreground">{error}</p>
+                        </div>
+                        <Button onClick={loadData} variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-white">Retry Connection</Button>
+                    </CardContent>
+                </Card>
+            ) : (
+                <Tabs defaultValue="ledger" className="w-full text-left">
+                    <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start text-left">
+                        <TabsTrigger value="ledger" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                            <FileText className="h-3.5 w-3.5" /> Global Handshake Ledger
+                        </TabsTrigger>
+                        <TabsTrigger value="inventory" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                            <Truck className="h-3.5 w-3.5" /> Community Inventory
+                        </TabsTrigger>
+                    </TabsList>
 
-                <TabsContent value="ledger" className="mt-8 text-left text-foreground text-foreground">
-                    <Card className="border-none shadow-xl text-left">
-                        <CardHeader className="border-b bg-muted/10 text-left text-foreground">
-                            <CardTitle className="text-lg flex items-center gap-2 text-foreground text-left text-foreground">
-                                <Handshake className="h-5 w-5 text-primary" />
-                                Active Handshakes
-                            </CardTitle>
-                            <CardDescription className="text-left">Reviewing price negotiations and finance division triggers.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="pt-6 text-left text-foreground text-foreground">
-                            <DataTable columns={saleColumns} data={sales} />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                    <TabsContent value="ledger" className="mt-8 text-left">
+                        <Card className="border-none shadow-xl text-left">
+                            <CardHeader className="border-b bg-muted/10 text-left">
+                                <CardTitle className="text-lg flex items-center gap-2 text-left">
+                                    <Handshake className="h-5 w-5 text-primary" />
+                                    Active Handshakes
+                                </CardTitle>
+                                <CardDescription className="text-left">Reviewing price negotiations and finance division triggers.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-6 text-left">
+                                {isLoading ? <div className="flex justify-center p-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : <DataTable columns={saleColumns} data={sales} />}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
 
-                <TabsContent value="inventory" className="mt-8 text-left text-foreground">
-                    <Card className="border-none shadow-xl text-left text-foreground">
-                        <CardHeader className="border-b bg-muted/10 text-left text-foreground text-left">
-                            <CardTitle className="text-lg flex items-center gap-2 text-foreground text-left text-foreground">
-                                <Database className="h-5 w-5 text-primary" />
-                                National Vehicle Registry
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 text-left text-foreground text-foreground">
-                             <DataTable 
-                                data={inventory}
-                                columns={[
-                                    { header: 'Asset / Entity', cell: ({row}) => (
-                                        <div className="flex flex-col text-left">
-                                            <span className="font-bold text-left">{row.original.year} {row.original.make} {row.original.model}</span>
-                                            <span className="text-[9px] text-muted-foreground uppercase text-left">{row.original.companyName}</span>
-                                        </div>
-                                    )},
-                                    { header: 'List Price', cell: ({row}) => <span className="font-black text-left">{formatCurrency(row.original.price)}</span> },
-                                    { header: 'Region', accessorKey: 'location' },
-                                    { header: 'Status', cell: ({row}) => <Badge className="capitalize text-[10px] font-black text-left">{row.original.status}</Badge> }
-                                ]}
-                            />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+                    <TabsContent value="inventory" className="mt-8 text-left">
+                        <Card className="border-none shadow-xl text-left">
+                            <CardHeader className="border-b bg-muted/10 text-left">
+                                <CardTitle className="text-lg flex items-center gap-2 text-left">
+                                    <Database className="h-5 w-5 text-primary" />
+                                    National Vehicle Registry
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6 text-left">
+                                {isLoading ? <div className="flex justify-center p-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : (
+                                    <DataTable 
+                                        data={inventory}
+                                        columns={[
+                                            { header: 'Asset / Entity', cell: ({row}) => (
+                                                <div className="flex flex-col text-left">
+                                                    <span className="font-bold text-left">{row.original.year} {row.original.make} {row.original.model}</span>
+                                                    <span className="text-[9px] text-muted-foreground uppercase text-left">{row.original.companyName}</span>
+                                                </div>
+                                            )},
+                                            { header: 'List Price', cell: ({row}) => <span className="font-black text-left">{formatCurrency(row.original.price)}</span> },
+                                            { header: 'Region', accessorKey: 'location' },
+                                            { header: 'Status', cell: ({row}) => <Badge className="capitalize text-[10px] font-black text-left">{row.original.status}</Badge> }
+                                        ]}
+                                    />
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+            )}
         </div>
     );
 }
-
