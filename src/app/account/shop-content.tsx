@@ -57,26 +57,6 @@ export default function ShopContent() {
   }, [firestore, companyData?.shopId, userData?.companyId]);
   const { data: products } = useCollection(productsQuery);
   
-  useEffect(() => {
-    const subview = searchParams.get('subview');
-    if (subview === 'wizard' && companyData?.shopId) {
-        setView('wizard');
-    }
-    
-    if (searchParams.get('created') === 'true' && companyData?.shopId) {
-        setView('wizard');
-        router.replace('/account?view=shop', { scroll: false });
-    }
-  }, [searchParams, companyData, router]);
-
-  const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading || arePermissionsLoading;
-
-  const forceRefreshAll = useCallback(() => {
-    forceRefreshUser();
-    forceRefreshCompany();
-    if (forceRefreshShop) forceRefreshShop();
-  }, [forceRefreshUser, forceRefreshCompany, forceRefreshShop]);
-
   const handleCreateShop = async () => {
     if (!user || !userData?.companyId) {
       toast({ variant: 'destructive', title: 'Error', description: 'User or company not found.' });
@@ -96,8 +76,9 @@ export default function ShopContent() {
       const result = await response.json();
       if (response.ok && result.success) {
         toast({ title: 'Profile Draft Created!' });
-        await forceRefreshAll();
-        router.push('/account?view=shop&created=true');
+        forceRefreshUser();
+        forceRefreshCompany();
+        setView('wizard');
       } else {
         throw new Error(result.error || 'Failed to create shop.');
       }
@@ -107,6 +88,26 @@ export default function ShopContent() {
       setIsCreating(false);
     }
   };
+
+  useEffect(() => {
+    const subview = searchParams.get('subview');
+    if (subview === 'wizard') {
+        if (companyData?.shopId) {
+            setView('wizard');
+        } else if (!isCompanyLoading && !isCreating) {
+            // Automatically launch creation if subview=wizard is passed but no shop exists
+            handleCreateShop();
+        }
+    }
+  }, [searchParams, companyData, isCompanyLoading, isCreating]);
+
+  const isLoading = isUserLoading || isUserDataLoading || isCompanyLoading || arePermissionsLoading;
+
+  const forceRefreshAll = useCallback(() => {
+    forceRefreshUser();
+    forceRefreshCompany();
+    if (forceRefreshShop) forceRefreshShop();
+  }, [forceRefreshUser, forceRefreshCompany, forceRefreshShop]);
 
   const canCreateShop = can('create', 'shop');
   const shopExists = !!companyData?.shopId;

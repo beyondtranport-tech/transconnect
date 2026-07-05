@@ -19,18 +19,19 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * High-speed dual-path check.
-     * Path 1: User profile explicitly links companyId.
-     * Path 2: Direct ownership check on the target company document.
+     * High-speed resilient verification for mission-critical paths.
+     * Uses exists() checks to prevent failure during initial indexing.
      */
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && cid != null && (
-          // Fast Path: Direct user profile link
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Safety Path: Direct ownership on target document
-          exists(/databases/$(database)/documents/companies/$(cid)) &&
-          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+        isSignedIn() && 
+        cid != null && (
+          // Path 1: User profile link
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
+          // Path 2: Direct ownership on target record (Fail-safe for indexing latency)
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }
@@ -57,12 +58,11 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Allow the owner to read the doc even during initial registration lag
       allow read: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections: Explicitly grant list/read to verified members
+      // Explicitly grant list/read to verified members for private financial ledgers
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }

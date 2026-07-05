@@ -12,9 +12,6 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
@@ -25,20 +22,18 @@ import {
   Wallet,
   Activity,
   Handshake,
-  Share2,
   Landmark,
   Users,
   Warehouse,
   Network,
   PackageSearch,
   ShoppingCart,
-  Scale,
   Search,
   MessageSquare,
   Sparkles,
   ShieldCheck,
-  CreditCard,
   Loader2,
+  Truck,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -225,13 +220,27 @@ function AccountPageContent() {
                 </SidebarMenu>
             </SidebarGroup>
           )}
-        </Sidebar>
-        <SidebarInset>
-          <div className="p-4 md:p-8 text-left text-foreground">
-              {renderContent()}
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col truncate text-left">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Member'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+            </div>
+            <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
+                <LogOut className="h-5 w-5" />
+            </Button>
           </div>
-        </SidebarInset>
-      </SidebarProvider>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <div className="p-4 md:p-8 text-left text-foreground">
+            {renderContent()}
+        </div>
+      </SidebarInset>
     </SidebarProvider>
   );
 }
