@@ -13,14 +13,6 @@ import { useUser } from '@/firebase';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-// Registry View Imports
-import TransporterIntelligencePage from '@/app/intelligence/transporter/page';
-import SupplierIntelligencePage from '@/app/intelligence/supplier/page';
-import CapitalIntelligencePage from '@/app/intelligence/finance/page';
-import WarehouseMallPage from '@/app/mall/warehouse/page';
-import LoadsMallPage from '@/app/mall/loads/page';
-import BuySellMall from '@/app/mall/buy-sell/page';
-
 interface MallConfig {
     id: string;
     title: string;
@@ -215,28 +207,21 @@ export function MallGate({ mallId }: { mallId: string }) {
 
     // 3. ACTION VIEWS
     if (intent === 'buy') {
-        switch(mallId) {
-            case 'loads': return <LoadsMallPage />;
-            case 'warehouse': return <WarehouseMallPage />;
-            case 'transporter': return <TransporterIntelligencePage />;
-            case 'distribution': return <TransporterIntelligencePage />;
-            case 'supplier': return <SupplierIntelligencePage />;
-            case 'finance': return <CapitalIntelligencePage />;
-            case 'buy-sell': return <BuySellMall />;
-            default: return <div className="text-center italic py-20">Registry search for this segment is under construction.</div>;
-        }
+        // Parent view logic in page.tsx handles this.
+        return <div className="text-center italic py-20">Accessing Buyer Terminal...</div>;
     }
 
     if (intent === 'sell') {
+        const subview = config.sellView === 'shop' ? '&subview=wizard' : '';
         return (
             <div className="max-w-4xl mx-auto py-20 text-center space-y-6">
                 <config.icon className="h-16 w-16 text-primary mx-auto opacity-20" />
                 <h3 className="text-2xl font-bold">Node Initialized</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto">
-                    To list your capabilities in the {config.title}, you need to complete your profile node.
+                    To list your capabilities in the {config.title}, you need to complete your professional node.
                 </p>
                 <Button size="lg" asChild className="h-12 px-10 font-bold uppercase tracking-widest shadow-lg">
-                    <Link href={`/account?view=${config.sellView}`}>
+                    <Link href={`/account?view=${config.sellView}${subview}`}>
                         Manage {config.sellLabel} <ArrowRight className="ml-2 h-4 w-4"/>
                     </Link>
                 </Button>

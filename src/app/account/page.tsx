@@ -13,8 +13,8 @@ import {
   SidebarFooter,
   SidebarInset,
   SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   LogOut,
@@ -22,41 +22,30 @@ import {
   User,
   Building,
   Store,
-  CreditCard,
   Wallet,
-  Gift,
   Activity,
   Handshake,
-  TrendingUp,
-  Mail,
-  Sparkles,
-  MessageSquare,
-  Truck,
-  Heart,
-  Zap,
-  ShoppingCart,
-  Package,
-  Award,
-  Search,
   Share2,
   Landmark,
-  ClipboardList,
   Users,
-  ShoppingBag,
   Warehouse,
   Network,
   PackageSearch,
-  Building2,
-  MapPin,
-  Scale
+  ShoppingCart,
+  Scale,
+  Search,
+  MessageSquare,
+  Sparkles,
+  ShieldCheck,
+  CreditCard,
+  Loader2,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { Loader2 } from 'lucide-react';
 import React from 'react';
 import AIChatWidget from '@/components/ai-chat-widget';
 
@@ -74,7 +63,6 @@ import LoyaltyPlanPage from '@/app/connect/loyalty/page';
 import RewardsPlanPage from '@/app/connect/rewards/page';
 import ActionsPlanPage from '@/app/connect/actions/page';
 import IntelligenceHistory from './intelligence-history';
-import SocialStudio from '@/app/adminaccount/social-studio';
 import MarketingStudio from './marketing-studio';
 import MyFacilitiesContent from './facilities-content';
 import ShopContent from './shop-content';
@@ -125,11 +113,6 @@ function AccountPageContent() {
 
   // Role Detection
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
-  const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
-  
-  const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk', 'my-facilities', 'marketplace-deals'].includes(activeView);
-  const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
-  const isSocialActive = activeView.startsWith('social-');
 
   const renderContent = () => {
     if (activeView.startsWith('mall-')) {
@@ -191,16 +174,13 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="Distribution Mall" isActive={activeView === 'mall-distribution'} onClick={() => navigate('mall-distribution')}><Network /><span>Distribution Mall</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Supplier Mall" isActive={activeView === 'mall-supplier'} onClick={() => navigate('mall-supplier')}><Building2 /><span>Supplier Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Supplier Mall" isActive={activeView === 'mall-supplier'} onClick={() => navigate('mall-supplier')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Finance Mall" isActive={activeView === 'mall-finance'} onClick={() => navigate('mall-finance')}><Landmark /><span>Finance Mall</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Buy & Sell Mall" isActive={activeView === 'mall-buy-sell'} onClick={() => navigate('mall-buy-sell')}><ShoppingCart /><span>Buy & Sell Mall</span></SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="SA Auction Mall" isActive={activeView === 'mall-sa-auction'} onClick={() => navigate('mall-sa-auction')}><Scale /><span>SA Auction Mall</span></SidebarMenuButton>
                   </SidebarMenuItem>
               </SidebarMenu>
           </SidebarGroup>
@@ -240,35 +220,18 @@ function AccountPageContent() {
                         <SidebarMenuButton tooltip="Content Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Marketing Studio</span></SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Social Studio" isActive={isSocialActive}><Share2 /><span>Social Studio</span></SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
                         <SidebarMenuButton tooltip="My Referrals" isActive={activeView === 'network'} onClick={() => navigate('network')}><Handshake /><span>My Referrals</span></SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarGroup>
           )}
         </Sidebar>
-        <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
-            <Avatar className="h-10 w-10">
-                <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col truncate">
-                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Member'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
-            </div>
-            <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
-                <LogOut className="h-5 w-5" />
-            </Button>
+        <SidebarInset>
+          <div className="p-4 md:p-8 text-left text-foreground">
+              {renderContent()}
           </div>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <div className="p-4 md:p-8 text-left text-foreground">
-            {renderContent()}
-        </div>
-      </SidebarInset>
+        </SidebarInset>
+      </SidebarProvider>
     </SidebarProvider>
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -59,6 +58,11 @@ export default function ShopContent() {
   const { data: products } = useCollection(productsQuery);
   
   useEffect(() => {
+    const subview = searchParams.get('subview');
+    if (subview === 'wizard' && companyData?.shopId) {
+        setView('wizard');
+    }
+    
     if (searchParams.get('created') === 'true' && companyData?.shopId) {
         setView('wizard');
         router.replace('/account?view=shop', { scroll: false });

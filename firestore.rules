@@ -19,15 +19,17 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * Simplified and optimized for high-speed verification.
+     * High-speed dual-path check.
+     * Path 1: User profile explicitly links companyId.
+     * Path 2: Direct ownership check on the target company document.
      */
     function isMember(cid) {
       return isAdmin() || (
-        isSignedIn() && 
-        cid != null && (
-          // Check 1: User document explicitly links to this company
+        isSignedIn() && cid != null && (
+          // Fast Path: Direct user profile link
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Check 2: Direct ownership check on the company document
+          // Safety Path: Direct ownership on target document
+          exists(/databases/$(database)/documents/companies/$(cid)) &&
           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
         )
       );
@@ -55,12 +57,12 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Allow the owner to read the doc even before companyId is set on their profile
+      // Allow the owner to read the doc even during initial registration lag
       allow read: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections: Explicitly grant list/read to members
+      // Sub-collections: Explicitly grant list/read to verified members
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
