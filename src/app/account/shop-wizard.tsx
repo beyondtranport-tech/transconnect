@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import {
     Loader2, Save, CheckCircle, PlusCircle, Send, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, Info, Sparkles, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
-    Globe, LayoutTemplate, ClipboardList, Gavel
+    Globe, LayoutTemplate, ClipboardList, Gavel, Package
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -51,8 +51,11 @@ const nodeFormSchema = z.object({
   placementFee: z.coerce.number().optional(),
   monthlyStorageFee: z.coerce.number().optional(),
   availablePallets: z.coerce.number().optional(),
-  // Transport specific
-  operatingRegions: z.array(z.string()).optional().default([]),
+  // Transport specific (Fleet Node)
+  poweredUnits: z.array(z.string()).optional().default([]),
+  trailers: z.array(z.string()).optional().default([]),
+  primaryRegions: z.array(z.string()).optional().default([]),
+  cargoTypes: z.array(z.string()).optional().default([]),
   fleetSummary: z.string().optional(),
   // Loads / Brokerage specific
   brokerageMargin: z.coerce.number().min(0).max(50).default(5),
@@ -62,7 +65,14 @@ const nodeFormSchema = z.object({
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
 
-// ====== COMPONENTS ======
+const fleetOptions = {
+    powered: ['Horse', '8-ton Rigid', '4-ton Rigid', 'Bakkie'],
+    trailers: ['Skeletal', 'Skeletal + Genset', 'Tautliner', 'Flatbed', 'Tipper', 'Lowbed', 'Reefer'],
+    regions: ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape', 'Cross-Border'],
+    cargo: ['General Freight', 'Containers', 'Refrigerated Containers', 'Bulk / Aggregates', 'Abnormal Loads', 'Perishables', 'Hazmat', 'FMCG']
+};
+
+// ====== STEP COMPONENTS ======
 
 function StepIdentity() {
     const { control } = useFormContext<NodeFormValues>();
@@ -81,7 +91,7 @@ function StepIdentity() {
                     <FormItem>
                         <FormLabel>Forensic Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                             </SelectContent>
@@ -164,28 +174,50 @@ function StepWarehouse() {
 function StepTransport() {
     const { control } = useFormContext<NodeFormValues>();
     return (
-        <div className="space-y-8 text-left">
+        <div className="space-y-8 text-left text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2"><Truck className="h-6 w-6 text-primary" /> Transport Node Parameters</h3>
-            <div className="space-y-6">
-                <FormField control={control} name="fleetSummary" render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Fleet Capabilities Summary</FormLabel>
-                        <FormControl><Textarea placeholder="e.g. Specialized 34-ton Superlink fleet with Hazmat authorization..." {...field} className="min-h-[120px] border-2" /></FormControl>
-                        <FormDescription>Describe your equipment and specialized service standing.</FormDescription>
-                    </FormItem>
-                )} />
-                
-                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4">
-                    <div className="flex items-center gap-2">
-                        <MapPin className="h-5 w-5 text-primary" />
-                        <h4 className="font-bold text-sm uppercase tracking-widest text-primary">Service Corridors</h4>
-                    </div>
-                    <p className="text-xs text-muted-foreground">List your primary routes and hubs. This helps the matching engine reduce empty miles.</p>
-                    <div className="bg-white p-4 rounded-xl border">
-                        <p className="text-[10px] font-black uppercase text-muted-foreground mb-1">Coming Soon: Interactive Hub Mapping</p>
-                        <p className="text-xs italic">Route-specific rates and live GPS hub syncing is currently being integrated.</p>
+            <div className="space-y-10">
+                <div className="space-y-4">
+                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4" />
+                        Verified Capacity (Fleet)
+                    </Label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {fleetOptions.powered.map(item => (
+                            <FormField key={item} control={control} name="poweredUnits" render={({ field }) => (
+                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-xl hover:bg-muted/50 transition-all cursor-pointer">
+                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                    <FormLabel className="font-bold text-xs cursor-pointer">{item}</FormLabel>
+                                </FormItem>
+                            )} />
+                        ))}
                     </div>
                 </div>
+
+                <div className="space-y-4">
+                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2">
+                        <MapPin className="h-4 w-4" />
+                        Service Corridors (Regions)
+                    </Label>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        {fleetOptions.regions.map(item => (
+                            <FormField key={item} control={control} name="primaryRegions" render={({ field }) => (
+                                <FormItem className="flex items-center space-x-2 space-y-0 p-2 border rounded-lg hover:bg-muted/50 transition-all cursor-pointer">
+                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
+                                    <FormLabel className="text-[10px] font-medium cursor-pointer">{item}</FormLabel>
+                                </FormItem>
+                            )} />
+                        ))}
+                    </div>
+                </div>
+
+                <FormField control={control} name="fleetSummary" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Professional Service Summary</FormLabel>
+                        <FormControl><Textarea placeholder="Describe your specialized routes, handling capabilities, and fleet standing..." {...field} className="min-h-[120px] border-2" /></FormControl>
+                        <FormDescription>This text is used for high-fidelity matching with shippers.</FormDescription>
+                    </FormItem>
+                )} />
             </div>
         </div>
     );
@@ -200,15 +232,15 @@ function StepLoads() {
                 <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 uppercase font-black text-[10px] tracking-widest">Earning Node Active</Badge>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                    <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="space-y-6 text-left">
+                    <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
                         <div className="flex items-center gap-2 text-primary">
                             <DollarSign className="h-5 w-5" />
                             <h4 className="font-bold text-sm uppercase tracking-widest">Revenue Participation</h4>
                         </div>
                         <FormField control={control} name="brokerageMargin" render={({ field }) => (
-                            <FormItem>
+                            <FormItem className="text-left">
                                 <FormLabel>Default Clearing Margin (%)</FormLabel>
                                 <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
                                 <FormDescription className="text-xs">The percentage deducted from the total load value before haulier payout.</FormDescription>
@@ -216,13 +248,13 @@ function StepLoads() {
                         )} />
                     </div>
 
-                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50">
+                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50 text-left text-foreground">
                         <div className="flex items-center gap-2 text-slate-800">
                             <Gavel className="h-5 w-5" />
                             <h4 className="font-bold text-sm uppercase tracking-widest">Risk & Compliance</h4>
                         </div>
                          <FormField control={control} name="haulierVerificationRequired" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between">
+                            <FormItem className="flex items-center justify-between space-y-0 text-left">
                                 <FormLabel className="text-xs font-bold uppercase tracking-tight">Enforce RC1 Verification</FormLabel>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                             </FormItem>
@@ -231,9 +263,9 @@ function StepLoads() {
                     </div>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 text-left">
                     <FormField control={control} name="loadPostingTerms" render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="text-left">
                             <FormLabel className="flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" /> Settlement Terms</FormLabel>
                             <FormControl><Textarea placeholder="Describe your payment cycle (e.g. 14 days after original POD)..." {...field} className="min-h-[150px] border-2 bg-white" /></FormControl>
                             <FormMessage />
@@ -269,8 +301,8 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
                 <CheckCircle className="h-16 w-16 text-primary" />
             </div>
             <div className="space-y-2 text-center">
-                <h3 className="text-3xl font-black font-headline">Setup Complete</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial node is configured and ready for the forensic audit. Once approved, your capacity and clearing hub will be visible in the malls.</p>
+                <h3 className="text-3xl font-black font-headline text-center">Setup Complete</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial node is configured and ready for the forensic audit. Once approved, your capacity and clearing hub will be visible in the malls.</p>
             </div>
             <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                 {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
@@ -326,21 +358,21 @@ function AIToolModal({ initialPrompt, onResult, targetField }: any) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-xl text-left">
                 <DialogHeader>
-                    <DialogTitle>AI Branding Terminal</DialogTitle>
-                    <DialogDescription>Generate high-fidelity assets for your commercial node.</DialogDescription>
+                    <DialogTitle className="text-left">AI Branding Terminal</DialogTitle>
+                    <DialogDescription className="text-left">Generate high-fidelity assets for your commercial node.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
-                    <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className="bg-slate-50 border-2"/>
+                    <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className="bg-slate-50 border-2 text-left"/>
                     <div className="bg-muted aspect-video rounded-3xl flex flex-col items-center justify-center border-4 border-dashed border-muted-foreground/20 shadow-inner">
                         {isLoading ? (
                             <div className="text-center space-y-2">
                                 <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Rendering Asset...</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse text-center">Rendering Asset...</p>
                             </div>
                         ) : (
                             <div className="text-center opacity-30">
                                 <ImageIcon className="h-12 w-12 mx-auto mb-2" />
-                                <p className="text-xs font-bold uppercase">Asset will appear here</p>
+                                <p className="text-xs font-bold uppercase text-center">Asset will appear here</p>
                             </div>
                         )}
                     </div>
@@ -433,14 +465,14 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             <CardContent className="p-0">
                 <FormProvider {...methods}>
                     <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
-                        <div className="bg-slate-50/50 border-r p-6 space-y-2">
+                        <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
                                     key={step.id} 
                                     type="button" 
                                     variant={currentStep === index ? 'secondary' : 'ghost'} 
                                     className={cn(
-                                        "w-full justify-start gap-3 h-12 px-4 transition-all",
+                                        "w-full justify-start gap-3 h-12 px-4 transition-all text-left",
                                         currentStep === index && "bg-white shadow-md ring-1 ring-primary/20"
                                     )} 
                                     onClick={() => setCurrentStep(index)}
@@ -451,7 +483,7 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
                                     )}>
                                         {index + 1}
                                     </div>
-                                    <span className="font-bold text-xs uppercase tracking-widest">{step.name}</span>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-left">{step.name}</span>
                                 </Button>
                             ))}
                         </div>

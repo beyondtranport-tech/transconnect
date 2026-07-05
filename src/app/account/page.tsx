@@ -102,7 +102,7 @@ function AccountPageContent() {
   // Role Detection for Industrial Node Labeling
   const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.hasLoadsPlan;
   const isWarehouse = user?.declaredPosition === 'warehouse' || user?.companyData?.hasWarehousePlan;
-  const isSupplier = user?.declaredPosition === 'vendor' || user?.companyData?.membershipId === 'intelligence';
+  const isSupplier = user?.declaredPosition === 'vendor' || user?.companyData?.membershipId === 'intelligence' || user?.companyData?.membershipId === 'premium';
 
   const nodeLabel = useMemo(() => {
       if (isWarehouse) return "My Warehouse Hub";
@@ -197,7 +197,7 @@ function AccountPageContent() {
           </SidebarGroup>
 
           <SidebarGroup>
-              <SidebarGroupLabel>Node Management</SidebarGroupLabel>
+              <SidebarGroupLabel>Industrial Node Terminal</SidebarGroupLabel>
               <SidebarMenu>
                   <SidebarMenuItem>
                     <SidebarMenuButton tooltip={nodeLabel} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
