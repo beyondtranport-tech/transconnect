@@ -34,7 +34,7 @@
         "mobile": { "type": "string" },
         "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"] },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance", "distributor"] },
         "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
         "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
         "address": { "type": "string" },
@@ -45,38 +45,32 @@
       },
       "required": ["firstName", "lastName", "email", "type"]
     },
-    "WarehouseListing": {
-      "title": "Warehouse Capacity",
+    "WarehouseNode": {
+      "title": "Warehouse Node",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "companyId": { "type": "string" },
+        "nodeName": { "type": "string" },
         "providerType": { "type": "string", "enum": ["primary_operator", "excess_capacity"] },
-        "facilityName": { "type": "string" },
-        "location": { "type": "string" },
-        "totalSqm": { "type": "number" },
         "availablePallets": { "type": "number" },
         "upliftFee": { "type": "number" },
         "placementFee": { "type": "number" },
         "monthlyStorageFee": { "type": "number" },
-        "status": { "type": "string", "enum": ["active", "full", "draft"] }
+        "services": { "type": "array", "items": { "type": "string" } },
+        "imageUrls": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["draft", "pending_review", "approved"] }
       }
     },
-    "WarehouseBooking": {
-      "title": "Warehouse Transaction",
+    "Load": {
+      "title": "Standardized Load",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
-        "listingId": { "type": "string" },
-        "clientCompanyId": { "type": "string" },
-        "palletCount": { "type": "number" },
-        "startDate": { "type": "object" },
-        "estimatedDurationMonths": { "type": "number" },
-        "requiresPacking": { "type": "boolean" },
-        "requiresBarcoding": { "type": "boolean" },
-        "totalInitialFees": { "type": "number" },
-        "recurringMonthlyFee": { "type": "number" },
-        "status": { "type": "string", "enum": ["pending", "authorized", "completed"] }
+        "originNodeId": { "type": "string", "description": "The Warehouse or Supplier ID where load originates." },
+        "loadType": { "type": "string", "enum": ["local_distribution", "long_haul"] },
+        "status": { "type": "string", "enum": ["active", "assigned", "delivered", "completed"] },
+        "payout": { "type": "number" }
       }
     }
   },
@@ -94,12 +88,12 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       },
       {
-        "path": "/warehouseListings/{listingId}",
-        "definition": { "entityName": "WarehouseListing", "schema": { "$ref": "#/entities/WarehouseListing" }, "description": "Global storage capacity registry." }
+        "path": "/companies/{companyId}/warehouses/{warehouseId}",
+        "definition": { "entityName": "WarehouseNode", "schema": { "$ref": "#/entities/WarehouseNode" }, "description": "Member-managed storage nodes." }
       },
       {
-        "path": "/companies/{companyId}/warehouseBookings/{bookingId}",
-        "definition": { "entityName": "WarehouseBooking", "schema": { "$ref": "#/entities/WarehouseBooking" }, "description": "Specific member storage agreements." }
+        "path": "/loads/{loadId}",
+        "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Global standardized load board." }
       }
     ]
   }

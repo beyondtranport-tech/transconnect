@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -15,7 +15,7 @@ import { doc, collection, query, orderBy, serverTimestamp } from 'firebase/fires
 import { 
     Loader2, Save, CheckCircle, PlusCircle, Edit, Trash2, Send, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, Info, Sparkles, ImageIcon, Wand2, 
-    Home, BookOpen, ShieldCheck, Map, UploadCloud, Download, Upload
+    Home, BookOpen, ShieldCheck, Map, UploadCloud, Download, Upload, Warehouse, Handshake
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -47,74 +47,33 @@ const shopFormSchema = z.object({
   heroBannerUrl: z.string().optional(),
   termsText: z.string().min(20, "Please provide terms and conditions."),
   privacyText: z.string().min(20, "Please provide a privacy policy."),
+  // Warehouse specific
+  upliftFee: z.coerce.number().optional(),
+  placementFee: z.coerce.number().optional(),
+  monthlyStorageFee: z.coerce.number().optional(),
 });
 
-// ====== UTILS ======
+// ====== COMPONENTS ======
 
-const fileToDataUri = (file: File) => new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-    reader.readAsDataURL(file);
-});
-
-// ====== SHARED AI COMPONENTS ======
-
-function AIToolModal({ type, initialPrompt, onResult, targetField }: any) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [prompt, setPrompt] = useState(initialPrompt);
-    const [isLoading, setIsLoading] = useState(false);
-    const { user } = useUser();
-    const { toast } = useToast();
-
-    const handleAction = async () => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-
-            let result = await generateImage({ prompt });
-            if (!result.imageDataUri) throw new Error("AI failed to return image.");
-
-            const folder = `user-assets/${user!.uid}/shop-ai`;
-            const fileName = `ai_${targetField}_${Date.now()}.png`;
-            
-            const uploadRes = await fetch('/api/uploadImageAsset', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileDataUri: result.imageDataUri, folder, fileName })
-            });
-            const uploadData = await uploadRes.json();
-            if (!uploadRes.ok) throw new Error(uploadData.error);
-
-            onResult(uploadData.url);
-            setIsOpen(false);
-            toast({ title: "AI Asset Ready!" });
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "AI Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
+function StepWarehouseCapacity() {
+    const { control } = useFormContext();
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                    <Sparkles className="h-4 w-4" /> Generate with AI
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-xl text-left">
-                <DialogHeader><DialogTitle>AI Content Creator</DialogTitle></DialogHeader>
-                <div className="space-y-4 py-4 text-left">
-                    <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4}/>
-                    <div className="bg-muted aspect-video rounded-md flex items-center justify-center border-2 border-dashed">
-                        {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <p className="text-xs italic">Asset will appear here.</p>}
-                    </div>
-                </div>
-                <DialogFooter><Button onClick={handleAction} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate</Button></DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <div className="space-y-6 text-left">
+            <h3 className="text-xl font-bold flex items-center gap-2"><Banknote className="h-6 w-6 text-primary" /> Handling & Storage Fees</h3>
+            <p className="text-sm text-muted-foreground">Define your core revenue variables for the automated calculator.</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <FormField control={control} name="upliftFee" render={({ field }) => (
+                    <FormItem><FormLabel>Uplift Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>One-time charge to receive.</FormDescription></FormItem>
+                )} />
+                <FormField control={control} name="placementFee" render={({ field }) => (
+                    <FormItem><FormLabel>Placement Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>One-time charge to rack.</FormDescription></FormItem>
+                )} />
+                <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
+                    <FormItem><FormLabel>Storage Fee (R/mo)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Recurring monthly rental.</FormDescription></FormItem>
+                )} />
+            </div>
+        </div>
     );
 }
 
@@ -129,6 +88,7 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     const isAssociate = user?.declaredPosition === 'associate' || user?.role === 'associate';
     const isLender = user?.declaredPosition === 'lender' || user?.role === 'lender' || shop.declaredRole === 'lender';
     const isTransporter = shop.shopType === 'transporter';
+    const isWarehouse = user?.declaredPosition === 'warehouse' || shop.shopType === 'warehouse';
 
     const methods = useForm<z.infer<typeof shopFormSchema>>({
         resolver: zodResolver(shopFormSchema),
@@ -165,7 +125,10 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             { id: 'content', name: 'Content', component: <StepContent />, fields: ['homeHeading', 'aboutText'] },
         ];
         
-        // Only show products/fleet/commercials for non-Associate and non-Lender
+        if (isWarehouse) {
+            base.push({ id: 'capacity', name: 'Capacity', component: <StepWarehouseCapacity />, fields: ['upliftFee', 'monthlyStorageFee'] });
+        }
+
         if (!isAssociate && !isLender) {
             base.push({ id: 'catalog', name: isTransporter ? 'Lanes' : 'Catalog', component: <StepCatalog shop={shop} />, fields: [] });
             if (isTransporter) base.push({ id: 'fleet', name: 'Fleet', component: <StepFleet shop={shop} />, fields: [] });
@@ -174,7 +137,7 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
 
         base.push({ id: 'publish', name: 'Publish', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] });
         return base;
-    }, [shop, isTransporter, isAssociate, isLender, onUpdate]);
+    }, [shop, isTransporter, isAssociate, isLender, isWarehouse, onUpdate]);
 
     const handleNext = async () => {
         const step = wizardSteps[currentStep];
@@ -211,7 +174,6 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
     );
 }
 
-// Sub-components (Details, Media, etc.) are implemented here following the user's role logic.
 function StepDetails() {
     const { control } = useFormContext();
     return (
@@ -278,4 +240,61 @@ function StepPublish({ shop, onSave }: any) {
         </div>
     );
 }
-    
+
+function AIToolModal({ type, initialPrompt, onResult, targetField }: any) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [prompt, setPrompt] = useState(initialPrompt);
+    const [isLoading, setIsLoading] = useState(false);
+    const { user } = useUser();
+    const { toast } = useToast();
+
+    const handleAction = async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            let result = await generateImage({ prompt });
+            if (!result.imageDataUri) throw new Error("AI failed to return image.");
+
+            const folder = `user-assets/${user!.uid}/shop-ai`;
+            const fileName = `ai_${targetField}_${Date.now()}.png`;
+            
+            const uploadRes = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: result.imageDataUri, folder, fileName })
+            });
+            const uploadData = await uploadRes.json();
+            if (!uploadRes.ok) throw new Error(uploadData.error);
+
+            onResult(uploadData.url);
+            setIsOpen(false);
+            toast({ title: "AI Asset Ready!" });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "AI Error", description: e.message });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                    <Sparkles className="h-4 w-4" /> Generate with AI
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl text-left">
+                <DialogHeader><DialogTitle>AI Content Creator</DialogTitle></DialogHeader>
+                <div className="space-y-4 py-4 text-left">
+                    <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4}/>
+                    <div className="bg-muted aspect-video rounded-md flex items-center justify-center border-2 border-dashed">
+                        {isLoading ? <Loader2 className="h-8 w-8 animate-spin text-primary" /> : <p className="text-xs italic">Asset will appear here.</p>}
+                    </div>
+                </div>
+                <DialogFooter><Button onClick={handleAction} disabled={isLoading}>{isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate</Button></DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}

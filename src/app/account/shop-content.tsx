@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, Store, PlusCircle, ShieldAlert, Edit, Eye, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Loader2, Store, PlusCircle, ShieldAlert, Edit, Eye, ArrowLeft, CheckCircle, Warehouse } from 'lucide-react';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -108,19 +108,23 @@ export default function ShopContent() {
   const shopExists = !!companyData?.shopId;
   
   const isTransporter = user?.declaredPosition === 'transporter' || companyData?.shopType === 'transporter';
+  const isDistributor = user?.declaredPosition === 'distributor' || companyData?.shopType === 'distributor';
+  const isWarehouse = user?.declaredPosition === 'warehouse' || companyData?.shopType === 'warehouse';
   const isAssociate = user?.declaredPosition === 'associate' || user?.role === 'associate';
   const isLender = user?.declaredPosition === 'lender' || user?.role === 'lender' || companyData?.declaredRole === 'lender';
-  const isSupplier = (user?.declaredPosition === 'vendor' || companyData?.shopType === 'vendor') && !isLender;
+  const isSupplier = (user?.declaredPosition === 'vendor' || companyData?.shopType === 'vendor') && !isLender && !isWarehouse;
 
   const shopStatus = userShop?.status || 'draft';
 
   const creationLabel = useMemo(() => {
       if (isAssociate) return "Create Creator Profile";
-      if (isTransporter) return "Create Service Profile";
+      if (isTransporter) return "Create Transport Profile";
+      if (isDistributor) return "Create Distribution Profile";
+      if (isWarehouse) return "Create Warehouse Branch";
       if (isLender) return "Create Lender Profile";
       if (isSupplier) return "Create My Shop";
       return "Create Profile";
-  }, [isAssociate, isTransporter, isLender, isSupplier]);
+  }, [isAssociate, isTransporter, isLender, isSupplier, isDistributor, isWarehouse]);
 
   const renderContent = () => {
     if (view === 'wizard' && userShop) {
@@ -140,9 +144,12 @@ export default function ShopContent() {
              <div className="space-y-6">
                 <div className="p-6 border rounded-lg bg-muted/50">
                     <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 text-left">
-                        <div className="text-left">
-                            <h3 className="text-xl font-semibold text-left">{userShop.shopName}</h3>
-                            <p className="text-muted-foreground text-left">{userShop.category || 'General'}</p>
+                        <div className="text-left flex items-center gap-3">
+                            {isWarehouse ? <Warehouse className="h-6 w-6 text-primary" /> : <Store className="h-6 w-6 text-primary" />}
+                            <div>
+                                <h3 className="text-xl font-semibold text-left">{userShop.shopName}</h3>
+                                <p className="text-muted-foreground text-left">{userShop.category || 'General'}</p>
+                            </div>
                         </div>
                         <div className="flex items-center gap-2 text-left">
                             <span className="text-sm font-medium">Status:</span>
@@ -154,7 +161,7 @@ export default function ShopContent() {
                     <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t text-left">
                         {!isAssociate && !isLender && (
                             <div className="text-left">
-                                <p className="text-sm font-medium text-left">{isTransporter ? 'Active Service Lanes' : 'Products Listed'}</p>
+                                <p className="text-sm font-medium text-left">{(isTransporter || isDistributor) ? 'Active Service Lanes' : isWarehouse ? 'Storage Products' : 'Products Listed'}</p>
                                 <p className="text-2xl font-bold text-left">{products?.length || 0}</p>
                             </div>
                         )}
@@ -203,13 +210,16 @@ export default function ShopContent() {
         );
   };
 
+  const titleIcon = isWarehouse ? <Warehouse className="h-6 w-6" /> : <Store className="h-6 w-6" />;
+  const titleLabel = isAssociate ? 'Creator Profile' : (isTransporter ? 'Transport Profile' : isDistributor ? 'Distribution Profile' : isWarehouse ? 'Warehouse Branch' : isLender ? 'Lender Profile' : 'My Shop');
+
   return (
     <Card>
       <CardHeader className="text-left">
         <div className="flex justify-between items-start text-left">
             <div className="text-left">
                 <CardTitle className="flex items-center gap-2 text-left">
-                    <Store /> {isAssociate ? 'Creator Profile' : (isTransporter ? 'Service Profile' : isLender ? 'Lender Profile' : 'My Shop')}
+                    {titleIcon} {titleLabel}
                 </CardTitle>
                 <CardDescription className="text-left">
                 {shopExists ? `Manage your professional profile: ${userShop?.shopName || '...'}` : "Create and manage your public-facing profile."}
@@ -232,4 +242,3 @@ export default function ShopContent() {
     </Card>
   );
 }
-    

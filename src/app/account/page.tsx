@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -41,6 +42,9 @@ import {
   ClipboardList,
   Users,
   ShoppingBag,
+  Warehouse,
+  Network,
+  PackageSearch
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -125,15 +129,20 @@ function AccountPageContent() {
 
   // Role Detection
   const isTransporter = user.declaredPosition === 'transporter' || user.companyData?.shopType === 'transporter';
+  const isDistributor = user.declaredPosition === 'distributor' || user.companyData?.shopType === 'distributor';
+  const isWarehouse = user.declaredPosition === 'warehouse' || user.companyData?.shopType === 'warehouse';
   const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
-  const isSupplier = (user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor') && !isLender;
+  const isSupplier = (user.declaredPosition === 'vendor' || user.companyData?.shopType === 'vendor') && !isLender && !isWarehouse;
   const isProfessional = user.declaredPosition === 'driver' || user.role === 'driver';
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
-  const isCargoOwner = !isTransporter && !isSupplier && !isProfessional && !isAssociate && !isLender;
+  const isCargoOwner = !isTransporter && !isSupplier && !isProfessional && !isAssociate && !isLender && !isWarehouse && !isDistributor;
   
   const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk', 'my-facilities', 'marketplace-deals'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
   const isSocialActive = activeView.startsWith('social-');
+
+  const shopLabel = isAssociate ? "Creator Profile" : (isTransporter ? "Transport Profile" : isDistributor ? "Distribution Profile" : isWarehouse ? "Warehouse Profile" : isLender ? "Lender Profile" : "My Shop");
+  const shopIcon = isWarehouse ? <Warehouse /> : <Store />;
 
   return (
     <SidebarProvider>
@@ -153,12 +162,12 @@ function AccountPageContent() {
               
               <SidebarMenuItem>
                   <SidebarMenuButton 
-                    tooltip={isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")} 
+                    tooltip={shopLabel} 
                     isActive={activeView === 'shop'} 
                     onClick={() => navigate('shop')}
                   >
-                    <Store />
-                    <span>{isAssociate ? "Creator Profile" : (isTransporter ? "Service Profile" : isLender ? "Lender Profile" : "My Shop")}</span>
+                    {shopIcon}
+                    <span>{shopLabel}</span>
                   </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -184,7 +193,7 @@ function AccountPageContent() {
                 </SidebarMenuItem>
               )}
               
-              {isTransporter && (
+              {(isTransporter || isDistributor) && (
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Fleet & Services" isActive={activeView === 'fleet'} onClick={() => navigate('fleet')}><Truck /><span>Fleet & Services</span></SidebarMenuButton>
                 </SidebarMenuItem>
