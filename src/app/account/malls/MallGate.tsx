@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useUser } from '@/firebase';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Registry View Imports
 import TransporterIntelligencePage from '@/app/intelligence/transporter/page';
@@ -40,7 +40,7 @@ const mallConfigs: Record<string, MallConfig> = {
     loads: {
         id: 'loads',
         title: 'Loads Mall',
-        description: 'The national clearing house for all local and long-haul freight instructions.',
+        description: 'The national clearing house for all local and long-haul freight instructions. Find loads or post freight.',
         icon: PackageSearch,
         resource: 'loads',
         permission: 'transact',
@@ -54,7 +54,7 @@ const mallConfigs: Record<string, MallConfig> = {
     warehouse: {
         id: 'warehouse',
         title: 'Warehouse Mall',
-        description: 'Map community storage capacity. Calculate handling, storage, and uplift fees.',
+        description: 'Map community storage capacity. Calculate handling, storage, and uplift fees across the hub network.',
         icon: Warehouse,
         resource: 'warehouseMall',
         permission: 'transact',
@@ -68,11 +68,11 @@ const mallConfigs: Record<string, MallConfig> = {
     transporter: {
         id: 'transporter',
         title: 'Transport Mall',
-        description: 'Long-haul arterial fleet registry. Connect with verified capacity.',
+        description: 'Long-haul arterial fleet registry. Connect with verified capacity for national corridors.',
         icon: Truck,
         resource: 'transporterMall',
         permission: 'view',
-        upgradePlan: 'intelligence',
+        upgradePlan: 'loads_intelligence',
         buyLabel: 'Source Capacity',
         buyDesc: 'Scan the forensic haulier registry.',
         sellLabel: 'List My Fleet',
@@ -82,11 +82,11 @@ const mallConfigs: Record<string, MallConfig> = {
     distribution: {
         id: 'distribution',
         title: 'Distribution Mall',
-        description: 'Urban spoke networks. Vetted fleet registry for final-mile logistics.',
+        description: 'Urban spoke networks. Vetted fleet registry for inner-city collection and final-mile delivery.',
         icon: Network,
         resource: 'distributionMall',
         permission: 'view',
-        upgradePlan: 'intelligence',
+        upgradePlan: 'loads_intelligence',
         buyLabel: 'Source Spokes',
         buyDesc: 'Find inner-city distribution partners.',
         sellLabel: 'List My Node',
@@ -110,7 +110,7 @@ const mallConfigs: Record<string, MallConfig> = {
     finance: {
         id: 'finance',
         title: 'Finance Mall',
-        description: 'Direct in-house funding and specialized market lenders.',
+        description: 'Direct in-house funding and specialized market lenders understanding industrial risk.',
         icon: Landmark,
         resource: 'financeMall',
         permission: 'view',
@@ -124,7 +124,7 @@ const mallConfigs: Record<string, MallConfig> = {
     'buy-sell': {
         id: 'buy-sell',
         title: 'Buy & Sell Mall',
-        description: 'Marketplace for vehicle trading and secure commercial handshakes.',
+        description: 'Marketplace for vehicle trading and secure commercial handshakes with document automation.',
         icon: ShoppingCart,
         resource: 'buySellMall',
         permission: 'transact',
@@ -146,20 +146,21 @@ export function MallGate({ mallId }: { mallId: string }) {
 
     const hasAccess = can(config.permission as any, config.resource);
 
-    // 1. ACCESS CHECK
+    // 1. ACCESS CHECK (The Activation Mechanism)
     if (!hasAccess) {
         return (
-            <div className="max-w-4xl mx-auto py-12">
+            <div className="max-w-4xl mx-auto py-12 animate-in fade-in zoom-in duration-500">
                 <PremiumFeaturePrompt 
                     icon={config.icon}
                     title={config.title}
                     description={config.description}
+                    planId={config.upgradePlan}
                 />
             </div>
         );
     }
 
-    // 2. INTENT SELECTION
+    // 2. INTENT SELECTION (Post-Activation)
     if (intent === 'select') {
         return (
             <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-500 text-left">
@@ -172,20 +173,20 @@ export function MallGate({ mallId }: { mallId: string }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl" onClick={() => setIntent('buy')}>
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => setIntent('buy')}>
                         <CardHeader className="p-8 pb-4">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
                                 <Search className="h-8 w-8 text-foreground group-hover:text-white" />
                             </div>
                             <CardTitle className="text-2xl font-black mt-6">{config.buyLabel}</CardTitle>
-                            <CardDescription className="text-base mt-2 leading-relaxed">{config.buyDesc}</CardDesc>
+                            <CardDescription className="text-base mt-2 leading-relaxed">{config.buyDesc}</CardDescription>
                         </CardHeader>
                         <CardFooter className="p-8 pt-0 flex justify-end">
                             <ArrowRight className="h-6 w-6 text-primary" />
                         </CardFooter>
                     </Card>
 
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl" onClick={() => setIntent('sell')}>
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => setIntent('sell')}>
                         <CardHeader className="p-8 pb-4">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
                                 <PlusCircle className="h-8 w-8 text-foreground group-hover:text-white" />
@@ -214,12 +215,11 @@ export function MallGate({ mallId }: { mallId: string }) {
 
     // 3. ACTION VIEWS
     if (intent === 'buy') {
-        // Render the specialized Registry Search components
         switch(mallId) {
             case 'loads': return <LoadsMallPage />;
             case 'warehouse': return <WarehouseMallPage />;
             case 'transporter': return <TransporterIntelligencePage />;
-            case 'distribution': return <TransporterIntelligencePage />; // Uses haulier engine with filter
+            case 'distribution': return <TransporterIntelligencePage />;
             case 'supplier': return <SupplierIntelligencePage />;
             case 'finance': return <CapitalIntelligencePage />;
             case 'buy-sell': return <BuySellMall />;
@@ -228,7 +228,6 @@ export function MallGate({ mallId }: { mallId: string }) {
     }
 
     if (intent === 'sell') {
-        // Redirect to the management view inside /account
         return (
             <div className="max-w-4xl mx-auto py-20 text-center space-y-6">
                 <config.icon className="h-16 w-16 text-primary mx-auto opacity-20" />
