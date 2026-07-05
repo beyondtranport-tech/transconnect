@@ -38,7 +38,7 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
         });
 
         // 2. Resolve Accounting (4000 series for subscription revenue)
-        const chartOfAccountsCode = planType === 'membership' ? '4010' : '4100';
+        const chartOfAccountsCode = (planType === 'membership' || planId === 'intelligence') ? '4010' : '4100';
 
         // 3. Record Member Transaction
         const companyTransactionRef = companyRef.collection('transactions').doc();
@@ -71,7 +71,7 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
         if (cycle === 'annual') nextBilling.setFullYear(nextBilling.getFullYear() + 1);
         else nextBilling.setMonth(nextBilling.getMonth() + 1);
 
-        if (planType === 'membership') {
+        if (planType === 'membership' || planId === 'intelligence') {
             transaction.update(companyRef, {
                 membershipId: planId,
                 billingCycle: cycle || 'monthly',
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
   }
 
   const authorization = req.headers.get('authorization');
-  if (!authorization?.startsWith('Bearer ')) {
+  if (!authorization || !authorization.startsWith('Bearer ')) {
     return NextResponse.json({ success: false, error: 'Missing Auth' }, { status: 401 });
   }
   
@@ -132,6 +132,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result);
 
   } catch (error: any) {
+    console.error("Payment API Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

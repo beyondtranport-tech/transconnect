@@ -28,6 +28,41 @@ const iconMap: Record<string, any> = {
     finance_intelligence: Landmark,
 };
 
+const defaultPlans = [
+    {
+        id: 'intelligence',
+        name: 'Intelligence Access',
+        price: 100,
+        type: 'membership',
+        description: 'Foundational access to the forensic industrial registry and community discounts.',
+        icon: ShieldCheck
+    },
+    {
+        id: 'loads_intelligence',
+        name: 'Loads Intelligence',
+        price: 75,
+        type: 'node',
+        description: 'The Brokerage Node. Enables posting, taking, and settling freight loads.',
+        icon: Truck
+    },
+    {
+        id: 'warehouse_intelligence',
+        name: 'Warehouse Intelligence',
+        price: 125,
+        type: 'node',
+        description: 'The Storage Node. Manage community storage capacity and handling fees.',
+        icon: Warehouse
+    },
+    {
+        id: 'buy_sell_intelligence',
+        name: 'Buy & Sell Intelligence',
+        price: 150,
+        type: 'node',
+        description: 'The Marketplace Node. Secure vehicle trading and document automation.',
+        icon: ShoppingCart
+    }
+];
+
 function CheckoutComponent() {
   const router = useRouter();
   const params = useParams();
@@ -42,8 +77,6 @@ function CheckoutComponent() {
   
   // Categorize plan type
   const isConnectPlan = ['loyalty', 'rewards', 'actions'].includes(planId);
-  const isEarningNode = ['loads_intelligence', 'warehouse_intelligence', 'buy_sell_intelligence', 'finance_intelligence'].includes(planId);
-  const isFoundationTier = planId === 'intelligence';
 
   // Refs
   const membershipRef = useMemoFirebase(() => {
@@ -89,7 +122,7 @@ function CheckoutComponent() {
         };
     }
     
-    // 2. Handle Foundation Tier or Earning Nodes
+    // 2. Handle Foundation Tier or Earning Nodes (Firestore Priority)
     if (membershipPlan) {
         const monthlyPrice = (typeof membershipPlan.price === 'object' && membershipPlan.price !== null)
             ? membershipPlan.price.monthly || 0
@@ -98,6 +131,8 @@ function CheckoutComponent() {
         const specialOfferDiscount = Number(membershipPlan.specialOfferDiscount) || 0;
         const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
 
+        const type = planId === 'intelligence' ? 'membership' : 'node';
+
         if (cycle === 'annual') {
             const annualDiscount = Number(membershipPlan.annualDiscount) || 0;
             const baseAnnualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
@@ -105,18 +140,30 @@ function CheckoutComponent() {
                 name: membershipPlan.name,
                 price: baseAnnualPrice * (1 - (specialOfferDiscount / 100)),
                 description: membershipPlan.description,
-                type: isFoundationTier ? 'membership' : 'node'
+                type: type
             };
         }
         return {
             name: membershipPlan.name,
             price: finalMonthlyPrice,
             description: membershipPlan.description,
-            type: isFoundationTier ? 'membership' : 'node'
+            type: type
         };
     }
+
+    // 3. Fallback to Defaults (If not in DB yet)
+    const fallback = defaultPlans.find(p => p.id === planId);
+    if (fallback) {
+        return {
+            name: fallback.name,
+            price: fallback.price,
+            description: fallback.description,
+            type: fallback.type
+        };
+    }
+
     return null;
-  }, [planId, isConnectPlan, isFoundationTier, connectConfig, membershipPlan, cycle]);
+  }, [planId, isConnectPlan, connectConfig, membershipPlan, cycle]);
 
   const handlePurchase = async () => {
     if (!user || !planDisplay || !companyData || !firestore) {
@@ -203,7 +250,7 @@ function CheckoutComponent() {
                     <div className="text-left">
                         <div className="flex items-center gap-2 mb-1">
                             <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.2em] border-primary/50 text-primary px-3 h-5">
-                                {isEarningNode ? 'Industrial Node' : 'Ecosystem Foundation'}
+                                {planDisplay.type === 'node' ? 'Industrial Node' : 'Ecosystem Foundation'}
                             </Badge>
                         </div>
                         <CardTitle className="text-3xl font-black font-headline text-white text-left leading-tight">Activate Intelligence</CardTitle>
