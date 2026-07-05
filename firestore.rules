@@ -20,15 +20,17 @@ service cloud.firestore {
     /**
      * IS MEMBER / OWNER CHECK
      * High-speed verification for company-level data.
-     * Checks user profile mapping AND direct ownership on the company record.
+     * Checks both the user profile mapping AND direct ownership on the company record.
      */
     function isMember(cid) {
+      let uid = request.auth.uid;
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          cid == request.auth.uid || 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          (exists(/databases/$(database)/documents/companies/$(cid)) && get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
+          // Path 1: User's profile document explicitly links to this company
+          get(/databases/$(database)/documents/users/$(uid)).data.companyId == cid ||
+          // Path 2: The company document explicitly lists this user as the owner
+          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == uid
         )
       );
     }
