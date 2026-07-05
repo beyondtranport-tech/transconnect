@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -7,11 +6,10 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export const dynamic = 'force-dynamic';
 
 /**
- * FORENSIC SEARCH ENGINE
- * Enforces:
- * 1. Deep-scan of industrialTags and minedServiceWording.
- * 2. Visual data masking for Free tier.
- * 3. 100-record hard cap for all tiers to prevent resource exhaustion.
+ * FORENSIC SEARCH ENGINE - REVENUE PROTECTED
+ * Enforces "Transactional Masking":
+ * 1. Base Intelligence members see Names/Addresses.
+ * 2. ONLY specific Earning Node members see Direct Emails, Mobiles, and mined Service wording.
  */
 export async function POST(req: NextRequest) {
     try {
@@ -32,7 +30,7 @@ export async function POST(req: NextRequest) {
         const uid = decodedToken.uid;
         const db = getFirestore(app);
 
-        // 1. Get Member Status
+        // 1. Get Member Status & Tier
         const userDoc = await db.collection('users').doc(uid).get();
         const companyId = userDoc.data()?.companyId;
         if (!companyId) throw new Error("Member profile not found.");
@@ -41,88 +39,86 @@ export async function POST(req: NextRequest) {
         const companyDoc = await companyRef.get();
         const companyData = companyDoc.data()!;
         
-        const isPaid = companyData.membershipId && companyData.membershipId !== 'free';
+        const membershipId = companyData.membershipId || 'free';
+        const isBasePaid = membershipId !== 'free';
 
-        // 2. Enforce Daily Limit (10 per day for free users)
-        if (!isPaid) {
-            const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-            const recentSearches = await companyRef.collection('searchLogs')
-                .where('timestamp', '>', Timestamp.fromDate(yesterday))
-                .get();
+        // REVENUE GUARD: Check for specific Earning Node
+        const hasLoadsNode = membershipId === 'loads_intelligence' || membershipId === 'premium';
+        const hasMarketplaceNode = membershipId === 'buy_sell_intelligence' || membershipId === 'premium';
+        const hasWarehouseNode = membershipId === 'warehouse_intelligence' || membershipId === 'premium';
 
-            if (recentSearches.size >= 10) {
-                return NextResponse.json({ 
-                    success: false, 
-                    error: 'Daily Search Limit Reached (10/10). Upgrade to Intelligence Access for unlimited scans.',
-                    limitReached: true
-                }, { status: 429 });
-            }
-        }
-
-        // 3. Execute Registry Scan
+        // 2. Execute Registry Scan
         let collectionName = 'leads';
-        if (['driver', 'transporter', 'supplier', 'finance'].includes(type)) collectionName = 'partners';
+        if (['driver', 'transporter', 'supplier', 'finance', 'warehouse'].includes(type)) collectionName = 'partners';
         
-        // Capped Scan: Only search the latest 200 items to preserve quota
         const snapshot = await db.collection(collectionName)
             .orderBy('updatedAt', 'desc')
-            .limit(200) 
+            .limit(500) 
             .get();
 
         let results = snapshot.docs.map((doc: any) => {
             const item = doc.data();
             const normalized = {
                 id: doc.id,
-                companyName: item.companyName || item.company_name || item.trading_name || item.name || item.service_handle || 'Industrial Entity',
-                address: item.address || item.physicalAddress || item.physical_address || item.location || 'South Africa',
-                entryType: item.industrial_category || item.category || item.entryType || item.classification || item.role || 'General',
-                industrialTags: item.industrialTags || item.tags || [],
-                minedServiceWording: item.minedServiceWording || item.notes || '',
+                companyName: item.companyName || item.company_name || item.trading_name || item.service_handle || 'Industrial Entity',
+                address: item.address || item.physicalAddress || 'South Africa',
+                entryType: item.industrial_category || item.category || 'General',
             };
 
-            if (isPaid) {
+            // RESOLVE DATA DEPTH based on the specific Mall Node
+            let canSeeDirectDetails = false;
+            if (type === 'transporter') canSeeDirectDetails = hasLoadsNode;
+            else if (type === 'supplier') canSeeDirectDetails = isBasePaid; // Suppliers are open to all paid
+            else if (type === 'finance') canSeeDirectDetails = isBasePaid; // Capital access is core value
+            else if (type === 'warehouse') canSeeDirectDetails = hasWarehouseNode;
+            else if (type === 'driver') canSeeDirectDetails = hasLoadsNode;
+
+            if (canSeeDirectDetails) {
                 return {
                     ...normalized,
-                    contactPerson: item.contactPerson || item.contact_person || (item.firstName ? `${item.firstName} ${item.lastName}` : 'N/A'),
+                    contactPerson: item.contactPerson || item.contact_person || 'Identity Verified',
                     email: item.email || item.email_address || 'N/A',
                     phone: item.phone || item.telephone_number || 'N/A',
                     mobile: item.mobile || item.registry_line || 'N/A',
                     website: item.website || item.url || 'N/A',
+                    minedServiceWording: item.minedServiceWording || item.notes || '',
+                };
+            } else if (isBasePaid) {
+                // R100 Foundation: See metadata but mask the high-value "Transactional" contacts
+                return {
+                    ...normalized,
+                    contactPerson: 'Locked (Earning Node Required)',
+                    email: 'upgrade@tc.co.za',
+                    phone: '0XX XXX XXXX',
+                    mobile: '0XX XXX XXXX',
+                    website: 'www.locked.co.za',
+                    minedServiceWording: 'Transactional intelligence is restricted to specific Mall subscribers.',
+                    isMasked: true,
+                    nodeRequired: type === 'transporter' ? 'loads_intelligence' : type === 'warehouse' ? 'warehouse_intelligence' : 'buy_sell_intelligence'
                 };
             } else {
+                // Free: Standard deep masking
                 return {
                     ...normalized,
                     contactPerson: 'Locked',
-                    email: 'locked@tc.co.za',
-                    phone: '011 XXX XXXX',
-                    mobile: '082 XXX XXXX',
-                    website: 'www.locked.co.za',
-                    isMasked: true
+                    isMasked: true,
+                    isFreeMask: true
                 };
             }
         });
 
-        // 4. Forensic Memory Filter
-        if (searchTerm || service || city || suburb || province || category) {
+        // 3. Filter results
+        if (searchTerm || category) {
             const lowSearch = searchTerm?.toLowerCase() || '';
-            const lowProv = province?.toLowerCase() || '';
-            const lowCity = city?.toLowerCase() || '';
-            
-            results = results.filter((item: any) => {
-                const addr = (item.address || '').toLowerCase();
-                const typeStr = (item.entryType || '').toLowerCase();
-                const name = (item.companyName || '').toLowerCase();
-
-                const matchesLoc = (!lowProv || addr.includes(lowProv)) && (!lowCity || addr.includes(lowCity));
-                const matchesText = !lowSearch || name.includes(lowSearch) || typeStr.includes(lowSearch) || addr.includes(lowSearch);
-
-                return matchesLoc && matchesText;
-            });
+            results = results.filter((item: any) => 
+                item.companyName.toLowerCase().includes(lowSearch) || 
+                item.entryType.toLowerCase().includes(lowSearch)
+            );
         }
 
         const finalResults = results.slice(0, 100);
 
-        // 5. Log Search
+        // 4. Log Search for Audit
         await companyRef.collection('searchLogs').add({
             userId: uid,
             type,

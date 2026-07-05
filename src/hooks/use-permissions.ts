@@ -3,7 +3,7 @@
 import { useUser } from '@/firebase';
 import { useMemo } from 'react';
 
-export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage' | 'publish';
+export type Action = 'create' | 'view' | 'edit' | 'delete' | 'manage' | 'publish' | 'transact';
 export type Resource = 
     'shop' | 
     'products' | 
@@ -31,11 +31,13 @@ export type Resource =
     'social' |
     'marketing-studio' |
     'lending-focus' |
-    'account';
+    'account' |
+    'direct-contacts';
 
 // `manage` implies all other actions
 const permissionHierarchy: { [key in Action]: Action[] } = {
-    manage: ['create', 'view', 'edit', 'delete', 'publish'],
+    manage: ['create', 'view', 'edit', 'delete', 'publish', 'transact'],
+    transact: ['transact'],
     create: ['create'],
     view: ['view'],
     edit: ['edit'],
@@ -45,7 +47,8 @@ const permissionHierarchy: { [key in Action]: Action[] } = {
 
 /**
  * INTELLIGENCE NODE PERMISSIONS
- * Logic refined to handle the specialized industrial membership strategy.
+ * Logic strictly protects the revenue stream by gating "Transactional Intelligence" 
+ * behind specialized Earning Nodes.
  */
 export function usePermissions() {
     const { user, isUserLoading } = useUser();
@@ -61,63 +64,52 @@ export function usePermissions() {
                         user.email === 'beyondtransport@gmail.com' ||
                         user.email === 'michael@logisticsflow.co.za';
 
-        // Admins get all permissions
         if (isAdmin) {
             return new Set<string>(['manage:all']);
         }
         
-        // Handle staff members first (Explicit Granular Permissions)
-        if (user.role === 'staff' && Array.isArray(user.permissions)) {
-             user.permissions.forEach((p: string) => perms.add(p));
-             return perms;
-        }
-
-        // Default Owner Permissions (Internal Management)
-        perms.add('view:account');
-        perms.add('manage:staff');
-        perms.add('edit:staff');
-        perms.add('delete:staff');
-        perms.add('create:staff');
-        perms.add('view:wallet');
-
         const membershipId = user.companyData?.membershipId || 'free';
         const isPaidIntelligence = membershipId !== 'free';
-        const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
-        const isLender = user.declaredPosition === 'lender' || user.role === 'lender' || user.companyData?.declaredRole === 'lender';
 
-        // 1. FOUNDATION: INTELLIGENCE ACCESS (Applies to all paid nodes)
-        if (isPaidIntelligence || isAssociate) {
-            perms.add('create:shop');
-            perms.add('edit:shop');
-            perms.add('publish:shop');
-            perms.add('manage:products');
+        // 1. FOUNDATION: INTELLIGENCE ACCESS (R100)
+        // Grants access to the "Industrial Map" but not the "Transactional Terminal"
+        if (isPaidIntelligence) {
+            perms.add('view:account');
+            perms.add('view:wallet');
             perms.add('view:quotes');
             perms.add('create:quotes');
             perms.add('view:enquiries');
             perms.add('create:enquiries');
+            perms.add('create:shop');
+            perms.add('edit:shop');
+            perms.add('publish:shop');
+            perms.add('manage:products');
+            perms.add('manage:staff');
         }
 
-        // 2. SPECIALIZED NODE: LOADS INTELLIGENCE
+        // 2. EARNING NODE: LOADS INTELLIGENCE (R75)
+        // Unlocks direct contacts for transporters and load-posting capabilities
         if (membershipId === 'loads_intelligence' || membershipId === 'premium') {
+            perms.add('view:direct-contacts'); // High-value forensic data
+            perms.add('transact:loads');
             perms.add('create:loads');
             perms.add('manage:loads');
         }
 
-        // 3. SPECIALIZED NODE: BUY & SELL INTELLIGENCE
+        // 3. EARNING NODE: BUY & SELL INTELLIGENCE (R150)
+        // Unlocks dealer contacts and the Handshake Terminal
         if (membershipId === 'buy_sell_intelligence' || membershipId === 'premium') {
+            perms.add('view:direct-contacts');
+            perms.add('transact:buySellMall');
             perms.add('manage:buySellMall');
         }
 
-        // 4. ROLE SPECIFIC: DIGITAL ASSOCIATE
-        if (isAssociate) {
-            perms.add('view:social');
-            perms.add('manage:marketing-studio');
-            perms.add('manage:social');
-        }
-
-        // 5. ROLE SPECIFIC: LENDER
-        if (isLender) {
-            perms.add('manage:lending-focus');
+        // 4. EARNING NODE: WAREHOUSE INTELLIGENCE (R125)
+        // Unlocks operator contacts and the Booking Terminal
+        if (membershipId === 'warehouse_intelligence' || membershipId === 'premium') {
+            perms.add('view:direct-contacts');
+            perms.add('transact:warehouseMall');
+            perms.add('manage:warehouseMall');
         }
 
         return perms;

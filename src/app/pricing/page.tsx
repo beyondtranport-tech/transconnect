@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,7 @@ const defaultPlans = [
         features: [
             "1 Search per day",
             "View up to 10 records",
-            "Basic company details only",
+            "Basic company names only",
             "Public Mall access",
         ],
         cta: "Start Free",
@@ -33,31 +32,29 @@ const defaultPlans = [
         name: 'Intelligence Access',
         price: 100,
         type: 'foundation',
-        description: 'Full forensic data and industrial intelligence tools.',
+        description: 'The foundation for industrial growth. Unlock the map.',
         features: [
-            "Unlimited Daily Searches",
-            "Unlimited Record Access",
-            "Full Forensic Data (CEO/MD Names)",
-            "Direct E-mails & Mobile Numbers",
-            "Publish Your Shop Profile",
-            "Unlock Wallet & Billing Tools",
+            "Unlimited Registry Search",
+            "Access to 22,000+ Records",
+            "Publish Your Digital Branch",
+            "Apply for Direct Funding",
+            "Community Buying Discounts",
         ],
-        cta: "Activate Node",
+        cta: "Activate Foundation",
         variant: "default" as const
     },
     {
         id: 'loads_intelligence',
         name: 'Loads Intelligence',
-        price: 175,
+        price: 75,
         type: 'earning',
-        description: 'The Brokerage Tier. Unlock the ability to post and take freight loads.',
+        description: 'The Brokerage Node. Post and take freight loads.',
         features: [
-            "Everything in Intelligence Access",
-            "Post Unlimited Loads as a Broker",
-            "Take Loads as a Haulier",
-            "Access Subcontractor Handshakes",
-            "Verified Fleet & Driver Registry",
-            "Fulfillment & Settlement Ledger",
+            "Unlock Direct Haulier Contacts",
+            "Post Unlimited Loads (Broker)",
+            "Take Matching Loads (Haulier)",
+            "Access Settlement Ledger",
+            "Verified Driver Registry",
         ],
         cta: "Activate Node",
         variant: "default" as const
@@ -67,14 +64,13 @@ const defaultPlans = [
         name: 'Warehouse Intelligence',
         price: 125,
         type: 'earning',
-        description: 'The Storage Tier. List capacity and manage storage agreements.',
+        description: 'The Storage Node. Monetize empty space.',
         features: [
-            "Everything in Intelligence Access",
+            "Unlock Operator Contacts",
             "List Warehouse Capacity",
             "Calculate Handling & Storage Fees",
-            "Manage Inbound/Outbound Logic",
-            "Track Recurring Storage Revenue",
-            "Integrated VAS Billing (Packing/Barcoding)",
+            "Inbound/Outbound Flow Logic",
+            "Integrated VAS Billing",
         ],
         cta: "Activate Node",
         variant: "default" as const
@@ -82,17 +78,16 @@ const defaultPlans = [
     {
         id: 'buy_sell_intelligence',
         name: 'Buy & Sell Intelligence',
-        price: 250,
+        price: 150,
         isPopular: true,
         type: 'earning',
-        description: 'The Marketplace Tier. List vehicles and conclude transactions securely.',
+        description: 'The Marketplace Node. Secure vehicle trading.',
         features: [
-            "Everything in Intelligence Access",
-            "List Unlimited Vehicles for Sale",
-            "Initiate Secure Negotiations",
+            "Unlock Dealer Contacts",
+            "List Assets for Sale",
+            "Start Secure Handshakes",
             "Generate OTPs & Invoices",
             "Direct Buyer-Seller Chat",
-            "Integrated Finance Referral",
         ],
         cta: "Activate Node",
         variant: "default" as const
@@ -113,39 +108,43 @@ export default function MembershipPage() {
   const plans = React.useMemo(() => {
     if (!dbPlans || dbPlans.length === 0) return defaultPlans;
     
-    return dbPlans.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: Number(p.price) || 0,
-        description: p.description,
-        features: p.features || [],
-        isPopular: p.isPopular,
-        type: p.id === 'free' || p.id === 'intelligence' ? 'foundation' : 'earning',
-        cta: "Activate Node",
-        variant: p.id === 'free' ? "outline" : "default"
-    })).sort((a,b) => a.price - b.price);
+    return dbPlans.map(p => {
+        const dPlan = defaultPlans.find(dp => dp.id === p.id);
+        return {
+            id: p.id,
+            name: p.name,
+            price: Number(p.price) || 0,
+            description: p.description,
+            features: p.features || [],
+            isPopular: p.isPopular,
+            type: dPlan?.type || 'earning',
+            cta: "Activate Node",
+            variant: p.id === 'free' ? "outline" : "default"
+        };
+    }).sort((a,b) => a.price - b.price);
   }, [dbPlans]);
 
   return (
     <div className="bg-background min-h-screen text-left">
       <div className="container mx-auto px-4 py-16 md:py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Ecosystem Nodes</Badge>
-          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-center">Intelligence that Pays for Itself.</h1>
-          <p className="mt-4 text-lg md:text-xl text-muted-foreground text-center">
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Business Intelligence</Badge>
+          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight">Intelligence that pays.</h1>
+          <p className="mt-4 text-lg md:text-xl text-muted-foreground">
             Activate the specialized intelligence nodes required for your industrial growth.
           </p>
         </div>
 
         {isLoading ? (
-            <div className="flex justify-center py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto"/></div>
+            <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto"/></div>
         ) : (
             <div className="space-y-16 max-w-7xl mx-auto">
+                {/* FOUNDATION SECTION */}
                 <div className="space-y-8">
                     <div className="flex items-center gap-4 border-l-4 border-primary pl-6">
                         <div className="text-left">
-                            <h2 className="text-2xl font-black uppercase tracking-tight">01. Foundational Intelligence</h2>
-                            <p className="text-muted-foreground text-sm">Transparency and registry access for the SA market.</p>
+                            <h2 className="text-2xl font-black uppercase tracking-tight">The Foundation</h2>
+                            <p className="text-muted-foreground text-sm font-medium">Registry search and community discounts.</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
@@ -155,11 +154,12 @@ export default function MembershipPage() {
                     </div>
                 </div>
 
+                {/* EARNING NODES SECTION */}
                 <div className="space-y-8">
                     <div className="flex items-center gap-4 border-l-4 border-amber-500 pl-6">
                         <div className="text-left">
-                            <h2 className="text-2xl font-black uppercase tracking-tight">02. Industrial Earning Nodes</h2>
-                            <p className="text-muted-foreground text-sm">Transactional access for fulfillment, storage, and asset sales.</p>
+                            <h2 className="text-2xl font-black uppercase tracking-tight text-amber-600">Industrial Earning Nodes</h2>
+                            <p className="text-muted-foreground text-sm font-medium">Transactional intelligence and direct contact data.</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -171,44 +171,13 @@ export default function MembershipPage() {
             </div>
         )}
 
-        <div className="mt-32 max-w-5xl mx-auto space-y-12 text-left">
-            <div className="text-center">
-                <h2 className="text-3xl font-black font-headline">The ROI of Intelligence</h2>
-                <p className="text-muted-foreground mt-2">Our nodes are designed to solve specific industrial constraints.</p>
-            </div>
-            
-            <div className="grid md:grid-cols-3 gap-12">
-                <div className="space-y-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Warehouse className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold text-left">Dynamic Storage</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Warehouse Intelligence allows you to monetize empty shelf space or find flexible storage. Automated calculation of handling and storage fees eliminates billing friction.
-                    </p>
-                </div>
-                <div className="space-y-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><ShoppingCart className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold text-left">Secure Liquidity</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Buy & Sell Intelligence provides a secure "Handshake Terminal" for vehicle trading. Lock prices, generate OTPs, and initiate funding applications in a single workflow.
-                    </p>
-                </div>
-                <div className="space-y-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Search className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold text-left">Forensic Visibility</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Stop hitting gatekeepers. Foundation Intelligence gives you direct mobile numbers for decision-makers at 22,000+ logistics and supply firms.
-                    </p>
-                </div>
-            </div>
-        </div>
-        
-        <div className="mt-20 max-w-3xl mx-auto text-left">
-             <Alert className="bg-primary/5 border-primary/20 p-8 rounded-3xl text-left text-foreground">
+        <div className="mt-24 max-w-3xl mx-auto text-left">
+             <Alert className="bg-primary/5 border-primary/20 p-8 rounded-3xl text-foreground text-left">
                 <ShieldCheck className="h-8 w-8 text-primary" />
                 <div className="ml-4">
                     <AlertTitle className="text-xl font-black uppercase tracking-tight">Data as a Currency</AlertTitle>
                     <AlertDescription className="mt-2 text-muted-foreground leading-relaxed text-left">
-                        Logistics Flow is a community-first ecosystem. By contributing your verified fleet data (RC1) or supplier lists, you earn **Reward Points** that can be applied to reduce the cost of any Intelligence Node.
+                        Contribute your verified fleet data (RC1) or supplier lists to earn **Reward Points** that can be applied to reduce the cost of any Intelligence Node.
                     </AlertDescription>
                     <Button variant="link" className="p-0 h-auto font-bold mt-4" asChild><Link href="/contribute">Start Contributing <ArrowRight className="ml-1 h-3 w-3"/></Link></Button>
                 </div>
@@ -223,11 +192,12 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
     return (
         <Card className={cn(
             "flex flex-col shadow-xl transition-all duration-300 relative border-none overflow-hidden",
-            plan.isPopular ? "ring-2 ring-primary ring-offset-2 scale-105" : "bg-slate-50"
+            plan.isPopular ? "ring-2 ring-primary ring-offset-2 scale-105" : "bg-slate-50",
+            plan.type === 'earning' && "border-amber-100"
         )}>
             {plan.isPopular && (
                 <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-[10px] font-black uppercase rounded-bl-xl z-10">
-                    Most Active
+                    High Conversion
                 </div>
             )}
             <CardHeader className="text-left pb-4">
