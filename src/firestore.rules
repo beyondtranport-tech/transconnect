@@ -27,9 +27,11 @@ service cloud.firestore {
         isSignedIn() && 
         cid != null && (
           // Fast Path: Direct user profile link
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
           // Owner Path: Direct check on target document (Safe against indexing latency)
-          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }

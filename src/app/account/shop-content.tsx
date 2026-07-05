@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, Store, PlusCircle, ShieldAlert, Edit, Eye, ArrowLeft, CheckCircle, Warehouse } from 'lucide-react';
+import { Loader2, Store, PlusCircle, ShieldAlert, Edit, Eye, ArrowLeft, CheckCircle, Warehouse, Truck, Network, ShieldCheck } from 'lucide-react';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -95,7 +95,6 @@ export default function ShopContent() {
         if (companyData?.shopId) {
             setView('wizard');
         } else if (!isCompanyLoading && !isCreating) {
-            // Automatically launch creation if subview=wizard is passed but no shop exists
             handleCreateShop();
         }
     }
@@ -122,13 +121,12 @@ export default function ShopContent() {
   const shopStatus = userShop?.status || 'draft';
 
   const creationLabel = useMemo(() => {
-      if (isAssociate) return "Create Creator Profile";
-      if (isTransporter) return "Create Transport Profile";
-      if (isDistributor) return "Create Distribution Profile";
-      if (isWarehouse) return "Create Warehouse Branch";
-      if (isLender) return "Create Lender Profile";
-      if (isSupplier) return "Create My Shop";
-      return "Create Profile";
+      if (isAssociate) return "Activate Creator Node";
+      if (isTransporter) return "Initialize Transport Node";
+      if (isDistributor) return "Initialize Distribution Node";
+      if (isWarehouse) return "Initialize Warehouse Node";
+      if (isLender) return "Initialize Lender Node";
+      return "Initialize Commercial Node";
   }, [isAssociate, isTransporter, isLender, isSupplier, isDistributor, isWarehouse]);
 
   const renderContent = () => {
@@ -139,111 +137,123 @@ export default function ShopContent() {
     if (shopExists) {
         if (isShopLoading || !userShop) {
             return (
-                 <div className="flex justify-center items-center py-20">
+                 <div className="flex flex-col items-center justify-center py-20 gap-4">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="ml-4">Loading your commercial profile...</p>
+                    <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Synchronizing Commercial Profile...</p>
                 </div>
             );
         }
         return (
              <div className="space-y-6">
-                <div className="p-6 border rounded-lg bg-muted/50">
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 text-left">
-                        <div className="text-left flex items-center gap-3">
-                            {isWarehouse ? <Warehouse className="h-6 w-6 text-primary" /> : <Store className="h-6 w-6 text-primary" />}
+                <div className="p-8 border rounded-3xl bg-muted/30 shadow-inner">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-6 text-left">
+                        <div className="text-left flex items-center gap-4">
+                            <div className="bg-primary p-3 rounded-2xl text-white shadow-lg">
+                                {isWarehouse ? <Warehouse className="h-8 w-8" /> : isTransporter ? <Truck className="h-8 w-8" /> : <Store className="h-8 w-8" />}
+                            </div>
                             <div>
-                                <h3 className="text-xl font-semibold text-left">{userShop.shopName}</h3>
-                                <p className="text-muted-foreground text-left">{userShop.category || 'General'}</p>
+                                <h3 className="text-2xl font-black text-left">{userShop.shopName}</h3>
+                                <p className="text-muted-foreground text-left font-medium">{userShop.category || 'Forensic Category Required'}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2 text-left">
-                            <span className="text-sm font-medium">Status:</span>
-                            <Badge variant={statusColors[shopStatus] || 'secondary'} className="capitalize text-base">
+                        <div className="flex flex-col gap-2 text-right">
+                             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Node Status</p>
+                             <Badge variant={statusColors[shopStatus] || 'secondary'} className="capitalize text-sm font-black px-4 py-1 h-auto">
                                 {shopStatus.replace(/_/g, ' ')}
-                            </Badge>
+                             </Badge>
                         </div>
                     </div>
-                    <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-4 mt-4 pt-4 border-t text-left">
+                    <div className="flex flex-col sm:flex-row justify-between sm:items-end gap-6 mt-8 pt-8 border-t border-muted text-left">
                         {!isAssociate && !isLender && (
-                            <div className="text-left">
-                                <p className="text-sm font-medium text-left">{(isTransporter || isDistributor) ? 'Active Service Lanes' : isWarehouse ? 'Storage Products' : 'Products Listed'}</p>
-                                <p className="text-2xl font-bold text-left">{products?.length || 0}</p>
+                            <div className="text-left space-y-1">
+                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Live Portfolio</p>
+                                <p className="text-3xl font-black text-primary">{(products?.length || 0).toLocaleString()}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground italic">{(isTransporter || isDistributor) ? 'Active Service Lanes' : isWarehouse ? 'Capacity Slots' : 'Products Listed'}</p>
                             </div>
                         )}
-                        <div className="flex gap-2 text-left ml-auto">
+                        <div className="flex gap-3 text-left ml-auto">
                             {userShop.status === 'approved' && (
-                                <Button asChild variant="outline">
+                                <Button asChild variant="outline" className="font-bold gap-2">
                                     <Link href={`/shops/${userShop.id}`} target="_blank">
-                                        <Eye className="mr-2 h-4 w-4" /> View Live Profile
+                                        <Eye className="h-4 w-4" /> View Public Profile
                                     </Link>
                                 </Button>
                             )}
-                            <Button onClick={() => setView('wizard')}>
-                                <Edit className="mr-2 h-4 w-4" /> Change Profile Details
+                            <Button onClick={() => setView('wizard')} className="font-bold gap-2">
+                                <Edit className="h-4 w-4" /> Manage Configuration
                             </Button>
                         </div>
                     </div>
                 </div>
+
+                {shopStatus === 'draft' && (
+                    <Alert className="bg-amber-50 border-amber-200">
+                        <ShieldAlert className="h-5 w-5 text-amber-600" />
+                        <div className="ml-2 text-left">
+                            <AlertTitle className="font-bold text-amber-900">Node Inactive</AlertTitle>
+                            <AlertDescription className="text-sm text-amber-800 leading-relaxed mt-1">
+                                Your commercial profile is currently in draft mode. You must complete the setup wizard and submit for review before your capacity is visible in the malls.
+                            </AlertDescription>
+                        </div>
+                    </Alert>
+                )}
             </div>
         );
     }
     
      return (
-          <div className="text-center py-20 border-2 border-dashed rounded-lg text-left">
-            <Store className="mx-auto h-12 w-12 text-muted-foreground text-left" />
-            <h3 className="mt-4 text-xl font-semibold text-left">You don't have a commercial profile yet.</h3>
-            <p className="mt-2 text-muted-foreground text-left">Ready to start {isAssociate ? 'building your network' : 'selling your services'}? Create your profile to get started.</p>
+          <div className="text-center py-20 border-4 border-dashed rounded-3xl bg-muted/10 text-left">
+            <div className="bg-white p-6 rounded-full w-fit mx-auto mb-6 shadow-sm">
+                <Store className="h-12 w-12 text-muted-foreground opacity-30" />
+            </div>
+            <h3 className="text-2xl font-black text-center">Establish Your Handshake</h3>
+            <p className="mt-2 text-muted-foreground max-w-sm mx-auto text-center leading-relaxed">Ready to monetize your capacity? Initialize your commercial node to start trading in the malls.</p>
             
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="inline-block mt-4 text-left">
-                    <Button onClick={handleCreateShop} disabled={isCreating || !canCreateShop || arePermissionsLoading}>
-                      {isCreating || arePermissionsLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                      {creationLabel}
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                {!canCreateShop && (
-                  <TooltipContent>
-                    <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> You don't have permission to create a profile.</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
+            <div className="flex justify-center mt-8">
+                <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                    <div className="inline-block">
+                        <Button size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl" onClick={handleCreateShop} disabled={isCreating || !canCreateShop || arePermissionsLoading}>
+                        {isCreating || arePermissionsLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <PlusCircle className="mr-2 h-5 w-5" />}
+                        {creationLabel}
+                        </Button>
+                    </div>
+                    </TooltipTrigger>
+                    {!canCreateShop && (
+                    <TooltipContent>
+                        <p className="flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> Access Restricted</p>
+                    </TooltipContent>
+                    )}
+                </Tooltip>
+                </TooltipProvider>
+            </div>
           </div>
         );
   };
 
-  const titleIcon = isWarehouse ? <Warehouse className="h-6 w-6" /> : <Store className="h-6 w-6" />;
-  const titleLabel = isAssociate ? 'Creator Profile' : (isTransporter ? 'Transport Profile' : isDistributor ? 'Distribution Profile' : isWarehouse ? 'Warehouse Branch' : isLender ? 'Lender Profile' : 'My Shop');
+  const titleIcon = isWarehouse ? <Warehouse className="h-6 w-6" /> : isTransporter ? <Truck className="h-6 w-6" /> : <Store className="h-6 w-6" />;
+  const titleLabel = isAssociate ? 'Digital Associate Node' : (isTransporter ? 'Transport Node' : isDistributor ? 'Distribution Node' : isWarehouse ? 'Warehouse Node' : isLender ? 'Lender Profile' : 'Commercial Node');
 
   return (
-    <Card>
-      <CardHeader className="text-left">
-        <div className="flex justify-between items-start text-left">
+    <div className="space-y-6 text-left animate-in fade-in duration-500">
+        <div className="flex justify-between items-start">
             <div className="text-left">
-                <CardTitle className="flex items-center gap-2 text-left">
+                <h1 className="text-3xl font-black font-headline flex items-center gap-3">
                     {titleIcon} {titleLabel}
-                </CardTitle>
-                <CardDescription className="text-left">
-                {shopExists ? `Manage your professional profile: ${userShop?.shopName || '...'}` : "Create and manage your public-facing profile."}
-                </CardDescription>
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                {shopExists ? `Managing ${userShop?.shopName || '...'}` : "Configure your professional presence in the ecosystem."}
+                </p>
             </div>
             {view === 'wizard' && (
-                 <Button variant="outline" onClick={() => setView('overview')}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Back to Overview
+                    <Button variant="ghost" onClick={() => setView('overview')} className="font-bold text-muted-foreground">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Exit Wizard
                 </Button>
             )}
         </div>
-      </CardHeader>
-      <CardContent className="text-left">
-        {isLoading ? (
-          <div className="flex justify-center items-center py-20 text-left">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          </div>
-        ) : renderContent()}
-      </CardContent>
-    </Card>
+        
+        {renderContent()}
+    </div>
   );
 }

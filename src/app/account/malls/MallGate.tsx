@@ -26,6 +26,7 @@ interface MallConfig {
     sellLabel: string;
     sellDesc: string;
     sellView: string;
+    role: string;
 }
 
 const mallConfigs: Record<string, MallConfig> = {
@@ -41,7 +42,8 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Find available freight and match your capacity.',
         sellLabel: 'Post a Load',
         sellDesc: 'List your available freight for the community.',
-        sellView: 'load-board'
+        sellView: 'load-board',
+        role: 'transporter'
     },
     warehouse: {
         id: 'warehouse',
@@ -55,7 +57,8 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Find warehousing hubs and calculate storage costs.',
         sellLabel: 'List Capacity',
         sellDesc: 'List your excess storage space and services.',
-        sellView: 'shop'
+        sellView: 'shop',
+        role: 'warehouse'
     },
     transporter: {
         id: 'transporter',
@@ -69,7 +72,8 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Scan the forensic haulier registry.',
         sellLabel: 'List My Fleet',
         sellDesc: 'Complete your fleet profile to receive matches.',
-        sellView: 'fleet'
+        sellView: 'fleet',
+        role: 'transporter'
     },
     distribution: {
         id: 'distribution',
@@ -83,7 +87,8 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Find inner-city distribution partners.',
         sellLabel: 'List My Node',
         sellDesc: 'Complete your hub profile for local distribution.',
-        sellView: 'fleet'
+        sellView: 'fleet',
+        role: 'distributor'
     },
     supplier: {
         id: 'supplier',
@@ -97,7 +102,8 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Find parts and services by category.',
         sellLabel: 'Publish Shop',
         sellDesc: 'Set up your digital vendor storefront.',
-        sellView: 'shop'
+        sellView: 'shop',
+        role: 'vendor'
     },
     finance: {
         id: 'finance',
@@ -111,7 +117,8 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Search lenders and start applications.',
         sellLabel: 'I am a Funder',
         sellDesc: 'Join our lending network as a co-funder.',
-        sellView: 'lending-focus'
+        sellView: 'lending-focus',
+        role: 'lender'
     },
     'buy-sell': {
         id: 'buy-sell',
@@ -125,7 +132,8 @@ const mallConfigs: Record<string, MallConfig> = {
         buyDesc: 'Search vehicles and equipment listed for sale.',
         sellLabel: 'List Asset',
         sellDesc: 'Sell your commercial vehicles to the network.',
-        sellView: 'vehicle-listings'
+        sellView: 'vehicle-listings',
+        role: 'vendor'
     },
 };
 
@@ -207,22 +215,26 @@ export function MallGate({ mallId }: { mallId: string }) {
 
     // 3. ACTION VIEWS
     if (intent === 'buy') {
-        // Parent view logic in page.tsx handles this.
-        return <div className="text-center italic py-20">Accessing Buyer Terminal...</div>;
+        return <div className="text-center italic py-20 flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="font-bold uppercase text-[10px] tracking-widest">Opening {config.title} Terminal...</p>
+        </div>;
     }
 
     if (intent === 'sell') {
-        const subview = config.sellView === 'shop' ? '&subview=wizard' : '';
+        const subview = (config.sellView === 'shop' || config.sellView === 'fleet') ? '&subview=wizard' : '';
         return (
             <div className="max-w-4xl mx-auto py-20 text-center space-y-6">
-                <config.icon className="h-16 w-16 text-primary mx-auto opacity-20" />
-                <h3 className="text-2xl font-bold">Node Initialized</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">
-                    To list your capabilities in the {config.title}, you need to complete your professional node.
+                <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
+                    <config.icon className="h-16 w-16 text-primary opacity-50" />
+                </div>
+                <h3 className="text-2xl font-black">Node Authorization Required</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto text-center leading-relaxed">
+                    To list your capabilities in the {config.title}, you need to complete the commercial configuration wizard for your node.
                 </p>
-                <Button size="lg" asChild className="h-12 px-10 font-bold uppercase tracking-widest shadow-lg">
-                    <Link href={`/account?view=${config.sellView}${subview}`}>
-                        Manage {config.sellLabel} <ArrowRight className="ml-2 h-4 w-4"/>
+                <Button size="lg" asChild className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
+                    <Link href={`/account?view=shop&subview=wizard`}>
+                        Launch Configuration Wizard <ArrowRight className="ml-2 h-6 w-6"/>
                     </Link>
                 </Button>
             </div>

@@ -38,7 +38,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import React from 'react';
@@ -98,6 +98,25 @@ function AccountPageContent() {
     router.push(`/account?view=${view}`, { scroll: false });
   };
 
+  // Role Detection
+  const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
+  const isWarehouse = user?.declaredPosition === 'warehouse' || user?.companyData?.shopType === 'warehouse';
+  const isDistributor = user?.declaredPosition === 'distributor' || user?.companyData?.shopType === 'distributor';
+  const isAssociate = user?.declaredPosition === 'associate' || user?.role === 'associate';
+
+  const shopLabel = useMemo(() => {
+      if (isWarehouse) return "My Warehouse Branch";
+      if (isTransporter || isDistributor) return "My Fleet / Node";
+      if (isAssociate) return "My Creator Profile";
+      return "My Shop / Profile";
+  }, [isWarehouse, isTransporter, isDistributor, isAssociate]);
+
+  const shopIcon = useMemo(() => {
+      if (isWarehouse) return Warehouse;
+      if (isTransporter || isDistributor) return Truck;
+      return Store;
+  }, [isWarehouse, isTransporter, isDistributor]);
+
   if (isUserLoading || !user) {
     return (
       <div className="flex justify-center items-center py-40">
@@ -105,9 +124,6 @@ function AccountPageContent() {
       </div>
     );
   }
-
-  // Role Detection
-  const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
 
   const renderContent = () => {
     if (activeView.startsWith('mall-')) {
@@ -181,10 +197,13 @@ function AccountPageContent() {
           </SidebarGroup>
 
           <SidebarGroup>
-              <SidebarGroupLabel>Account & Settings</SidebarGroupLabel>
+              <SidebarGroupLabel>Node Management</SidebarGroupLabel>
               <SidebarMenu>
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="My Shop" isActive={activeView === 'shop'} onClick={() => navigate('shop')}><Store /><span>My Shop / Profile</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip={shopLabel} isActive={activeView === 'shop'} onClick={() => navigate('shop')}>
+                        {React.createElement(shopIcon)}
+                        <span>{shopLabel}</span>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Company Profile" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company Profile</span></SidebarMenuButton>
@@ -209,10 +228,10 @@ function AccountPageContent() {
 
           {isAssociate && (
             <SidebarGroup>
-                <SidebarGroupLabel>Digital Associate Tools</SidebarGroupLabel>
+                <SidebarGroupLabel>Associate Toolkit</SidebarGroupLabel>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Content Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Marketing Studio</span></SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Marketing Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Sparkles /><span>Marketing Studio</span></SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton tooltip="My Referrals" isActive={activeView === 'network'} onClick={() => navigate('network')}><Handshake /><span>My Referrals</span></SidebarMenuButton>
@@ -238,7 +257,9 @@ function AccountPageContent() {
       </Sidebar>
       <SidebarInset>
         <div className="p-4 md:p-8 text-left text-foreground">
-            {renderContent()}
+            <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+                {renderContent()}
+            </Suspense>
         </div>
       </SidebarInset>
     </SidebarProvider>
