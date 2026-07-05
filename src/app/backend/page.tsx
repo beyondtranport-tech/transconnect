@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -48,6 +49,7 @@ import {
   ClipboardList,
   ShoppingCart,
   HelpCircle,
+  Warehouse,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -75,9 +77,10 @@ import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 
-// Admin oversight components - DEFINITIVE CORRECTED PATHS
+// Admin oversight components
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const WarehouseOversight = dynamic(() => import('@/app/backend/warehouse-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Settings
 import PermissionsContent from '@/app/backend/permissions-content';
@@ -154,6 +157,7 @@ function BackendContent() {
       case 'finance-mall': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
       case 'buy-sell-oversight': return <BuySellOversight />;
+      case 'warehouse-oversight': return <WarehouseOversight />;
       case 'success-engine': return <MemberSuccessEngine />;
       case 'loyalty-overview': return <MemberLoyaltyStatus />;
       case 'contributions': return <ContributionsList />;
@@ -166,7 +170,7 @@ function BackendContent() {
       case 'pricing-memberships': return <PricingManagement />;
       case 'pricing-connect': return <ConnectPlanPricing />;
       case 'pricing-tech': return <TechPricing />;
-      case 'pricing-marketplace': return <MarketplaceFees />;
+      case 'pricing-marketplace': return < MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'commissions-isa': return <ISAPitchSettings />;
       case 'incentives-sales': return <SalesIncentives />;
@@ -185,7 +189,7 @@ function BackendContent() {
   const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
   
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
-  const isMallsActive = ['finance-mall', 'loads-oversight', 'buy-sell-oversight', 'success-engine'].includes(activeView);
+  const isMallsActive = ['finance-mall', 'loads-oversight', 'buy-sell-oversight', 'warehouse-oversight', 'success-engine'].includes(activeView);
   const isSuccessActive = ['loyalty-overview', 'contributions', 'commercial-negotiations'].includes(activeView);
   const isPlatformSettingsActive = ['permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'].includes(activeView);
 
@@ -233,6 +237,9 @@ function BackendContent() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton tooltip="Buy and Sell" isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart /><span>Buy and Sell</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Warehouse Mall" isActive={activeView === 'warehouse-oversight'} onClick={() => navigate('warehouse-oversight')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarGroup>
