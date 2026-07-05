@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -48,6 +47,7 @@ import {
   Truck,
   ClipboardList,
   ShoppingCart,
+  HelpCircle,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -75,9 +75,9 @@ import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 
-// Admin oversight components
+// Admin oversight components - DEFINITIVE CORRECTED PATHS
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BuySellOversight = dynamic(() => import('@/app/adminaccount/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 // Settings
 import PermissionsContent from '@/app/backend/permissions-content';
@@ -93,6 +93,7 @@ import TierBenefits from '@/app/backend/tier-benefits';
 import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
+import AdminGuides from '../adminaccount/guides';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -171,6 +172,7 @@ function BackendContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
+      case 'guides': return <AdminGuides />;
       default: return <AdminDashboardContent />;
     }
   }, [activeView, memberId]);
@@ -269,19 +271,42 @@ function BackendContent() {
                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'tasks'} onClick={() => navigate('tasks')}><Wrench />Platform Tasks</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
+
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Help & Guides" isActive={activeView === 'guides'} onClick={() => navigate('guides')}>
+                        <HelpCircle /><span>Help & Guides</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
+          <div className="border-t p-2">
+            <Button variant="outline" className="w-full justify-start gap-2 h-9 text-xs" asChild>
+                <Link href="/adminaccount">
+                    <ArrowRightLeft className="h-3.5 w-3.5" /> Admin Portal
+                </Link>
+            </Button>
+          </div>
           {user && (
               <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               </Avatar>
               <div className="flex flex-col truncate text-left">
-                  <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user.displayName || 'Super Admin'}</span>
-                  <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user.email}</span>
+                  <span className="text-sm font-medium text-sidebar-foreground truncate text-left">
+                  {user.displayName || 'Super Admin'}
+                  </span>
+                  <span className="text-xs text-sidebar-foreground/70 truncate text-left">
+                  {user.email}
+                  </span>
               </div>
-              <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
+              <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto"
+                  onClick={onLogout}
+                  title="Sign Out"
+              >
                   <LogOut className="h-5 w-5" />
               </Button>
               </div>

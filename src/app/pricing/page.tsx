@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2 } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -39,7 +38,6 @@ const defaultPlans = [
             "Direct E-mails & Mobile Numbers",
             "Publish Your Shop Profile",
             "Unlock Wallet & Billing Tools",
-            "Priority Support & Compliance",
         ],
         cta: "Get Full Access",
         variant: "default" as const
@@ -48,7 +46,6 @@ const defaultPlans = [
         id: 'loads_intelligence',
         name: 'Loads Intelligence',
         price: 75,
-        isPopular: true,
         description: 'The Earning Tier. Unlock the ability to post and take freight loads.',
         features: [
             "Everything in Intelligence Access",
@@ -57,9 +54,25 @@ const defaultPlans = [
             "Access Subcontractor Handshakes",
             "Verified Fleet & Driver Registry",
             "2.5% Success Fee Participation",
-            "Priority Load Matching",
         ],
         cta: "Unlock Earning Power",
+        variant: "default" as const
+    },
+    {
+        id: 'buy_sell_intelligence',
+        name: 'Buy & Sell Intelligence',
+        price: 150,
+        isPopular: true,
+        description: 'The Marketplace Tier. List vehicles and conclude transactions securely.',
+        features: [
+            "Everything in Intelligence Access",
+            "List Unlimited Vehicles for Sale",
+            "Initiate Secure Negotiations",
+            "Generate OTPs & Invoices",
+            "Direct Buyer-Seller Chat",
+            "Integrated Finance Referral",
+        ],
+        cta: "Unlock Marketplace",
         variant: "default" as const
     }
 ];
@@ -78,7 +91,6 @@ export default function MembershipPage() {
   const plans = React.useMemo(() => {
     if (!dbPlans || dbPlans.length === 0) return defaultPlans;
     
-    // Merge DB plans with defaults or just use DB plans if they exist
     return dbPlans.map(p => ({
         id: p.id,
         name: p.name,
@@ -103,9 +115,9 @@ export default function MembershipPage() {
         </div>
 
         {isLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary"/></div>
+            <div className="flex justify-center py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto"/></div>
         ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
                 {plans.map((plan) => (
                     <Card key={plan.id} className={cn(
                         "flex flex-col shadow-xl transition-all duration-300 relative",
@@ -114,12 +126,12 @@ export default function MembershipPage() {
                         {plan.isPopular && (
                             <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground px-4 py-1 text-xs font-black uppercase rounded-full flex items-center gap-1 z-10">
                                 <Star className="h-3 w-3 fill-current" />
-                                Most Popular for Growth
+                                Top Rated
                             </div>
                         )}
                         <CardHeader className="text-center pb-2">
                             <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                            <CardDescription className="mt-2 text-sm h-12 text-center">{plan.description}</CardDescription>
+                            <CardDescription className="mt-2 text-sm h-12 text-center leading-tight">{plan.description}</CardDescription>
                             <div className="py-6 text-center">
                                 <div className="flex items-baseline justify-center gap-1">
                                     <span className="text-5xl font-black tracking-tight">{formatCurrency(plan.price)}</span>
@@ -128,19 +140,19 @@ export default function MembershipPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow">
-                            <ul className="space-y-4">
+                            <ul className="space-y-3">
                                 {(plan.features as string[]).map((feature, i) => (
-                                    <li key={i} className="flex items-start text-sm">
-                                        <Check className="h-4 w-4 text-green-500 mr-3 shrink-0 mt-0.5" />
-                                        <span className="font-medium">{feature}</span>
+                                    <li key={i} className="flex items-start text-xs">
+                                        <Check className="h-3.5 w-3.5 text-green-500 mr-2 shrink-0 mt-0.5" />
+                                        <span className="font-medium text-muted-foreground">{feature}</span>
                                     </li>
                                 ))}
                             </ul>
                         </CardContent>
                         <CardFooter className="pt-6">
-                            <Button asChild className="w-full py-6 text-lg font-bold" variant={plan.variant as any}>
+                            <Button asChild className="w-full py-6 text-sm font-black uppercase tracking-widest" variant={plan.variant as any}>
                                 <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${plan.id}`}>
-                                    {plan.id === 'loads_intelligence' ? 'Unlock Earning Power' : plan.cta}
+                                    {plan.cta}
                                 </Link>
                             </Button>
                         </CardFooter>
@@ -149,10 +161,10 @@ export default function MembershipPage() {
             </div>
         )}
 
-        <div className="mt-24 max-w-5xl mx-auto space-y-12">
+        <div className="mt-24 max-w-5xl mx-auto space-y-12 text-left">
             <div className="text-center">
                 <h2 className="text-3xl font-black font-headline">The Earning Pathway</h2>
-                <p className="text-muted-foreground mt-2">How our memberships generate ROI for your business.</p>
+                <p className="text-muted-foreground mt-2">How our memberships generate direct ROI for your business.</p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
@@ -160,31 +172,31 @@ export default function MembershipPage() {
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><Handshake className="h-6 w-6 text-primary"/></div>
                     <h3 className="text-xl font-bold text-left">Brokerage Nodes</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        The **Loads Intelligence** tier allows you to act as an authorized subcontractor. Map loads you know of and earn a professional split on every completed delivery.
+                        The **Loads Intelligence** tier allows you to act as an authorized subcontractor. Map loads you know of and earn a professional split on every delivery.
                     </p>
                 </div>
                 <div className="space-y-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><Truck className="h-6 w-6 text-primary"/></div>
-                    <h3 className="text-xl font-bold text-left">Priority Capacity</h3>
+                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><ShoppingCart className="h-6 w-6 text-primary"/></div>
+                    <h3 className="text-xl font-bold text-left">Asset Monetization</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Hauliers on the earning tier get first-look at high-value freight. Our AI matching engine prioritizes your fleet for loads that match your empty legs.
+                        List decommissioned trucks or excess inventory in the **Buy & Sell Mall**. Use our secure OTP generator to close deals with verified community buyers.
                     </p>
                 </div>
                 <div className="space-y-4 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl w-fit"><Search className="h-6 w-6 text-primary"/></div>
                     <h3 className="text-xl font-bold text-left">Forensic Transparency</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                        Access direct mobile numbers for MDs and Fleet Owners. Stop hitting generic support lines and start talking to the people who control the freight.
+                        Access direct mobile numbers for MDs and Fleet Owners. Stop hitting generic support lines and start talking to the people who control the capital.
                     </p>
                 </div>
             </div>
         </div>
         
-        <div className="mt-20 max-w-3xl mx-auto">
+        <div className="mt-20 max-w-3xl mx-auto text-left">
              <Alert className="bg-primary/5 border-primary/20 p-6 text-left text-foreground">
                 <ShieldCheck className="h-6 w-6 text-primary" />
                 <AlertTitle className="text-lg font-bold ml-2">Data as a Currency</AlertTitle>
-                <AlertDescription className="mt-2 text-muted-foreground ml-2">
+                <AlertDescription className="mt-2 text-muted-foreground ml-2 text-left">
                     We incentivize contribution. By registering your fleet (RC1) and contributing supplier data, you earn points that can be used to lower your monthly subscription costs.
                 </AlertDescription>
             </Alert>

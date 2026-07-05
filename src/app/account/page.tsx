@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -41,6 +40,7 @@ import {
   Landmark,
   ClipboardList,
   Users,
+  ShoppingBag,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -131,7 +131,7 @@ function AccountPageContent() {
   const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
   const isCargoOwner = !isTransporter && !isSupplier && !isProfessional && !isAssociate && !isLender;
   
-  const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk', 'my-facilities'].includes(activeView);
+  const isSalesActive = ['network', 'performance', 'offer', 'emails', 'lending-desk', 'my-facilities', 'marketplace-deals'].includes(activeView);
   const isConnectActive = ['connect-loyalty', 'connect-rewards', 'connect-actions'].includes(activeView);
   const isSocialActive = activeView.startsWith('social-');
 
@@ -233,7 +233,7 @@ function AccountPageContent() {
               )}
 
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>{isLender ? 'Lending Desk (CRM)' : 'Sales & Outreach'}</span></SidebarMenuButton>
+                <SidebarMenuButton tooltip="Sales" isActive={isSalesActive}><Handshake /><span>{isLender ? 'Lending Desk (CRM)' : 'Marketplace Deals'}</span></SidebarMenuButton>
                 <SidebarMenuSub>
                     {isLender ? (
                         <>
@@ -243,6 +243,7 @@ function AccountPageContent() {
                     ) : (
                         <>
                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'network'} onClick={() => navigate('network')}><Users className="h-3.5 w-3.5" />My Network</SidebarMenuSubButton></SidebarMenuSubItem>
+                           <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketplace-deals'} onClick={() => navigate('marketplace-deals')}><ShoppingBag className="h-3.5 w-3.5" />Vehicle Deals</SidebarMenuSubButton></SidebarMenuSubItem>
                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'my-facilities'} onClick={() => navigate('my-facilities')}><Landmark className="h-3.5 w-3.5" />My Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                            {!isAssociate && (
                                <>
@@ -338,6 +339,7 @@ function AccountPageContent() {
             {activeView === 'search-history' && <IntelligenceHistory />}
             {activeView === 'marketing-studio' && <MarketingStudio />}
             {activeView === 'my-facilities' && <MyFacilitiesContent />}
+            {activeView === 'marketplace-deals' && <div className="text-center py-20 italic">No active vehicle transactions. Start one from the <Link href="/marketplace" className="underline text-primary">Buy & Sell Mall</Link>.</div>}
             {activeView.startsWith('social-') && <SocialStudio platform={activeView.split('-')[1] as any} />}
         </div>
       </SidebarInset>

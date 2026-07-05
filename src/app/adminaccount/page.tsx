@@ -48,6 +48,7 @@ import {
   RefreshCcw,
   Globe,
   ClipboardList,
+  ShoppingCart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -57,8 +58,9 @@ import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import React from 'react';
+import dynamic from 'next/dynamic';
 
-// Static Imports for reliability in prototype environment
+// Component Imports
 import AdminDashboardContent from '@/app/backend/dashboard-content';
 import ActivityFeed from '@/app/backend/activity-feed';
 import LeadsAgent from '@/app/adminaccount/leads-agent';
@@ -67,6 +69,7 @@ import MarketingPage from '@/app/adminaccount/marketing/MarketingPage';
 import BrandingStudio from '@/app/adminaccount/branding-studio';
 import TTSStudio from '@/app/adminaccount/tts-studio';
 import AssetGallery from '@/app/adminaccount/asset-gallery';
+import SocialStudio from '@/app/adminaccount/social-studio';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
@@ -90,10 +93,12 @@ import PlatformSettingsContent from '@/app/backend/platform-settings';
 import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
-import SocialStudio from '@/app/adminaccount/social-studio';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 import AdminGuides from '@/app/adminaccount/guides';
-import LoadsOversight from '@/app/adminaccount/loads-oversight';
+
+// DEFINITIVE CORRECTED DYNAMIC IMPORTS
+const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -186,6 +191,7 @@ function AdminAccountContent() {
       case 'associate-oversight': return <AssociateOversight />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
+      case 'buy-sell-oversight': return <BuySellOversight />;
       case 'guides': return <AdminGuides />;
       default: return <AdminDashboardContent />;
     }
@@ -223,11 +229,12 @@ function AdminAccountContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView === 'associate-oversight' || activeView === 'market-origination' || activeView === 'loads-oversight'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView === 'associate-oversight' || activeView === 'market-origination' || activeView === 'loads-oversight' || activeView === 'buy-sell-oversight'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Market Origination</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><ClipboardList className="h-3.5 w-3.5" />Loads & Brokerage</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart className="h-3.5 w-3.5" />Buy & Sell Deals</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'associate-oversight'} onClick={() => navigate('associate-oversight')}><Eye className="h-3 w-3" />Associate Monitoring</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -290,7 +297,7 @@ function AdminAccountContent() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>

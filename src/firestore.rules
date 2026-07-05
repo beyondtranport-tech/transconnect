@@ -17,8 +17,6 @@ service cloud.firestore {
       );
     }
 
-    // Atomic membership check: Verifies identity against the user's own profile doc.
-    // This is verifiable during collection-wide 'list' operations.
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
@@ -27,6 +25,11 @@ service cloud.firestore {
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid
         )
       );
+    }
+
+    function isSaleParticipant(sale) {
+        let userCid = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId;
+        return sale != null && (sale.buyerId == userCid || sale.sellerId == userCid);
     }
 
     // --- STANDARD PATH RULES ---
@@ -47,7 +50,6 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // Sub-collection matches using explicit isMember authorization
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
@@ -64,6 +66,27 @@ service cloud.firestore {
         allow write: if isMember(companyId); 
         match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
         match /agreements/{agId} { allow read, write: if isMember(companyId); }
+      }
+
+      match /vehicleListings/{id} {
+          allow read: if true;
+          allow write: if isMember(companyId);
+      }
+      
+      match /loadBoard/{allBoard=**} {
+        allow read, write: if isMember(companyId);
+      }
+    }
+
+    match /sales/{saleId} {
+      allow read: if isSignedIn() && (isAdmin() || isSaleParticipant(resource.data));
+      allow write: if isAdmin() || (isSignedIn() && (
+        (!exists(/databases/$(database)/documents/sales/$(saleId)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
+        isSaleParticipant(resource.data)
+      ));
+      
+      match /messages/{id} {
+        allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
       }
     }
 
