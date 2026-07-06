@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -352,13 +351,13 @@ function AIToolModal({ initialPrompt, onResult, targetField }: any) {
                     <Sparkles className="h-4 w-4" /> AI Tool
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-xl text-left text-foreground">
+            <DialogContent className="sm:max-w-xl text-left text-foreground text-foreground">
                 <DialogHeader>
                     <DialogTitle>AI Branding Tool</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
                     <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className="bg-slate-50 border-2" />
-                    <div className="bg-muted aspect-video rounded-3xl flex flex-col items-center justify-center border-4 border-dashed shadow-inner">
+                    <div className="bg-muted aspect-video rounded-3xl flex flex-col items-center justify-center border-4 border-dashed shadow-inner text-left text-foreground">
                         {isLoading ? (
                             <div className="text-center space-y-2">
                                 <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
@@ -367,7 +366,7 @@ function AIToolModal({ initialPrompt, onResult, targetField }: any) {
                         ) : <ImageIcon className="h-12 w-12 opacity-20" />}
                     </div>
                 </div>
-                <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
+                <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left text-foreground">
                     <Button onClick={handleAction} disabled={isLoading} className="w-full h-12 font-black uppercase shadow-lg">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} 
                         Generate Asset
@@ -464,11 +463,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     </form>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
-                <div className="flex gap-3">
+                <div className="flex gap-3 text-left text-foreground">
                     <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4 mr-2" />} Sync
                     </Button>
@@ -480,3 +479,4 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         </Card>
     );
 }
+

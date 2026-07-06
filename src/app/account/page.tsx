@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -76,6 +75,7 @@ function AccountPageContent() {
   const auth = useAuth();
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
+  const nodeType = searchParams.get('nodeType');
   const [activeView, setActiveView] = useState(initialView);
 
   useEffect(() => {
@@ -99,8 +99,8 @@ function AccountPageContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const navigate = (view: string, nodeType?: string) => {
-    const url = nodeType ? `/account?view=${view}&nodeType=${nodeType}` : `/account?view=${view}`;
+  const navigate = (view: string, nodeTypeParam?: string) => {
+    const url = nodeTypeParam ? `/account?view=${view}&nodeType=${nodeTypeParam}` : `/account?view=${view}`;
     router.push(url, { scroll: false });
   };
 
@@ -113,7 +113,7 @@ function AccountPageContent() {
   }
 
   const renderContent = () => {
-    if (activeView.startsWith('mall-')) {
+    if (activeView === 'mall-loads' || activeView === 'mall-warehouse' || activeView === 'mall-transporter' || activeView === 'mall-supplier' || activeView === 'mall-finance' || activeView === 'mall-buy-sell') {
         const mallId = activeView.replace('mall-', '');
         return <MallGate mallId={mallId} />;
     }
@@ -161,37 +161,37 @@ function AccountPageContent() {
               <SidebarMenu>
                   {/* LOADS FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Loads" isActive={activeView.includes('loads') || (activeView === 'shop' && searchParams.get('nodeType') === 'loads')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Loads" isActive={activeView.includes('loads') || (activeView === 'shop' && nodeType === 'loads')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-loads'} onClick={() => navigate('mall-loads')}>Search Loads</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'loads'} onClick={() => navigate('shop', 'loads')}>My Brokerage Hub</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'loads'} onClick={() => navigate('shop', 'loads')}>My Brokerage Hub</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
                   {/* WAREHOUSE FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Warehouse" isActive={activeView.includes('warehouse') || (activeView === 'shop' && searchParams.get('nodeType') === 'warehouse')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Warehouse" isActive={activeView.includes('warehouse') || (activeView === 'shop' && nodeType === 'warehouse')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-warehouse'} onClick={() => navigate('mall-warehouse')}>Source Storage</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'warehouse'} onClick={() => navigate('shop', 'warehouse')}>My Warehouse Hub</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'warehouse'} onClick={() => navigate('shop', 'warehouse')}>My Warehouse Hub</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
                   {/* TRANSPORT FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Transport" isActive={activeView.includes('transporter') || (activeView === 'shop' && searchParams.get('nodeType') === 'transport')}><Truck /><span>Transport Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Transport" isActive={activeView.includes('transporter') || (activeView === 'shop' && nodeType === 'transport')}><Truck /><span>Transport Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-transporter'} onClick={() => navigate('mall-transporter')}>Source Capacity</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'transport'} onClick={() => navigate('shop', 'transport')}>My Fleet Node</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'transport'} onClick={() => navigate('shop', 'transport')}>My Fleet Node</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
                   {/* SUPPLIER FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Suppliers" isActive={activeView.includes('supplier') || (activeView === 'shop' && searchParams.get('nodeType') === 'supplier')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Suppliers" isActive={activeView.includes('supplier') || (activeView === 'shop' && nodeType === 'supplier')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-supplier'} onClick={() => navigate('mall-supplier')}>Registry Search</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'supplier'} onClick={() => navigate('shop', 'supplier')}>My Shop Profile</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'supplier'} onClick={() => navigate('shop', 'supplier')}>My Shop Profile</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
