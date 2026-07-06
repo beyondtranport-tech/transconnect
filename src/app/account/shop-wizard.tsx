@@ -16,7 +16,7 @@ import {
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, 
     Package, Info, Navigation, Search, HelpCircle, Users, FileText, Camera,
-    ShoppingCart
+    ShoppingCart, Wrench
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -88,6 +88,9 @@ const nodeFormSchema = z.object({
   upliftFee: z.coerce.number().min(0).optional(),
   placementFee: z.coerce.number().min(0).optional(),
   monthlyStorageFee: z.coerce.number().min(0).optional(),
+  services: z.array(z.string()).default([]),
+  equipment: z.array(z.string()).default([]),
+  racking: z.array(z.string()).default([]),
   imageUrls: z.array(z.string()).default([]),
 });
 
@@ -260,6 +263,59 @@ function StepBranding() {
                     </FormItem>
                 )} />
             </div>
+        </div>
+    );
+}
+
+function StepWarehouseCapabilities() {
+    const { control } = useFormContext<NodeFormValues>();
+    
+    const serviceOptions = ["Packaging", "Shrink Wrapping", "Palletization", "Labeling", "Cross-Docking", "Inventory Management", "Quality Inspection"];
+    const equipmentOptions = ["Hyster / Forklift", "Reach Truck", "Electric Pallet Jack", "Hand Pallet Jack", "Dock Levelers", "Weighing Scales"];
+    const rackingOptions = ["Selective Racking", "Drive-In Racking", "Push-Back Racking", "Cantilever Racking", "Floor Storage", "Mezzanine"];
+
+    const renderCheckboxes = (name: any, options: string[], title: string, icon: any) => (
+        <div className="space-y-4 text-left">
+            <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                {React.createElement(icon, { className: "h-3.5 w-3.5" })}
+                {title}
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+                {options.map(opt => (
+                    <FormField key={opt} control={control} name={name} render={({ field }) => (
+                        <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors">
+                            <Checkbox 
+                                checked={field.value?.includes(opt)} 
+                                onCheckedChange={(checked) => {
+                                    const current = field.value || [];
+                                    return checked 
+                                        ? field.onChange([...current, opt]) 
+                                        : field.onChange(current.filter((v: string) => v !== opt));
+                                }} 
+                            />
+                            <span className="text-[11px] font-medium">{opt}</span>
+                        </div>
+                    )} />
+                ))}
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="space-y-10 text-left text-foreground">
+            <div className="text-left">
+                <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                    <Wrench className="h-6 w-6 text-primary" />
+                    Capabilities & Equipment
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">Detail the tools and services that define your operational value.</p>
+            </div>
+
+            {renderCheckboxes('services', serviceOptions, "Available Services", ClipboardList)}
+            <Separator />
+            {renderCheckboxes('equipment', equipmentOptions, "On-Site Equipment", Truck)}
+            <Separator />
+            {renderCheckboxes('racking', rackingOptions, "Racking & Storage Configuration", Warehouse)}
         </div>
     );
 }
@@ -705,7 +761,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center text-foreground">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
@@ -740,6 +796,9 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             upliftFee: shop.upliftFee || 0,
             placementFee: shop.placementFee || 0,
             monthlyStorageFee: shop.monthlyStorageFee || 0,
+            services: shop.services || [],
+            equipment: shop.equipment || [],
+            racking: shop.racking || [],
             imageUrls: shop.imageUrls || [],
         }
     });
@@ -763,9 +822,10 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 { id: 'legal', name: '1. Legal Rights', component: <StepLegal />, fields: ['primaryContractUrl', 'subcontractorAgreementUrl'] },
                 { id: 'identity', name: '2. Facility Identity', component: <StepIdentity nodeType="warehouse" />, fields: ['shopName', 'category'] },
                 { id: 'branding', name: '3. Branding & Narrative', component: <StepBranding />, fields: ['homeHeading', 'aboutText'] },
-                { id: 'fees', name: '4. Capacity & Fees', component: <StepWarehouseFees />, fields: ['availablePallets', 'monthlyStorageFee'] },
-                { id: 'gallery', name: '5. Facility Gallery', component: <StepGallery />, fields: [] },
-                { id: 'publish', name: '6. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+                { id: 'capabilities', name: '4. Capabilities & Equipment', component: <StepWarehouseCapabilities />, fields: ['services', 'equipment', 'racking'] },
+                { id: 'fees', name: '5. Capacity & Fees', component: <StepWarehouseFees />, fields: ['availablePallets', 'monthlyStorageFee'] },
+                { id: 'gallery', name: '6. Facility Gallery', component: <StepGallery />, fields: [] },
+                { id: 'publish', name: '7. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
         if (nodeType === 'transport') {
