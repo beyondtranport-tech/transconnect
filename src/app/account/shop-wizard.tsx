@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,14 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
 import { 
     Loader2, Save, CheckCircle, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, 
     Package, Info, Navigation, Search, HelpCircle, Users, FileText, Camera,
-    ShoppingCart, Wrench, Shield, Clock, Map, ListOrdered, FileSignature
+    ShoppingCart, Wrench, Shield, Clock, Map, ListOrdered, FileSignature, Edit, Tag
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -27,7 +28,7 @@ import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
@@ -48,13 +49,12 @@ const routeRateSchema = z.object({
     price: z.coerce.number().positive("Price required"),
 });
 
-const loadOpportunitySchema = z.object({
-    origin: z.string().min(1, "Origin hub required."),
-    destination: z.string().min(1, "Destination hub required."),
-    rate: z.coerce.number().positive("Rate required."),
-    pickupDate: z.string().min(1, "Required."),
-    dropoffDate: z.string().min(1, "Required."),
-    conditions: z.string().optional(),
+const productSchema = z.object({
+    name: z.string().min(1, "Product name required."),
+    description: z.string().min(10, "Provide a brief description."),
+    price: z.coerce.number().positive("Price must be positive."),
+    stock: z.coerce.number().int().min(0).default(0),
+    imageUrls: z.array(z.string()).optional().default([]),
 });
 
 const vehicleListingSchema = z.object({
@@ -103,7 +103,6 @@ const nodeFormSchema = z.object({
   accessControl: z.string().optional(),
   rollerDoors: z.string().optional(),
   operatingHours: z.string().optional(),
-  // New Fleet Fields
   rateType: z.enum(['none', 'route', 'per_km']).default('none'),
   kmRate: z.coerce.number().min(0).optional(),
   routeRates: z.array(routeRateSchema).default([]),
@@ -212,7 +211,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
 
     useEffect(() => {
         if (!companyName && user?.displayName) {
-            const label = nodeType === 'loads' ? 'Loads Shop' : nodeType === 'warehouse' ? 'Warehouse Hub' : nodeType === 'transport' ? 'Fleet Node' : nodeType === 'buy-sell' ? 'Marketplace Profile' : 'Node';
+            const label = nodeType === 'loads' ? 'Loads Shop' : nodeType === 'warehouse' ? 'Warehouse Hub' : nodeType === 'transport' ? 'Fleet Node' : nodeType === 'buy-sell' ? 'Marketplace Profile' : nodeType === 'supplier' ? 'Supplier Store' : 'Node';
             setValue('shopName', `${user.displayName}'s ${label}`);
         }
     }, [nodeType, companyName, setValue, user]);
@@ -258,7 +257,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                                         <SelectItem value="Salvage Operator">Salvage Operator</SelectItem>
                                     </>
                                 ) : (
-                                    freightClassifications.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)
+                                    supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)
                                 )}
                             </SelectContent>
                         </Select>
@@ -628,7 +627,7 @@ function StepRateSheet() {
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
                     <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
-                        <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
+                        <FormLabel>Standard Rate per Kilometer (ZAR)</Label>
                         <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold" /></FormControl>
                     </FormItem>
                 )} />
@@ -647,13 +646,19 @@ function StepRateSheet() {
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
                                 <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger className="h-9"><SelectValue/></SelectTrigger></FormControl>
+                                        <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                                    </Select>
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
                                 <FormItem className="text-left text-foreground text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger className="h-9"><SelectValue/></SelectTrigger></FormControl>
+                                        <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                                    </Select>
                                 </FormItem>
                             )} />
                             <div className="flex items-center gap-2 text-left text-foreground text-foreground">
@@ -713,6 +718,245 @@ function StepLoadAgreement() {
     );
 }
 
+function StepCommercials({ shop }: { shop: any }) {
+    const firestore = useFirestore();
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [proposedRate, setProposedRate] = useState<number>(2.5);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const agreementsQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.companyId) return null;
+        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/agreements`), orderBy('createdAt', 'desc'));
+    }, [firestore, shop.companyId, shop.id]);
+
+    const { data: agreements, forceRefresh } = useCollection(agreementsQuery);
+
+    const activeAgreement = useMemo(() => agreements?.find(a => a.status === 'active') || null, [agreements]);
+    const pendingAgreement = useMemo(() => agreements?.find(a => a.status === 'proposed') || null, [agreements]);
+
+    const handlePropose = async () => {
+        setIsSubmitting(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const response = await fetch('/api/proposeCommercialAgreement', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ companyId: shop.companyId, shopId: shop.id, percentage: proposedRate }),
+            });
+            if (!response.ok) throw new Error("Failed to submit proposal.");
+            toast({ title: "Proposal Submitted", description: "The platform AI agent will evaluate your proposed rate." });
+            forceRefresh();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <Handshake className="h-6 w-6 text-primary" />
+                Mall Commercials
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Standard Platform Rate</p>
+                    <p className="text-3xl font-black">2.5%</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
+                </div>
+                
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
+                    <p className="text-[10px] font-black uppercase text-primary tracking-widest">Your Proposal (%)</p>
+                    <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white" />
+                    <Button className="w-full h-10 font-bold" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
+                        {isSubmitting ? <Loader2 className="animate-spin h-4 w-4"/> : <Zap className="h-4 w-4 mr-2" />}
+                        {pendingAgreement ? 'Awaiting Evaluation' : 'Propose Rate'}
+                    </Button>
+                </div>
+            </div>
+
+            {agreements && agreements.length > 0 && (
+                <div className="space-y-4 text-left">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <History className="h-4 w-4" />
+                        Agreement History
+                    </h4>
+                    <DataTable 
+                        data={agreements}
+                        columns={[
+                            { accessorKey: 'percentage', header: 'Rate (%)', cell: ({row}) => <strong>{row.original.percentage}%</strong> },
+                            { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'} className="capitalize">{row.original.status}</Badge> },
+                            { header: 'Date', cell: ({row}) => formatDateSafe(row.original.createdAt) }
+                        ]}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+function StepCatalog({ shop }: { shop: any }) {
+    const firestore = useFirestore();
+    const [isAdding, setIsAdding] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<any | null>(null);
+
+    const productsQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.companyId) return null;
+        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`), orderBy('createdAt', 'desc'));
+    }, [firestore, shop.companyId, shop.id]);
+
+    const { data: products, forceRefresh } = useCollection(productsQuery);
+
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4 text-left">
+                <div className="text-left">
+                    <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
+                    <p className="text-xs text-muted-foreground text-left text-left">List the items or services you sell directly in the Mall.</p>
+                </div>
+                <Dialog open={isAdding || !!editingProduct} onOpenChange={(o) => { if (!o) { setIsAdding(false); setEditingProduct(null); } }}>
+                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Add Product</Button></DialogTrigger>
+                    <ProductDialogContent shop={shop} product={editingProduct} onComplete={() => { forceRefresh(); setIsAdding(false); setEditingProduct(null); }} />
+                </Dialog>
+            </div>
+            
+            <div className="min-h-[300px] text-left">
+                {products && products.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                        {products.map(p => (
+                            <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left">
+                                <div className="relative aspect-square bg-muted">
+                                    {p.imageUrls?.[0] ? <Image src={p.imageUrls[0]} alt={p.name} fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="h-10 w-10 opacity-10" /></div>}
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                        <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setEditingProduct(p)}><Edit className="h-4 w-4"/></Button>
+                                        <Button variant="destructive" size="icon" className="h-8 w-8" onClick={async () => {
+                                            const token = await getClientSideAuthToken();
+                                            await fetch('/api/deleteUserDoc', {
+                                                method: 'POST',
+                                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}/products/${p.id}` })
+                                            });
+                                            forceRefresh();
+                                        }}><Trash2 className="h-4 w-4"/></Button>
+                                    </div>
+                                </div>
+                                <CardContent className="p-4 text-left">
+                                    <p className="font-bold text-sm text-left">{p.name}</p>
+                                    <p className="text-xs text-primary font-black mt-1 text-left">{formatCurrency(p.price)}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
+                        <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">Catalog Empty</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function ProductDialogContent({ shop, product, onComplete }: { shop: any, product?: any, onComplete: () => void }) {
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const form = useForm({ 
+        resolver: zodResolver(productSchema),
+        defaultValues: product || { name: '', description: '', price: 0, stock: 0, imageUrls: [] } 
+    });
+
+    const onSubmit = async (values: any) => {
+        setLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            const collectionPath = `companies/${shop.companyId}/shops/${shop.id}/products`;
+            const res = await fetch(product ? '/api/updateUserDoc' : '/api/addUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(product 
+                    ? { path: `${collectionPath}/${product.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }
+                    : { collectionPath, data: values }
+                )
+            });
+            if (!res.ok) throw new Error("Failed to save product.");
+            toast({ title: "Catalog Updated" });
+            onComplete();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !shop) return;
+        const token = await getClientSideAuthToken();
+        const reader = new FileReader();
+        const dataUri = await new Promise<string>(res => {
+            reader.onload = () => res(reader.result as string);
+            reader.readAsDataURL(file);
+        });
+        const response = await fetch('/api/uploadImageAsset', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fileDataUri: dataUri, folder: `products/${shop.companyId}`, fileName: `prod_${Date.now()}_${file.name}` })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            const current = form.getValues('imageUrls') || [];
+            form.setValue('imageUrls', [...current, result.url]);
+        }
+    };
+
+    return (
+        <DialogContent className="sm:max-w-xl text-left text-foreground">
+            <DialogHeader>
+                <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
+                <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
+                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                    </div>
+                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} /></FormControl></FormItem>)} />
+                    
+                    <div className="space-y-4 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Product Images</Label>
+                        <div className="grid grid-cols-4 gap-2">
+                             {(form.watch('imageUrls') || []).map((url: string, i: number) => (
+                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                                     <Image src={url} alt="pic" fill className="object-cover" />
+                                 </div>
+                             ))}
+                             <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('prod-img-up')?.click()}>
+                                 <Camera className="h-6 w-6 opacity-40" />
+                                 <span className="text-[8px] uppercase font-bold">Add</span>
+                             </Button>
+                             <input type="file" id="prod-img-up" className="hidden" onChange={handleUpload} />
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest">
+                            {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+                            Commit Product
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    );
+}
+
 // ====== INTERNAL TERMINALS FOR ASSETS AND LOADS ======
 
 function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'fleet' | 'sale', onComplete: () => void }) {
@@ -756,14 +1000,18 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const token = await getClientSideAuthToken();
-            const dataUri = await fileToDataUri(file);
-            const res = await fetch('/api/uploadImageAsset', {
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>(res => {
+                reader.onload = () => res(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+            const response = await fetch('/api/uploadImageAsset', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileDataUri: dataUri, folder: `fleet-photos/${shop.companyId}`, fileName: `photo_${Date.now()}_${file.name}` })
             });
             const result = await response.json();
-            if (res.ok) urls.push(result.url);
+            if (response.ok) urls.push(result.url);
         }
         form.setValue('photoUrls', urls);
     };
@@ -1111,6 +1359,15 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 { id: 'identity', name: '1. Dealer Identity', component: <StepIdentity nodeType="buy-sell" />, fields: ['shopName', 'category'] },
                 { id: 'inventory', name: '2. Vehicle Inventory', component: <StepAssetRegistry shop={shop} mode="sale" />, fields: [] },
                 { id: 'publish', name: '3. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+            ];
+        }
+        if (nodeType === 'supplier') {
+            return [
+                { id: 'identity', name: '1. Shop Identity', component: <StepIdentity nodeType="supplier" />, fields: ['shopName', 'category'] },
+                { id: 'branding', name: '2. Branding & Narrative', component: <StepBranding />, fields: ['homeHeading', 'aboutText'] },
+                { id: 'commercials', name: '3. Mall Commercials', component: <StepCommercials shop={shop} />, fields: [] },
+                { id: 'catalog', name: '4. Product Catalogue', component: <StepCatalog shop={shop} />, fields: [] },
+                { id: 'publish', name: '5. Activate Shop', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
         return [
