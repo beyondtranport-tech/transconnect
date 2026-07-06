@@ -1,88 +1,115 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { 
     Loader2, Save, CheckCircle, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
-    ClipboardList, Sparkles, Store
+    ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, Circle,
+    Package, Calendar, Info
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency, formatDateSafe } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { generateImage } from '@/ai/flows/image-generation-flow';
-import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { collection, query, orderBy } from 'firebase/firestore';
+import { DataTable } from '@/components/ui/data-table';
 
 // ====== SCHEMAS ======
 
+const loadOpportunitySchema = z.object({
+    origin: z.string().min(1, "Origin hub required."),
+    destination: z.string().min(1, "Destination hub required."),
+    rate: z.coerce.number().positive("Rate required."),
+    pickupDate: z.string().min(1, "Required."),
+    dropoffDate: z.string().min(1, "Required."),
+    conditions: z.string().optional(),
+});
+
 const nodeFormSchema = z.object({
   shopName: z.string().min(1, "Identity label is required."),
-  category: z.string().min(1, "Please select a forensic category."),
-  websiteUrl: z.string().url("Must be a valid URL.").optional().or(z.literal('')),
-  contactEmail: z.string().email("Please enter a valid business email.").optional().or(z.literal('')),
+  category: z.string().min(1, "Classification required."),
+  contactEmail: z.string().email("Valid email required.").optional().or(z.literal('')),
   contactPhone: z.string().optional(),
-  homeHeading: z.string().min(5, "Headline must be at least 5 characters."),
-  homeSubheading: z.string().optional(),
-  aboutText: z.string().min(20, "Detailed profile summary required."),
+  homeHeading: z.string().min(5, "Headline required."),
+  aboutText: z.string().min(20, "Summary required."),
   logoUrl: z.string().optional(),
-  heroBannerUrl: z.string().optional(),
-  termsText: z.string().optional().default("Standard platform terms apply."),
-  privacyText: z.string().optional().default("Standard platform privacy policy applies."),
-  // Warehouse specific
-  upliftFee: z.coerce.number().optional(),
-  placementFee: z.coerce.number().optional(),
-  monthlyStorageFee: z.coerce.number().optional(),
-  availablePallets: z.coerce.number().optional(),
-  // Transport specific
-  poweredUnits: z.array(z.string()).optional().default([]),
-  trailers: z.array(z.string()).optional().default([]),
-  primaryRegions: z.array(z.string()).optional().default([]),
-  cargoTypes: z.array(z.string()).optional().default([]),
-  fleetSummary: z.string().optional(),
-  // Brokerage specific
+  // Legal
+  primaryContractUrl: z.string().min(1, "Primary contract required for audit."),
+  subcontractorAgreementUrl: z.string().min(1, "Subcontractor agreement required."),
+  // Commercials
   brokerageMargin: z.coerce.number().min(0).max(50).default(5),
-  loadPostingTerms: z.string().optional().default("Standard 30-day payment terms after POD verification."),
-  haulierVerificationRequired: z.boolean().default(true),
 });
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
 
-const fleetOptions = {
-    powered: ['Horse', '8-ton Rigid', '4-ton Rigid', 'Bakkie'],
-    trailers: ['Skeletal', 'Skeletal + Genset', 'Tautliner', 'Flatbed', 'Tipper', 'Lowbed', 'Reefer'],
-    regions: ['Gauteng', 'Western Cape', 'KwaZulu-Natal', 'Eastern Cape', 'Free State', 'Mpumalanga', 'Limpopo', 'North West', 'Northern Cape', 'Cross-Border'],
-    cargo: ['General Freight', 'Containers', 'Refrigerated Containers', 'Bulk / Aggregates', 'Abnormal Loads', 'Perishables', 'Hazmat', 'FMCG']
-};
+const freightClassifications = ["Long Haul", "LTL", "Container", "Refrigerated", "Local Distribution", "Abnormal"];
 
 // ====== STEP COMPONENTS ======
 
-function StepIdentity() {
+function StepLegal({ nodeType }: { nodeType: string }) {
     const { control } = useFormContext<NodeFormValues>();
     return (
-        <div className="space-y-6 text-left">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
-                <UserCheck className="h-6 w-6 text-primary" /> Node Identity
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <Gavel className="h-6 w-6 text-primary" />
+                Legal Authorization
             </h3>
-            <div className="space-y-4 text-left text-foreground">
+            <div className="space-y-6 text-left">
+                <Alert className="bg-primary/5 border-primary/20">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <AlertTitle className="font-bold">Subcontracting Audit</AlertTitle>
+                    <AlertDescription className="text-xs">
+                        You must provide evidence of your right to subcontract freight. These documents are held in our secure vault for Admin Audit only.
+                    </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FileUploadField name="primaryContractUrl" label="Primary Contract (Audit Only)" folder="legal-docs" />
+                    <FileUploadField name="subcontractorAgreementUrl" label="Subcontractor Agreement" folder="legal-docs" />
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">Documents must include the No-Circumvention clause to be approved.</p>
+            </div>
+        </div>
+    );
+}
+
+function StepIdentity({ nodeType }: { nodeType: string }) {
+    const { control, setValue, watch } = useFormContext<NodeFormValues>();
+    const companyName = watch('shopName');
+
+    useEffect(() => {
+        if (!companyName && nodeType === 'loads') {
+            setValue('shopName', "Log Flow Member One's loads Shop");
+        }
+    }, [nodeType, companyName, setValue]);
+
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <UserCheck className="h-6 w-6 text-primary" /> 
+                {nodeType === 'loads' ? 'Brokerage Identity' : 'Node Identity'}
+            </h3>
+            <div className="space-y-4 text-left">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem>
                         <FormLabel>Public Identity Label</FormLabel>
-                        <FormControl><Input placeholder="e.g. Cape Town Logistics Hub" {...field} className="h-11 border-2" /></FormControl>
+                        <FormControl><Input {...field} className="h-11 border-2" /></FormControl>
                         <FormMessage />
                     </FormItem> 
                 )} />
@@ -90,183 +117,189 @@ function StepIdentity() {
                     <FormItem>
                         <FormLabel>Forensic Category</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
                             <SelectContent>
-                                {supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                                {freightClassifications.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <FormMessage />
                     </FormItem> 
                 )} />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField control={control} name="contactEmail" render={({ field }) => ( 
-                        <FormItem><FormLabel>Operations E-mail</FormLabel><FormControl><Input {...field} className="h-11 border-2" /></FormControl><FormMessage /></FormItem> 
-                    )} />
-                    <FormField control={control} name="contactPhone" render={({ field }) => ( 
-                        <FormItem><FormLabel>Operations Number</FormLabel><FormControl><Input {...field} className="h-11 border-2" /></FormControl><FormMessage /></FormItem> 
-                    )} />
-                </div>
             </div>
         </div>
     );
 }
 
-function StepBranding() {
-    const { setValue, watch } = useFormContext<NodeFormValues>();
-    const logo = watch('logoUrl');
-    const banner = watch('heroBannerUrl');
-
-    return (
-        <div className="space-y-8 text-left">
-            <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
-                    <ImageIcon className="h-6 w-6 text-primary" /> Node Branding
-                </h3>
-                <AIToolModal type="generate" targetField="logoUrl" onResult={(url: string) => setValue('logoUrl', url)} initialPrompt="Professional modern industrial logistics logo, minimalist vector style." />
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Node Logo</Label>
-                    <div className="aspect-square w-48 border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner">
-                        {logo ? <Image src={logo} alt="Logo" fill className="object-contain p-4" /> : <p className="text-xs italic text-muted-foreground">No Logo Uploaded</p>}
-                    </div>
-                </div>
-                <div className="space-y-4">
-                    <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Marketplace Banner</Label>
-                    <div className="aspect-video w-full border-4 border-dashed rounded-3xl bg-muted/30 flex items-center justify-center relative overflow-hidden shadow-inner">
-                        {banner ? <Image src={banner} alt="Banner" fill className="object-cover" /> : <p className="text-xs italic text-muted-foreground text-center px-4">Generate or upload a high-fidelity industrial banner.</p>}
-                    </div>
-                    <AIToolModal type="generate" targetField="heroBannerUrl" onResult={(url: string) => setValue('heroBannerUrl', url)} initialPrompt="Wide angle cinematic shot of an ultra-modern logistics warehouse interior at night, blue glowing data lines on the floor." />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StepWarehouse() {
+function StepBrokerageCommercials() {
     const { control } = useFormContext<NodeFormValues>();
     return (
-        <div className="space-y-8 text-left">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
-                <Warehouse className="h-6 w-6 text-primary" /> Storage Hub Parameters
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <DollarSign className="h-6 w-6 text-primary" />
+                Commercial Configuration
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="space-y-4">
-                    <FormField control={control} name="availablePallets" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Total Pallet Slots</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Total capacity currently unallocated.</FormDescription></FormItem>
-                    )} />
-                    <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Storage Rate (R/plt/mo)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl><FormDescription>Monthly recurring fee.</FormDescription></FormItem>
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
+                    <FormField control={control} name="brokerageMargin" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Your Clearing Margin (%)</FormLabel>
+                            <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
+                            <FormDescription className="text-[10px]">Your percentage participation in each load payout.</FormDescription>
+                        </FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left text-foreground">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground"><Banknote className="h-4 w-4" /> Handling Logic</h4>
-                    <FormField control={control} name="upliftFee" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Inbound Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
-                    )} />
-                    <FormField control={control} name="placementFee" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Outbound Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
-                    )} />
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Platform Success Fee</p>
+                    <p className="text-3xl font-black text-primary">2.5%</p>
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">Standard ecosystem fee applied to all successfully matched freight transactions.</p>
                 </div>
             </div>
         </div>
     );
 }
 
-function StepTransport() {
-    const { control } = useFormContext<NodeFormValues>();
+function StepLoadBoard({ shop }: { shop: any }) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isAdding, setIsAdding] = useState(false);
+    
+    const loadsQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.companyId) return null;
+        return query(collection(firestore, `companies/${shop.companyId}/loadBoard/loads`), orderBy('createdAt', 'desc'));
+    }, [firestore, shop.companyId]);
+    
+    const { data: loads, forceRefresh } = useCollection(loadsQuery);
+
     return (
-        <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
-                <Truck className="h-6 w-6 text-primary" /> Fleet Node Parameters
-            </h3>
-            <div className="space-y-10 text-left">
-                <div className="space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left">
-                        <ShieldCheck className="h-4 w-4" /> Verified Capacity (Fleet)
-                    </Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-                        {fleetOptions.powered.map(item => (
-                            <FormField key={item} control={control} name="poweredUnits" render={({ field }) => (
-                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-xl hover:bg-muted/50 transition-all cursor-pointer text-left">
-                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                    <FormLabel className="font-bold text-xs cursor-pointer">{item}</FormLabel>
-                                </FormItem>
-                            )} />
-                        ))}
-                    </div>
+        <div className="space-y-6 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4">
+                <div className="text-left">
+                    <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
+                    <p className="text-xs text-muted-foreground">Manage your freight opportunities directly within your node.</p>
                 </div>
-
-                <div className="space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left">
-                        <MapPin className="h-4 w-4" /> Primary Service Lanes
-                    </Label>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-left text-foreground">
-                        {fleetOptions.regions.map(item => (
-                            <FormField key={item} control={control} name="primaryRegions" render={({ field }) => (
-                                <FormItem className="flex items-center space-x-2 space-y-0 p-2 border rounded-lg hover:bg-muted/50 transition-all cursor-pointer">
-                                    <FormControl><Checkbox checked={field.value?.includes(item)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, item]) : field.onChange(field.value?.filter((v: string) => v !== item))} /></FormControl>
-                                    <FormLabel className="text-[10px] font-medium cursor-pointer">{item}</FormLabel>
-                                </FormItem>
-                            )} />
-                        ))}
+                <Dialog open={isAdding} onOpenChange={setIsAdding}>
+                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
+                    <LoadOpportunityForm shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                </Dialog>
+            </div>
+            
+            <div className="min-h-[300px]">
+                {loads && loads.length > 0 ? (
+                    <DataTable 
+                        data={loads}
+                        columns={[
+                            { header: 'Route', cell: ({row}) => <div className="font-bold flex items-center gap-2">{row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}</div> },
+                            { header: 'Rate', cell: ({row}) => <span className="font-black text-primary">{formatCurrency(row.original.rate)}</span> },
+                            { header: 'Dates', cell: ({row}) => <div className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(row.original.pickupDate, "dd MMM")} - {formatDateSafe(row.original.dropoffDate, "dd MMM")}</div> },
+                            { 
+                                id: 'actions', 
+                                header: '', 
+                                cell: ({row}) => <Button variant="ghost" size="icon" onClick={() => toast({ title: "Simulation", description: "Record isolation active." })}><Trash2 className="h-4 w-4 text-destructive"/></Button> 
+                            }
+                        ]}
+                    />
+                ) : (
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
+                        <PackageSearch className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No loads listed in this node.</p>
                     </div>
-                </div>
-
-                <FormField control={control} name="fleetSummary" render={({ field }) => (
-                    <FormItem className="text-left text-foreground">
-                        <FormLabel>Technical Profile Summary</FormLabel>
-                        <FormControl><Textarea placeholder="Describe your specialized capabilities and corridors..." {...field} className="min-h-[120px] border-2" /></FormControl>
-                        <FormDescription>This text is used for high-fidelity matching.</FormDescription>
-                    </FormItem>
-                )} />
+                )}
             </div>
         </div>
     );
 }
 
-function StepLoads() {
-    const { control } = useFormContext<NodeFormValues>();
+function LoadOpportunityForm({ shop, onComplete }: { shop: any, onComplete: () => void }) {
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const form = useForm({ resolver: zodResolver(loadOpportunitySchema) });
+
+    const onSubmit = async (values: any) => {
+        setLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            const res = await fetch('/api/addUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    collectionPath: `companies/${shop.companyId}/loadBoard/loads`,
+                    data: { ...values, status: 'active', createdAt: { _methodName: 'serverTimestamp' } }
+                })
+            });
+            if (!res.ok) throw new Error("Failed to post load.");
+            toast({ title: "Load Posted Successfully" });
+            onComplete();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
-        <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
-                <PackageSearch className="h-6 w-6 text-primary" /> Brokerage Terminal Config
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                <div className="space-y-6 text-left">
-                    <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
-                        <div className="flex items-center gap-2 text-primary">
-                            <DollarSign className="h-5 w-5" />
-                            <h4 className="font-bold text-sm uppercase tracking-widest text-left text-foreground">Revenue Flow</h4>
-                        </div>
-                        <FormField control={control} name="brokerageMargin" render={({ field }) => (
-                            <FormItem className="text-left text-foreground">
-                                <FormLabel>Default Clearing Margin (%)</FormLabel>
-                                <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                                <FormDescription className="text-xs">Your participation percentage on posted freight.</FormDescription>
-                            </FormItem>
-                        )} />
+        <DialogContent className="sm:max-w-xl text-left text-foreground">
+            <DialogHeader><DialogTitle>Post Freight Opportunity</DialogTitle></DialogHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                        <FormField control={form.control} name="origin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Origin Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="destination" render={({ field }) => (<FormItem className="text-left"><FormLabel>Destination Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
                     </div>
-
-                    <div className="p-6 border-2 rounded-3xl space-y-4 bg-slate-50 text-left text-foreground">
-                         <FormField control={control} name="haulierVerificationRequired" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between space-y-0 text-left">
-                                <FormLabel className="text-xs font-bold uppercase tracking-tight text-left">Enforce RC1 Compliance</FormLabel>
-                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            </FormItem>
-                         )} />
-                         <p className="text-[10px] text-muted-foreground leading-tight italic text-left">Restricts load acceptance to verified fleet nodes only.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                        <FormField control={form.control} name="rate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="pickupDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Pickup</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Drop-off</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
                     </div>
-                </div>
+                    <FormField control={form.control} name="conditions" render={({ field }) => (<FormItem className="text-left"><FormLabel>Commercial Conditions</FormLabel><FormControl><Textarea placeholder="Specific equipment or insurance rules..." {...field} /></FormControl></FormItem>)} />
+                    <DialogFooter><Button type="submit" disabled={loading}>{loading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <PlusCircle className="mr-2 h-4 w-4"/>} List Load</Button></DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    );
+}
 
-                <FormField control={control} name="loadPostingTerms" render={({ field }) => (
-                    <FormItem className="text-left text-foreground">
-                        <FormLabel className="flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" /> Settlement Ledger Terms</FormLabel>
-                        <FormControl><Textarea placeholder="e.g. Payments processed 30 days from original POD submission..." {...field} className="min-h-[150px] border-2 bg-white" /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )} />
+function FileUploadField({ name, label, folder }: { name: string, label: string, folder: string }) {
+    const { setValue, watch } = useFormContext<NodeFormValues>();
+    const [isUploading, setIsUploading] = useState(false);
+    const { user } = useUser();
+    const { toast } = useToast();
+    const currentUrl = watch(name as any);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+        setIsUploading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>(res => {
+                reader.onload = () => res(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+            const response = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName: `${name}_${Date.now()}_${file.name}` })
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
+            setValue(name as any, result.url, { shouldValidate: true });
+            toast({ title: "Document Attached" });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: e.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-2 text-left">
+            <Label className="text-[10px] font-black uppercase text-muted-foreground">{label}</Label>
+            <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" className={cn("flex-1 h-12 border-2 border-dashed", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
+                    {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
+                    {currentUrl ? "File Attached" : "Select Document"}
+                </Button>
+                <input id={`up-${name}`} type="file" className="hidden" onChange={handleUpload} />
             </div>
         </div>
     );
@@ -307,76 +340,6 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     );
 }
 
-function AIToolModal({ initialPrompt, onResult, targetField }: any) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [prompt, setPrompt] = useState(initialPrompt);
-    const [isLoading, setIsLoading] = useState(false);
-    const { user } = useUser();
-    const { toast } = useToast();
-
-    const handleAction = async () => {
-        setIsLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-
-            let result = await generateImage({ prompt });
-            if (!result.imageDataUri) throw new Error("AI error.");
-
-            const folder = `user-assets/${user!.uid}/node-ai`;
-            const fileName = `ai_${targetField}_${Date.now()}.png`;
-            
-            const uploadRes = await fetch('/api/uploadImageAsset', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileDataUri: result.imageDataUri, folder, fileName })
-            });
-            const uploadData = await uploadRes.json();
-            if (!uploadRes.ok) throw new Error(uploadData.error);
-
-            onResult(uploadData.url);
-            setIsOpen(false);
-            toast({ title: "Asset Ready" });
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "AI Error", description: e.message });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2 font-bold border-primary/20 text-primary hover:bg-primary/5">
-                    <Sparkles className="h-4 w-4" /> AI Tool
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-xl text-left text-foreground text-foreground">
-                <DialogHeader>
-                    <DialogTitle>AI Branding Tool</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4 text-left">
-                    <Textarea value={prompt} onChange={e => setPrompt(e.target.value)} rows={4} className="bg-slate-50 border-2" />
-                    <div className="bg-muted aspect-video rounded-3xl flex flex-col items-center justify-center border-4 border-dashed shadow-inner text-left text-foreground">
-                        {isLoading ? (
-                            <div className="text-center space-y-2">
-                                <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                                <p className="text-[10px] font-black uppercase text-muted-foreground">Rendering...</p>
-                            </div>
-                        ) : <ImageIcon className="h-12 w-12 opacity-20" />}
-                    </div>
-                </div>
-                <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left text-foreground">
-                    <Button onClick={handleAction} disabled={isLoading} className="w-full h-12 font-black uppercase shadow-lg">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} 
-                        Generate Asset
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
 // ====== MAIN WIZARD ======
 
 export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: string, onUpdate: () => void }) {
@@ -414,17 +377,21 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     };
 
     const wizardSteps = useMemo(() => {
-        const base = [
-            { id: 'identity', name: 'Identity', component: <StepIdentity />, fields: ['shopName', 'category'] },
-            { id: 'branding', name: 'Branding', component: <StepBranding />, fields: [] },
+        if (nodeType === 'loads') {
+            return [
+                { id: 'legal', name: '1. Legal Rights', component: <StepLegal nodeType="loads" />, fields: ['primaryContractUrl', 'subcontractorAgreementUrl'] },
+                { id: 'identity', name: '2. Commercial Identity', component: <StepIdentity nodeType="loads" />, fields: ['shopName', 'category'] },
+                { id: 'commercials', name: '3. Brokerage Config', component: <StepBrokerageCommercials />, fields: ['brokerageMargin'] },
+                { id: 'board', name: '4. Active Load Board', component: <StepLoadBoard shop={shop} />, fields: [] },
+                { id: 'publish', name: '5. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+            ];
+        }
+        
+        // Default generic nodes
+        return [
+            { id: 'identity', name: 'Identity', component: <StepIdentity nodeType={nodeType} />, fields: ['shopName', 'category'] },
+            { id: 'publish', name: 'Activate', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
         ];
-        
-        if (nodeType === 'warehouse') base.push({ id: 'warehouse', name: 'Storage Setup', component: <StepWarehouse />, fields: ['availablePallets'] });
-        if (nodeType === 'transport') base.push({ id: 'transport', name: 'Fleet Profile', component: <StepTransport />, fields: ['fleetSummary'] });
-        if (nodeType === 'loads') base.push({ id: 'loads', name: 'Brokerage Config', component: <StepLoads />, fields: ['brokerageMargin'] });
-        
-        base.push({ id: 'publish', name: 'Activate', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] });
-        return base;
     }, [shop, nodeType, onUpdate]);
 
     const handleNext = async () => {
@@ -440,7 +407,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             </CardHeader>
             <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
+                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -455,21 +422,21 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px] text-left text-foreground">
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
+                        <div className="p-10 min-h-[500px] text-left">
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
                                 {wizardSteps[currentStep].component}
                             </div>
                         </div>
                     </form>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
-                <div className="flex gap-3 text-left text-foreground">
+                <div className="flex gap-3 text-left">
                     <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold">
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4 mr-2" />} Sync
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
                         <Button type="button" onClick={handleNext} className="font-bold px-8">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
@@ -479,4 +446,3 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         </Card>
     );
 }
-
