@@ -119,7 +119,7 @@ export default function TransporterDiscoveryEngine() {
         <Card className="shadow-none border-none text-left">
             <Tabs defaultValue="Long Haul" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left">
-                    <CardTitle className="flex items-center gap-2 text-left">
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline">
                         <Database className="h-6 w-6 text-primary" />
                         Forensic Haulier Mapper
                     </CardTitle>

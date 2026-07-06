@@ -137,14 +137,14 @@ export default function AssociateDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Associate Discovery Engine
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground text-left text-foreground">Identify high-impact content and brand creators for recruitment.</CardDescription>
+                    <CardDescription className="text-muted-foreground text-left text-foreground text-foreground text-foreground">Identify high-impact content and brand creators for recruitment.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left text-foreground">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12 text-left text-foreground">
                         <div className="lg:col-span-2 text-left text-foreground">
-                            <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left text-foreground">
+                            <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left text-foreground text-foreground">
                                 {associateCategories.map(category => (
-                                    <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
+                                    <TabsTrigger key={category} value={category} className="text-xs px-4 py-2 text-foreground">
                                         {category}
                                         {category === 'Industry Influencer' && <Star className="h-3 w-3 ml-2 text-amber-500 fill-current" />}
                                     </TabsTrigger>
@@ -159,7 +159,7 @@ export default function AssociateDiscoveryEngine() {
                             </div>
                         </div>
 
-                        <div className="space-y-6 text-left text-foreground">
+                        <div className="space-y-6 text-left text-foreground text-foreground">
                             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 text-left">
                                 <Info className="h-4 w-4" /> 
                                 Tactical Roadmap
@@ -171,33 +171,33 @@ export default function AssociateDiscoveryEngine() {
                                             <UserCheck className="h-3 w-3 text-amber-500 fill-current"/> Phase 1: Industry Influencer
                                         </p>
                                         <p className="font-bold text-amber-700 italic text-left">Recommended Primary Focus.</p>
-                                        <p className="text-left">Thought leaders with an established "ear" in the SA trucking sector.</p>
+                                        <p className="text-left text-foreground">Thought leaders with an established "ear" in the SA trucking sector.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-left">
-                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left">
+                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground">
                                             <Video className="h-3 w-3 text-primary"/> Phase 2: Content Creator
                                         </p>
-                                        <p className="text-left text-foreground">High-volume media producers who create industrial narratives.</p>
+                                        <p className="text-left text-foreground text-foreground">High-volume media producers who create industrial narratives.</p>
                                     </div>
                                     <Separator />
                                     <div className="space-y-1 text-left">
-                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground">
+                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground text-foreground">
                                             <Zap className="h-3 w-3 text-primary"/> Phase 3: Digital Marketer
                                         </p>
-                                        <p className="text-left text-foreground">Professionals who turn social content into registered members.</p>
+                                        <p className="text-left text-foreground text-foreground">Professionals who turn social content into registered members.</p>
                                     </div>
                                     <Separator />
-                                    <div className="space-y-1 text-left">
-                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground">
+                                    <div className="space-y-1 text-left text-foreground">
+                                        <p className="font-black text-foreground flex items-center gap-1.5 uppercase tracking-tighter text-left text-foreground text-foreground">
                                             <Palette className="h-3 w-3 text-primary"/> Phase 4: Brand Strategist
                                         </p>
-                                        <p className="text-left text-muted-foreground text-foreground">Ensuring transporters look professional and "lender-ready".</p>
+                                        <p className="text-left text-muted-foreground text-foreground text-foreground">Ensuring transporters look professional and "lender-ready".</p>
                                     </div>
                                 </CardContent>
                             </Card>
 
-                            <Alert className="border-blue-200 bg-blue-50/30 text-left text-foreground">
+                            <Alert className="border-blue-200 bg-blue-50/30 text-left text-foreground text-foreground">
                                 <Info className="h-4 w-4 text-blue-600" />
                                 <AlertDescription className="text-[10px] text-blue-800 leading-tight text-left text-foreground">
                                     <strong>Tip:</strong> Start with influencers to gain mass-credibility, then use creators to fill the <strong>Marketing Library</strong> with assets.

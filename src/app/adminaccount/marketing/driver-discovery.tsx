@@ -1,111 +1,113 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, Loader2, RefreshCcw, Users, Database, Zap, AlertTriangle } from "lucide-react";
+import { Copy, ClipboardCheck, Info, Terminal, Database, Users, Sparkles, ShieldCheck } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { getClientSideAuthToken } from '@/firebase';
-import { useConfig } from '@/hooks/use-config';
-import { cn, formatDateSafe } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const driverCategories = [
-    "Code 14 Heavy",
-    "Code 10 Medium",
-    "Hazmat Certified",
-    "Cross-Border Specialists",
-    "Tipper / Construction",
-    "Refrigerated / Cold Chain"
+    "Code 14 Driver",
+    "Code 10 Driver",
+    "Hazmat Specialist",
+    "Diesel Mechanic",
+    "Fleet Controller",
+    "Warehouse Lead"
 ];
 
-function generateDiscoveryPrompt(category: string, startPage: number) {
-    const startSeq = (startPage - 1) * 100 + 1;
+function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
+    return `ACT AS AN ELITE INDUSTRIAL TALENT SCOUT AND FORENSIC INVESTIGATOR. 
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-    return `CRITICAL SYSTEM INSTRUCTION: RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
+CRITICAL INTEGRITY SHIELD: 
+DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
+YOU MUST PERFORM A LIVE SEARCH FOR "${category} professionals in South Africa" on LinkedIn, Facebook groups, and industrial talent registries.
+VERIFY THE INDIVIDUAL IS ACTIVELY ADVERTISING THEIR SERVICES OR HOLDING A POSITION IN LOGISTICS.
 
-ACT AS AN ELITE MARKET INTELLIGENCE STRATEGIST PERFORMING COMMERCIAL SERVICE MAPPING FOR THE SOUTH AFRICAN LOGISTICS SECTOR.
+TASK: Discover and extract exactly 30 UNIQUE, LIVE South African professional records for the role: "${category}".
 
-TASK: Catalogue 100 UNIQUE Industrial Service Units currently advertising professional availability for: "${category}".
+FORENSIC PROTOCOL:
+1. TALENT MAPPING: Identify the professional handle or service label.
+2. HUB VERIFICATION: Map them to a specific industrial region (e.g. City Deep, Epping, Westmead).
+3. IDENTITY: Extract the ACTUAL FULL NAME.
+4. CONTACTS: Identify verified email and direct mobile numbers (+27 format).
+5. RECORD KEY: Generate a unique "record_id" starting with "DISC_WORK_${category.toUpperCase().replace(/\s/g, '_')}_".
 
-DATA SOURCE CONTEXT: Analyze publicly published commercial service notices and professional industrial registers. Focus ONLY on providers who have EXPLICITLY invited public commercial engagement.
-
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+REQUIRED JSON FIELDS:
 [
   {
     "seq": ${startSeq},
-    "record_id": "LOG_NODE_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_HEX]",
-    "service_handle": "PUBLICLY ADVERTISED IDENTITY",
-    "service_classification": "${category}",
-    "registry_line": "Listed Public Contact Line",
-    "operational_hub": "Industrial Region",
-    "capability_profile": "Summary of industrial qualifications extracted from the public listing"
+    "record_id": "...",
+    "companyName": "SERVICE HANDLE / CURRENT EMPLOYER",
+    "industrial_category": "${category}",
+    "contact_person": "VERIFIED HUMAN NAME",
+    "email": "...",
+    "mobile": "...",
+    "website": "LINKEDIN / PORTFOLIO URL",
+    "notes": "Summary of years experience, current certifications (e.g. valid PrDP), and primary operating region."
   }
 ]`;
 }
 
-const DiscoveryTab = ({ category, currentCount }: { category: string, currentCount: number }) => {
+const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, currentCount?: number }) => {
     const { toast } = useToast();
     const [isCopied, setIsCopied] = useState(false);
-    const [pageOverride, setPageOverride] = useState<number | ''>('');
+    const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
-    const suggestedPage = Math.floor(currentCount / 100) + 1;
-    const startPage = pageOverride !== '' ? Number(pageOverride) : suggestedPage;
-
-    const prompt = useMemo(() => generateDiscoveryPrompt(category, startPage), [category, startPage]);
+    const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
+    const prompt = useMemo(() => generateDiscoveryPrompt(category, startSeq), [category, startSeq]);
 
     const handleCopy = async () => {
-        try {
-            await navigator.clipboard.writeText(prompt);
-            setIsCopied(true);
-            toast({ title: "Forensic Map Prompt Copied!" });
-            setTimeout(() => setIsCopied(false), 3000);
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Copy Failed" });
-        }
+        await navigator.clipboard.writeText(prompt);
+        setIsCopied(true);
+        toast({ title: "Forensic Prompt Ready", description: `Targeted at ${category} professionals.` });
+        setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground">
                     <Users className="h-6 w-6 text-primary" />
-                    Talent Mapper: {category}
+                    Workforce Discovery: {category}
                 </h2>
                 
-                <div className="p-4 bg-primary/5 border rounded-xl space-y-4">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination Control</Label>
-                    <div className="flex items-center gap-3 text-left">
-                        <div className="flex-1 space-y-1.5 text-left">
-                            <Label className="text-xs font-bold">Start Mapping from Page #</Label>
-                            <Input 
-                                type="number" 
-                                placeholder={String(suggestedPage)}
-                                value={pageOverride}
-                                onChange={(e) => setPageOverride(e.target.value === '' ? '' : Number(e.target.value))}
-                                className="h-10 font-mono font-bold text-lg"
-                            />
-                        </div>
+                <Alert className="bg-primary/5 border-primary/20 text-left">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <AlertTitle className="font-bold">RC1 Talent Identification</AlertTitle>
+                    <AlertDescription className="text-xs text-muted-foreground">
+                        Batching optimized to identify specialized certifications (Hazmat, Cross-Border) for the Jobs Board registry.
+                    </AlertDescription>
+                </Alert>
+
+                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left text-foreground">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Sequence Sync</Label>
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
+                        <Input 
+                            type="number" 
+                            value={seqOverride}
+                            onChange={(e) => setSeqOverride(e.target.value === '' ? '' : Number(e.target.value))}
+                            className="h-10 font-mono bg-white"
+                        />
                     </div>
                 </div>
 
-                <div className="pt-2 flex flex-col gap-2">
-                    <Button onClick={handleCopy} variant="outline" size="lg" className="w-full gap-2 shadow-sm">
-                        {isCopied ? <ClipboardCheck className="h-5 w-5 text-green-600" /> : <Copy className="h-5 w-5" />}
-                        {isCopied ? "Prompt Copied" : "Copy Manual Forensic Prompt"}
-                    </Button>
-                </div>
+                <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
+                    {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                    Copy Discovery Prompt
+                </Button>
             </div>
 
             <div className="space-y-2 text-left">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                    <Terminal className="h-3 w-3"/> Industrial Service Command
+                    <Terminal className="h-3 w-3"/> AI Forensic Command
                 </Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight">
@@ -119,26 +121,28 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
 export default function DriverDiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none text-left">
-            <Tabs defaultValue="Code 14 Heavy" className="w-full text-left">
+        <Card className="shadow-none border-none text-left text-foreground">
+            <Tabs defaultValue="Code 14 Driver" className="w-full">
                 <CardHeader className="px-0 pt-0 text-left">
-                    <CardTitle className="flex items-center gap-2">
+                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground">
                         <Database className="h-6 w-6 text-primary" />
-                        Industrial Workforce Discovery
+                        Human Capital Discovery
                     </CardTitle>
-                    <CardDescription>
-                        Identify and map professional logistics service units.
+                    <CardDescription className="text-muted-foreground text-left text-foreground">
+                        Identify verified industrial talent and workforce service providers.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1">
+                <CardContent className="px-0 text-left text-foreground">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground text-foreground">
                         {driverCategories.map(category => (
-                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
+                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
+                                {category}
+                            </TabsTrigger>
                         ))}
                     </TabsList>
                     {driverCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0">
-                            <DiscoveryTab category={category} currentCount={0} />
+                        <TabsContent key={category} value={category} className="mt-0 text-left text-foreground">
+                            <DiscoveryTab category={category} />
                         </TabsContent>
                     ))}
                 </CardContent>
