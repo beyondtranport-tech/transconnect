@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -24,11 +23,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn, formatCurrency, formatDateSafe } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
-import { generateImage } from '@/ai/flows/image-generation-flow';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // ====== SCHEMAS ======
 
@@ -62,202 +61,7 @@ const freightClassifications = ["Long Haul", "LTL", "Container", "Refrigerated",
 
 // ====== STEP COMPONENTS ======
 
-function StepLegal({ nodeType }: { nodeType: string }) {
-    const { control } = useFormContext<NodeFormValues>();
-    return (
-        <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
-                <Gavel className="h-6 w-6 text-primary" />
-                Legal Authorization
-            </h3>
-            <div className="space-y-6 text-left">
-                <Alert className="bg-primary/5 border-primary/20">
-                    <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="font-bold">Subcontracting Audit</AlertTitle>
-                    <AlertDescription className="text-xs">
-                        You must provide evidence of your right to subcontract freight. These documents are held in our secure vault for Admin Audit only.
-                    </AlertDescription>
-                </Alert>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FileUploadField name="primaryContractUrl" label="Primary Contract (Audit Only)" folder="legal-docs" />
-                    <FileUploadField name="subcontractorAgreementUrl" label="Subcontractor Agreement" folder="legal-docs" />
-                </div>
-                <p className="text-[10px] text-muted-foreground italic">Documents must include the No-Circumvention clause to be approved.</p>
-            </div>
-        </div>
-    );
-}
-
-function StepIdentity({ nodeType }: { nodeType: string }) {
-    const { control, setValue, watch } = useFormContext<NodeFormValues>();
-    const companyName = watch('shopName');
-
-    useEffect(() => {
-        if (!companyName && nodeType === 'loads') {
-            setValue('shopName', "Log Flow Member One's loads Shop");
-        }
-    }, [nodeType, companyName, setValue]);
-
-    return (
-        <div className="space-y-6 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
-                <UserCheck className="h-6 w-6 text-primary" /> 
-                {nodeType === 'loads' ? 'Brokerage Identity' : 'Node Identity'}
-            </h3>
-            <div className="space-y-4 text-left">
-                <FormField control={control} name="shopName" render={({ field }) => ( 
-                    <FormItem>
-                        <FormLabel>Public Identity Label</FormLabel>
-                        <FormControl><Input {...field} className="h-11 border-2" /></FormControl>
-                        <FormMessage />
-                    </FormItem> 
-                )} />
-                <FormField control={control} name="category" render={({ field }) => ( 
-                    <FormItem>
-                        <FormLabel>Forensic Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {freightClassifications.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </FormItem> 
-                )} />
-            </div>
-        </div>
-    );
-}
-
-function StepBrokerageCommercials() {
-    const { control } = useFormContext<NodeFormValues>();
-    return (
-        <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
-                <DollarSign className="h-6 w-6 text-primary" />
-                Commercial Configuration
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
-                    <FormField control={control} name="brokerageMargin" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Your Clearing Margin (%)</FormLabel>
-                            <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                            <FormDescription className="text-[10px]">Your percentage participation in each load payout.</FormDescription>
-                        </FormItem>
-                    )} />
-                </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Platform Success Fee</p>
-                    <p className="text-3xl font-black text-primary">2.5%</p>
-                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">Standard ecosystem fee applied to all successfully matched freight transactions.</p>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StepLoadBoard({ shop }: { shop: any }) {
-    const firestore = useFirestore();
-    const { toast } = useToast();
-    const [isAdding, setIsAdding] = useState(false);
-    
-    const loadsQuery = useMemoFirebase(() => {
-        if (!firestore || !shop?.companyId) return null;
-        return query(collection(firestore, `companies/${shop.companyId}/loadBoard/loads`), orderBy('createdAt', 'desc'));
-    }, [firestore, shop.companyId]);
-    
-    const { data: loads, forceRefresh } = useCollection(loadsQuery);
-
-    return (
-        <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4">
-                <div className="text-left">
-                    <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
-                    <p className="text-xs text-muted-foreground">Manage your freight opportunities directly within your node.</p>
-                </div>
-                <Dialog open={isAdding} onOpenChange={setIsAdding}>
-                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
-                    <LoadOpportunityForm shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
-                </Dialog>
-            </div>
-            
-            <div className="min-h-[300px]">
-                {loads && loads.length > 0 ? (
-                    <DataTable 
-                        data={loads}
-                        columns={[
-                            { header: 'Route', cell: ({row}) => <div className="font-bold flex items-center gap-2">{row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}</div> },
-                            { header: 'Rate', cell: ({row}) => <span className="font-black text-primary">{formatCurrency(row.original.rate)}</span> },
-                            { header: 'Dates', cell: ({row}) => <div className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(row.original.pickupDate, "dd MMM")} - {formatDateSafe(row.original.dropoffDate, "dd MMM")}</div> },
-                            { 
-                                id: 'actions', 
-                                header: '', 
-                                cell: ({row}) => <Button variant="ghost" size="icon" onClick={() => toast({ title: "Simulation", description: "Record isolation active." })}><Trash2 className="h-4 w-4 text-destructive"/></Button> 
-                            }
-                        ]}
-                    />
-                ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
-                        <PackageSearch className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No loads listed in this node.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function LoadOpportunityForm({ shop, onComplete }: { shop: any, onComplete: () => void }) {
-    const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
-    const form = useForm({ resolver: zodResolver(loadOpportunitySchema) });
-
-    const onSubmit = async (values: any) => {
-        setLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            const res = await fetch('/api/addUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    collectionPath: `companies/${shop.companyId}/loadBoard/loads`,
-                    data: { ...values, status: 'active', createdAt: { _methodName: 'serverTimestamp' } }
-                })
-            });
-            if (!res.ok) throw new Error("Failed to post load.");
-            toast({ title: "Load Posted Successfully" });
-            onComplete();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader><DialogTitle>Post Freight Opportunity</DialogTitle></DialogHeader>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-                        <FormField control={form.control} name="origin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Origin Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="destination" render={({ field }) => (<FormItem className="text-left"><FormLabel>Destination Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <FormField control={form.control} name="rate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="pickupDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Pickup</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Drop-off</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
-                    </div>
-                    <FormField control={form.control} name="conditions" render={({ field }) => (<FormItem className="text-left"><FormLabel>Commercial Conditions</FormLabel><FormControl><Textarea placeholder="Specific equipment or insurance rules..." {...field} /></FormControl></FormItem>)} />
-                    <DialogFooter><Button type="submit" disabled={loading}>{loading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <PlusCircle className="mr-2 h-4 w-4"/>} List Load</Button></DialogFooter>
-                </form>
-            </Form>
-        </DialogContent>
-    );
-}
-
-function FileUploadField({ name, label, folder }: { name: string, label: string, folder: string }) {
+function FileUploadField({ name, label, folder, variant = 'standard' }: { name: string, label: string, folder: string, variant?: 'standard' | 'compact' }) {
     const { setValue, watch } = useFormContext<NodeFormValues>();
     const [isUploading, setIsUploading] = useState(false);
     const { user } = useUser();
@@ -305,6 +109,201 @@ function FileUploadField({ name, label, folder }: { name: string, label: string,
     );
 }
 
+function StepLegal() {
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <Gavel className="h-6 w-6 text-primary" />
+                Legal Authorization
+            </h3>
+            <div className="space-y-6 text-left">
+                <Alert className="bg-primary/5 border-primary/20">
+                    <ShieldCheck className="h-4 w-4 text-primary" />
+                    <AlertTitle className="font-bold">Subcontracting Audit</AlertTitle>
+                    <AlertDescription className="text-xs leading-relaxed">
+                        You must provide evidence of your right to subcontract freight. These documents are held in our secure vault for Admin Audit only.
+                    </AlertDescription>
+                </Alert>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FileUploadField name="primaryContractUrl" label="Primary Contract (Audit Only)" folder="legal-docs" />
+                    <FileUploadField name="subcontractorAgreementUrl" label="Subcontractor Agreement" folder="legal-docs" />
+                </div>
+                <p className="text-[10px] text-muted-foreground italic">Documents must include the No-Circumvention clause to be approved.</p>
+            </div>
+        </div>
+    );
+}
+
+function StepIdentity({ nodeType }: { nodeType: string }) {
+    const { control, setValue, watch } = useFormContext<NodeFormValues>();
+    const companyName = watch('shopName');
+    const { user } = useUser();
+
+    useEffect(() => {
+        if (!companyName && nodeType === 'loads' && user?.displayName) {
+            setValue('shopName', `${user.displayName}'s Loads Shop`);
+        }
+    }, [nodeType, companyName, setValue, user]);
+
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <UserCheck className="h-6 w-6 text-primary" /> 
+                {nodeType === 'loads' ? 'Brokerage Identity' : 'Node Identity'}
+            </h3>
+            <div className="space-y-4 text-left">
+                <FormField control={control} name="shopName" render={({ field }) => ( 
+                    <FormItem>
+                        <FormLabel>Public Identity Label</FormLabel>
+                        <FormControl><Input {...field} className="h-11 border-2 bg-white" /></FormControl>
+                        <FormMessage />
+                    </FormItem> 
+                )} />
+                <FormField control={control} name="category" render={({ field }) => ( 
+                    <FormItem>
+                        <FormLabel>Forensic Category</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {freightClassifications.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </FormItem> 
+                )} />
+            </div>
+        </div>
+    );
+}
+
+function StepBrokerageCommercials() {
+    const { control } = useFormContext<NodeFormValues>();
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <DollarSign className="h-6 w-6 text-primary" />
+                Commercial Configuration
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
+                    <FormField control={control} name="brokerageMargin" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Your Clearing Margin (%)</FormLabel>
+                            <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
+                            <FormDescription className="text-[10px]">Your percentage participation in each load payout.</FormDescription>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Platform Success Fee</p>
+                    <p className="text-3xl font-black text-primary">2.5%</p>
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">Standard ecosystem fee applied to all successfully matched freight transactions.</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function LoadOpportunityForm({ shop, onComplete }: { shop: any, onComplete: () => void }) {
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const form = useForm({ resolver: zodResolver(loadOpportunitySchema) });
+
+    const onSubmit = async (values: any) => {
+        setLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            const res = await fetch('/api/addUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    collectionPath: `companies/${shop.companyId}/loadBoard/loads`,
+                    data: { ...values, status: 'active', brokerId: shop.companyId, brokerName: shop.shopName }
+                })
+            });
+            if (!res.ok) throw new Error("Failed to post load.");
+            toast({ title: "Load Posted Successfully" });
+            onComplete();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <DialogContent className="sm:max-w-xl text-left text-foreground">
+            <DialogHeader><DialogTitle>Post Freight Opportunity</DialogTitle></DialogHeader>
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                        <FormField control={form.control} name="origin" render={({ field }) => (<FormItem><FormLabel>Origin Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="destination" render={({ field }) => (<FormItem><FormLabel>Destination Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                        <FormField control={form.control} name="rate" render={({ field }) => (<FormItem><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="pickupDate" render={({ field }) => (<FormItem><FormLabel>Pickup</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem><FormLabel>Drop-off</Label><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                    </div>
+                    <FormField control={form.control} name="conditions" render={({ field }) => (<FormItem><FormLabel>Commercial Conditions</FormLabel><FormControl><Textarea placeholder="Specific equipment or insurance rules..." {...field} /></FormControl></FormItem>)} />
+                    <DialogFooter><Button type="submit" disabled={loading}>{loading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <PlusCircle className="mr-2 h-4 w-4"/>} List Load</Button></DialogFooter>
+                </form>
+            </Form>
+        </DialogContent>
+    );
+}
+
+function StepLoadBoard({ shop }: { shop: any }) {
+    const firestore = useFirestore();
+    const { toast } = useToast();
+    const [isAdding, setIsAdding] = useState(false);
+    
+    const loadsQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.companyId) return null;
+        return query(collection(firestore, `companies/${shop.companyId}/loadBoard/loads`), orderBy('createdAt', 'desc'));
+    }, [firestore, shop.companyId]);
+    
+    const { data: loads, forceRefresh } = useCollection(loadsQuery);
+
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4">
+                <div className="text-left">
+                    <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
+                    <p className="text-xs text-muted-foreground">Manage your freight opportunities directly within your node.</p>
+                </div>
+                <Dialog open={isAdding} onOpenChange={setIsAdding}>
+                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
+                    <LoadOpportunityForm shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                </Dialog>
+            </div>
+            
+            <div className="min-h-[300px]">
+                {loads && loads.length > 0 ? (
+                    <DataTable 
+                        data={loads}
+                        columns={[
+                            { header: 'Route', cell: ({row}) => <div className="font-bold flex items-center gap-2">{row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}</div> },
+                            { header: 'Rate', cell: ({row}) => <span className="font-black text-primary">{formatCurrency(row.original.rate)}</span> },
+                            { header: 'Dates', cell: ({row}) => <div className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(row.original.pickupDate, "dd MMM")} - {formatDateSafe(row.original.dropoffDate, "dd MMM")}</div> },
+                            { 
+                                id: 'actions', 
+                                header: '', 
+                                cell: ({row}) => <Button variant="ghost" size="icon" onClick={() => toast({ title: "Simulation", description: "Record isolation active." })}><Trash2 className="h-4 w-4 text-destructive"/></Button> 
+                            }
+                        ]}
+                    />
+                ) : (
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
+                        <PackageSearch className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No loads listed in this node.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
@@ -328,9 +327,9 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
                 <CheckCircle className="h-16 w-16 text-primary" />
             </div>
-            <div className="space-y-2 text-center text-foreground">
-                <h3 className="text-3xl font-black font-headline text-center">Node Configured</h3>
-                <p className="text-muted-foreground max-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+            <div className="space-y-2 text-center">
+                <h3 className="text-3xl font-black font-headline">Node Configured</h3>
+                <p className="text-muted-foreground max-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                 {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
@@ -344,7 +343,6 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
 
 export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: string, onUpdate: () => void }) {
     const { toast } = useToast();
-    const { user } = useUser();
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
 
@@ -379,7 +377,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     const wizardSteps = useMemo(() => {
         if (nodeType === 'loads') {
             return [
-                { id: 'legal', name: '1. Legal Rights', component: <StepLegal nodeType="loads" />, fields: ['primaryContractUrl', 'subcontractorAgreementUrl'] },
+                { id: 'legal', name: '1. Legal Rights', component: <StepLegal />, fields: ['primaryContractUrl', 'subcontractorAgreementUrl'] },
                 { id: 'identity', name: '2. Commercial Identity', component: <StepIdentity nodeType="loads" />, fields: ['shopName', 'category'] },
                 { id: 'commercials', name: '3. Brokerage Config', component: <StepBrokerageCommercials />, fields: ['brokerageMargin'] },
                 { id: 'board', name: '4. Active Load Board', component: <StepLoadBoard shop={shop} />, fields: [] },
@@ -387,7 +385,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             ];
         }
         
-        // Default generic nodes
         return [
             { id: 'identity', name: 'Identity', component: <StepIdentity nodeType={nodeType} />, fields: ['shopName', 'category'] },
             { id: 'publish', name: 'Activate', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
@@ -401,11 +398,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     };
     
     return (
-        <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+        <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
             <CardHeader className="bg-slate-50 border-b p-6">
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2" />
             </CardHeader>
-            <CardContent className="p-0 text-left text-foreground">
+            <CardContent className="p-0 text-left">
                 <FormProvider {...methods}>
                     <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
@@ -414,11 +411,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     key={step.id} 
                                     type="button" 
                                     variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-md ring-1 ring-primary/20")} 
+                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                     onClick={() => setCurrentStep(index)}
                                 >
                                     <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                    <span className="font-bold text-xs uppercase tracking-widest">{step.name}</span>
+                                    <span className="font-bold text-xs uppercase tracking-widest text-left">{step.name}</span>
                                 </Button>
                             ))}
                         </div>
