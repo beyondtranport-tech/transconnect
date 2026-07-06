@@ -59,6 +59,10 @@ const TransporterDiscovery = dynamic(() => import('@/app/adminaccount/marketing/
 const FinanceDiscovery = dynamic(() => import('@/app/adminaccount/marketing/finance-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 const DriverDiscovery = dynamic(() => import('@/app/adminaccount/marketing/driver-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateDiscovery = dynamic(() => import('@/app/adminaccount/marketing/associate-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const WarehouseDiscovery = dynamic(() => import('@/app/adminaccount/marketing/warehouse-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const DistributionDiscovery = dynamic(() => import('@/app/adminaccount/marketing/distribution-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const LoadsDiscovery = dynamic(() => import('@/app/adminaccount/marketing/loads-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const BuySellDiscovery = dynamic(() => import('@/app/adminaccount/marketing/buy-sell-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Management (CRM)
 const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -81,6 +85,10 @@ const audienceConfig: Record<string, any> = {
     associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: PartnerEmails, Management: AssociateManagement, Discovery: AssociateDiscovery },
     drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Management: DriverManagement, Discovery: DriverDiscovery },
     finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscovery },
+    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: WarehouseDiscovery },
+    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: DistributionDiscovery },
+    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: LoadsDiscovery },
+    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: BuySellDiscovery },
 };
 
 interface MarketingPageProps {
@@ -99,13 +107,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
     }
     return result;
 }
-
-const logSchema = z.object({
-  partnerId: z.string().min(1, "Please select a partner."),
-  communicationType: z.string().min(1, "Please select a type."),
-  notes: z.string().optional(),
-});
-type LogFormValues = z.infer<typeof logSchema>;
 
 export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];

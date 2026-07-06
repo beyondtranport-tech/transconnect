@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -51,6 +50,8 @@ import {
   ClipboardList,
   ShoppingCart,
   Warehouse,
+  Network,
+  PackageSearch,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -71,7 +72,6 @@ import MarketingPage from '@/app/adminaccount/marketing/MarketingPage';
 import BrandingStudio from '@/app/adminaccount/branding-studio';
 import TTSStudio from '@/app/adminaccount/tts-studio';
 import AssetGallery from '@/app/adminaccount/asset-gallery';
-import SocialStudio from '@/app/adminaccount/social-studio';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
@@ -125,9 +125,9 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !uid || (email !== 'mkoton100@gmail.com' && email !== 'beyondtransport@gmail.com' && email !== 'michael@logisticsflow.co.za')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground text-left">
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-center">Verifying Admin Permissions...</p>
+                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest">Verifying Admin Permissions...</p>
             </div>
         );
     }
@@ -207,16 +207,15 @@ function AdminAccountContent() {
   };
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
-  const isSocialActive = activeView.startsWith('social-');
   const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2 text-left">
+          <div className="flex items-center gap-2 p-2">
             <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Portal</h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Portal</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -257,11 +256,15 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}>Finance Co</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-warehouse'} onClick={() => navigate('marketing-warehouse')}><Warehouse className="h-3.5 w-3.5 mr-2" />Warehouse Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-distribution'} onClick={() => navigate('marketing-distribution')}><Network className="h-3.5 w-3.5 mr-2" />Distribution Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-loads'} onClick={() => navigate('marketing-loads')}><PackageSearch className="h-3.5 w-3.5 mr-2" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-buy-sell'} onClick={() => navigate('marketing-buy-sell')}><ShoppingCart className="h-3.5 w-3.5 mr-2" />Buy & Sell Mall</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Social" isActive={activeView.startsWith('social-')}><Share2 /><span>Social</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -302,13 +305,13 @@ function AdminAccountContent() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left text-foreground">
-                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
+            <div className="flex flex-col truncate text-left">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Admin'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />
@@ -317,7 +320,7 @@ function AdminAccountContent() {
       </SidebarFooter>
     </Sidebar>
     <SidebarInset>
-        <div className="p-6 text-left text-foreground">
+        <div className="p-6">
             {renderContent()}
         </div>
     </SidebarInset>
@@ -328,7 +331,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <AdminAuthGuard>
-        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-left text-foreground"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <AdminAccountContent />
         </Suspense>
     </AdminAuthGuard>
