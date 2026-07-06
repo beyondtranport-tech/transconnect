@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -33,6 +32,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
 
 // ====== DATA SOURCES ======
 const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
@@ -92,7 +92,6 @@ const nodeFormSchema = z.object({
   equipment: z.array(z.string()).default([]),
   racking: z.array(z.string()).default([]),
   imageUrls: z.array(z.string()).default([]),
-  // New Security Fields
   securityFeatures: z.array(z.string()).default([]),
   accessControl: z.string().optional(),
   rollerDoors: z.string().optional(),
@@ -541,7 +540,7 @@ function StepBrokerageCommercials() {
             </div>
 
             <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
-                <CardContent className="p-6 text-left text-foreground">
+                <CardContent className="p-6 text-left text-foreground text-foreground text-left">
                     <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
@@ -625,7 +624,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                                 <FormItem>
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                                         <SelectContent>{vehicleClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
@@ -739,10 +738,10 @@ function StepLoadBoard({ shop }: { shop: any }) {
     const { data: loads, forceRefresh } = useCollection(loadsQuery);
 
     return (
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left text-foreground text-left">
             <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
-                    <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
+                    <h3 className="text-xl font-black font-headline text-left">Active Load Registry</h3>
                     <p className="text-xs text-muted-foreground text-left">Manage your freight opportunities directly within your node.</p>
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
@@ -782,7 +781,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
     const { data: assets, forceRefresh } = useCollection(assetsQuery);
 
     return (
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left text-foreground text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
@@ -797,7 +796,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                 {assets && assets.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                         {assets.map(asset => (
-                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left">
+                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left text-foreground">
                                 <div className="relative aspect-video bg-muted">
                                     {asset.photoUrl && <Image src={asset.photoUrl} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
@@ -955,7 +954,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
                 <div className="text-left">
                     <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
-                    <CardDescription className="text-left">Establish legal and commercial parameters for this business unit.</CardDescription>
+                    <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2 mt-4" />
             </CardHeader>
@@ -982,7 +981,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     {wizardSteps[currentStep].component}
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-center h-full">
+                                <div className="flex items-center justify-center h-full text-foreground">
                                     <Loader2 className="animate-spin h-8 w-8 text-primary" />
                                 </div>
                             )}
@@ -991,7 +990,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 </FormProvider>
             </CardContent>
             <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left">
-                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
+                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
                 <div className="flex gap-3 text-left">
@@ -1009,11 +1008,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                             onUpdate();
                         } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
                         finally { setIsSaving(false); }
-                    })} disabled={isSaving} className="font-bold">
+                    })} disabled={isSaving} className="font-bold text-foreground">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
-                        <Button type="button" onClick={handleNext} className="font-bold px-8">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                        <Button type="button" onClick={handleNext} className="font-bold px-8 text-foreground">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
                     )}
                 </div>
             </CardFooter>
