@@ -509,7 +509,7 @@ function StepBrokerageCommercials() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <DollarSign className="h-6 w-6 text-primary" />
                 Commercial Configuration
             </h3>
@@ -542,7 +542,7 @@ function StepBrokerageCommercials() {
             </div>
 
             <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
-                <CardContent className="p-6 text-left text-foreground">
+                <CardContent className="p-6 text-left text-foreground text-foreground">
                     <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
@@ -575,6 +575,8 @@ function StepRateSheet() {
     const { control, watch } = useFormContext<NodeFormValues>();
     const rateType = watch('rateType');
     const { fields, append, remove } = useFieldArray({ control, name: 'routeRates' });
+
+    const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
 
     return (
         <div className="space-y-8 text-left text-foreground">
@@ -787,7 +789,7 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
                 <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
@@ -1129,7 +1131,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center text-foreground">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto text-center leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto text-center leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center text-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
