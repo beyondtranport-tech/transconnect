@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import {
     DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, Circle,
-    Package, Calendar, Info, Globe, Navigation
+    Package, Calendar, Info, Globe, Navigation, Search
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -203,7 +203,7 @@ function StepBrokerageCommercials() {
     );
 }
 
-function LoadOpportunityDialog({ shop, onComplete }: { shop: any, onComplete: () => void }) {
+function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onComplete: () => void }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const form = useForm({ resolver: zodResolver(loadOpportunitySchema) });
@@ -232,7 +232,10 @@ function LoadOpportunityDialog({ shop, onComplete }: { shop: any, onComplete: ()
 
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader><DialogTitle>Post Freight Opportunity</DialogTitle></DialogHeader>
+            <DialogHeader>
+                <DialogTitle>Post Freight Opportunity</DialogTitle>
+                <DialogDescription>Define the operational parameters for this freight instruction.</DialogDescription>
+            </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
@@ -242,10 +245,15 @@ function LoadOpportunityDialog({ shop, onComplete }: { shop: any, onComplete: ()
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                         <FormField control={form.control} name="rate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="pickupDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Pickup</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Drop-off</Label><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Drop-off</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
                     </div>
                     <FormField control={form.control} name="conditions" render={({ field }) => (<FormItem className="text-left"><FormLabel>Commercial Conditions</FormLabel><FormControl><Textarea placeholder="Specific equipment or insurance rules..." {...field} /></FormControl></FormItem>)} />
-                    <DialogFooter><Button type="submit" disabled={loading}>{loading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <PlusCircle className="mr-2 h-4 w-4"/>} List Load</Button></DialogFooter>
+                    <DialogFooter>
+                        <Button type="submit" disabled={loading}>
+                            {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                            List Load Opportunity
+                        </Button>
+                    </DialogFooter>
                 </form>
             </Form>
         </DialogContent>
@@ -273,7 +281,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
-                    <LoadOpportunityDialog shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                    <LoadOpportunityDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
             
@@ -328,7 +336,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             </div>
             <div className="space-y-2">
                 <h3 className="text-3xl font-black font-headline">Node Configured</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                 {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
