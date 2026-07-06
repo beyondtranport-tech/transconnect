@@ -144,7 +144,7 @@ function FileUploadField({ name, label, folder, variant = 'standard', onUploadSu
     return (
         <div className="space-y-2 text-left">
             {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{label}</Label>}
-            <Button type="button" variant="outline" className={cn("w-full h-12 border-2 border-dashed", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
+            <Button type="button" variant="outline" className={cn("w-full min-h-[3rem] h-auto border-2 border-dashed py-2 whitespace-normal leading-tight", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
                 {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
                 {currentUrl ? "File Attached" : `Select ${label}`}
             </Button>
