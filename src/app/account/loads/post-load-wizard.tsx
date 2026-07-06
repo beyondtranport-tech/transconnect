@@ -90,7 +90,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    collectionPath: `companies/${user!.companyId}/loadBoard/loads`,
+                    collectionPath: `companies/${user!.companyId}/loads`,
                     data: { 
                         ...values, 
                         brokerId: user!.companyId,
@@ -109,6 +109,11 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleNext = async () => {
+        const isValid = await methods.trigger(steps[currentStep].id as any);
+        if (isValid) setCurrentStep(prev => prev + 1);
     };
 
     return (
@@ -193,7 +198,6 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 </div>
                             )}
                             
-                            {/* ... remaining steps ... */}
                             {currentStep === 2 && (
                                 <div className="space-y-6 text-left text-foreground">
                                     <h3 className="font-bold text-lg flex items-center gap-2"><ClipboardList className="h-5 w-5 text-primary" /> Execution Specifics</h3>
@@ -241,7 +245,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
                                         <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono" {...field} /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={form.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                                     </div>
                                     
                                     <div className="bg-slate-50 p-8 rounded-3xl border-2 border-dashed space-y-4 text-left">
@@ -272,7 +276,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
             <CardFooter className="p-8 bg-slate-50 border-t flex justify-between">
                 <Button variant="ghost" onClick={currentStep === 0 ? onComplete : () => setCurrentStep(prev => prev - 1)}><ArrowLeft className="mr-2 h-4 w-4"/> {currentStep === 0 ? 'Cancel' : 'Back'}</Button>
                 {currentStep < 5 ? (
-                    <Button onClick={() => handleNext()}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                    <Button onClick={handleNext}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
                 ) : (
                     <Button onClick={methods.handleSubmit(onSubmit)} disabled={isLoading || !isEarningMember} className="gap-2 font-black uppercase shadow-lg h-12 px-8 text-white">
                         {isLoading ? <Loader2 className="animate-spin h-4 w-4"/> : <ShieldCheck className="h-4 w-4" />}
@@ -281,71 +285,5 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                 )}
             </CardFooter>
         </Card>
-    );
-}
-
-function StepDetails() {
-    const { control } = useFormContext();
-    return (
-        <div className="space-y-4 text-left">
-            <FormField control={control} name="shopName" render={({ field }) => ( <FormItem><FormLabel>Branding Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <FormField control={control} name="category" render={({ field }) => ( <FormItem><FormLabel>Category</FormLabel><Input {...field} /></FormItem> )} />
-             <FormField control={control} name="contactEmail" render={({ field }) => ( <FormItem><FormLabel>Contact Email</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-        </div>
-    );
-}
-
-function StepMedia() {
-    const { setValue, watch } = useFormContext();
-    const logo = watch('logoUrl');
-    return (
-        <div className="space-y-6 text-left">
-            <div className="flex items-center justify-between">
-                <h3 className="font-bold">Media & Logo</h3>
-            </div>
-            <div className="aspect-square w-32 border rounded bg-muted relative overflow-hidden">
-                {logo && <Image src={logo} alt="Logo" fill className="object-contain" />}
-            </div>
-        </div>
-    );
-}
-
-function StepContent() {
-    const { control } = useFormContext();
-    return (
-        <div className="space-y-4 text-left">
-            <FormField control={control} name="homeHeading" render={({ field }) => ( <FormItem><FormLabel>Headline</FormLabel><Input {...field} /></FormItem> )} />
-            <FormField control={control} name="aboutText" render={({ field }) => ( <FormItem><FormLabel>About Wording</FormLabel><Textarea rows={5} {...field} /></FormItem> )} />
-        </div>
-    );
-}
-
-function StepCatalog({ shop }: any) { return <div className="p-8 border rounded-lg bg-muted/20 text-center">Standard Catalog Tools enabled.</div>; }
-function StepFleet({ shop }: any) { return <div className="p-8 border rounded-lg bg-muted/20 text-center">Fleet Gallery tools enabled.</div>; }
-function StepCommercials({ shop }: any) { return <div className="p-8 border rounded-lg bg-muted/20 text-center">Revenue sharing registered at 2.5%</div>; }
-
-function StepPublish({ shop, onSave }: any) {
-    const [loading, setLoading] = useState(false);
-    const { toast } = useToast();
-    const handlePublish = async () => {
-        setLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            await fetch('/api/updateUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { status: 'pending_review' } }),
-            });
-            toast({ title: "Submitted for Review" });
-            onSave();
-        } catch (e) { toast({ variant: 'destructive', title: 'Failed' }); }
-        finally { setLoading(false); }
-    };
-    return (
-        <div className="text-center py-10 space-y-4">
-            <h3 className="text-2xl font-bold text-foreground">Ready to Publish?</h3>
-            <Button onClick={handlePublish} disabled={loading}>{loading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Send className="mr-2 h-4 w-4"/>} Submit Profile</Button>
-        </div>
     );
 }

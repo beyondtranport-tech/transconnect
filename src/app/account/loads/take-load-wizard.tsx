@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -39,7 +40,6 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
         if (!user?.companyData?.fleet) return false;
         const { poweredUnits = [], trailers = [] } = user.companyData.fleet;
         
-        // If load requires specific equipment (e.g. Reefer), check haulier profile
         if (load.requiredEquipment?.length > 0) {
             return load.requiredEquipment.some((req: string) => 
                 trailers.includes(req) || poweredUnits.includes(req)
@@ -82,7 +82,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                 updatedAt: serverTimestamp()
             };
 
-            const loadRef = doc(firestore, `companies/${load.brokerId}/loadBoard/loads/${load.id}`);
+            const loadRef = doc(firestore, `companies/${load.brokerId}/loads/${load.id}`);
             await setDoc(loadRef, update, { merge: true });
 
             setAcceptedLoadData({ ...load, ...update });

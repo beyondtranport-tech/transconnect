@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -29,7 +30,6 @@ import { Label } from '@/components/ui/label';
 import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
-import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 
 // ====== SCHEMAS ======
 
@@ -243,7 +243,7 @@ function StepBrokerageCommercials() {
     );
 }
 
-function LoadOpportunityDialog({ shop, onComplete }: { shop: any, onComplete: () => void }) {
+function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onComplete: () => void }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const form = useForm({ resolver: zodResolver(loadOpportunitySchema) });
@@ -256,7 +256,7 @@ function LoadOpportunityDialog({ shop, onComplete }: { shop: any, onComplete: ()
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    collectionPath: `companies/${shop.companyId}/loadBoard/loads`,
+                    collectionPath: `companies/${shop.companyId}/loads`,
                     data: { ...values, status: 'active', brokerId: shop.companyId, brokerName: shop.shopName }
                 })
             });
@@ -307,7 +307,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
     
     const loadsQuery = useMemoFirebase(() => {
         if (!firestore || !shop?.companyId) return null;
-        return query(collection(firestore, `companies/${shop.companyId}/loadBoard/loads`), orderBy('createdAt', 'desc'));
+        return query(collection(firestore, `companies/${shop.companyId}/loads`), orderBy('createdAt', 'desc'));
     }, [firestore, shop.companyId]);
     
     const { data: loads, forceRefresh } = useCollection(loadsQuery);
@@ -321,7 +321,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
-                    <LoadOpportunityDialog shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                    <LoadOpportunityDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
             

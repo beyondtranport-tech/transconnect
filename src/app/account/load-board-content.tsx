@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
@@ -48,7 +49,7 @@ export default function LoadBoardContent() {
     const myLoadsQuery = useMemoFirebase(() => {
         if (!firestore || !user?.companyId) return null;
         return query(
-            collection(firestore, `companies/${user.companyId}/loadBoard/loads`),
+            collection(firestore, `companies/${user.companyId}/loads`),
             orderBy('createdAt', 'desc')
         );
     }, [firestore, user?.companyId]);

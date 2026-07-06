@@ -71,7 +71,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
 
-            const loadRef = doc(firestore, `companies/${load.brokerId}/loadBoard/loads/${load.id}`);
+            const loadRef = doc(firestore, `companies/${load.brokerId}/loads/${load.id}`);
             
             await updateDoc(loadRef, {
                 status: 'delivered',

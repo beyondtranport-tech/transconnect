@@ -34,7 +34,7 @@
         "mobile": { "type": "string" },
         "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance"] },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance", "distributor"] },
         "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
         "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
         "address": { "type": "string" },
@@ -45,32 +45,33 @@
       },
       "required": ["firstName", "lastName", "email", "type"]
     },
-    "Load": {
-      "title": "Load Listing",
+    "WarehouseNode": {
+      "title": "Warehouse Node",
       "type": "object",
-      "description": "A specific freight load posted on the board.",
       "properties": {
         "id": { "type": "string" },
-        "brokerId": { "type": "string", "description": "The Primary Contractor company ID." },
-        "brokerName": { "type": "string" },
-        "origin": { "type": "string" },
-        "destination": { "type": "string" },
-        "cargoType": { "type": "string" },
-        "requiredEquipment": { "type": "array", "items": { "type": "string" } },
-        "weight": { "type": "number" },
-        "totalValue": { "type": "number" },
-        "haulierPayout": { "type": "number" },
-        "status": { "type": "string", "enum": ["active", "assigned", "completed", "cancelled"] },
-        "collectionDetails": { "type": "string", "description": "Full address and contact for pickup." },
-        "deliveryDetails": { "type": "string", "description": "Full address and contact for drop-off." },
-        "demurrageConditions": { "type": "string", "description": "Penalties for delays." },
-        "instructionNumber": { "type": "string", "description": "Formal generated ID upon acceptance." },
-        "instructionDate": { "type": "object" },
-        "takerId": { "type": "string" },
-        "createdAt": { "type": "object" },
-        "updatedAt": { "type": "object" }
-      },
-      "required": ["brokerId", "origin", "destination", "cargoType", "status"]
+        "companyId": { "type": "string" },
+        "nodeName": { "type": "string" },
+        "providerType": { "type": "string", "enum": ["primary_operator", "excess_capacity"] },
+        "availablePallets": { "type": "number" },
+        "upliftFee": { "type": "number" },
+        "placementFee": { "type": "number" },
+        "monthlyStorageFee": { "type": "number" },
+        "services": { "type": "array", "items": { "type": "string" } },
+        "imageUrls": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["draft", "pending_review", "approved"] }
+      }
+    },
+    "Load": {
+      "title": "Standardized Load",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "originNodeId": { "type": "string", "description": "The Warehouse or Supplier ID where load originates." },
+        "loadType": { "type": "string", "enum": ["local_distribution", "long_haul"] },
+        "status": { "type": "string", "enum": ["active", "assigned", "delivered", "completed"] },
+        "payout": { "type": "number" }
+      }
     }
   },
   "auth": {
@@ -87,8 +88,12 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       },
       {
-        "path": "/companies/{companyId}/loadBoard/loads/{loadId}",
-        "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Private load registry." }
+        "path": "/companies/{companyId}/warehouses/{warehouseId}",
+        "definition": { "entityName": "WarehouseNode", "schema": { "$ref": "#/entities/WarehouseNode" }, "description": "Member-managed storage nodes." }
+      },
+      {
+        "path": "/companies/{companyId}/loads/{loadId}",
+        "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Member-managed freight loads." }
       }
     ]
   }
