@@ -112,7 +112,7 @@ const mallConfigs: Record<string, MallConfig> = {
 export function MallGate({ mallId }: { mallId: string }) {
     const { can } = usePermissions();
     const router = useRouter();
-    const config = mallConfigs[mallId];
+    const config = mallConfigs[mallId.trim()];
     const [intent, setIntent] = useState<'select' | 'buy' | 'sell' | null>('select');
 
     if (!config) return <div className="p-12 text-center italic text-muted-foreground">Mall configuration "{mallId}" not found.</div>;
@@ -121,7 +121,7 @@ export function MallGate({ mallId }: { mallId: string }) {
 
     if (!hasAccess) {
         return (
-            <div className="max-w-4xl mx-auto py-12 animate-in fade-in zoom-in duration-500">
+            <div className="max-w-4xl mx-auto py-12 animate-in fade-in zoom-in duration-500 text-left">
                 <PremiumFeaturePrompt 
                     icon={config.icon}
                     title={config.title}
@@ -140,7 +140,7 @@ export function MallGate({ mallId }: { mallId: string }) {
                         <config.icon className="h-8 w-8 text-primary" />
                         Welcome to {config.title}
                     </h1>
-                    <p className="text-muted-foreground">{config.description}</p>
+                    <p className="text-muted-foreground text-left leading-relaxed">{config.description}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
@@ -185,7 +185,7 @@ export function MallGate({ mallId }: { mallId: string }) {
     }
 
     return (
-        <div className="text-center py-20 flex flex-col items-center gap-4">
+        <div className="text-center py-20 flex flex-col items-center gap-4 text-left text-foreground">
             <Loader2 className="animate-spin h-8 w-8 text-primary" />
             <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Opening Hub...</p>
         </div>

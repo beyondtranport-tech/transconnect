@@ -35,10 +35,6 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 
-// ====== DATA SOURCES ======
-const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
-const vehicleClasses = ["Heavy Truck (Horse)", "Trailer", "Rigid Truck (8t-14t)", "Light Commercial (Bakkie)", "Bus", "Passenger Vehicle", "Other"];
-
 // ====== SCHEMAS ======
 
 const routeRateSchema = z.object({
@@ -470,7 +466,7 @@ function StepGallery() {
                 <label className="aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors text-center p-4 text-foreground">
                     {uploading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <PlusCircle className="h-6 w-6 text-muted-foreground" />}
                     <span className="text-[10px] font-black uppercase mt-2 tracking-widest leading-tight">Add Photos</span>
-                    <input type="file" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
+                    <input id="gallery-up" type="file" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
                 </label>
             </div>
         </div>
@@ -486,7 +482,7 @@ function StepWarehouseFees() {
                 Storage Yield Settings
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                <div className="space-y-6 text-left">
+                <div className="space-y-6 text-left text-foreground">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
                         <FormItem className="text-left"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
@@ -494,7 +490,7 @@ function StepWarehouseFees() {
                         <FormItem className="text-left"><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                 </div>
-                <div className="space-y-6 text-left">
+                <div className="space-y-6 text-left text-foreground">
                     <FormField control={control} name="upliftFee" render={({ field }) => (
                         <FormItem className="text-left"><FormLabel>Inbound Handling (Uplift)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
@@ -551,7 +547,7 @@ function StepBrokerageCommercials() {
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
-                    <div className="space-y-2 text-sm text-left">
+                    <div className="space-y-2 text-sm text-left text-foreground">
                         <div className="flex justify-between border-b pb-2 text-left">
                             <span className="text-muted-foreground">Total Load Value (Example)</span>
                             <span className="font-bold">R 10,000.00</span>
@@ -582,13 +578,13 @@ function StepRateSheet() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
                 <ListOrdered className="h-6 w-6 text-primary" />
                 Fleet Rate Sheet (Optional)
             </h3>
 
             <FormField control={control} name="rateType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left">
+                <FormItem className="space-y-4 text-left text-foreground">
                     <FormLabel className="font-bold">Select Rate Structure</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
@@ -616,7 +612,7 @@ function StepRateSheet() {
             )}
 
             {rateType === 'route' && (
-                <div className="space-y-4 animate-in slide-in-from-top-2 text-left">
+                <div className="space-y-4 animate-in slide-in-from-top-2 text-left text-foreground">
                     <div className="flex justify-between items-center text-left">
                         <Label className="font-bold text-left">Common Route Rates</Label>
                         <Button type="button" size="sm" variant="outline" onClick={() => append({ origin: '', destination: '', price: 0 })} className="text-foreground">
@@ -626,7 +622,7 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left text-foreground text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -635,7 +631,7 @@ function StepRateSheet() {
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left text-foreground text-foreground text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -643,9 +639,9 @@ function StepRateSheet() {
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2 text-left text-foreground">
+                            <div className="flex items-center gap-2 text-left text-foreground text-foreground">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
-                                    <FormItem className="flex-1 text-left">
+                                    <FormItem className="flex-1 text-left text-foreground">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
                                         <FormControl><Input type="number" {...field} className="h-9 bg-white" /></FormControl>
                                     </FormItem>
@@ -666,7 +662,7 @@ function StepLoadAgreement() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
                 <FileSignature className="h-6 w-6 text-primary" />
                 Contractual Framework
             </h3>
@@ -760,7 +756,7 @@ function StepCommercials({ shop }: { shop: any }) {
 
             {agreements && agreements.length > 0 && (
                 <div className="space-y-4 text-left">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left text-foreground">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -792,7 +788,7 @@ function StepCatalog({ shop }: { shop: any }) {
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
@@ -894,14 +890,14 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
 
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader className="text-left">
+            <DialogHeader className="text-left text-foreground">
                 <DialogTitle>Product Management</DialogTitle>
                 <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
                     <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                          <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
@@ -909,7 +905,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                     
                     <div className="space-y-4 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-4 gap-2 text-left">
                              {(form.watch('imageUrls') || []).map((url: string, i: number) => (
                                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                                      <Image src={url} alt="pic" fill className="object-cover" />
@@ -917,7 +913,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('prod-img-up')?.click()}>
                                  <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] uppercase font-bold">Add</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Add Photo</span>
                              </Button>
                              <input type="file" id="prod-img-up" className="hidden" onChange={handleUpload} />
                         </div>
@@ -947,8 +943,8 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
                     <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
                 </div>
@@ -1041,13 +1037,13 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     };
 
     return (
-        <DialogContent className="sm:max-w-2xl text-left text-foreground">
-            <DialogHeader className="text-left">
+        <DialogContent className="sm:max-w-2xl text-left text-foreground text-foreground">
+            <DialogHeader className="text-left text-foreground">
                 <DialogTitle>{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription>Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left text-foreground">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="make" render={({ field }) => (<FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem>)} />
@@ -1056,12 +1052,18 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                          <FormField control={form.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                                         <SelectContent>
-                                            {vehicleClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                            <SelectItem value="Heavy Truck (Horse)">Heavy Truck (Horse)</SelectItem>
+                                            <SelectItem value="Trailer">Trailer</SelectItem>
+                                            <SelectItem value="Rigid Truck (8t-14t)">Rigid Truck (8t-14t)</SelectItem>
+                                            <SelectItem value="Light Commercial (Bakkie)">Light Commercial (Bakkie)</SelectItem>
+                                            <SelectItem value="Bus">Bus</SelectItem>
+                                            <SelectItem value="Passenger Vehicle">Passenger Vehicle</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </FormItem>
@@ -1081,7 +1083,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('multi-up')?.click()}>
                                  <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] uppercase font-bold">Add Photo</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Add Photo</span>
                              </Button>
                              <input type="file" id="multi-up" multiple className="hidden" onChange={handleMultiUpload} />
                         </div>
@@ -1125,9 +1127,9 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     return (
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left text-foreground">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
-            <div className="space-y-2 text-center">
+            <div className="space-y-2 text-center text-foreground">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto text-center leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center text-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
@@ -1258,7 +1260,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
-                <div>
+                <div className="text-left">
                     <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
                     <CardDescription className="text-left">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
@@ -1266,7 +1268,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             </CardHeader>
             <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 

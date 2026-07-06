@@ -120,12 +120,6 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
-    match /leads/{leadId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-
     // --- COLLECTION GROUP RULES ---
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }

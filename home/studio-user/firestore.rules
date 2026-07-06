@@ -19,16 +19,18 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * Simplified and optimized for high-speed verification.
+     * High-speed resilient verification for mission-critical paths.
      */
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          // Check 1: User document explicitly links to this company
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid ||
-          // Check 2: Direct ownership check on the company document
-          get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid
+          // Path 1: User profile link (Primary)
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
+          // Path 2: Direct ownership on target record (Fallback)
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
     }
@@ -39,6 +41,22 @@ service cloud.firestore {
             sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
             sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
         );
+    }
+
+    // --- PUBLIC / CONFIGURATION RULES ---
+
+    match /configuration/{configId} {
+      allow get, list: if true;
+    }
+    match /memberships/{membershipId} {
+      allow get, list: if true;
+    }
+    match /shops/{shopId} { 
+      allow read: if true; 
+      match /products/{prodId} { allow read: if true; }
+    }
+    match /visitors/{visitorId} {
+      allow read, write: if true;
     }
 
     // --- STANDARD PATH RULES ---
@@ -55,12 +73,10 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Allow the owner to read the doc even before companyId is set on their profile
       allow read: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections: Explicitly grant list/read to members
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
@@ -70,23 +86,23 @@ service cloud.firestore {
       match /payoutRequests/{id} { allow read, write, list: if isMember(companyId); }
       match /searchLogs/{id} { allow read, write, list: if isMember(companyId); }
       match /facilities/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
-      match /staff/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /staff/{id} { allow read, write, list: if isMember(companyId); }
       match /brokerAgreements/{id} { allow read, write, list: if isMember(companyId); }
+      match /assets/{id} { allow read, write, list: if isMember(companyId); }
+      match /vehicleListings/{id} { allow read, write, list: if isMember(companyId); }
       
       match /shops/{shopId} { 
-        allow read: if true; 
         allow write: if isMember(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        match /products/{prodId} { allow write: if isMember(companyId); }
         match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
 
-      match /vehicleListings/{id} {
-          allow read: if true;
-          allow write: if isMember(companyId);
+      match /loads/{id} {
+        allow read, write, list: if isMember(companyId);
       }
-      
-      match /loadBoard/{allBoard=**} {
-        allow read, write: if isMember(companyId);
+
+      match /warehouses/{id} {
+        allow read, write, list: if isMember(companyId);
       }
     }
 
@@ -96,10 +112,6 @@ service cloud.firestore {
         (!exists(/databases/$(database)/documents/sales/$(saleId)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
         isSaleParticipant(resource.data)
       ));
-      
-      match /messages/{id} {
-        allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
-      }
     }
 
     match /partners/{partnerId} {
@@ -113,52 +125,15 @@ service cloud.firestore {
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
-    
-    match /visitors/{visitorId} {
-      allow read, write: if true;
-    }
-
-    match /memberships/{membershipId} {
-      allow get, list: if true;
-    }
-    
-    match /configuration/{configId} {
-      allow get, list: if true;
-    }
-
-    match /contributions/{contributionId} {
-      allow create: if isSignedIn();
-      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-    }
-    
-    match /reconciliations/{id} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /platformTransactions/{id} {
-      allow read, write: if isAdmin();
-    }
 
     // --- COLLECTION GROUP RULES ---
-    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
-    
+    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
+    match /{path=**}/assets/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/quotes/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/facilities/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
-
+    
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
