@@ -57,8 +57,7 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow get: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
-      allow list: if isAdmin();
+      allow read: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
@@ -116,9 +115,12 @@ service cloud.firestore {
     }
 
     // --- CONFIGURATION RULES ---
-    // Required for public-facing stats, plan pricing, and loyalty settings
+    // Public read required for stats, plan descriptions, and loyalty tiers
     match /configuration/{configId} {
-      allow get, list: if true;
+      allow read: if true;
+    }
+    match /memberships/{membershipId} {
+      allow read: if true;
     }
 
     // --- COLLECTION GROUP RULES ---
