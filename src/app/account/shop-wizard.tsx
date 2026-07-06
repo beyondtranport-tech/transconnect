@@ -675,10 +675,10 @@ function StepLoadAgreement() {
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground">Fixed volume per month.</span></Label>
+                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground">Spot market bookings.</span></Label>
+                                <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></Label>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -688,9 +688,9 @@ function StepLoadAgreement() {
             {contractType === 'master' && (
                 <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
                     <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
-                        <FormLabel>Committed Loads per Month</Label>
+                        <FormLabel>Committed Loads per Month</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
-                        <FormDescription className="text-[10px]">Your node will be prioritized for long-term contract matching.</FormDescription>
+                        <FormDescription className="text-[10px] text-left">Your node will be prioritized for long-term contract matching.</FormDescription>
                     </FormItem>
                 )} />
             )}
@@ -1046,11 +1046,11 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
             </DialogHeader>
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="make" render={({ field }) => (<FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                          <FormField control={form.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
@@ -1129,9 +1129,9 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     return (
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left text-foreground">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
-            <div className="space-y-2 text-center">
-                <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-sm mx-auto leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+            <div className="space-y-2 text-center text-foreground text-left">
+                <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
+                <p className="text-muted-foreground max-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
@@ -1262,26 +1262,26 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
-                <div className="text-left">
-                    <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
-                    <CardDescription className="text-left">Establish legal and commercial parameters for this business unit.</CardDescription>
+                <div className="text-left text-foreground">
+                    <CardTitle className="text-2xl font-black font-headline text-left text-foreground">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
+                    <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2 mt-4" />
             </CardHeader>
             <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
                                     key={step.id} 
                                     type="button" 
                                     variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left text-foreground", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                     onClick={() => setCurrentStep(index)}
                                 >
                                     <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                    <span className="font-bold text-[10px] uppercase tracking-widest text-left">{step.name}</span>
+                                    <span className="font-bold text-[10px] uppercase tracking-widest text-left text-foreground">{step.name}</span>
                                 </Button>
                             ))}
                         </div>
@@ -1301,7 +1301,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 </FormProvider>
             </CardContent>
             <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
-                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
+                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
                 <div className="flex gap-3 text-left">
