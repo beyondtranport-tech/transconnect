@@ -16,7 +16,7 @@ import {
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, 
     Package, Info, Navigation, Search, HelpCircle, Users, FileText, Camera,
-    ShoppingCart, Wrench
+    ShoppingCart, Wrench, ShieldAlert, Clock, Shield, Lock, Eye
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -92,6 +92,11 @@ const nodeFormSchema = z.object({
   equipment: z.array(z.string()).default([]),
   racking: z.array(z.string()).default([]),
   imageUrls: z.array(z.string()).default([]),
+  // New Security Fields
+  securityFeatures: z.array(z.string()).default([]),
+  accessControl: z.string().optional(),
+  rollerDoors: z.string().optional(),
+  operatingHours: z.string().optional(),
 });
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
@@ -316,6 +321,83 @@ function StepWarehouseCapabilities() {
             {renderCheckboxes('equipment', equipmentOptions, "On-Site Equipment", Truck)}
             <Separator />
             {renderCheckboxes('racking', rackingOptions, "Racking & Storage Configuration", Warehouse)}
+        </div>
+    );
+}
+
+function StepWarehouseSecurity() {
+    const { control } = useFormContext<NodeFormValues>();
+    
+    const securityOptions = [
+        "24/7 On-site Guards",
+        "Perimeter Electric Fencing",
+        "CCTV Surveillance (Internal)",
+        "CCTV Surveillance (Perimeter)",
+        "Biometric Access Control",
+        "Alarm Linked to Armed Response",
+        "Internal Cage / High-Value Vault",
+        "Guard Patrol Points / QR Scan"
+    ];
+
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <div className="text-left">
+                <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                    <Shield className="h-6 w-6 text-primary" />
+                    Security & Access Protocol
+                </h3>
+                <p className="text-sm text-muted-foreground mt-1">Provide forensic clarity on how cargo is protected within your node.</p>
+            </div>
+
+            <div className="space-y-4 text-left">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1">
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    Security Infrastructure
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                    {securityOptions.map(opt => (
+                        <FormField key={opt} control={control} name="securityFeatures" render={({ field }) => (
+                            <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors">
+                                <Checkbox 
+                                    checked={field.value?.includes(opt)} 
+                                    onCheckedChange={(checked) => {
+                                        const current = field.value || [];
+                                        return checked 
+                                            ? field.onChange([...current, opt]) 
+                                            : field.onChange(current.filter((v: string) => v !== opt));
+                                    }} 
+                                />
+                                <span className="text-[11px] font-medium">{opt}</span>
+                            </div>
+                        )} />
+                    ))}
+                </div>
+            </div>
+
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                <FormField control={control} name="accessControl" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Access Control Type</FormLabel>
+                        <FormControl><Input placeholder="e.g. Biometric / Keycard / Manual log" {...field} className="h-10 border-2 bg-white" /></FormControl>
+                    </FormItem>
+                )} />
+                <FormField control={control} name="rollerDoors" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Roller Door Configuration</FormLabel>
+                        <FormControl><Input placeholder="e.g. 4 x Automated Heavy Duty" {...field} className="h-10 border-2 bg-white" /></FormControl>
+                    </FormItem>
+                )} />
+            </div>
+
+            <FormField control={control} name="operatingHours" render={({ field }) => (
+                <FormItem className="text-left">
+                    <FormLabel className="flex items-center gap-2"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
+                    <FormControl><Input placeholder="e.g. Mon-Fri: 08:00 - 16:30, Sat: 08:00 - 12:00" {...field} className="h-10 border-2 bg-white" /></FormControl>
+                    <FormDescription className="text-[10px]">Critical for haulier planning and matching.</FormDescription>
+                </FormItem>
+            )} />
         </div>
     );
 }
@@ -800,6 +882,10 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             equipment: shop.equipment || [],
             racking: shop.racking || [],
             imageUrls: shop.imageUrls || [],
+            securityFeatures: shop.securityFeatures || [],
+            accessControl: shop.accessControl || '',
+            rollerDoors: shop.rollerDoors || '',
+            operatingHours: shop.operatingHours || '',
         }
     });
 
@@ -823,9 +909,10 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 { id: 'identity', name: '2. Facility Identity', component: <StepIdentity nodeType="warehouse" />, fields: ['shopName', 'category'] },
                 { id: 'branding', name: '3. Branding & Narrative', component: <StepBranding />, fields: ['homeHeading', 'aboutText'] },
                 { id: 'capabilities', name: '4. Capabilities & Equipment', component: <StepWarehouseCapabilities />, fields: ['services', 'equipment', 'racking'] },
-                { id: 'fees', name: '5. Capacity & Fees', component: <StepWarehouseFees />, fields: ['availablePallets', 'monthlyStorageFee'] },
-                { id: 'gallery', name: '6. Facility Gallery', component: <StepGallery />, fields: [] },
-                { id: 'publish', name: '7. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+                { id: 'security', name: '5. Security & Access', component: <StepWarehouseSecurity />, fields: ['securityFeatures', 'accessControl', 'rollerDoors', 'operatingHours'] },
+                { id: 'fees', name: '6. Capacity & Fees', component: <StepWarehouseFees />, fields: ['availablePallets', 'monthlyStorageFee'] },
+                { id: 'gallery', name: '7. Facility Gallery', component: <StepGallery />, fields: [] },
+                { id: 'publish', name: '8. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
         if (nodeType === 'transport') {
