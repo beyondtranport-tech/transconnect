@@ -144,7 +144,7 @@ export function MallGate({ mallId }: { mallId: string }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white text-left" onClick={() => router.push(config.id === 'finance' ? '/mall/finance' : (config.id === 'buy-sell' ? '/mall/buy-sell' : `/mall/${config.id}`))}>
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white text-left" onClick={() => router.push(config.id === 'finance' ? '/intelligence/finance' : (config.id === 'buy-sell' ? '/mall/buy-sell' : `/mall/${config.id}`))}>
                         <CardHeader className="p-8 pb-4 text-left">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors text-left">
                                 <Search className="h-8 w-8 text-foreground group-hover:text-white" />

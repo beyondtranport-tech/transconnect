@@ -162,7 +162,7 @@ function StepLegal() {
                 Legal Authorization
             </h3>
             <div className="space-y-6">
-                <Alert className="bg-primary/5 border-primary/20">
+                <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="font-bold text-left">Operational Compliance Audit</AlertTitle>
                     <AlertDescription className="text-xs leading-relaxed text-left">
@@ -728,7 +728,7 @@ function StepCommercials({ shop }: { shop: any }) {
             toast({ title: "Proposal Submitted", description: "The platform AI agent will evaluate your proposed rate." });
             forceRefresh();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
         } finally {
             setIsSubmitting(false);
         }
@@ -865,7 +865,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
             toast({ title: "Catalogue Updated" });
             onComplete();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
         } finally {
             setLoading(false);
         }
@@ -1011,7 +1011,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
             toast({ title: mode === 'fleet' ? "Asset Registered" : "Listing Published" });
             onComplete();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
         } finally {
             setLoading(false);
         }
@@ -1127,7 +1127,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center text-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
