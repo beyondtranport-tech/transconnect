@@ -1127,7 +1127,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center text-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
@@ -1266,7 +1266,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             </CardHeader>
             <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <form className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -1293,7 +1293,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                 </div>
                             )}
                         </div>
-                    </form>
+                    </div>
                 </FormProvider>
             </CardContent>
             <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
