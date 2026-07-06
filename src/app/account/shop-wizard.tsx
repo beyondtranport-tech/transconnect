@@ -30,11 +30,12 @@ import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'fireba
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // ====== DATA SOURCES ======
 const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
 const freightClassifications = ["Long Haul", "LTL", "Container", "Refrigerated", "Local Distribution", "Abnormal"];
-const vehicleClasses = ["Horse (Heavy)", "Trailer", "Rigid (8t-14t)", "Bakkie", "Bus"];
+const vehicleClasses = ["Heavy Truck (Horse)", "Trailer", "Rigid Truck (8t-14t)", "Light Commercial (Bakkie)", "Bus", "Passenger Vehicle", "Other"];
 
 // ====== SCHEMAS ======
 
@@ -218,7 +219,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
 function StepWarehouseFees() {
     const { control } = useFormContext<NodeFormValues>();
     return (
-        <div className="space-y-8 text-left text-foreground text-foreground">
+        <div className="space-y-8 text-left text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2">
                 <Banknote className="h-6 w-6 text-primary" />
                 Capacity & Yield Settings
@@ -259,7 +260,7 @@ function AssetDialogContent({ shop, onComplete }: { shop: any, onComplete: () =>
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     collectionPath: `companies/${shop.companyId}/assets`,
-                    data: { ...values, status: 'verified', type: 'vehicle' }
+                    data: { ...values, status: 'verified', type: 'vehicle', createdAt: { _methodName: 'serverTimestamp' } }
                 })
             });
             if (!res.ok) throw new Error("Failed to register asset.");
@@ -273,21 +274,21 @@ function AssetDialogContent({ shop, onComplete }: { shop: any, onComplete: () =>
     };
 
     return (
-        <DialogContent className="sm:max-w-2xl text-left text-foreground text-foreground">
+        <DialogContent className="sm:max-w-2xl text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>Register Fleet Asset (RC1)</DialogTitle>
                 <DialogDescription>Declare a specific vehicle and upload compliance documents.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="make" render={({ field }) => (<FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField control={form.control} name="make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} /></FormControl></FormItem>)} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                         <FormField control={form.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input placeholder="20XX" {...field} /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-2 gap-4">
+                         <FormField control={form.control} name="year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} /></FormControl></FormItem>)} />
                          <FormField control={form.control} name="vClass" render={({ field }) => (
-                            <FormItem className="text-left">
+                            <FormItem>
                                 <FormLabel>Asset Class</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
@@ -297,7 +298,7 @@ function AssetDialogContent({ shop, onComplete }: { shop: any, onComplete: () =>
                          )} />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FileUploadField name="photoUrl" label="Vehicle Photo" folder="fleet-photos" />
                         <FileUploadField name="rc1Url" label="RC1 Document" folder="fleet-docs" />
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
@@ -329,7 +330,7 @@ function StepFleetRoster({ shop }: { shop: any }) {
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4">
-                <div className="text-left text-foreground">
+                <div className="text-left">
                     <h3 className="text-xl font-black font-headline">Verified Fleet Roster</h3>
                     <p className="text-xs text-muted-foreground">Manage your RC1-vetted assets.</p>
                 </div>
@@ -339,16 +340,16 @@ function StepFleetRoster({ shop }: { shop: any }) {
                 </Dialog>
             </div>
             
-            <div className="min-h-[300px] text-left">
+            <div className="min-h-[300px]">
                 {assets && assets.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {assets.map(asset => (
-                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left text-foreground">
+                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white">
                                 <div className="relative aspect-video bg-muted">
-                                    <Image src={asset.photoUrl} alt={asset.make} fill className="object-cover" />
+                                    {asset.photoUrl && <Image src={asset.photoUrl} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
                                 </div>
-                                <CardContent className="p-4 text-left text-foreground">
+                                <CardContent className="p-4">
                                     <p className="font-bold text-sm">{asset.year} {asset.make} {asset.model}</p>
                                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">{asset.vClass}</p>
                                 </CardContent>
@@ -362,91 +363,6 @@ function StepFleetRoster({ shop }: { shop: any }) {
                     </div>
                 )}
             </div>
-        </div>
-    );
-}
-
-function StepLoadBoard({ shop }: { shop: any }) {
-    const firestore = useFirestore();
-    const [isAdding, setIsAdding] = useState(false);
-    
-    const loadsQuery = useMemoFirebase(() => {
-        if (!firestore || !shop?.companyId) return null;
-        return query(collection(firestore, `companies/${shop.companyId}/loads`), orderBy('createdAt', 'desc'));
-    }, [firestore, shop.companyId]);
-    
-    const { data: loads, forceRefresh } = useCollection(loadsQuery);
-
-    return (
-        <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4">
-                <div className="text-left">
-                    <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
-                    <p className="text-xs text-muted-foreground">Manage your freight opportunities directly within your node.</p>
-                </div>
-                <Dialog open={isAdding} onOpenChange={setIsAdding}>
-                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
-                    <LoadOpportunityDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
-                </Dialog>
-            </div>
-            
-            <div className="min-h-[300px] text-left">
-                {loads && loads.length > 0 ? (
-                    <DataTable 
-                        data={loads}
-                        columns={[
-                            { header: 'Route', cell: ({row}) => <div className="font-bold flex items-center gap-2">{row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}</div> },
-                            { header: 'Rate', cell: ({row}) => <span className="font-black text-primary">{formatCurrency(row.original.rate)}</span> },
-                            { header: 'Dates', cell: ({row}) => <div className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(row.original.pickupDate, "dd MMM")} - {formatDateSafe(row.original.dropoffDate, "dd MMM")}</div> },
-                            { 
-                                id: 'actions', 
-                                header: '', 
-                                cell: ({row}) => <Button variant="ghost" size="icon" onClick={() => {}}><Trash2 className="h-4 w-4 text-destructive"/></Button> 
-                            }
-                        ]}
-                    />
-                ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
-                        <PackageSearch className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No loads listed in this node.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
-    const [loading, setLoading] = useState(false);
-    const { toast } = useToast();
-    const handlePublish = async () => {
-        setLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            await fetch('/api/updateUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { status: 'pending_review' } }),
-            });
-            toast({ title: "Node Submitted for Review" });
-            onSave();
-        } catch (e) { toast({ variant: 'destructive', title: 'Submission Failed' }); }
-        finally { setLoading(false); }
-    };
-    return (
-        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500">
-            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
-                <CheckCircle className="h-16 w-16 text-primary" />
-            </div>
-            <div className="space-y-2 text-center text-foreground text-foreground text-foreground text-foreground">
-                <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
-            </div>
-            <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
-                {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
-                Activate Commercial Hub
-            </Button>
         </div>
     );
 }
@@ -465,7 +381,7 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     collectionPath: `companies/${shop.companyId}/loads`,
-                    data: { ...values, status: 'active', brokerId: shop.companyId, brokerName: shop.shopName }
+                    data: { ...values, status: 'active', brokerId: shop.companyId, brokerName: shop.shopName, createdAt: { _methodName: 'serverTimestamp' } }
                 })
             });
             if (!res.ok) throw new Error("Failed to post load.");
@@ -481,12 +397,12 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
             <DialogHeader>
-                <DialogTitle className="text-left text-foreground">Post Freight Opportunity</DialogTitle>
-                <DialogDescription className="text-left">Define the operational parameters for this freight instruction.</DialogDescription>
+                <DialogTitle>Post Freight Opportunity</DialogTitle>
+                <DialogDescription>Define the operational parameters for this freight instruction.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="origin" render={({ field }) => (
                             <FormItem className="text-left">
                                 <FormLabel>Origin Hub</FormLabel>
@@ -514,7 +430,7 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
                             </FormItem>
                         )} />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <FormField control={form.control} name="rate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="pickupDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Pickup</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Drop-off</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
@@ -532,6 +448,51 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
     );
 }
 
+function StepLoadBoard({ shop }: { shop: any }) {
+    const firestore = useFirestore();
+    const [isAdding, setIsAdding] = useState(false);
+    
+    const loadsQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.companyId) return null;
+        return query(collection(firestore, `companies/${shop.companyId}/loads`), orderBy('createdAt', 'desc'));
+    }, [firestore, shop.companyId]);
+    
+    const { data: loads, forceRefresh } = useCollection(loadsQuery);
+
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4">
+                <div className="text-left">
+                    <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
+                    <p className="text-xs text-muted-foreground">Manage your freight opportunities directly within your node.</p>
+                </div>
+                <Dialog open={isAdding} onOpenChange={setIsAdding}>
+                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
+                    <LoadOpportunityDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                </Dialog>
+            </div>
+            
+            <div className="min-h-[300px]">
+                {loads && loads.length > 0 ? (
+                    <DataTable 
+                        data={loads}
+                        columns={[
+                            { header: 'Route', cell: ({row}) => <div className="font-bold flex items-center gap-2">{row.original.origin} <ArrowRight className="h-3 w-3 opacity-30" /> {row.original.destination}</div> },
+                            { header: 'Rate', cell: ({row}) => <span className="font-black text-primary">{formatCurrency(row.original.rate)}</span> },
+                            { header: 'Dates', cell: ({row}) => <div className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(row.original.pickupDate, "dd MMM")} - {formatDateSafe(row.original.dropoffDate, "dd MMM")}</div> }
+                        ]}
+                    />
+                ) : (
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
+                        <PackageSearch className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No loads listed in this node.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function StepBrokerageCommercials() {
     const { control, watch } = useFormContext<NodeFormValues>();
     const margin = watch('brokerageMargin') || 5;
@@ -543,7 +504,7 @@ function StepBrokerageCommercials() {
                 Commercial Configuration
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
                     <FormField control={control} name="brokerageMargin" render={({ field }) => (
                         <FormItem>
@@ -552,50 +513,85 @@ function StepBrokerageCommercials() {
                                 <HelpCircle className="h-3 w-3 opacity-50" />
                             </FormLabel>
                             <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                            <FormDescription className="text-[10px] leading-tight mt-2 text-left">
+                            <FormDescription className="text-[10px] leading-tight mt-2">
                                 The profit you retain from the total load value. This is your "Broker Participation."
                             </FormDescription>
                         </FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center">
                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
                         Platform Success Fee
                         <ShieldCheck className="h-3 w-3 text-primary" />
                     </p>
                     <p className="text-4xl font-black text-primary">2.5%</p>
-                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic text-left">
-                        Facilitation fee for forensic matching, digital handshakes, and document automation.
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">
+                        Facilitation fee for matching, handshakes, and automation.
                     </p>
                 </div>
             </div>
 
-            <Card className="border-none bg-slate-50 shadow-inner text-left">
-                <CardContent className="p-6 text-left text-foreground">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
+            <Card className="border-none bg-slate-50 shadow-inner">
+                <CardContent className="p-6">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
-                    <div className="space-y-2 text-sm text-left">
-                        <div className="flex justify-between border-b pb-2 text-left">
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between border-b pb-2">
                             <span className="text-muted-foreground">Total Load Value (Example)</span>
                             <span className="font-bold">R 10,000.00</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Your Clearing Margin ({margin}%)</span>
                             <span className="font-bold text-green-600">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-left">
-                            <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
+                        <div className="flex justify-between pt-2">
+                            <span className="font-black uppercase text-xs">Available Haulier Payout</span>
                             <span className="font-black text-primary">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
                     </div>
                 </CardContent>
             </Card>
+        </div>
+    );
+}
+
+function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
+    const [loading, setLoading] = useState(false);
+    const { toast } = useToast();
+    const handlePublish = async () => {
+        setLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { status: 'pending_review', updatedAt: { _methodName: 'serverTimestamp' } } }),
+            });
+            toast({ title: "Node Submitted for Review" });
+            onSave();
+        } catch (e) { toast({ variant: 'destructive', title: 'Submission Failed' }); }
+        finally { setLoading(false); }
+    };
+    return (
+        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500">
+            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
+                <CheckCircle className="h-16 w-16 text-primary" />
+            </div>
+            <div className="space-y-2">
+                <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+            </div>
+            <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
+                {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
+                Activate Commercial Hub
+            </Button>
         </div>
     );
 }
@@ -701,10 +697,10 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             <CardHeader className="bg-slate-50 border-b p-6">
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2" />
             </CardHeader>
-            <CardContent className="p-0 text-left">
+            <CardContent className="p-0">
                 <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
-                        <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
+                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
+                        <div className="bg-slate-50/50 border-r p-6 space-y-2">
                             {wizardSteps.map((step, index) => (
                                 <Button 
                                     key={step.id} 
@@ -714,12 +710,12 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     onClick={() => setCurrentStep(index)}
                                 >
                                     <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                    <span className="font-bold text-[10px] uppercase tracking-widest text-foreground text-left">{step.name}</span>
+                                    <span className="font-bold text-[10px] uppercase tracking-widest text-foreground">{step.name}</span>
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px] text-left text-foreground">
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
+                        <div className="p-10 min-h-[500px]">
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                                 {wizardSteps[currentStep].component}
                             </div>
                         </div>
