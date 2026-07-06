@@ -542,7 +542,7 @@ function StepBrokerageCommercials() {
             </div>
 
             <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
-                <CardContent className="p-6 text-left text-foreground text-foreground">
+                <CardContent className="p-6 text-left text-foreground">
                     <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
@@ -624,7 +624,7 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -633,7 +633,7 @@ function StepRateSheet() {
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground text-foreground">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -641,7 +641,7 @@ function StepRateSheet() {
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2 text-left text-foreground text-foreground">
+                            <div className="flex items-center gap-2 text-left text-foreground">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
                                     <FormItem className="flex-1 text-left text-foreground">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
@@ -758,7 +758,7 @@ function StepCommercials({ shop }: { shop: any }) {
 
             {agreements && agreements.length > 0 && (
                 <div className="space-y-4 text-left">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left text-foreground">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -789,8 +789,8 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
-                <div className="text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4 text-left">
+                <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
@@ -892,14 +892,14 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
 
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader className="text-left text-foreground">
+            <DialogHeader className="text-left">
                 <DialogTitle>Product Management</DialogTitle>
                 <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
                     <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                          <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
@@ -945,8 +945,8 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
-                <div className="text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4 text-left">
+                <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
                     <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
                 </div>
@@ -1039,13 +1039,13 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     };
 
     return (
-        <DialogContent className="sm:max-w-2xl text-left text-foreground text-foreground">
-            <DialogHeader className="text-left text-foreground">
+        <DialogContent className="sm:max-w-2xl text-left text-foreground">
+            <DialogHeader className="text-left">
                 <DialogTitle>{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription>Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left text-foreground">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
                     <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="make" render={({ field }) => (<FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem>)} />
@@ -1054,7 +1054,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                          <FormField control={form.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
@@ -1129,11 +1129,11 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     return (
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left text-foreground">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
-            <div className="space-y-2 text-center text-foreground">
-                <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-sm mx-auto text-center leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+            <div className="space-y-2 text-center">
+                <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
-            <div className="flex justify-center text-center">
+            <div className="flex justify-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Smartphone className="mr-2 h-4 w-4"/>}
                   Activate Commercial Hub
@@ -1257,7 +1257,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     const currentStepConfig = wizardSteps[currentStep];
 
-    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-foreground text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Synchronizing Steps...</p></div>;
+    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-foreground text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Steps...</p></div>;
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
@@ -1291,9 +1291,9 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     {currentStepConfig.component}
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-foreground gap-3">
-                                    <Loader2 className="animate-spin h-10 w-10 text-primary" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Initializing Terminal Module...</p>
+                                <div className="flex flex-col items-center justify-center h-full text-foreground gap-3 text-center">
+                                    <Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Initializing Terminal Module...</p>
                                 </div>
                             )}
                         </div>
