@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,7 +14,7 @@ import {
     DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, Circle,
-    Package, Calendar, Info
+    Package, Calendar, Info, Globe, Navigation
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -25,9 +25,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
 import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 // ====== SCHEMAS ======
 
@@ -48,10 +50,8 @@ const nodeFormSchema = z.object({
   homeHeading: z.string().min(5, "Headline required."),
   aboutText: z.string().min(20, "Summary required."),
   logoUrl: z.string().optional(),
-  // Legal
   primaryContractUrl: z.string().min(1, "Primary contract required for audit."),
   subcontractorAgreementUrl: z.string().min(1, "Subcontractor agreement required."),
-  // Commercials
   brokerageMargin: z.coerce.number().min(0).max(50).default(5),
 });
 
@@ -59,9 +59,9 @@ type NodeFormValues = z.infer<typeof nodeFormSchema>;
 
 const freightClassifications = ["Long Haul", "LTL", "Container", "Refrigerated", "Local Distribution", "Abnormal"];
 
-// ====== STEP COMPONENTS ======
+// ====== SHARED UI COMPONENTS ======
 
-function FileUploadField({ name, label, folder, variant = 'standard' }: { name: string, label: string, folder: string, variant?: 'standard' | 'compact' }) {
+function FileUploadField({ name, label, folder }: { name: string, label: string, folder: string }) {
     const { setValue, watch } = useFormContext<NodeFormValues>();
     const [isUploading, setIsUploading] = useState(false);
     const { user } = useUser();
@@ -97,17 +97,17 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
 
     return (
         <div className="space-y-2 text-left">
-            <Label className="text-[10px] font-black uppercase text-muted-foreground">{label}</Label>
-            <div className="flex items-center gap-3">
-                <Button type="button" variant="outline" className={cn("flex-1 h-12 border-2 border-dashed", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
-                    {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
-                    {currentUrl ? "File Attached" : "Select Document"}
-                </Button>
-                <input id={`up-${name}`} type="file" className="hidden" onChange={handleUpload} />
-            </div>
+            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{label}</Label>
+            <Button type="button" variant="outline" className={cn("w-full h-12 border-2 border-dashed", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
+                {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
+                {currentUrl ? "File Attached" : "Select Document"}
+            </Button>
+            <input id={`up-${name}`} type="file" className="hidden" onChange={handleUpload} />
         </div>
     );
 }
+
+// ====== STEP COMPONENTS ======
 
 function StepLegal() {
     return (
@@ -129,7 +129,6 @@ function StepLegal() {
                     <FileUploadField name="primaryContractUrl" label="Primary Contract (Audit Only)" folder="legal-docs" />
                     <FileUploadField name="subcontractorAgreementUrl" label="Subcontractor Agreement" folder="legal-docs" />
                 </div>
-                <p className="text-[10px] text-muted-foreground italic">Documents must include the No-Circumvention clause to be approved.</p>
             </div>
         </div>
     );
@@ -150,9 +149,9 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
         <div className="space-y-6 text-left text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2">
                 <UserCheck className="h-6 w-6 text-primary" /> 
-                {nodeType === 'loads' ? 'Brokerage Identity' : 'Node Identity'}
+                Commercial Identity
             </h3>
-            <div className="space-y-4 text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem>
                         <FormLabel>Public Identity Label</FormLabel>
@@ -197,14 +196,14 @@ function StepBrokerageCommercials() {
                 <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl">
                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Platform Success Fee</p>
                     <p className="text-3xl font-black text-primary">2.5%</p>
-                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">Standard ecosystem fee applied to all successfully matched freight transactions.</p>
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">Standard ecosystem fee applied to all matched freight transactions.</p>
                 </div>
             </div>
         </div>
     );
 }
 
-function LoadOpportunityForm({ shop, onComplete }: { shop: any, onComplete: () => void }) {
+function LoadOpportunityDialog({ shop, onComplete }: { shop: any, onComplete: () => void }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const form = useForm({ resolver: zodResolver(loadOpportunitySchema) });
@@ -237,15 +236,15 @@ function LoadOpportunityForm({ shop, onComplete }: { shop: any, onComplete: () =
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="origin" render={({ field }) => (<FormItem><FormLabel>Origin Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="destination" render={({ field }) => (<FormItem><FormLabel>Destination Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="origin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Origin Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="destination" render={({ field }) => (<FormItem className="text-left"><FormLabel>Destination Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <FormField control={form.control} name="rate" render={({ field }) => (<FormItem><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="pickupDate" render={({ field }) => (<FormItem><FormLabel>Pickup</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem><FormLabel>Drop-off</Label><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="rate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="pickupDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Pickup</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="dropoffDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Drop-off</Label><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
                     </div>
-                    <FormField control={form.control} name="conditions" render={({ field }) => (<FormItem><FormLabel>Commercial Conditions</FormLabel><FormControl><Textarea placeholder="Specific equipment or insurance rules..." {...field} /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="conditions" render={({ field }) => (<FormItem className="text-left"><FormLabel>Commercial Conditions</FormLabel><FormControl><Textarea placeholder="Specific equipment or insurance rules..." {...field} /></FormControl></FormItem>)} />
                     <DialogFooter><Button type="submit" disabled={loading}>{loading ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <PlusCircle className="mr-2 h-4 w-4"/>} List Load</Button></DialogFooter>
                 </form>
             </Form>
@@ -274,11 +273,11 @@ function StepLoadBoard({ shop }: { shop: any }) {
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
-                    <LoadOpportunityForm shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                    <LoadOpportunityDialog shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
             
-            <div className="min-h-[300px]">
+            <div className="min-h-[300px] text-left">
                 {loads && loads.length > 0 ? (
                     <DataTable 
                         data={loads}
@@ -289,14 +288,14 @@ function StepLoadBoard({ shop }: { shop: any }) {
                             { 
                                 id: 'actions', 
                                 header: '', 
-                                cell: ({row}) => <Button variant="ghost" size="icon" onClick={() => toast({ title: "Simulation", description: "Record isolation active." })}><Trash2 className="h-4 w-4 text-destructive"/></Button> 
+                                cell: ({row}) => <Button variant="ghost" size="icon" onClick={() => toast({ title: "Record Isolation Active" })}><Trash2 className="h-4 w-4 text-destructive"/></Button> 
                             }
                         ]}
                     />
                 ) : (
                     <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
                         <PackageSearch className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No loads listed in this node.</p>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No loads listed in this node.</p>
                     </div>
                 )}
             </div>
@@ -327,9 +326,9 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
                 <CheckCircle className="h-16 w-16 text-primary" />
             </div>
-            <div className="space-y-2 text-center">
+            <div className="space-y-2">
                 <h3 className="text-3xl font-black font-headline">Node Configured</h3>
-                <p className="text-muted-foreground max-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                 {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
@@ -378,7 +377,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         if (nodeType === 'loads') {
             return [
                 { id: 'legal', name: '1. Legal Rights', component: <StepLegal />, fields: ['primaryContractUrl', 'subcontractorAgreementUrl'] },
-                { id: 'identity', name: '2. Commercial Identity', component: <StepIdentity nodeType="loads" />, fields: ['shopName', 'category'] },
+                { id: 'identity', name: '2. Hub Identity', component: <StepIdentity nodeType="loads" />, fields: ['shopName', 'category'] },
                 { id: 'commercials', name: '3. Brokerage Config', component: <StepBrokerageCommercials />, fields: ['brokerageMargin'] },
                 { id: 'board', name: '4. Active Load Board', component: <StepLoadBoard shop={shop} />, fields: [] },
                 { id: 'publish', name: '5. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
@@ -398,29 +397,29 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     };
     
     return (
-        <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
+        <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6">
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2" />
             </CardHeader>
-            <CardContent className="p-0 text-left">
+            <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
-                        <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
+                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
+                        <div className="bg-slate-50/50 border-r p-6 space-y-2">
                             {wizardSteps.map((step, index) => (
                                 <Button 
                                     key={step.id} 
                                     type="button" 
                                     variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                     onClick={() => setCurrentStep(index)}
                                 >
                                     <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                    <span className="font-bold text-xs uppercase tracking-widest text-left">{step.name}</span>
+                                    <span className="font-bold text-xs uppercase tracking-widest">{step.name}</span>
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px] text-left">
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
+                        <div className="p-10 min-h-[500px]">
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
                                 {wizardSteps[currentStep].component}
                             </div>
                         </div>
@@ -431,7 +430,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
-                <div className="flex gap-3 text-left">
+                <div className="flex gap-3">
                     <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync
                     </Button>
