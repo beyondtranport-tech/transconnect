@@ -378,11 +378,11 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
             </DialogHeader>
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} /></FormControl></FormItem>)} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                          <FormField control={form.control} name="year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} /></FormControl></FormItem>)} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
@@ -457,7 +457,7 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
                             <FormItem className="text-left">
                                 <FormLabel>Origin Hub</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select origin..." /></SelectTrigger></FormControl>
+                                    <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select origin..." /></SelectTrigger></FormControl>
                                     <SelectContent>{locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
                                 </Select>
                             </FormItem>
@@ -466,7 +466,7 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
                             <FormItem className="text-left">
                                 <FormLabel>Destination Hub</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select destination..." /></SelectTrigger></FormControl>
+                                    <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select destination..." /></SelectTrigger></FormControl>
                                     <SelectContent>{locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
                                 </Select>
                             </FormItem>
@@ -504,7 +504,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4">
+            <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
                     <p className="text-xs text-muted-foreground">Manage your freight opportunities directly within your node.</p>
@@ -514,7 +514,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
                     <LoadOpportunityDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
-            <div className="min-h-[300px]">
+            <div className="min-h-[300px] text-left">
                 {loads && loads.length > 0 ? (
                     <DataTable 
                         data={loads}
@@ -527,7 +527,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
                 ) : (
                     <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
                         <PackageSearch className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No loads listed in this node.</p>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No loads listed in this node.</p>
                     </div>
                 )}
             </div>
@@ -547,7 +547,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4">
+            <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black font-headline">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
                     <p className="text-xs text-muted-foreground">Manage your RC1-vetted assets for this node.</p>
@@ -559,16 +559,16 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
             </div>
             <div className="min-h-[300px]">
                 {assets && assets.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                         {assets.map(asset => (
                             <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left">
                                 <div className="relative aspect-video bg-muted">
                                     {asset.photoUrl && <Image src={asset.photoUrl} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
                                 </div>
-                                <CardContent className="p-4">
-                                    <p className="font-bold text-sm">{asset.year} {asset.make} {asset.model}</p>
-                                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1">{asset.vClass || asset.location}</p>
+                                <CardContent className="p-4 text-left">
+                                    <p className="font-bold text-sm text-left">{asset.year} {asset.make} {asset.model}</p>
+                                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1 text-left">{asset.vClass || asset.location}</p>
                                 </CardContent>
                             </Card>
                         ))}
@@ -576,7 +576,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                 ) : (
                     <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
                         <Truck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No records found.</p>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No records found.</p>
                     </div>
                 )}
             </div>
@@ -603,16 +603,18 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
         finally { setLoading(false); }
     };
     return (
-        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500">
+        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left text-foreground">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
-            <div className="space-y-2">
-                <h3 className="text-3xl font-black font-headline text-foreground">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+            <div className="space-y-2 text-center text-foreground">
+                <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
+                <p className="text-muted-foreground max-w-sm mx-auto text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
-            <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
-                {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
-                Activate Commercial Hub
-            </Button>
+            <div className="flex justify-center">
+              <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
+                  {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-6 w-6"/>}
+                  Activate Commercial Hub
+              </Button>
+            </div>
         </div>
     );
 }
@@ -642,6 +644,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             monthlyStorageFee: shop.monthlyStorageFee || 0,
         }
     });
+
+    // Reset current step when nodeType changes to prevent out of bounds
+    useEffect(() => {
+        setCurrentStep(0);
+    }, [nodeType]);
 
     const wizardSteps = useMemo(() => {
         if (nodeType === 'loads') {
@@ -690,6 +697,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     const handleNext = async () => {
         const step = wizardSteps[currentStep];
+        if (!step) return;
         const isValid = step.fields && step.fields.length > 0 ? await methods.trigger(step.fields as any) : true;
         if (isValid && currentStep < wizardSteps.length - 1) setCurrentStep(prev => prev + 1);
     };
@@ -705,7 +713,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             </CardHeader>
             <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <form className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
+                    <form className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -720,10 +728,16 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px] text-left">
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
-                                {wizardSteps[currentStep].component}
-                            </div>
+                        <div className="p-10 min-h-[500px] text-left text-foreground">
+                            {wizardSteps[currentStep] ? (
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
+                                    {wizardSteps[currentStep].component}
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-center h-full">
+                                    <Loader2 className="animate-spin h-8 w-8 text-primary" />
+                                </div>
+                            )}
                         </div>
                     </form>
                 </FormProvider>
@@ -732,7 +746,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
-                <div className="flex gap-3">
+                <div className="flex gap-3 text-left">
                     <Button type="button" variant="outline" onClick={methods.handleSubmit(async (v) => {
                         setIsSaving(true);
                         try {
