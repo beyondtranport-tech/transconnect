@@ -136,36 +136,36 @@ export function MallGate({ mallId }: { mallId: string }) {
         return (
             <div className="max-w-5xl mx-auto space-y-12 animate-in fade-in duration-500 text-left">
                 <div className="text-left space-y-2">
-                    <h1 className="text-3xl font-black font-headline flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline flex items-center gap-3 text-left text-foreground">
                         <config.icon className="h-8 w-8 text-primary" />
                         Welcome to {config.title}
                     </h1>
                     <p className="text-muted-foreground">{config.description}</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(`/mall/${config.id === 'buy-sell' ? 'buy-sell' : config.id}`)}>
-                        <CardHeader className="p-8 pb-4">
-                            <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white text-left" onClick={() => router.push(config.id === 'finance' ? '/mall/finance' : (config.id === 'buy-sell' ? '/mall/buy-sell' : `/mall/${config.id}`))}>
+                        <CardHeader className="p-8 pb-4 text-left">
+                            <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors text-left">
                                 <Search className="h-8 w-8 text-foreground group-hover:text-white" />
                             </div>
-                            <CardTitle className="text-2xl font-black mt-6">{config.buyLabel}</CardTitle>
-                            <CardDescription className="text-base mt-2 leading-relaxed">{config.buyDesc}</CardDescription>
+                            <CardTitle className="text-2xl font-black mt-6 text-left">{config.buyLabel}</CardTitle>
+                            <CardDescription className="text-base mt-2 leading-relaxed text-left">{config.buyDesc}</CardDescription>
                         </CardHeader>
-                        <CardFooter className="p-8 pt-0 flex justify-end">
+                        <CardFooter className="p-8 pt-0 flex justify-end text-left">
                             <ArrowRight className="h-6 w-6 text-primary" />
                         </CardFooter>
                     </Card>
 
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(config.sellHref || `/account?view=shop&subview=wizard&nodeType=${config.id}`)}>
-                        <CardHeader className="p-8 pb-4">
-                            <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white text-left" onClick={() => router.push(config.sellHref || `/account?view=shop&subview=wizard&nodeType=${config.id}`)}>
+                        <CardHeader className="p-8 pb-4 text-left text-foreground">
+                            <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors text-left text-foreground">
                                 <PlusCircle className="h-8 w-8 text-foreground group-hover:text-white" />
                             </div>
-                            <CardTitle className="text-2xl font-black mt-6">{config.sellLabel}</CardTitle>
-                            <CardDescription className="text-base mt-2 leading-relaxed">{config.sellDesc}</CardDescription>
+                            <CardTitle className="text-2xl font-black mt-6 text-left text-foreground">{config.sellLabel}</CardTitle>
+                            <CardDescription className="text-base mt-2 leading-relaxed text-left text-foreground">{config.sellDesc}</CardDescription>
                         </CardHeader>
-                        <CardFooter className="p-8 pt-0 flex justify-end">
+                        <CardFooter className="p-8 pt-0 flex justify-end text-left text-foreground">
                             <ArrowRight className="h-6 w-6 text-primary" />
                         </CardFooter>
                     </Card>

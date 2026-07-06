@@ -29,7 +29,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { collection, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
-import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
@@ -530,7 +529,7 @@ function StepBrokerageCommercials() {
                             <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
                             <FormDescription className="text-[10px] leading-tight mt-2 font-bold text-primary text-left">
                                 The profit you, as the Primary Contractor (Broker), retain from the total load value for your role in securing the freight.
-                            </Label>
+                            </FormDescription>
                         </FormItem>
                     )} />
                 </div>
@@ -1147,6 +1146,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
 
+    // RESET STEP ON NODE TYPE SWITCH
     useEffect(() => {
         setCurrentStep(0);
     }, [nodeType]);

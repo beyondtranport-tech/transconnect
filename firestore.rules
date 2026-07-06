@@ -43,7 +43,7 @@ service cloud.firestore {
         );
     }
 
-    // --- PUBLIC / CONFIGURATION RULES (Must be top-level for consistent matching) ---
+    // --- PUBLIC / CONFIGURATION RULES ---
 
     match /configuration/{configId} {
       allow get, list: if true;
