@@ -88,6 +88,7 @@ const nodeFormSchema = z.object({
   upliftFee: z.coerce.number().min(0).optional(),
   placementFee: z.coerce.number().min(0).optional(),
   monthlyStorageFee: z.coerce.number().min(0).optional(),
+  imageUrls: z.array(z.string()).default([]),
 });
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
@@ -157,15 +158,15 @@ function StepLegal() {
             <div className="space-y-6 text-left">
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="font-bold">Subcontracting Audit</AlertTitle>
+                    <AlertTitle className="font-bold">Operational Compliance Audit</AlertTitle>
                     <AlertDescription className="text-xs leading-relaxed">
-                        You must provide evidence of your operating rights. For brokers, this includes subcontracting clauses. For hauliers, this is your operator permit.
+                        You must provide evidence of your operating rights. This allows the platform to verify your node before it is published to the public mall.
                     </AlertDescription>
                 </Alert>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                     <FileUploadField name="primaryContractUrl" label="Operating Authority / Contract" folder="legal-docs" />
-                    <FileUploadField name="subcontractorAgreementUrl" label="Master Sub-contractor Agreement" folder="legal-docs" />
+                    <FileUploadField name="subcontractorAgreementUrl" label="Standard Terms of Business" folder="legal-docs" />
                 </div>
             </div>
         </div>
@@ -236,6 +237,103 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
     );
 }
 
+function StepBranding() {
+    const { control } = useFormContext<NodeFormValues>();
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <Sparkles className="h-6 w-6 text-primary" /> 
+                Branding & Narrative
+            </h3>
+            <div className="space-y-4 text-left">
+                <FileUploadField name="logoUrl" label="Company Logo" folder="node-branding" />
+                <FormField control={control} name="homeHeading" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Public Headline</FormLabel>
+                        <FormControl><Input placeholder="e.g. Premium Cold Storage in City Deep" {...field} className="h-11 border-2" /></FormControl>
+                    </FormItem>
+                )} />
+                <FormField control={control} name="aboutText" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Professional Summary (About Us)</FormLabel>
+                        <FormControl><Textarea placeholder="Describe your facility, security, and specialized services..." {...field} className="min-h-[150px] border-2" /></FormControl>
+                    </FormItem>
+                )} />
+            </div>
+        </div>
+    );
+}
+
+function StepGallery() {
+    const { watch, setValue } = useFormContext<NodeFormValues>();
+    const imageUrls = watch('imageUrls') || [];
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [uploading, setUploading] = useState(false);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0 || !user) return;
+        setUploading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const newUrls = [...imageUrls];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+                const dataUri = await new Promise<string>(res => {
+                    reader.onload = () => res(reader.result as string);
+                    reader.readAsDataURL(file);
+                });
+                const response = await fetch('/api/uploadImageAsset', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileDataUri: dataUri, folder: `node-gallery/${user.uid}`, fileName: `gallery_${Date.now()}_${file.name}` })
+                });
+                const result = await response.json();
+                if (response.ok) newUrls.push(result.url);
+            }
+            setValue('imageUrls', newUrls, { shouldValidate: true });
+            toast({ title: "Gallery Updated" });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Upload Error" });
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <Camera className="h-6 w-6 text-primary" /> 
+                Facility Gallery
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+                {imageUrls.map((url: string, i: number) => (
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-100 group shadow-sm">
+                        <Image src={url} alt="Gallery" fill className="object-cover" />
+                        <Button 
+                            type="button" 
+                            variant="destructive" 
+                            size="icon" 
+                            className="absolute top-1 right-1 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => setValue('imageUrls', imageUrls.filter((_, idx) => idx !== i))}
+                        >
+                            <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                ))}
+                <label className="aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors text-center p-4">
+                    {uploading ? <Loader2 className="h-6 w-6 animate-spin text-primary" /> : <PlusCircle className="h-6 w-6 text-muted-foreground" />}
+                    <span className="text-[10px] font-black uppercase mt-2 tracking-widest leading-tight">Add Photos</span>
+                    <input type="file" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
+                </label>
+            </div>
+        </div>
+    );
+}
+
 function StepWarehouseFees() {
     const { control } = useFormContext<NodeFormValues>();
     return (
@@ -247,18 +345,18 @@ function StepWarehouseFees() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="space-y-6">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
-                        <FormItem><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
                     )} />
                     <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
-                        <FormItem><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
                     )} />
                 </div>
                 <div className="space-y-6">
                     <FormField control={control} name="upliftFee" render={({ field }) => (
-                        <FormItem><FormLabel>Inbound Handling (Uplift)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Inbound Handling (Uplift)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
                     )} />
                     <FormField control={control} name="placementFee" render={({ field }) => (
-                        <FormItem><FormLabel>Outbound Handling (Placement)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Outbound Handling (Placement)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
                     )} />
                 </div>
             </div>
@@ -507,7 +605,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
             <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black font-headline">Active Load Registry</h3>
-                    <p className="text-xs text-muted-foreground">Manage your freight opportunities directly within your node.</p>
+                    <p className="text-xs text-muted-foreground text-left">Manage your freight opportunities directly within your node.</p>
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
@@ -549,15 +647,15 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
-                    <h3 className="text-xl font-black font-headline">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
-                    <p className="text-xs text-muted-foreground">Manage your RC1-vetted assets for this node.</p>
+                    <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
+                    <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Add Asset</Button></DialogTrigger>
                     <AssetDialogContent shop={shop} mode={mode} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
-            <div className="min-h-[300px]">
+            <div className="min-h-[300px] text-left">
                 {assets && assets.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                         {assets.map(asset => (
@@ -642,10 +740,10 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             upliftFee: shop.upliftFee || 0,
             placementFee: shop.placementFee || 0,
             monthlyStorageFee: shop.monthlyStorageFee || 0,
+            imageUrls: shop.imageUrls || [],
         }
     });
 
-    // Reset current step when nodeType changes to prevent out of bounds
     useEffect(() => {
         setCurrentStep(0);
     }, [nodeType]);
@@ -662,9 +760,12 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         }
         if (nodeType === 'warehouse') {
             return [
-                { id: 'identity', name: '1. Facility Identity', component: <StepIdentity nodeType="warehouse" />, fields: ['shopName', 'category'] },
-                { id: 'fees', name: '2. Capacity & Fees', component: <StepWarehouseFees />, fields: ['availablePallets', 'monthlyStorageFee'] },
-                { id: 'publish', name: '3. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+                { id: 'legal', name: '1. Legal Rights', component: <StepLegal />, fields: ['primaryContractUrl', 'subcontractorAgreementUrl'] },
+                { id: 'identity', name: '2. Facility Identity', component: <StepIdentity nodeType="warehouse" />, fields: ['shopName', 'category'] },
+                { id: 'branding', name: '3. Branding & Narrative', component: <StepBranding />, fields: ['homeHeading', 'aboutText'] },
+                { id: 'fees', name: '4. Capacity & Fees', component: <StepWarehouseFees />, fields: ['availablePallets', 'monthlyStorageFee'] },
+                { id: 'gallery', name: '5. Facility Gallery', component: <StepGallery />, fields: [] },
+                { id: 'publish', name: '6. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
         if (nodeType === 'transport') {
