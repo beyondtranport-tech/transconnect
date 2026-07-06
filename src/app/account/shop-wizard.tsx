@@ -688,7 +688,7 @@ function StepLoadAgreement() {
             {contractType === 'master' && (
                 <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
                     <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
-                        <FormLabel>Committed Loads per Month</FormLabel>
+                        <FormLabel>Committed Loads per Month</Label>
                         <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                         <FormDescription className="text-[10px]">Your node will be prioritized for long-term contract matching.</FormDescription>
                     </FormItem>
@@ -1131,7 +1131,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center">
                 <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">

@@ -7,7 +7,7 @@ import { usePermissions, type Resource } from '@/hooks/use-permissions';
 import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
 import { 
     PackageSearch, Warehouse, Truck, Network, Building2, Landmark, 
-    ShoppingCart, Search, PlusCircle, ArrowRight, Info, Loader2
+    ShoppingCart, Search, PlusCircle, ArrowRight, Info, Loader2, HandCoins
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -117,7 +117,8 @@ export function MallGate({ mallId }: { mallId: string }) {
 
     if (!config) return <div className="p-12 text-center italic text-muted-foreground">Mall configuration "{mallId}" not found.</div>;
 
-    const hasAccess = can(config.permission as any, config.resource);
+    // Check basic view permission for the mall resource
+    const hasAccess = can('view', config.resource);
 
     if (!hasAccess) {
         return (
@@ -160,7 +161,7 @@ export function MallGate({ mallId }: { mallId: string }) {
                     <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white text-left" onClick={() => router.push(config.sellHref || `/account?view=shop&subview=wizard&nodeType=${config.id}`)}>
                         <CardHeader className="p-8 pb-4 text-left text-foreground">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors text-left text-foreground">
-                                <PlusCircle className="h-8 w-8 text-foreground group-hover:text-white" />
+                                {config.id === 'finance' ? <HandCoins className="h-8 w-8 text-foreground group-hover:text-white" /> : <PlusCircle className="h-8 w-8 text-foreground group-hover:text-white" />}
                             </div>
                             <CardTitle className="text-2xl font-black mt-6 text-left text-foreground">{config.sellLabel}</CardTitle>
                             <CardDescription className="text-base mt-2 leading-relaxed text-left text-foreground">{config.sellDesc}</CardDescription>
