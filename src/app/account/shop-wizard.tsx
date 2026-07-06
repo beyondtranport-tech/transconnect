@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -30,6 +29,11 @@ import { Label } from '@/components/ui/label';
 import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { provinces } from '@/lib/geodata';
+
+// ====== DATA SOURCES ======
+const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
+const freightClassifications = ["Long Haul", "LTL", "Container", "Refrigerated", "Local Distribution", "Abnormal"];
 
 // ====== SCHEMAS ======
 
@@ -56,8 +60,6 @@ const nodeFormSchema = z.object({
 });
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
-
-const freightClassifications = ["Long Haul", "LTL", "Container", "Refrigerated", "Local Distribution", "Abnormal"];
 
 // ====== SHARED UI COMPONENTS ======
 
@@ -279,8 +281,32 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="origin" render={({ field }) => (<FormItem className="text-left"><FormLabel>Origin Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="destination" render={({ field }) => (<FormItem className="text-left"><FormLabel>Destination Hub</FormLabel><FormControl><Input placeholder="City/Region" {...field} /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="origin" render={({ field }) => (
+                            <FormItem className="text-left">
+                                <FormLabel>Origin Hub</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="bg-white"><SelectValue placeholder="Select origin..." /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="destination" render={({ field }) => (
+                            <FormItem className="text-left">
+                                <FormLabel>Destination Hub</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger className="bg-white"><SelectValue placeholder="Select destination..." /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                         <FormField control={form.control} name="rate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Rate (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
