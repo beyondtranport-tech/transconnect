@@ -24,6 +24,7 @@ interface MallConfig {
     buyDesc: string;
     sellLabel: string;
     sellDesc: string;
+    sellHref?: string; // Optional override for the "List" side
 }
 
 const mallConfigs: Record<string, MallConfig> = {
@@ -79,6 +80,33 @@ const mallConfigs: Record<string, MallConfig> = {
         sellLabel: 'Setup Supplier Node',
         sellDesc: 'Publish your digital branch to the community.',
     },
+    finance: {
+        id: 'finance',
+        title: 'Finance Mall',
+        description: 'Connect with 85+ specialized lenders. Source asset finance, working capital, and insurance.',
+        icon: Landmark,
+        resource: 'financeMall',
+        permission: 'view',
+        upgradePlan: 'intelligence',
+        buyLabel: 'Search for Funding',
+        buyDesc: 'Scan the capital registry for matched lenders.',
+        sellLabel: 'Apply for Finance',
+        sellDesc: 'Submit a formal enquiry to the funding division.',
+        sellHref: '/funding',
+    },
+    'buy-sell': {
+        id: 'buy-sell',
+        title: 'Buy & Sell Mall',
+        description: 'The national marketplace for new and used vehicles. Trade assets within a secure ecosystem.',
+        icon: ShoppingCart,
+        resource: 'buySellMall',
+        permission: 'transact',
+        upgradePlan: 'buy_sell_intelligence',
+        buyLabel: 'Search Inventory',
+        buyDesc: 'Browse verified vehicle and equipment listings.',
+        sellLabel: 'Setup Marketplace Node',
+        sellDesc: 'List your assets for sale and manage handshakes.',
+    },
 };
 
 export function MallGate({ mallId }: { mallId: string }) {
@@ -129,7 +157,7 @@ export function MallGate({ mallId }: { mallId: string }) {
                         </CardFooter>
                     </Card>
 
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(`/account?view=shop&subview=wizard`)}>
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(config.sellHref || `/account?view=shop&subview=wizard&nodeType=${config.id}`)}>
                         <CardHeader className="p-8 pb-4">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
                                 <PlusCircle className="h-8 w-8 text-foreground group-hover:text-white" />
