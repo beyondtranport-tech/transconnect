@@ -80,7 +80,6 @@ service cloud.firestore {
         allow read: if true; 
         allow write: if isMember(companyId); 
         match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
-        match /agreements/{agId} { allow read, write, list: if isMember(companyId); }
       }
 
       match /loads/{id} {
@@ -117,10 +116,10 @@ service cloud.firestore {
     // --- CONFIGURATION RULES ---
     // Public read required for stats, plan descriptions, and loyalty tiers
     match /configuration/{configId} {
-      allow read: if true;
+      allow get, list: if true;
     }
     match /memberships/{membershipId} {
-      allow read: if true;
+      allow get, list: if true;
     }
 
     // --- COLLECTION GROUP RULES ---

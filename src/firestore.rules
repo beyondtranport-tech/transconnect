@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -115,8 +114,11 @@ service cloud.firestore {
     }
 
     // --- CONFIGURATION RULES ---
-    // Required for public-facing stats, plan pricing, and loyalty settings
+    // Public read required for stats, plan descriptions, and loyalty tiers
     match /configuration/{configId} {
+      allow get, list: if true;
+    }
+    match /memberships/{membershipId} {
       allow get, list: if true;
     }
 
