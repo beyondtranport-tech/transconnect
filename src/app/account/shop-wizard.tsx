@@ -15,7 +15,7 @@ import {
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, 
     Package, Info, Navigation, Search, HelpCircle, Users, FileText, Camera,
-    ShoppingCart, Wrench, ShieldAlert, Clock, Shield, Lock, Eye
+    ShoppingCart, Wrench, Shield, Clock, Map, ListOrdered, FileSignature
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 // ====== DATA SOURCES ======
 const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
@@ -40,6 +41,12 @@ const freightClassifications = ["Long Haul", "LTL", "Container", "Refrigerated",
 const vehicleClasses = ["Heavy Truck (Horse)", "Trailer", "Rigid Truck (8t-14t)", "Light Commercial (Bakkie)", "Bus", "Passenger Vehicle", "Other"];
 
 // ====== SCHEMAS ======
+
+const routeRateSchema = z.object({
+    origin: z.string().min(1, "Origin required"),
+    destination: z.string().min(1, "Destination required"),
+    price: z.coerce.number().positive("Price required"),
+});
 
 const loadOpportunitySchema = z.object({
     origin: z.string().min(1, "Origin hub required."),
@@ -58,7 +65,7 @@ const vehicleListingSchema = z.object({
     location: z.string().min(1, "Location required."),
     serviceHistory: z.string().optional(),
     description: z.string().min(10, "Detail required."),
-    photoUrl: z.string().min(1, "Photo required."),
+    photoUrls: z.array(z.string()).min(1, "At least one photo required."),
     rc1Url: z.string().min(1, "RC1 required."),
     licenseUrl: z.string().min(1, "License required."),
 });
@@ -68,7 +75,7 @@ const fleetAssetSchema = z.object({
     model: z.string().min(1, "Model required."),
     year: z.string().min(4, "Year required."),
     vClass: z.string().min(1, "Class required."),
-    photoUrl: z.string().min(1, "Vehicle photo required."),
+    photoUrls: z.array(z.string()).min(1, "At least one vehicle photo required."),
     rc1Url: z.string().min(1, "RC1 Document required."),
     licenseUrl: z.string().min(1, "License Disk required."),
 });
@@ -96,13 +103,31 @@ const nodeFormSchema = z.object({
   accessControl: z.string().optional(),
   rollerDoors: z.string().optional(),
   operatingHours: z.string().optional(),
+  // New Fleet Fields
+  rateType: z.enum(['none', 'route', 'per_km']).default('none'),
+  kmRate: z.coerce.number().min(0).optional(),
+  routeRates: z.array(routeRateSchema).default([]),
+  contractType: z.enum(['none', 'master', 'one_off']).default('none'),
+  monthlyLoadTarget: z.coerce.number().min(0).optional(),
 });
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
 
 // ====== SHARED UI COMPONENTS ======
 
-function FileUploadField({ name, label, folder, variant = 'standard', onUploadSuccess }: { name: string, label: string, folder: string, variant?: 'standard' | 'compact', onUploadSuccess?: (url: string) => void }) {
+function FileUploadField({ 
+    name, 
+    label, 
+    folder, 
+    variant = 'standard', 
+    onUploadSuccess 
+}: { 
+    name: string, 
+    label: string, 
+    folder: string, 
+    variant?: 'standard' | 'compact', 
+    onUploadSuccess?: (url: string) => void 
+}) {
     const { setValue, watch } = useFormContext<any>();
     const [isUploading, setIsUploading] = useState(false);
     const { user } = useUser();
@@ -527,7 +552,7 @@ function StepBrokerageCommercials() {
                         </FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left text-foreground">
                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
                         Platform Success Fee
                         <ShieldCheck className="h-3 w-3 text-primary" />
@@ -540,8 +565,8 @@ function StepBrokerageCommercials() {
             </div>
 
             <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
-                <CardContent className="p-6 text-left text-foreground text-foreground text-left">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
+                <CardContent className="p-6 text-left text-foreground text-left">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left text-foreground">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
@@ -569,6 +594,125 @@ function StepBrokerageCommercials() {
     );
 }
 
+function StepRateSheet() {
+    const { control, watch } = useFormContext<NodeFormValues>();
+    const rateType = watch('rateType');
+    const { fields, append, remove } = useFieldArray({ control, name: 'routeRates' });
+
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <ListOrdered className="h-6 w-6 text-primary" />
+                Fleet Rate Sheet (Optional)
+            </h3>
+
+            <FormField control={control} name="rateType" render={({ field }) => (
+                <FormItem className="space-y-4 text-left">
+                    <FormLabel className="font-bold">Select Rate Structure</FormLabel>
+                    <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'none' ? "bg-primary/5 border-primary" : "bg-white")}>
+                                <RadioGroupItem value="none" id="r-none" /><Label htmlFor="r-none" className="cursor-pointer">No Sheet</Label>
+                            </div>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'route' ? "bg-primary/5 border-primary" : "bg-white")}>
+                                <RadioGroupItem value="route" id="r-route" /><Label htmlFor="r-route" className="cursor-pointer">Route-Based</Label>
+                            </div>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'per_km' ? "bg-primary/5 border-primary" : "bg-white")}>
+                                <RadioGroupItem value="per_km" id="r-km" /><Label htmlFor="r-km" className="cursor-pointer">Rate per KM</Label>
+                            </div>
+                        </RadioGroup>
+                    </FormControl>
+                </FormItem>
+            )} />
+
+            {rateType === 'per_km' && (
+                <FormField control={control} name="kmRate" render={({ field }) => (
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
+                        <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold" /></FormControl>
+                    </FormItem>
+                )} />
+            )}
+
+            {rateType === 'route' && (
+                <div className="space-y-4 animate-in slide-in-from-top-2 text-left text-foreground">
+                    <div className="flex justify-between items-center text-left">
+                        <Label className="font-bold">Common Route Rates</Label>
+                        <Button type="button" size="sm" variant="outline" onClick={() => append({ origin: '', destination: '', price: 0 })}>
+                            <PlusCircle className="h-4 w-4 mr-2" /> Add Route
+                        </Button>
+                    </div>
+                    {fields.map((item, index) => (
+                        <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm">
+                            <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
+                                <FormItem className="text-left text-foreground">
+                                    <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                </FormItem>
+                            )} />
+                            <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
+                                <FormItem className="text-left text-foreground text-foreground">
+                                    <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                </FormItem>
+                            )} />
+                            <div className="flex items-center gap-2 text-left text-foreground text-foreground">
+                                <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
+                                    <FormItem className="flex-1 text-left text-foreground text-foreground">
+                                        <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
+                                        <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                                    </FormItem>
+                                )} />
+                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="mb-0.5 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function StepLoadAgreement() {
+    const { control, watch } = useFormContext<NodeFormValues>();
+    const contractType = watch('contractType');
+
+    return (
+        <div className="space-y-8 text-left text-foreground text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground">
+                <FileSignature className="h-6 w-6 text-primary" />
+                Contractual Framework
+            </h3>
+
+            <FormField control={control} name="contractType" render={({ field }) => (
+                <FormItem className="space-y-4 text-left text-foreground text-foreground">
+                    <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
+                    <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
+                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground">Fixed volume per month.</span></Label>
+                            </div>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
+                                <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground">Spot market bookings.</span></Label>
+                            </div>
+                        </RadioGroup>
+                    </FormControl>
+                </FormItem>
+            )} />
+
+            {contractType === 'master' && (
+                <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
+                        <FormLabel>Committed Loads per Month</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold" /></FormControl>
+                        <FormDescription className="text-[10px]">Your node will be prioritized for long-term contract matching.</FormDescription>
+                    </FormItem>
+                )} />
+            )}
+        </div>
+    );
+}
+
 // ====== INTERNAL TERMINALS FOR ASSETS AND LOADS ======
 
 function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'fleet' | 'sale', onComplete: () => void }) {
@@ -576,7 +720,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     const [loading, setLoading] = useState(false);
     const form = useForm({ 
         resolver: zodResolver(mode === 'fleet' ? fleetAssetSchema : vehicleListingSchema),
-        defaultValues: { photoUrl: '', rc1Url: '', licenseUrl: '', status: 'active' } 
+        defaultValues: { photoUrls: [], rc1Url: '', licenseUrl: '', status: 'active' } 
     });
 
     const onSubmit = async (values: any) => {
@@ -603,6 +747,25 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleMultiUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || !shop) return;
+        const urls = [...form.getValues('photoUrls')];
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const token = await getClientSideAuthToken();
+            const dataUri = await fileToDataUri(file);
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `fleet-photos/${shop.companyId}`, fileName: `photo_${Date.now()}_${file.name}` })
+            });
+            const result = await response.json();
+            if (res.ok) urls.push(result.url);
+        }
+        form.setValue('photoUrls', urls);
     };
 
     return (
@@ -634,8 +797,23 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                          )}
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FileUploadField name="photoUrl" label="Primary Photo" folder="fleet-photos" />
+                    <div className="space-y-4 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground">Vehicle Gallery</Label>
+                        <div className="grid grid-cols-3 gap-2">
+                             {form.watch('photoUrls').map((url: string, i: number) => (
+                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                                     <Image src={url} alt="pic" fill className="object-cover" />
+                                 </div>
+                             ))}
+                             <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('multi-up')?.click()}>
+                                 <Camera className="h-6 w-6 opacity-40" />
+                                 <span className="text-[8px] uppercase font-bold">Add Photo</span>
+                             </Button>
+                             <input type="file" id="multi-up" multiple className="hidden" onChange={handleMultiUpload} />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FileUploadField name="rc1Url" label="RC1 Doc" folder="fleet-docs" />
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
                     </div>
@@ -738,7 +916,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
     const { data: loads, forceRefresh } = useCollection(loadsQuery);
 
     return (
-        <div className="space-y-6 text-left text-foreground text-left">
+        <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">Active Load Registry</h3>
@@ -781,7 +959,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
     const { data: assets, forceRefresh } = useCollection(assetsQuery);
 
     return (
-        <div className="space-y-6 text-left text-foreground text-left text-foreground">
+        <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
@@ -798,7 +976,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                         {assets.map(asset => (
                             <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left text-foreground">
                                 <div className="relative aspect-video bg-muted">
-                                    {asset.photoUrl && <Image src={asset.photoUrl} alt={asset.make} fill className="object-cover" />}
+                                    {asset.photoUrls?.[0] && <Image src={asset.photoUrls[0]} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
                                 </div>
                                 <CardContent className="p-4 text-left">
@@ -885,6 +1063,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             accessControl: shop.accessControl || '',
             rollerDoors: shop.rollerDoors || '',
             operatingHours: shop.operatingHours || '',
+            rateType: shop.rateType || 'none',
+            kmRate: shop.kmRate || 0,
+            routeRates: shop.routeRates || [],
+            contractType: shop.contractType || 'none',
+            monthlyLoadTarget: shop.monthlyLoadTarget || 0,
         }
     });
 
@@ -918,7 +1101,9 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             return [
                 { id: 'identity', name: '1. Fleet Identity', component: <StepIdentity nodeType="transport" />, fields: ['shopName', 'category'] },
                 { id: 'roster', name: '2. Asset Roster', component: <StepAssetRegistry shop={shop} mode="fleet" />, fields: [] },
-                { id: 'publish', name: '3. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+                { id: 'rates', name: '3. Rate Sheet', component: <StepRateSheet />, fields: ['rateType', 'kmRate', 'routeRates'] },
+                { id: 'agreements', name: '4. Load Agreement', component: <StepLoadAgreement />, fields: ['contractType', 'monthlyLoadTarget'] },
+                { id: 'publish', name: '5. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
         if (nodeType === 'buy-sell') {
@@ -981,7 +1166,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     {wizardSteps[currentStep].component}
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-center h-full text-foreground">
+                                <div className="flex items-center justify-center h-full text-foreground text-foreground text-left">
                                     <Loader2 className="animate-spin h-8 w-8 text-primary" />
                                 </div>
                             )}
@@ -989,7 +1174,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     </form>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
@@ -1008,11 +1193,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                             onUpdate();
                         } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
                         finally { setIsSaving(false); }
-                    })} disabled={isSaving} className="font-bold text-foreground">
+                    })} disabled={isSaving} className="font-bold text-foreground text-foreground">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
-                        <Button type="button" onClick={handleNext} className="font-bold px-8 text-foreground">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                        <Button type="button" onClick={handleNext} className="font-bold px-8 text-foreground text-foreground text-left">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
                     )}
                 </div>
             </CardFooter>
