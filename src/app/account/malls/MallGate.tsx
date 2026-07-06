@@ -24,7 +24,7 @@ interface MallConfig {
     buyDesc: string;
     sellLabel: string;
     sellDesc: string;
-    sellHref?: string; // Optional override for the "List" side
+    sellHref?: string;
 }
 
 const mallConfigs: Record<string, MallConfig> = {
@@ -144,7 +144,7 @@ export function MallGate({ mallId }: { mallId: string }) {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(`/mall/${config.id}`)}>
+                    <Card className="hover:border-primary border-2 transition-all cursor-pointer group shadow-xl bg-white" onClick={() => router.push(`/mall/${config.id === 'buy-sell' ? 'buy-sell' : config.id}`)}>
                         <CardHeader className="p-8 pb-4">
                             <div className="bg-muted p-4 rounded-2xl w-fit group-hover:bg-primary transition-colors">
                                 <Search className="h-8 w-8 text-foreground group-hover:text-white" />

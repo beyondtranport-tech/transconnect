@@ -43,6 +43,22 @@ service cloud.firestore {
         );
     }
 
+    // --- PUBLIC / CONFIGURATION RULES (Must be top-level for consistent matching) ---
+
+    match /configuration/{configId} {
+      allow get, list: if true;
+    }
+    match /memberships/{membershipId} {
+      allow get, list: if true;
+    }
+    match /shops/{shopId} { 
+      allow read: if true; 
+      match /products/{prodId} { allow read: if true; }
+    }
+    match /visitors/{visitorId} {
+      allow read, write: if true;
+    }
+
     // --- STANDARD PATH RULES ---
 
     match /users/{userId} {
@@ -61,7 +77,6 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
       
-      // Sub-collections managed by verified members
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
@@ -77,9 +92,9 @@ service cloud.firestore {
       match /vehicleListings/{id} { allow read, write, list: if isMember(companyId); }
       
       match /shops/{shopId} { 
-        allow read: if true; 
         allow write: if isMember(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        match /products/{prodId} { allow write: if isMember(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
 
       match /loads/{id} {
@@ -102,24 +117,13 @@ service cloud.firestore {
     match /partners/{partnerId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
-      match /communications/{id} { allow read, write: if isAdmin(); }
-      match /tasks/{id} { allow read, write: if isAdmin(); }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
       allow read: if isSignedIn();
       allow write: if isAdmin();
-      match /communications/{id} { allow read, write: if isAdmin(); }
-      match /tasks/{id} { allow read, write: if isAdmin(); }
-    }
-
-    // --- CONFIGURATION RULES ---
-    // Public read required for stats, plan descriptions, and loyalty tiers
-    match /configuration/{configId} {
-      allow get, list: if true;
-    }
-    match /memberships/{membershipId} {
-      allow get, list: if true;
+      match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     // --- COLLECTION GROUP RULES ---
@@ -128,6 +132,7 @@ service cloud.firestore {
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/assets/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
+    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     
     match /{allPaths=**} {
       allow read, write: if isAdmin();
