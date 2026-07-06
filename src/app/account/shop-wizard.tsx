@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -13,7 +14,7 @@ import {
     Loader2, Save, CheckCircle, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
-    ClipboardList, Gavel, Sparkles
+    ClipboardList, Sparkles, Store
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -161,7 +162,7 @@ function StepWarehouse() {
                     )} />
                 </div>
                 <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 space-y-4 text-left text-foreground">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2 text-left"><Banknote className="h-4 w-4" /> Handling Logic</h4>
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground"><Banknote className="h-4 w-4" /> Handling Logic</h4>
                     <FormField control={control} name="upliftFee" render={({ field }) => (
                         <FormItem className="text-left"><FormLabel>Inbound Fee (R/plt)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
                     )} />
@@ -379,15 +380,11 @@ function AIToolModal({ initialPrompt, onResult, targetField }: any) {
 
 // ====== MAIN WIZARD ======
 
-export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void }) {
+export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: string, onUpdate: () => void }) {
     const { toast } = useToast();
     const { user } = useUser();
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
-
-    const hasWarehouse = shop.shopType === 'warehouse' || user?.companyData?.hasWarehousePlan || user?.declaredPosition === 'warehouse';
-    const hasTransport = shop.shopType === 'transporter' || user?.companyData?.hasLoadsPlan || user?.declaredPosition === 'transporter';
-    const hasLoads = user?.companyData?.hasLoadsPlan || user?.companyData?.membershipId === 'loads_intelligence';
 
     const methods = useForm<NodeFormValues>({
         resolver: zodResolver(nodeFormSchema),
@@ -422,12 +419,14 @@ export function ShopWizard({ shop, onUpdate }: { shop: any, onUpdate: () => void
             { id: 'identity', name: 'Identity', component: <StepIdentity />, fields: ['shopName', 'category'] },
             { id: 'branding', name: 'Branding', component: <StepBranding />, fields: [] },
         ];
-        if (hasWarehouse) base.push({ id: 'warehouse', name: 'Storage Node', component: <StepWarehouse />, fields: ['availablePallets'] });
-        if (hasTransport) base.push({ id: 'transport', name: 'Fleet Node', component: <StepTransport />, fields: ['fleetSummary'] });
-        if (hasLoads) base.push({ id: 'loads', name: 'Brokerage', component: <StepLoads />, fields: ['brokerageMargin'] });
+        
+        if (nodeType === 'warehouse') base.push({ id: 'warehouse', name: 'Storage Setup', component: <StepWarehouse />, fields: ['availablePallets'] });
+        if (nodeType === 'transport') base.push({ id: 'transport', name: 'Fleet Profile', component: <StepTransport />, fields: ['fleetSummary'] });
+        if (nodeType === 'loads') base.push({ id: 'loads', name: 'Brokerage Config', component: <StepLoads />, fields: ['brokerageMargin'] });
+        
         base.push({ id: 'publish', name: 'Activate', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] });
         return base;
-    }, [shop, hasWarehouse, hasTransport, hasLoads, onUpdate]);
+    }, [shop, nodeType, onUpdate]);
 
     const handleNext = async () => {
         const step = wizardSteps[currentStep];

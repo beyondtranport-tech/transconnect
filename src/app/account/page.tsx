@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -98,14 +99,10 @@ function AccountPageContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const navigate = (view: string) => {
-    router.push(`/account?view=${view}`, { scroll: false });
+  const navigate = (view: string, nodeType?: string) => {
+    const url = nodeType ? `/account?view=${view}&nodeType=${nodeType}` : `/account?view=${view}`;
+    router.push(url, { scroll: false });
   };
-
-  // Role Detection for Industrial Node Labeling
-  const hasLoads = user?.companyData?.hasLoadsPlan || user?.companyData?.membershipId === 'loads_intelligence';
-  const hasWarehouse = user?.companyData?.hasWarehousePlan || user?.companyData?.membershipId === 'warehouse_intelligence';
-  const hasSupplier = user?.companyData?.membershipId === 'intelligence' || user?.companyData?.membershipId === 'premium';
 
   if (isUserLoading || !user) {
     return (
@@ -164,37 +161,37 @@ function AccountPageContent() {
               <SidebarMenu>
                   {/* LOADS FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Loads" isActive={activeView.includes('loads')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Loads" isActive={activeView.includes('loads') || (activeView === 'shop' && searchParams.get('nodeType') === 'loads')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-loads'} onClick={() => navigate('mall-loads')}>Search Loads</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && hasLoads} onClick={() => navigate('shop')}>My Brokerage Hub</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'loads'} onClick={() => navigate('shop', 'loads')}>My Brokerage Hub</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
                   {/* WAREHOUSE FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Warehouse" isActive={activeView.includes('warehouse')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Warehouse" isActive={activeView.includes('warehouse') || (activeView === 'shop' && searchParams.get('nodeType') === 'warehouse')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-warehouse'} onClick={() => navigate('mall-warehouse')}>Source Storage</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && hasWarehouse} onClick={() => navigate('shop')}>My Warehouse Hub</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'warehouse'} onClick={() => navigate('shop', 'warehouse')}>My Warehouse Hub</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
                   {/* TRANSPORT FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Transport" isActive={activeView.includes('transporter')}><Truck /><span>Transport Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Transport" isActive={activeView.includes('transporter') || (activeView === 'shop' && searchParams.get('nodeType') === 'transport')}><Truck /><span>Transport Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-transporter'} onClick={() => navigate('mall-transporter')}>Source Capacity</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop'} onClick={() => navigate('shop')}>My Fleet Node</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'transport'} onClick={() => navigate('shop', 'transport')}>My Fleet Node</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
                   {/* SUPPLIER FLOW */}
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Suppliers" isActive={activeView.includes('supplier')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Suppliers" isActive={activeView.includes('supplier') || (activeView === 'shop' && searchParams.get('nodeType') === 'supplier')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-supplier'} onClick={() => navigate('mall-supplier')}>Registry Search</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && hasSupplier} onClick={() => navigate('shop')}>My Shop Profile</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && searchParams.get('nodeType') === 'supplier'} onClick={() => navigate('shop', 'supplier')}>My Shop Profile</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                   </SidebarMenuItem>
 
