@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -624,7 +623,7 @@ function StepRateSheet() {
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
@@ -633,7 +632,7 @@ function StepRateSheet() {
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
@@ -748,7 +747,7 @@ function StepCommercials({ shop }: { shop: any }) {
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest text-left">Your Proposal (%)</p>
                     <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white" />
                     <Button className="w-full h-10 font-bold" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
-                        {isSubmitting ? <Loader2 className="animate-spin h-4 w-4"/> : <Zap className="h-4 w-4 mr-2" />}
+                        {isSubmitting ? <Loader2 className="animate-spin h-4 w-4"/> : <Zap className="mr-2 h-4 w-4" />}
                         {pendingAgreement ? 'Awaiting Evaluation' : 'Propose Rate'}
                     </Button>
                 </div>
@@ -1088,7 +1087,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
 
                     <DialogFooter>
                         <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest">
-                            {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit to Node
                         </Button>
                     </DialogFooter>
@@ -1315,4 +1314,3 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         </Card>
     );
 }
-
