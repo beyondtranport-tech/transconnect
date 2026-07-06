@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, Store, PlusCircle, ShieldAlert, Edit, ArrowLeft, Warehouse, Truck, ShieldCheck, Landmark, PackageSearch } from 'lucide-react';
+import { Loader2, Store, PlusCircle, ShieldAlert, Edit, ArrowLeft, Warehouse, Truck, ShieldCheck, Landmark, PackageSearch, ShoppingCart } from 'lucide-react';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +37,11 @@ const nodeConfig: Record<string, { title: string; description: string; icon: any
         title: "Fleet Node Terminal", 
         description: "Configure your vehicle assets, service lanes, and technical profile.", 
         icon: Truck 
+    },
+    'buy-sell': { 
+        title: "Marketplace Node Terminal", 
+        description: "Manage your vehicle inventory, sales agreements, and buyer communications.", 
+        icon: ShoppingCart 
     },
     supplier: { 
         title: "Supplier Shop Terminal", 
@@ -175,7 +180,7 @@ export default function ShopContent() {
                     <ShieldAlert className="h-5 w-5 text-amber-600" />
                     <div className="ml-2 text-left">
                         <AlertTitle className="font-bold text-amber-900">Handshake Incomplete</AlertTitle>
-                        <AlertDescription className="text-sm text-amber-800 leading-relaxed mt-1">
+                        <AlertDescription className="text-sm text-amber-800 leading-relaxed mt-1 text-left">
                             Your **{config.title}** is currently in draft mode. You must complete the legal and commercial setup steps to activate your presence in the Mall.
                         </AlertDescription>
                     </div>

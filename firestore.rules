@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -74,6 +75,7 @@ service cloud.firestore {
       match /staff/{id} { allow read, write, list: if isMember(companyId); }
       match /brokerAgreements/{id} { allow read, write, list: if isMember(companyId); }
       match /assets/{id} { allow read, write, list: if isMember(companyId); }
+      match /vehicleListings/{id} { allow read, write, list: if isMember(companyId); }
       
       match /shops/{shopId} { 
         allow read: if true; 
@@ -87,11 +89,6 @@ service cloud.firestore {
 
       match /warehouses/{id} {
         allow read, write, list: if isMember(companyId);
-      }
-      
-      match /vehicleListings/{id} {
-          allow read: if true;
-          allow write: if isMember(companyId);
       }
     }
 
@@ -118,7 +115,7 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
