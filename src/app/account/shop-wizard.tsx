@@ -352,7 +352,7 @@ function StepWarehouseSecurity() {
                     <Shield className="h-6 w-6 text-primary" />
                     Security & Access Protocol
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1">Provide forensic clarity on how cargo is protected within your node.</p>
+                <p className="text-sm text-muted-foreground mt-1 text-left">Provide forensic clarity on how cargo is protected within your node.</p>
             </div>
 
             <div className="space-y-4 text-left">
@@ -530,7 +530,7 @@ function StepBrokerageCommercials() {
                             <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
                             <FormDescription className="text-[10px] leading-tight mt-2 font-bold text-primary text-left">
                                 The profit you, as the Primary Contractor (Broker), retain from the total load value for your role in securing the freight.
-                            </FormDescription>
+                            </Label>
                         </FormItem>
                     )} />
                 </div>
@@ -553,19 +553,19 @@ function StepBrokerageCommercials() {
                         Commercial Transparency Breakdown
                     </h4>
                     <div className="space-y-2 text-sm text-left">
-                        <div className="flex justify-between border-b pb-2">
+                        <div className="flex justify-between border-b pb-2 text-left">
                             <span className="text-muted-foreground">Total Load Value (Example)</span>
                             <span className="font-bold">R 10,000.00</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2">
+                        <div className="flex justify-between border-b pb-2 text-left">
                             <span className="text-muted-foreground">Your Clearing Margin ({margin}%)</span>
                             <span className="font-bold text-green-600">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2">
+                        <div className="flex justify-between border-b pb-2 text-left">
                             <span className="text-muted-foreground">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2">
+                        <div className="flex justify-between pt-2 text-left">
                             <span className="font-black uppercase text-xs">Available Haulier Payout</span>
                             <span className="font-black text-primary">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
@@ -1253,7 +1253,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     const currentStepConfig = wizardSteps[currentStep];
 
-    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary"/></div>;
+    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-foreground text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Synchronizing Steps...</p></div>;
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
@@ -1287,8 +1287,9 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     {currentStepConfig.component}
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-center h-full text-foreground">
-                                    <Loader2 className="animate-spin h-8 w-8 text-primary" />
+                                <div className="flex flex-col items-center justify-center h-full text-foreground gap-3">
+                                    <Loader2 className="animate-spin h-10 w-10 text-primary" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Initializing Terminal Module...</p>
                                 </div>
                             )}
                         </div>
