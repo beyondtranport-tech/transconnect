@@ -81,7 +81,6 @@ const nodeFormSchema = z.object({
   homeHeading: z.string().min(5, "Headline required."),
   aboutText: z.string().min(20, "Summary required."),
   logoUrl: z.string().optional(),
-  // Specialized Node Fields
   primaryContractUrl: z.string().optional(),
   subcontractorAgreementUrl: z.string().optional(),
   brokerageMargin: z.coerce.number().min(0).max(50).default(5),
@@ -394,7 +393,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                                         <SelectContent>{vehicleClasses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
-                             )} />
+                             ) } />
                          ) : (
                             <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
                          )}
@@ -684,7 +683,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     const nodeTitleMap: Record<string, string> = {
         loads: "Brokerage Node Configuration",
         warehouse: "Warehouse Hub Terminal",
-        transport: "Fleet Node Terminal",
+        transport: "Fleet Node Configuration",
         "buy-sell": "Marketplace Terminal",
         supplier: "Supplier Shop Wizard"
     };
