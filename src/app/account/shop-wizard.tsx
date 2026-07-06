@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -13,8 +13,8 @@ import {
     Loader2, Save, CheckCircle, Truck, MapPin, 
     DollarSign, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
-    ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, Circle,
-    Package, Calendar, Info, Globe, Navigation, Search
+    ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, 
+    Package, Info, Navigation, Search, HelpCircle
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -24,12 +24,12 @@ import { cn, formatCurrency, formatDateSafe } from '@/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
+import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 
 // ====== SCHEMAS ======
 
@@ -176,34 +176,74 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
 }
 
 function StepBrokerageCommercials() {
-    const { control } = useFormContext<NodeFormValues>();
+    const { control, watch } = useFormContext<NodeFormValues>();
+    const margin = watch('brokerageMargin') || 5;
+
     return (
         <div className="space-y-8 text-left text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2">
                 <DollarSign className="h-6 w-6 text-primary" />
                 Commercial Configuration
             </h3>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
                     <FormField control={control} name="brokerageMargin" render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Your Clearing Margin (%)</FormLabel>
+                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2">
+                                Your Clearing Margin (%)
+                                <HelpCircle className="h-3 w-3 opacity-50" />
+                            </FormLabel>
                             <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                            <FormDescription className="text-[10px]">Your percentage participation in each load payout.</FormDescription>
+                            <FormDescription className="text-[10px] leading-tight mt-2">
+                                The profit you retain from the total load value. This is your "Broker Participation."
+                            </FormDescription>
                         </FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Platform Success Fee</p>
-                    <p className="text-3xl font-black text-primary">2.5%</p>
-                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">Standard ecosystem fee applied to all matched freight transactions.</p>
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                        Platform Success Fee
+                        <ShieldCheck className="h-3 w-3 text-primary" />
+                    </p>
+                    <p className="text-4xl font-black text-primary">2.5%</p>
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">
+                        Facilitation fee for forensic matching, digital handshakes, and document automation.
+                    </p>
                 </div>
             </div>
+
+            <Card className="border-none bg-slate-50 shadow-inner">
+                <CardContent className="p-6">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+                        <Info className="h-4 w-4 text-primary" />
+                        Commercial Transparency Breakdown
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Total Load Value (Example)</span>
+                            <span className="font-bold">R 10,000.00</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Your Clearing Margin ({margin}%)</span>
+                            <span className="font-bold text-green-600">+ R {(10000 * (margin/100)).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Platform Success Fee (2.5%)</span>
+                            <span className="font-bold text-slate-600">- R 250.00</span>
+                        </div>
+                        <div className="flex justify-between pt-2">
+                            <span className="font-black uppercase text-xs">Available Haulier Payout</span>
+                            <span className="font-black text-primary">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }
 
-function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onComplete: () => void }) {
+function LoadOpportunityDialog({ shop, onComplete }: { shop: any, onComplete: () => void }) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const form = useForm({ resolver: zodResolver(loadOpportunitySchema) });
@@ -281,7 +321,7 @@ function StepLoadBoard({ shop }: { shop: any }) {
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Post New Load</Button></DialogTrigger>
-                    <LoadOpportunityDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                    <LoadOpportunityDialog shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
             
