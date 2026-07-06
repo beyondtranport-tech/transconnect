@@ -114,9 +114,10 @@ service cloud.firestore {
       match /tasks/{id} { allow read, write: if isAdmin(); }
     }
 
+    // --- CONFIGURATION RULES ---
+    // Required for public-facing stats and plan pricing
     match /configuration/{configId} {
-      allow get: if true;
-      allow list: if isAdmin();
+      allow get, list: if true;
     }
 
     // --- COLLECTION GROUP RULES ---
@@ -124,6 +125,7 @@ service cloud.firestore {
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /{path=**}/assets/{id} { allow read: if true; allow write: if isAdmin(); }
     
     match /{allPaths=**} {
       allow read, write: if isAdmin();

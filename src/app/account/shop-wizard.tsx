@@ -196,7 +196,6 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                     <FormItem>
                         <FormLabel>Public Identity Label</FormLabel>
                         <FormControl><Input {...field} className="h-11 border-2 bg-white" /></FormControl>
-                        <FormDescription className="text-[10px]">How your business node appears in the Mall registries.</FormDescription>
                         <FormMessage />
                     </FormItem> 
                 )} />
@@ -268,7 +267,75 @@ function StepWarehouseFees() {
     );
 }
 
-// ====== ASSET REGISTRY FOR FLEET / BUY-SELL ======
+function StepBrokerageCommercials() {
+    const { control, watch } = useFormContext<NodeFormValues>();
+    const margin = watch('brokerageMargin') || 5;
+
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+                <DollarSign className="h-6 w-6 text-primary" />
+                Commercial Configuration
+            </h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
+                    <FormField control={control} name="brokerageMargin" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2">
+                                Your Clearing Margin (%)
+                                <HelpCircle className="h-3 w-3 opacity-50" />
+                            </FormLabel>
+                            <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
+                            <FormDescription className="text-[10px] leading-tight mt-2 font-bold text-primary">
+                                The profit you, as the Primary Contractor (Broker), retain from the total load value for your role in securing the freight.
+                            </FormDescription>
+                        </FormItem>
+                    )} />
+                </div>
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                        Platform Success Fee
+                        <ShieldCheck className="h-3 w-3 text-primary" />
+                    </p>
+                    <p className="text-4xl font-black text-primary">2.5%</p>
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">
+                        The fee paid to Logistics Flow for the forensic match and automated documentation.
+                    </p>
+                </div>
+            </div>
+
+            <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
+                <CardContent className="p-6 text-left text-foreground">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
+                        <Info className="h-4 w-4 text-primary" />
+                        Commercial Transparency Breakdown
+                    </h4>
+                    <div className="space-y-2 text-sm text-left">
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Total Load Value (Example)</span>
+                            <span className="font-bold">R 10,000.00</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Your Clearing Margin ({margin}%)</span>
+                            <span className="font-bold text-green-600">+ R {(10000 * (margin/100)).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between border-b pb-2">
+                            <span className="text-muted-foreground">Platform Success Fee (2.5%)</span>
+                            <span className="font-bold text-slate-600">- R 250.00</span>
+                        </div>
+                        <div className="flex justify-between pt-2">
+                            <span className="font-black uppercase text-xs">Available Haulier Payout</span>
+                            <span className="font-black text-primary">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+// ====== INTERNAL TERMINALS FOR ASSETS AND LOADS ======
 
 function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'fleet' | 'sale', onComplete: () => void }) {
     const { toast } = useToast();
@@ -339,21 +406,6 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
                     </div>
 
-                    {mode === 'sale' && (
-                        <div className="space-y-4">
-                             <FormField control={form.control} name="location" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Vehicle Location</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select town..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{locations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </FormItem>
-                             )} />
-                             <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Detailed Description</FormLabel><FormControl><Textarea placeholder="Condition, extras, etc..." {...field} /></FormControl></FormItem>)} />
-                        </div>
-                    )}
-
                     <DialogFooter>
                         <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest">
                             {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
@@ -365,67 +417,6 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
         </DialogContent>
     );
 }
-
-function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }) {
-    const firestore = useFirestore();
-    const [isAdding, setIsAdding] = useState(false);
-    
-    const collectionPath = mode === 'fleet' ? `companies/${shop.companyId}/assets` : `companies/${shop.companyId}/vehicleListings`;
-    const assetsQuery = useMemoFirebase(() => {
-        if (!firestore || !shop?.companyId) return null;
-        return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
-    }, [firestore, shop.companyId, collectionPath]);
-    
-    const { data: assets, forceRefresh } = useCollection(assetsQuery);
-
-    return (
-        <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4">
-                <div className="text-left">
-                    <h3 className="text-xl font-black font-headline">
-                        {mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">Manage your RC1-vetted assets for this node.</p>
-                </div>
-                <Dialog open={isAdding} onOpenChange={setIsAdding}>
-                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Add Asset</Button></DialogTrigger>
-                    <AssetDialogContent shop={shop} mode={mode} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
-                </Dialog>
-            </div>
-            
-            <div className="min-h-[300px]">
-                {assets && assets.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {assets.map(asset => (
-                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left">
-                                <div className="relative aspect-video bg-muted">
-                                    {asset.photoUrl && <Image src={asset.photoUrl} alt={asset.make} fill className="object-cover" />}
-                                    <div className="absolute top-2 right-2">
-                                        <Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge>
-                                    </div>
-                                </div>
-                                <CardContent className="p-4">
-                                    <p className="font-bold text-sm">{asset.year} {asset.make} {asset.model}</p>
-                                    {mode === 'sale' && <p className="text-primary font-black mt-1">{formatCurrency(asset.price)}</p>}
-                                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1">
-                                        {asset.vClass || asset.location}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
-                        <Truck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No records found in this node.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-// ====== LOADS NODE SPECIALIZATION ======
 
 function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onComplete: () => void }) {
     const { toast } = useToast();
@@ -500,15 +491,16 @@ function LoadOpportunityDialogContent({ shop, onComplete }: { shop: any, onCompl
     );
 }
 
+// ====== MAIN WIZARD ======
+
 function StepLoadBoard({ shop }: { shop: any }) {
     const firestore = useFirestore();
     const [isAdding, setIsAdding] = useState(false);
-    
+    const collectionPath = `companies/${shop.companyId}/loads`;
     const loadsQuery = useMemoFirebase(() => {
         if (!firestore || !shop?.companyId) return null;
-        return query(collection(firestore, `companies/${shop.companyId}/loads`), orderBy('createdAt', 'desc'));
-    }, [firestore, shop.companyId]);
-    
+        return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
+    }, [firestore, shop.companyId, collectionPath]);
     const { data: loads, forceRefresh } = useCollection(loadsQuery);
 
     return (
@@ -523,7 +515,6 @@ function StepLoadBoard({ shop }: { shop: any }) {
                     <LoadOpportunityDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
-            
             <div className="min-h-[300px]">
                 {loads && loads.length > 0 ? (
                     <DataTable 
@@ -545,70 +536,51 @@ function StepLoadBoard({ shop }: { shop: any }) {
     );
 }
 
-function StepBrokerageCommercials() {
-    const { control, watch } = useFormContext<NodeFormValues>();
-    const margin = watch('brokerageMargin') || 5;
+function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }) {
+    const firestore = useFirestore();
+    const [isAdding, setIsAdding] = useState(false);
+    const collectionPath = mode === 'fleet' ? `companies/${shop.companyId}/assets` : `companies/${shop.companyId}/vehicleListings`;
+    const assetsQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.companyId) return null;
+        return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
+    }, [firestore, shop.companyId, collectionPath]);
+    const { data: assets, forceRefresh } = useCollection(assetsQuery);
 
     return (
-        <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
-                <DollarSign className="h-6 w-6 text-primary" />
-                Commercial Configuration
-            </h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
-                    <FormField control={control} name="brokerageMargin" render={({ field }) => (
-                        <FormItem className="text-left">
-                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2">
-                                Your Clearing Margin (%)
-                                <HelpCircle className="h-3 w-3 opacity-50" />
-                            </FormLabel>
-                            <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                            <FormDescription className="text-[10px] leading-tight mt-2">
-                                The profit you retain from the total load value. This is your "Broker Participation."
-                            </FormDescription>
-                        </FormItem>
-                    )} />
+        <div className="space-y-6 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4">
+                <div className="text-left">
+                    <h3 className="text-xl font-black font-headline">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
+                    <p className="text-xs text-muted-foreground">Manage your RC1-vetted assets for this node.</p>
                 </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                        Platform Success Fee
-                        <ShieldCheck className="h-3 w-3 text-primary" />
-                    </p>
-                    <p className="text-4xl font-black text-primary">2.5%</p>
-                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">
-                        Facilitation fee for matching, handshakes, and automation.
-                    </p>
-                </div>
+                <Dialog open={isAdding} onOpenChange={setIsAdding}>
+                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Add Asset</Button></DialogTrigger>
+                    <AssetDialogContent shop={shop} mode={mode} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
+                </Dialog>
             </div>
-
-            <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
-                <CardContent className="p-6 text-left text-foreground">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
-                        <Info className="h-4 w-4 text-primary" />
-                        Commercial Transparency Breakdown
-                    </h4>
-                    <div className="space-y-2 text-sm text-left">
-                        <div className="flex justify-between border-b pb-2">
-                            <span className="text-muted-foreground">Total Load Value (Example)</span>
-                            <span className="font-bold">R 10,000.00</span>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                            <span className="text-muted-foreground">Your Clearing Margin ({margin}%)</span>
-                            <span className="font-bold text-green-600">+ R {(10000 * (margin/100)).toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between border-b pb-2">
-                            <span className="text-muted-foreground">Platform Success Fee (2.5%)</span>
-                            <span className="font-bold text-slate-600">- R 250.00</span>
-                        </div>
-                        <div className="flex justify-between pt-2">
-                            <span className="font-black uppercase text-xs">Available Haulier Payout</span>
-                            <span className="font-black text-primary">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
-                        </div>
+            <div className="min-h-[300px]">
+                {assets && assets.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {assets.map(asset => (
+                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left">
+                                <div className="relative aspect-video bg-muted">
+                                    {asset.photoUrl && <Image src={asset.photoUrl} alt={asset.make} fill className="object-cover" />}
+                                    <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
+                                </div>
+                                <CardContent className="p-4">
+                                    <p className="font-bold text-sm">{asset.year} {asset.make} {asset.model}</p>
+                                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1">{asset.vClass || asset.location}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
-                </CardContent>
-            </Card>
+                ) : (
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
+                        <Truck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No records found.</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
@@ -633,9 +605,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     };
     return (
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500">
-            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm">
-                <CheckCircle className="h-16 w-16 text-primary" />
-            </div>
+            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2">
                 <h3 className="text-3xl font-black font-headline text-foreground">Node Handshake Ready</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
@@ -647,8 +617,6 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
         </div>
     );
 }
-
-// ====== MAIN WIZARD ======
 
 export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: string, onUpdate: () => void }) {
     const { toast } = useToast();
@@ -676,28 +644,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         }
     });
 
-    const onSubmit = async (values: NodeFormValues) => {
-        setIsSaving(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            await fetch('/api/updateUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    path: `companies/${shop.companyId}/shops/${shop.id}`,
-                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
-                }),
-            });
-            toast({ title: 'Node Data Synced' });
-            onUpdate();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Sync Failed' });
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
     const wizardSteps = useMemo(() => {
         if (nodeType === 'loads') {
             return [
@@ -708,7 +654,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 { id: 'publish', name: '5. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
-
         if (nodeType === 'warehouse') {
             return [
                 { id: 'identity', name: '1. Facility Identity', component: <StepIdentity nodeType="warehouse" />, fields: ['shopName', 'category'] },
@@ -716,7 +661,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 { id: 'publish', name: '3. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
-
         if (nodeType === 'transport') {
             return [
                 { id: 'identity', name: '1. Fleet Identity', component: <StepIdentity nodeType="transport" />, fields: ['shopName', 'category'] },
@@ -724,7 +668,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 { id: 'publish', name: '3. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
-
         if (nodeType === 'buy-sell') {
             return [
                 { id: 'identity', name: '1. Dealer Identity', component: <StepIdentity nodeType="buy-sell" />, fields: ['shopName', 'category'] },
@@ -732,25 +675,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 { id: 'publish', name: '3. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
-        
         return [
             { id: 'identity', name: '1. Identity', component: <StepIdentity nodeType={nodeType} />, fields: ['shopName', 'category'] },
             { id: 'publish', name: '2. Activate', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
         ];
     }, [shop, nodeType, onUpdate]);
-
-    const handleNext = async () => {
-        const step = wizardSteps[currentStep];
-        const isValid = step.fields && step.fields.length > 0 ? await methods.trigger(step.fields as any) : true;
-        if (isValid && currentStep < wizardSteps.length - 1) setCurrentStep(prev => prev + 1);
-    };
-
-    const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0) return true;
-        const step = wizardSteps[stepIndex];
-        if (!step.fields || step.fields.length === 0) return true;
-        return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
-    };
 
     const nodeTitleMap: Record<string, string> = {
         loads: "Brokerage Node Configuration",
@@ -759,21 +688,25 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         "buy-sell": "Marketplace Terminal",
         supplier: "Supplier Shop Wizard"
     };
-    
+
+    const handleNext = async () => {
+        const step = wizardSteps[currentStep];
+        const isValid = step.fields && step.fields.length > 0 ? await methods.trigger(step.fields as any) : true;
+        if (isValid && currentStep < wizardSteps.length - 1) setCurrentStep(prev => prev + 1);
+    };
+
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
-                <div className="flex justify-between items-center mb-4 text-left">
-                    <div className="text-left">
-                        <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
-                        <CardDescription className="text-left">Establish legal and commercial parameters for this business unit.</CardDescription>
-                    </div>
+                <div className="text-left">
+                    <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
+                    <CardDescription className="text-left">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
-                <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2" />
+                <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2 mt-4" />
             </CardHeader>
             <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <form onSubmit={methods.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
+                    <form className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -801,7 +734,21 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
                 <div className="flex gap-3">
-                    <Button type="button" variant="outline" onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="font-bold">
+                    <Button type="button" variant="outline" onClick={methods.handleSubmit(async (v) => {
+                        setIsSaving(true);
+                        try {
+                            const token = await getClientSideAuthToken();
+                            if (!token) return;
+                            await fetch('/api/updateUserDoc', {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ path: `companies/${shop.companyId}/shops/${shop.id}`, data: { ...v, updatedAt: { _methodName: 'serverTimestamp' } } }),
+                            });
+                            toast({ title: 'Node Data Synced' });
+                            onUpdate();
+                        } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
+                        finally { setIsSaving(false); }
+                    })} disabled={isSaving} className="font-bold">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
