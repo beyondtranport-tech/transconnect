@@ -47,7 +47,6 @@ import {
   HelpCircle,
   Network,
   PackageSearch,
-  ShoppingCart,
   Warehouse,
   ClipboardList,
   Eye,

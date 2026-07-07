@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -192,7 +192,7 @@ export default function LendingParametersContent() {
 
                         <TabsContent value="criteria" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
                              <div className="space-y-4">
-                                <h3 className="text-sm font-black uppercase tracking-widest text-muted-foreground ml-1">Agreement Specifics</h3>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Agreement Specifics</Label>
                                 <Accordion type="multiple" className="w-full space-y-4">
                                     {productHierarchy.map(group => (
                                         <AccordionItem key={group.id} value={group.id} className="border rounded-xl bg-white overflow-hidden px-4">
@@ -276,7 +276,7 @@ export default function LendingParametersContent() {
 
                         <TabsContent value="risk" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
                              <Card>
-                                <CardHeader className="border-b bg-muted/20">
+                                <CardHeader className="border-b bg-muted/20 text-left">
                                     <CardTitle className="text-lg flex items-center gap-2">
                                         <ShieldCheck className="h-5 w-5 text-primary"/> 
                                         Entity Risk Parameters
@@ -285,16 +285,16 @@ export default function LendingParametersContent() {
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 text-left">
                                     <div className="space-y-6">
-                                        <div className="space-y-4">
+                                        <div className="space-y-4 text-left">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entity Maturity</Label>
                                             <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
-                                                <FormItem><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} className="border-2" /></FormControl></FormItem>
+                                                <FormItem className="text-left"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} className="border-2" /></FormControl></FormItem>
                                             )} />
                                         </div>
-                                        <div className="space-y-4">
+                                        <div className="space-y-4 text-left">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Minimum Annual Turnover (R)</Label>
                                             <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
-                                                <FormItem><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2" /></FormControl></FormItem>
+                                                <FormItem className="text-left"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2" /></FormControl></FormItem>
                                             )} />
                                         </div>
                                     </div>
@@ -348,13 +348,13 @@ export default function LendingParametersContent() {
 
                         <TabsContent value="portfolio" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left">
                              <Card>
-                                <CardHeader className="border-b bg-muted/20">
+                                <CardHeader className="border-b bg-muted/20 text-left">
                                     <CardTitle className="text-lg flex items-center gap-2"><Tag className="h-5 w-5 text-primary"/> Specialized Product Focus</CardTitle>
-                                    <CardDescription>Target specific industrial categories and forensic tags derived from registry notes.</CardDescription>
+                                    <CardDescription className="text-left">Target specific industrial categories and forensic tags derived from registry notes.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-10 pt-8 text-left">
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1 text-left">
                                             <Zap className="h-4 w-4" /> 
                                             Specialized Credit Products
                                         </Label>
@@ -381,7 +381,7 @@ export default function LendingParametersContent() {
                                     <Separator />
 
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1 text-left">
                                             <Truck className="h-4 w-4" /> 
                                             Asset Focus (Collateral)
                                         </Label>
@@ -408,11 +408,11 @@ export default function LendingParametersContent() {
                                     <Separator />
 
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1 text-left">
                                             <MapPin className="h-4 w-4" /> 
                                             Target Funding Regions
                                         </Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left">
                                             {regionOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
                                                     <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left">
@@ -436,9 +436,9 @@ export default function LendingParametersContent() {
                         </TabsContent>
                     </Tabs>
 
-                    <div className="bg-slate-50 border-t p-8 flex justify-end mt-12 rounded-2xl shadow-inner">
-                        <Button type="submit" disabled={isSaving} size="lg" className="h-14 px-12 font-black uppercase tracking-widest gap-2 shadow-xl">
-                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
+                    <div className="bg-slate-50 border-t p-8 flex justify-end mt-12 rounded-2xl shadow-inner text-left">
+                        <Button type="submit" disabled={isSaving} size="lg" className="h-14 px-12 font-black uppercase tracking-widest gap-2 shadow-xl text-left">
+                            {isSaving ? <Loader2 className="h-5 w-5 animate-spin text-left"/> : <Save className="h-5 w-5 text-left" />}
                             Update Global Matching Logic
                         </Button>
                     </div>
