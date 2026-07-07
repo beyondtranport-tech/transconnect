@@ -19,16 +19,13 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * High-speed resilient verification for mission-critical paths.
      */
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          // Path 1: User profile link (Primary)
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
-          // Path 2: Direct ownership on target record (Fallback)
           (exists(/databases/$(database)/documents/companies/$(cid)) && 
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
@@ -46,7 +43,6 @@ service cloud.firestore {
     }
 
     // --- ADMIN OVERRIDE ---
-    // Universal catch-all to ensure administrators can bypass all other logic.
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -96,20 +92,20 @@ service cloud.firestore {
       match /facilities/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
       match /staff/{id} { allow read, write, list: if isMember(companyId); }
       match /brokerAgreements/{id} { allow read, write, list: if isMember(companyId); }
-      match /assets/{id} { allow read, write, list: if isMember(companyId); }
-      match /vehicleListings/{id} { allow read, write, list: if isMember(companyId); }
       
       match /shops/{shopId} { 
+        allow read: if true; 
         allow write: if isMember(companyId); 
-        match /products/{prodId} { allow write: if isMember(companyId); }
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
         match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
 
-      match /loads/{id} {
-        allow read, write, list: if isMember(companyId);
+      match /vehicleListings/{id} {
+          allow read: if true;
+          allow write: if isMember(companyId);
       }
-
-      match /warehouses/{id} {
+      
+      match /loads/{id} {
         allow read, write, list: if isMember(companyId);
       }
     }
@@ -135,23 +131,18 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // Explicit authorization for cross-company industrial registries.
-    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
+    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
-    match /{path=**}/assets/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
-    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin() || isMember(resource.data.companyId); }
+    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/brokerAgreements/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
   }
 }

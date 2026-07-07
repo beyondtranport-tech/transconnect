@@ -15,7 +15,7 @@ import {
     Warehouse, Banknote, ShieldCheck, UserCheck, Smartphone, PackageSearch,
     ClipboardList, Sparkles, Store, Gavel, FileUp, Trash2, PlusCircle, 
     Package, Info, Navigation, Search, HelpCircle, Users, FileText, Camera,
-    ShoppingCart, Wrench, Shield, Clock, Map, ListOrdered, FileSignature, Edit, Tag, History, Zap
+    ShoppingCart, Wrench, Shield, Clock, ListOrdered, FileSignature, Edit, Tag, History, Zap
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -444,7 +444,7 @@ function StepGallery() {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
                 <Camera className="h-6 w-6 text-primary" /> 
                 Facility Gallery
             </h3>
@@ -465,7 +465,7 @@ function StepGallery() {
                 ))}
                 <label className="aspect-square border-2 border-dashed rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50 transition-colors p-4 text-center">
                     {uploading ? <Loader2 className="h-6 w-6 animate-spin text-primary mx-auto" /> : <PlusCircle className="h-6 w-6 text-muted-foreground mx-auto" />}
-                    <span className="text-[10px] font-black uppercase mt-2 tracking-widest leading-tight">Add Photos</span>
+                    <span className="text-[10px] font-black uppercase mt-2 tracking-widest leading-tight text-center">Add Photos</span>
                     <input id="gallery-up" type="file" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
                 </label>
             </div>
@@ -509,13 +509,13 @@ function StepBrokerageCommercials() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
                 <DollarSign className="h-6 w-6 text-primary" />
                 Commercial Configuration
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
                     <FormField control={control} name="brokerageMargin" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2">
@@ -535,7 +535,7 @@ function StepBrokerageCommercials() {
                         <ShieldCheck className="h-3 w-3 text-primary" />
                     </p>
                     <p className="text-4xl font-black text-primary">2.5%</p>
-                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic">
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic text-left">
                         The fee paid to Logistics Flow for the forensic match and automated documentation.
                     </p>
                 </div>
@@ -543,26 +543,26 @@ function StepBrokerageCommercials() {
 
             <Card className="border-none bg-slate-50 shadow-inner">
                 <CardContent className="p-6 text-left">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
                     <div className="space-y-2 text-sm text-left">
-                        <div className="flex justify-between border-b pb-2">
-                            <span className="text-muted-foreground">Total Load Value (Example)</span>
-                            <span className="font-bold">R 10,000.00</span>
+                        <div className="flex justify-between border-b pb-2 text-left">
+                            <span className="text-muted-foreground text-left">Total Load Value (Example)</span>
+                            <span className="font-bold text-left">R 10,000.00</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2">
-                            <span className="text-muted-foreground">Your Clearing Margin ({margin}%)</span>
-                            <span className="font-bold text-green-600">+ R {(10000 * (margin/100)).toFixed(2)}</span>
+                        <div className="flex justify-between border-b pb-2 text-left">
+                            <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
+                            <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2">
-                            <span className="text-muted-foreground">Platform Success Fee (2.5%)</span>
-                            <span className="font-bold text-slate-600">- R 250.00</span>
+                        <div className="flex justify-between border-b pb-2 text-left">
+                            <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
+                            <span className="font-bold text-slate-600 text-left">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2">
-                            <span className="font-black uppercase text-xs">Available Haulier Payout</span>
-                            <span className="font-black text-primary">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
+                        <div className="flex justify-between pt-2 text-left">
+                            <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
+                            <span className="font-black text-primary text-left">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
                     </div>
                 </CardContent>
@@ -606,7 +606,7 @@ function StepRateSheet() {
 
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
                         <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                     </FormItem>
@@ -627,16 +627,16 @@ function StepRateSheet() {
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
@@ -735,7 +735,7 @@ function StepCommercials({ shop }: { shop: any }) {
     return (
         <div className="space-y-8 text-left text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
-                <Handshake className="h-6 w-6 text-primary" />
+                <History className="h-6 w-6 text-primary" />
                 Mall Commercials
             </h3>
             
@@ -1057,7 +1057,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                                 <FormItem className="text-left">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="Heavy Truck (Horse)">Heavy Truck (Horse)</SelectItem>
                                             <SelectItem value="Trailer">Trailer</SelectItem>
@@ -1327,8 +1327,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     )}
                 </div>
             </CardFooter>
-        </form>
-      </FormProvider>
-    </Card>
-  );
+        </Card>
+    );
 }

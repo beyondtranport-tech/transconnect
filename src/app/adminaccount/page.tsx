@@ -157,7 +157,6 @@ function AdminAccountContent() {
         return <SocialStudio platform={platform} />;
     }
     if (activeView.startsWith('marketing-')) {
-        // Robust splitter for hyphenated IDs like buy-sell
         const audience = activeView.replace('marketing-', '') as any;
         return <MarketingPage audience={audience} />;
     }
