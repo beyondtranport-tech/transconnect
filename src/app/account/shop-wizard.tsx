@@ -161,7 +161,7 @@ function StepLegal() {
             <div className="space-y-6 text-left">
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="font-bold text-left">Operational Compliance Audit</AlertTitle>
+                    <AlertTitle className="font-bold text-left text-foreground">Operational Compliance Audit</AlertTitle>
                     <AlertDescription className="text-xs leading-relaxed text-left">
                         You must provide evidence of your operating rights. This allows the platform to verify your node before it is published to the public mall.
                     </AlertDescription>
@@ -791,7 +791,7 @@ function StepCatalog({ shop }: { shop: any }) {
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
-                <div className="text-left text-foreground">
+                <div className="text-left text-foreground text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
@@ -1019,7 +1019,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     const handleMultiUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || !shop) return;
-        const urls = [...form.getValues('photoUrls')];
+        const urls: any[] = [...(form.getValues('photoUrls') || [])];
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const token = await getClientSideAuthToken();
@@ -1048,11 +1048,11 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left text-foreground">
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="make" render={({ field }) => (<FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                        <FormField control={form.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem> )} />
+                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem> )} />
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-left">
-                         <FormField control={form.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                         <FormField control={form.control} name="year" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
                                 <FormItem className="text-left text-foreground">
@@ -1072,7 +1072,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                                 </FormItem>
                              ) } />
                          ) : (
-                            <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                            <FormField control={form.control} name="price" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          )}
                     </div>
 
@@ -1132,7 +1132,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <p className="text-muted-foreground max-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center text-left">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
