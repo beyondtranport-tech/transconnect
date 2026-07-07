@@ -91,15 +91,15 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 text-left">
-            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-left">
+            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-left text-foreground">
                 <ArrowLeft className="h-4 w-4" /> Back to Instruction
             </Button>
 
             <Card className="shadow-2xl border-none overflow-hidden text-left">
                 <CardHeader className="bg-slate-900 text-white p-10 text-left">
-                    <div className="flex justify-between items-start text-left text-white">
+                    <div className="flex justify-between items-start text-left">
                         <div className="text-left text-white">
-                            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white text-left">
+                            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white">
                                 <CheckCircle className="h-10 w-10 text-primary" />
                                 Work Fulfillment Gateway
                             </CardTitle>
@@ -131,13 +131,13 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                         </Button>
                                     </div>
                                 ) : (
-                                    <div className="text-center text-left">
+                                    <div className="text-center">
                                         <div className="bg-white p-4 rounded-full shadow-sm mx-auto w-fit">
                                             <FileText className="h-8 w-8 text-muted-foreground" />
                                         </div>
                                         <input type="file" id="pod-input" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
-                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="mt-4 font-bold text-left">
-                                            {isUploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <FileUp className="mr-2 h-4 w-4" />}
+                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="mt-4 font-bold text-left text-foreground">
+                                            {isUploading ? <Loader2 className="animate-spin mr-2 h-4 w-4 text-left" /> : <FileUp className="mr-2 h-4 w-4 text-left" />}
                                             Upload Signed POD
                                         </Button>
                                     </div>
@@ -152,12 +152,12 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 2. Settlement Summary
                             </h3>
                             <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left">
-                                <div className="space-y-1 text-left text-white">
-                                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-left">Expected Haulier Payout</p>
+                                <div className="space-y-1 text-left">
+                                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Expected Haulier Payout</p>
                                     <p className="text-4xl font-black text-primary text-left">{formatCurrency(load.haulierPayout)}</p>
                                 </div>
                                 <Separator className="bg-white/10" />
-                                <div className="text-xs text-slate-400 leading-relaxed text-left">
+                                <div className="text-xs text-slate-400 leading-relaxed text-left text-foreground">
                                     <p className="text-left text-foreground">Upon broker verification of the POD, these funds will be moved from "Pending" to "Available" in your wallet.</p>
                                 </div>
                             </div>
@@ -174,7 +174,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 </CardContent>
 
                 <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center text-left text-foreground">
-                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground text-left">Return to Details</Button>
+                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground text-left text-foreground">Return to Details</Button>
                     <Button 
                         onClick={handleConfirmFulfillment} 
                         disabled={!podUrl || isProcessing} 

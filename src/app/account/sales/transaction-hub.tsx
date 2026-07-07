@@ -216,11 +216,11 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                         <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2" onClick={() => toast({ title: "OTP Generated", description: "Offer to Purchase is ready for download." })}>
                                             <div className="bg-blue-100 p-2 rounded-lg"><FileText className="h-5 w-5 text-blue-600" /></div>
-                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase">Offer to Purchase</p><p className="text-[10px] text-muted-foreground">Legally Binding Contract</p></div>
+                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase">Offer to Purchase</p><p className="text-[10px] text-muted-foreground text-left">Legally Binding Contract</p></div>
                                         </Button>
                                         <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2" onClick={() => toast({ title: "Invoice Generated", description: "VAT Invoice has been isolated." })}>
                                             <div className="bg-green-100 p-2 rounded-lg"><Banknote className="h-5 w-5 text-green-600" /></div>
-                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground">Financial Settlement Record</p></div>
+                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground text-left">Financial Settlement Record</p></div>
                                         </Button>
                                     </div>
                                 </div>

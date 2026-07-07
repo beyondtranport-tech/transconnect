@@ -97,7 +97,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
 
     if (isAccepted && acceptedLoadData) {
         return (
-            <div className="space-y-6">
+            <div className="space-y-6 text-left">
                 <Alert className="bg-green-50 border-green-200">
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <AlertTitle className="font-bold">Transaction Confirmed</AlertTitle>
@@ -129,7 +129,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                 </CardHeader>
                 <CardContent className="p-10 space-y-10 bg-white text-left text-foreground">
                     <div className="p-8 rounded-3xl border-2 border-primary bg-primary/5 shadow-sm text-left">
-                        <div className="flex justify-between items-start mb-6">
+                        <div className="flex justify-between items-start mb-6 text-left">
                             <div className="text-left">
                                 <h3 className="font-black text-xl flex items-center gap-2"><Gavel className="h-6 w-6 text-primary" /> 1. Trust Binding</h3>
                                 <p className="text-sm text-muted-foreground">You are acting as a Subcontractor to <strong>{load.brokerName}</strong>.</p>
@@ -175,7 +175,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                         {!hasRequiredAsset && (
                             <div className="mt-6 p-6 bg-white rounded-2xl border border-destructive/20 space-y-4 shadow-inner text-left">
                                 <p className="text-xs text-muted-foreground leading-relaxed text-left">You have not registered the required verified **RC1 assets** in your node. Forensic proof of capacity is required before engagement.</p>
-                                <Button asChild variant="outline" size="lg" className="w-full border-destructive/20 text-destructive font-bold h-12"><Link href="/account?view=fleet">Complete Fleet Profile</Link></Button>
+                                <Button asChild variant="outline" size="lg" className="w-full border-destructive/20 text-destructive font-bold h-12 text-left"><Link href="/account?view=fleet">Complete Fleet Profile</Link></Button>
                             </div>
                         )}
                     </div>
@@ -189,16 +189,16 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                             {hasConfirmedDriver ? <CheckCircle className="h-8 w-8 text-green-600" /> : <AlertTriangle className="h-8 w-8 text-destructive" />}
                         </div>
                         {!hasConfirmedDriver && (
-                            <div className="mt-6 p-6 bg-white rounded-2xl border border-destructive/20 space-y-4 shadow-inner text-left">
+                            <div className="mt-6 p-6 bg-white rounded-2xl border border-destructive/20 space-y-4 shadow-inner text-left text-foreground">
                                 <p className="text-xs text-muted-foreground leading-relaxed text-left">No confirmed driver found in your roster. Onboard your logistics staff to satisfy compliance.</p>
-                                <Button asChild variant="outline" size="lg" className="w-full border-destructive/20 text-destructive font-bold h-12"><Link href="/account?view=staff">Manage Staff</Link></Button>
+                                <Button asChild variant="outline" size="lg" className="w-full border-destructive/20 text-destructive font-bold h-12 text-left"><Link href="/account?view=staff">Manage Staff</Link></Button>
                             </div>
                         )}
                     </div>
                 </CardContent>
                 <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left text-foreground">
-                    <Button variant="ghost" onClick={onCancel} className="font-bold text-muted-foreground">Cancel Transaction</Button>
-                    <Button onClick={handleAcceptLoad} disabled={!isIntelligenceMember || !hasRequiredAsset || !hasConfirmedDriver || !noCircumventionAccepted || isLoading} className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white">
+                    <Button variant="ghost" onClick={onCancel} className="font-bold text-muted-foreground text-left">Cancel Transaction</Button>
+                    <Button onClick={handleAcceptLoad} disabled={!isIntelligenceMember || !hasRequiredAsset || !hasConfirmedDriver || !noCircumventionAccepted || isLoading} className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white text-left">
                         {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Accept & Issue Instruction"}
                     </Button>
                 </CardFooter>

@@ -181,7 +181,9 @@ export default function MyFacilitiesContent() {
                         <h3 className="text-xl font-bold text-center">No Active Facilities Found</h3>
                         <p className="text-muted-foreground max-sm mx-auto text-center">You haven't been issued any funding facilities yet. Start by submitting a forensic application.</p>
                         <Button asChild className="mt-4 font-bold" size="lg">
-                            <Link href="/funding">Apply for Funding <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                            <Link href="/funding">
+                                Apply for Funding <ArrowRight className="ml-2 h-4 w-4"/>
+                            </Link>
                         </Button>
                     </CardContent>
                 </Card>

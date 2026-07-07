@@ -34,6 +34,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
+import { Badge } from '@/components/ui/badge';
 
 // ====== SCHEMAS ======
 
@@ -137,8 +138,8 @@ function FileUploadField({
     };
 
     return (
-        <div className="space-y-2 text-left">
-            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{label}</Label>}
+        <div className="space-y-2 text-left text-foreground">
+            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1"> {label}</Label>}
             <Button type="button" variant="outline" className={cn("w-full min-h-[3rem] h-auto border-2 border-dashed py-2 whitespace-normal leading-tight", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
                 {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
                 {currentUrl ? "File Attached" : `Select ${label}`}
@@ -200,19 +201,19 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                 <UserCheck className="h-6 w-6 text-primary" /> 
                 Node Identity & Labeling
             </h3>
-            <div className="space-y-4 text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Public Identity Label</FormLabel>
                         <FormControl><Input {...field} className="h-11 border-2 bg-white" /></FormControl>
                         <FormMessage />
                     </FormItem> 
                 )} />
                 <FormField control={control} name="category" render={({ field }) => ( 
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Primary Node Classification</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 {nodeType === 'warehouse' ? (
                                     <>
@@ -250,20 +251,20 @@ function StepBranding() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-6 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <Sparkles className="h-6 w-6 text-primary" /> 
                 Branding & Narrative
             </h3>
-            <div className="space-y-4 text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <FileUploadField name="logoUrl" label="Company Logo" folder="node-branding" />
                 <FormField control={control} name="homeHeading" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Public Headline</FormLabel>
                         <FormControl><Input placeholder="e.g. Premium Cold Storage in City Deep" {...field} className="h-11 border-2 bg-white" /></FormControl>
                     </FormItem>
                 )} />
                 <FormField control={control} name="aboutText" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Professional Summary (About Us)</FormLabel>
                         <FormControl><Textarea placeholder="Describe your facility, security, and specialized services..." {...field} className="min-h-[150px] border-2 bg-white" /></FormControl>
                     </FormItem>
@@ -281,15 +282,15 @@ function StepWarehouseCapabilities() {
     const rackingOptions = ["Selective Racking", "Drive-In Racking", "Push-Back Racking", "Cantilever Racking", "Floor Storage", "Mezzanine"];
 
     const renderCheckboxes = (name: any, options: string[], title: string, icon: any) => (
-        <div className="space-y-4 text-left">
+        <div className="space-y-4 text-left text-foreground">
             <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left">
                 {React.createElement(icon, { className: "h-3.5 w-3.5" })}
                 {title}
             </Label>
-            <div className="grid grid-cols-2 gap-2 text-left">
+            <div className="grid grid-cols-2 gap-2 text-left text-foreground">
                 {options.map(opt => (
                     <FormField key={opt} control={control} name={name} render={({ field }) => (
-                        <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors text-left">
+                        <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors text-left text-foreground">
                             <Checkbox 
                                 checked={field.value?.includes(opt)} 
                                 onCheckedChange={(checked) => {
@@ -299,7 +300,7 @@ function StepWarehouseCapabilities() {
                                         : field.onChange(current.filter((v: string) => v !== opt));
                                 }} 
                             />
-                            <span className="text-[11px] font-medium text-left">{opt}</span>
+                            <span className="text-[11px] font-medium text-left text-foreground">{opt}</span>
                         </div>
                     )} />
                 ))}
@@ -309,7 +310,7 @@ function StepWarehouseCapabilities() {
 
     return (
         <div className="space-y-10 text-left text-foreground">
-            <div className="text-left">
+            <div className="text-left text-foreground">
                 <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                     <Wrench className="h-6 w-6 text-primary" />
                     Capabilities & Equipment
@@ -342,23 +343,23 @@ function StepWarehouseSecurity() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="text-left">
-                <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
+            <div className="text-left text-foreground">
+                <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                     <Shield className="h-6 w-6 text-primary" />
                     Security & Access Protocol
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1 text-left text-foreground">Provide forensic clarity on how cargo is protected within your node.</p>
+                <p className="text-sm text-muted-foreground mt-1 text-left">Provide forensic clarity on how cargo is protected within your node.</p>
             </div>
 
-            <div className="space-y-4 text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left">
+            <div className="space-y-4 text-left text-foreground">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     Security Infrastructure
                 </Label>
-                <div className="grid grid-cols-2 gap-2 text-left">
+                <div className="grid grid-cols-2 gap-2 text-left text-foreground">
                     {securityOptions.map(opt => (
                         <FormField key={opt} control={control} name="securityFeatures" render={({ field }) => (
-                            <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors text-left">
+                            <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors text-left text-foreground">
                                 <Checkbox 
                                     checked={field.value?.includes(opt)} 
                                     onCheckedChange={(checked) => {
@@ -368,7 +369,7 @@ function StepWarehouseSecurity() {
                                             : field.onChange(current.filter((v: string) => v !== opt));
                                     }} 
                                 />
-                                <span className="text-[11px] font-medium text-left">{opt}</span>
+                                <span className="text-[11px] font-medium text-left text-foreground">{opt}</span>
                             </div>
                         )} />
                     ))}
@@ -377,15 +378,15 @@ function StepWarehouseSecurity() {
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
                 <FormField control={control} name="accessControl" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Access Control Type</FormLabel>
                         <FormControl><Input placeholder="e.g. Biometric / Keycard / Manual log" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     </FormItem>
                 )} />
                 <FormField control={control} name="rollerDoors" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground">
                         <FormLabel>Roller Door Configuration</FormLabel>
                         <FormControl><Input placeholder="e.g. 4 x Automated Heavy Duty" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     </FormItem>
@@ -393,7 +394,7 @@ function StepWarehouseSecurity() {
             </div>
 
             <FormField control={control} name="operatingHours" render={({ field }) => (
-                <FormItem className="text-left">
+                <FormItem className="text-left text-foreground text-foreground">
                     <FormLabel className="flex items-center gap-2"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
                     <FormControl><Input placeholder="e.g. Mon-Fri: 08:00 - 16:30, Sat: 08:00 - 12:00" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     <FormDescription className="text-[10px] text-left">Critical for haulier planning and matching.</FormDescription>
@@ -444,13 +445,13 @@ function StepGallery() {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <Camera className="h-6 w-6 text-primary" /> 
                 Facility Gallery
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                 {imageUrls.map((url: string, i: number) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-100 group shadow-sm">
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-100 group shadow-sm text-left">
                         <Image src={url} alt="Gallery" fill className="object-cover" />
                         <Button 
                             type="button" 
@@ -477,25 +478,25 @@ function StepWarehouseFees() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <Banknote className="h-6 w-6 text-primary" />
                 Storage Yield Settings
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
                 <div className="space-y-6 text-left">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                     <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                 </div>
                 <div className="space-y-6 text-left">
                     <FormField control={control} name="upliftFee" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Inbound Handling (Uplift)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Inbound Handling (Uplift)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                     <FormField control={control} name="placementFee" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Outbound Handling (Placement)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground"><FormLabel>Outbound Handling (Placement)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                 </div>
             </div>
@@ -509,7 +510,7 @@ function StepBrokerageCommercials() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <DollarSign className="h-6 w-6 text-primary" />
                 Commercial Configuration
             </h3>
@@ -517,7 +518,7 @@ function StepBrokerageCommercials() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
                     <FormField control={control} name="brokerageMargin" render={({ field }) => (
-                        <FormItem className="text-left">
+                        <FormItem className="text-left text-foreground">
                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2">
                                 Your Clearing Margin (%)
                                 <HelpCircle className="h-3 w-3 opacity-50" />
@@ -530,20 +531,20 @@ function StepBrokerageCommercials() {
                     )} />
                 </div>
                 <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2 text-left">
                         Platform Success Fee
                         <ShieldCheck className="h-3 w-3 text-primary" />
                     </p>
-                    <p className="text-4xl font-black text-primary">2.5%</p>
+                    <p className="text-4xl font-black text-primary text-left">2.5%</p>
                     <p className="text-[10px] text-slate-400 leading-tight pt-2 italic text-left">
                         The fee paid to Logistics Flow for the forensic match and automated documentation.
                     </p>
                 </div>
             </div>
 
-            <Card className="border-none bg-slate-50 shadow-inner">
+            <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
                 <CardContent className="p-6 text-left">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left text-foreground">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
@@ -557,10 +558,10 @@ function StepBrokerageCommercials() {
                             <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
+                            <span className="text-muted-foreground text-left text-foreground">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600 text-left">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-left">
+                        <div className="flex justify-between pt-2 text-left text-foreground">
                             <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
                             <span className="font-black text-primary text-left">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
@@ -606,7 +607,7 @@ function StepRateSheet() {
 
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
                         <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                     </FormItem>
@@ -624,7 +625,7 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
@@ -641,7 +642,7 @@ function StepRateSheet() {
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2 text-left">
+                            <div className="flex items-center gap-2 text-left text-foreground">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
                                     <FormItem className="flex-1 text-left text-foreground">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
@@ -664,21 +665,21 @@ function StepLoadAgreement() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <FileSignature className="h-6 w-6 text-primary" />
                 Contractual Framework
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground">Fixed volume per month.</span></Label>
+                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground">Spot market bookings.</span></Label>
+                                <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></Label>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -734,7 +735,7 @@ function StepCommercials({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <History className="h-6 w-6 text-primary" />
                 Mall Commercials
             </h3>
@@ -743,10 +744,10 @@ function StepCommercials({ shop }: { shop: any }) {
                 <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left">
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Standard Platform Rate</p>
                     <p className="text-3xl font-black text-left">2.5%</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed text-left">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
                 </div>
                 
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest text-left">Your Proposal (%)</p>
                     <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white" />
                     <Button className="w-full h-10 font-bold text-white" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
@@ -789,10 +790,10 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
-                    <p className="text-xs text-muted-foreground text-left text-foreground">List the items or services you sell directly in the Mall.</p>
+                    <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
                 <Dialog open={!!editingProduct} onOpenChange={(o) => { if (!o) setEditingProduct(null); }}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Product</Button></DialogTrigger>
@@ -802,9 +803,9 @@ function StepCatalog({ shop }: { shop: any }) {
             
             <div className="min-h-[300px] text-left text-foreground">
                 {products && products.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left text-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                         {products.map(p => (
-                            <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left">
+                            <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left text-foreground">
                                 <div className="relative aspect-square bg-muted">
                                     {p.imageUrls?.[0] ? <Image src={p.imageUrls[0]} alt={p.name} fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="h-10 w-10 opacity-10" /></div>}
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -820,7 +821,7 @@ function StepCatalog({ shop }: { shop: any }) {
                                         }}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
-                                <CardContent className="p-4 text-left">
+                                <CardContent className="p-4 text-left text-foreground">
                                     <p className="font-bold text-sm text-left">{p.name}</p>
                                     <p className="text-xs text-primary font-black mt-1 text-left">{formatCurrency(p.price)}</p>
                                 </CardContent>
@@ -892,22 +893,22 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
 
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader className="text-left text-foreground">
+            <DialogHeader className="text-left">
                 <DialogTitle>Product Management</DialogTitle>
                 <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
-                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white text-foreground" /></FormControl></FormItem>)} />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left text-foreground">
+                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     <div className="grid grid-cols-2 gap-4 text-left">
-                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white text-foreground" /></FormControl></FormItem>)} />
-                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white text-foreground" /></FormControl></FormItem>)} />
+                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
-                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white text-foreground" /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>)} />
                     
                     <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
-                        <div className="grid grid-cols-4 gap-2 text-left">
+                        <div className="grid grid-cols-4 gap-2 text-left text-foreground">
                              {(form.watch('imageUrls') || []).map((url: string, i: number) => (
                                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                                      <Image src={url} alt="pic" fill className="object-cover" />
@@ -915,13 +916,13 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('prod-img-up')?.click()}>
                                  <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Add Photo</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center">Add Photo</span>
                              </Button>
                              <input type="file" id="prod-img-up" className="hidden" onChange={handleUpload} />
                         </div>
                     </div>
 
-                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
+                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-foreground text-left">
                         <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit Product
@@ -946,9 +947,9 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left text-foreground">
+                <div className="text-left text-foreground text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
-                    <p className="text-xs text-muted-foreground text-left text-foreground">Manage your RC1-vetted assets for this node.</p>
+                    <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Asset</Button></DialogTrigger>
@@ -959,12 +960,12 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                 {assets && assets.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                         {assets.map(asset => (
-                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white">
-                                <div className="relative aspect-video bg-muted">
+                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left text-foreground">
+                                <div className="relative aspect-video bg-muted text-left">
                                     {asset.photoUrls?.[0] && <Image src={asset.photoUrls[0]} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
                                 </div>
-                                <CardContent className="p-4 text-left">
+                                <CardContent className="p-4 text-left text-foreground">
                                     <p className="font-bold text-sm text-left">{asset.year} {asset.make} {asset.model}</p>
                                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1 text-left">{asset.vClass || asset.location}</p>
                                 </CardContent>
@@ -1045,19 +1046,19 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                 <DialogDescription>Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left text-foreground">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="make" render={({ field }) => (<FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                          <FormField control={form.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
                                 <FormItem className="text-left text-foreground">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="Heavy Truck (Horse)">Heavy Truck (Horse)</SelectItem>
                                             <SelectItem value="Trailer">Trailer</SelectItem>
@@ -1076,16 +1077,16 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                     </div>
 
                     <div className="space-y-4 text-left text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Vehicle Gallery</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Vehicle Gallery</Label>
                         <div className="grid grid-cols-3 gap-2 text-left">
                              {(form.watch('photoUrls') || []).map((url: string, i: number) => (
-                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border text-left">
                                      <Image src={url} alt="pic" fill className="object-cover" />
                                  </div>
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('multi-up')?.click()}>
                                  <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Add Photo</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center">Add Photo</span>
                              </Button>
                              <input type="file" id="multi-up" multiple className="hidden" onChange={handleMultiUpload} />
                         </div>
@@ -1096,7 +1097,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
                     </div>
 
-                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
+                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-foreground text-left">
                         <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit to Node
@@ -1127,9 +1128,9 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
         finally { setLoading(false); }
     };
     return (
-        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left">
+        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left text-foreground">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
-            <div className="space-y-2 text-center text-foreground">
+            <div className="space-y-2 text-center">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
                 <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
@@ -1262,15 +1263,15 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
-                <div className="text-left text-foreground text-left text-foreground">
+                <div className="text-left text-foreground">
                     <CardTitle className="text-2xl font-black font-headline text-left text-foreground">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
-                    <CardDescription className="text-left text-foreground text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
+                    <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2 mt-4 text-foreground" />
             </CardHeader>
-            <CardContent className="p-0 text-left text-foreground text-left text-foreground">
+            <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -1287,7 +1288,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                         </div>
                         <div className="p-10 min-h-[500px] text-left text-foreground">
                             {currentStepConfig ? (
-                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground text-left text-foreground">
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
                                     {currentStepConfig.component}
                                 </div>
                             ) : (
@@ -1319,7 +1320,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                             onUpdate();
                         } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
                         finally { setIsSaving(false); }
-                    })} disabled={isSaving} className="font-bold text-foreground text-left text-foreground">
+                    })} disabled={isSaving} className="font-bold text-foreground text-left">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
