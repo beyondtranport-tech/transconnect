@@ -127,7 +127,7 @@ function EnquiryDetail() {
                      <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
                          <CircleHelp className="h-4 w-4 text-primary" /> Purpose of Funds
                      </h4>
-                     <div className="p-5 bg-muted/30 rounded-xl italic text-muted-foreground leading-relaxed text-sm">
+                     <div className="p-5 bg-muted/30 rounded-xl italic text-muted-foreground leading-relaxed text-sm text-left">
                          "{enquiry.purpose}"
                      </div>
                 </div>
@@ -179,7 +179,7 @@ function EnquiryDetail() {
 export default function EnquiryDetailPage() {
     return (
          <div className="container mx-auto px-4 py-20 text-left bg-slate-50 min-h-screen">
-            <Suspense fallback={<div className="flex justify-center items-center h-[50vh]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+            <Suspense fallback={<div className="flex justify-center items-center h-[50vh] text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
                 <EnquiryDetail />
             </Suspense>
         </div>

@@ -316,9 +316,7 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6 text-left">
-            <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-                {renderContent()}
-            </Suspense>
+            {renderContent()}
         </div>
     </SidebarInset>
     </SidebarProvider>
@@ -328,7 +326,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <AdminAuthGuard>
-        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+        <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <AdminAccountContent />
         </Suspense>
     </AdminAuthGuard>

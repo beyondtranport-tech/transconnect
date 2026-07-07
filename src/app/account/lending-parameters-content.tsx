@@ -14,8 +14,6 @@ import { Loader2, Save, Landmark, Banknote, ShieldCheck, Zap, Truck, Tag, MapPin
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
-import { financeTags, financeCategories } from '@/app/adminaccount/marketing/finance-discovery';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
@@ -366,7 +364,7 @@ export default function LendingParametersContent() {
                                             Specialized Credit Products
                                         </Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-                                            {financeTags.map(item => (
+                                            {["Asset Finance", "Working Capital", "Factoring", "Insurance"].map(item => (
                                                 <FormField key={item} control={form.control} name="industrial_tags" render={({ field }) => (
                                                     <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
                                                         <Checkbox 
@@ -395,7 +393,7 @@ export default function LendingParametersContent() {
                                             Asset Focus (Collateral)
                                         </Label>
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
-                                            {supplierCategories.map(item => (
+                                            {["Heavy Truck (Horse)", "Trailer", "Rigid Truck", "Bakkie"].map(item => (
                                                 <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
                                                     <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
                                                         <Checkbox 

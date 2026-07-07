@@ -127,7 +127,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                         <Badge variant="outline" className="border-primary text-primary">OFFER REF: {load.id.slice(-4)}</Badge>
                     </div>
                 </CardHeader>
-                <CardContent className="p-10 space-y-10 bg-white text-left text-foreground">
+                <CardContent className="p-10 space-y-10 bg-white text-left text-foreground text-foreground">
                     <div className="p-8 rounded-3xl border-2 border-primary bg-primary/5 shadow-sm text-left">
                         <div className="flex justify-between items-start mb-6">
                             <div className="text-left">
@@ -196,7 +196,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                         )}
                     </div>
                 </CardContent>
-                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left">
+                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left text-foreground">
                     <Button variant="ghost" onClick={onCancel} className="font-bold text-muted-foreground">Cancel Transaction</Button>
                     <Button onClick={handleAcceptLoad} disabled={!isIntelligenceMember || !hasRequiredAsset || !hasConfirmedDriver || !noCircumventionAccepted || isLoading} className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white">
                         {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Accept & Issue Instruction"}

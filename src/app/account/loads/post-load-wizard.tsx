@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -216,7 +216,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
 
                             {currentStep === 3 && (
                                 <div className="space-y-6 text-left text-foreground">
-                                    <div className="grid grid-cols-2 gap-4 text-left">
+                                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
                                                 <FormLabel>Cargo Classification</FormLabel>
