@@ -250,9 +250,11 @@ export default function LendingParametersContent() {
                                                                                                 checked={field.value?.includes(term)} 
                                                                                                 onCheckedChange={(checked) => {
                                                                                                     const current = field.value || [];
-                                                                                                    return checked 
-                                                                                                        ? field.onChange([...current, term]) 
-                                                                                                        : field.onChange(current.filter((t: string) => t !== term));
+                                                                                                    if (checked) {
+                                                                                                        field.onChange([...current, term]);
+                                                                                                    } else {
+                                                                                                        field.onChange(current.filter((t: string) => t !== term));
+                                                                                                    }
                                                                                                 }} 
                                                                                             />
                                                                                         </FormControl>
@@ -333,7 +335,11 @@ export default function LendingParametersContent() {
                                                             checked={field.value?.includes(item)} 
                                                             onCheckedChange={(checked) => {
                                                                 const current = field.value || [];
-                                                                return checked ? field.onChange([...current, item]) : field.onChange(current.filter((v: string) => v !== item));
+                                                                if (checked) {
+                                                                    field.onChange([...current, item]);
+                                                                } else {
+                                                                    field.onChange(current.filter((v: string) => v !== item));
+                                                                }
                                                             }} 
                                                         />
                                                     </FormControl>
@@ -367,7 +373,11 @@ export default function LendingParametersContent() {
                                                                 checked={field.value?.includes(item)} 
                                                                 onCheckedChange={(checked) => {
                                                                     const current = field.value || [];
-                                                                    return checked ? field.onChange([...current, item]) : field.onChange(current.filter((v: string) => v !== item));
+                                                                    if (checked) {
+                                                                        field.onChange([...current, item]);
+                                                                    } else {
+                                                                        field.onChange(current.filter((v: string) => v !== item));
+                                                                    }
                                                                 }} 
                                                             />
                                                         </FormControl>
@@ -394,7 +404,11 @@ export default function LendingParametersContent() {
                                                                 checked={field.value?.includes(item)} 
                                                                 onCheckedChange={(checked) => {
                                                                     const current = field.value || [];
-                                                                    return checked ? field.onChange([...current, item]) : field.onChange(current.filter((v: string) => v !== item));
+                                                                    if (checked) {
+                                                                        field.onChange([...current, item]);
+                                                                    } else {
+                                                                        field.onChange(current.filter((v: string) => v !== item));
+                                                                    }
                                                                 }} 
                                                             />
                                                         </FormControl>
@@ -421,7 +435,11 @@ export default function LendingParametersContent() {
                                                                 checked={field.value?.includes(item)} 
                                                                 onCheckedChange={(checked) => {
                                                                     const current = field.value || [];
-                                                                    return checked ? field.onChange([...current, item]) : field.onChange(current.filter((v: string) => v !== item));
+                                                                    if (checked) {
+                                                                        field.onChange([...current, item]);
+                                                                    } else {
+                                                                        field.onChange(current.filter((v: string) => v !== item));
+                                                                    }
                                                                 }} 
                                                             />
                                                         </FormControl>

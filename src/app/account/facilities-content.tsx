@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -6,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Landmark, Loader2, Lock, ArrowRight, ShieldCheck, Banknote, Calendar, BadgeInfo } from 'lucide-react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, formatDateSafe } from '@/lib/utils';
+import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
+import { Label } from '@/components/ui/label';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -144,7 +144,7 @@ export default function MyFacilitiesContent() {
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                                     <div className="space-y-1 text-left">
                                         <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Facility Limit</Label>
                                         <p className="text-3xl font-black text-primary">{formatCurrency(f.limit)}</p>

@@ -96,6 +96,7 @@ import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 import AdminGuides from '@/app/adminaccount/guides';
+import SocialStudio from '@/app/adminaccount/social-studio';
 
 // Dynamic Oversights
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-12 w-12 animate-spin text-primary" /> });
