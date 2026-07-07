@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { Checkbox } from '@/components/ui/checkbox';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Banknote, ShieldCheck, Zap, Truck, Tag, MapPin } from 'lucide-react';
+import { Loader2, Save, Landmark, Banknote, ShieldCheck, Zap, Truck, Tag, MapPin, RefreshCcw } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

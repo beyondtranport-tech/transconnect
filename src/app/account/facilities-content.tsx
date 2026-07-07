@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -117,8 +118,8 @@ export default function MyFacilitiesContent() {
                 <div className="flex items-center gap-4 text-left">
                     <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
                     <div className="text-left text-foreground">
-                        <CardTitle className="text-2xl font-black font-headline text-left">My Credit Facilities</CardTitle>
-                        <CardDescription className="text-left">Manage and draw down from your authorized industrial funding lines.</CardDescription>
+                        <CardTitle className="text-2xl font-black font-headline text-left text-foreground">My Credit Facilities</CardTitle>
+                        <CardDescription className="text-left text-foreground">Manage and draw down from your authorized industrial funding lines.</CardDescription>
                     </div>
                 </div>
             </CardHeader>
