@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -280,7 +281,7 @@ export default function LendingParametersContent() {
                         </TabsContent>
 
                         <TabsContent value="risk" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left text-foreground">
-                             <Card className="text-left">
+                             <Card className="text-left text-foreground">
                                 <CardHeader className="border-b bg-muted/20 text-left">
                                     <CardTitle className="text-lg flex items-center gap-2 text-left text-foreground">
                                         <ShieldCheck className="h-5 w-5 text-primary"/> 
@@ -290,13 +291,13 @@ export default function LendingParametersContent() {
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 text-left text-foreground">
                                     <div className="space-y-6 text-left">
-                                        <div className="space-y-4 text-left text-foreground text-foreground">
+                                        <div className="space-y-4 text-left text-foreground">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entity Maturity</Label>
                                             <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
                                                 <FormItem className="text-left text-foreground"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} className="border-2 text-foreground" /></FormControl></FormItem>
                                             )} />
                                         </div>
-                                        <div className="space-y-4 text-left">
+                                        <div className="space-y-4 text-left text-foreground">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Minimum Annual Turnover (R)</Label>
                                             <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
                                                 <FormItem className="text-left"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2 text-foreground" /></FormControl></FormItem>
@@ -359,7 +360,7 @@ export default function LendingParametersContent() {
                                     <CardTitle className="text-lg flex items-center gap-2 text-left text-foreground"><Tag className="h-5 w-5 text-primary"/> Specialized Product Focus</CardTitle>
                                     <CardDescription className="text-left">Target specific industrial categories and forensic tags derived from registry notes.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="space-y-10 pt-8 text-left text-foreground">
+                                <CardContent className="space-y-10 pt-8 text-left text-foreground text-foreground">
                                     <div className="space-y-4 text-left text-foreground">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1">
                                             <Zap className="h-4 w-4" /> 
@@ -389,7 +390,7 @@ export default function LendingParametersContent() {
 
                                     <Separator />
 
-                                    <div className="space-y-4 text-left text-foreground">
+                                    <div className="space-y-4 text-left text-foreground text-foreground">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground">
                                             <Truck className="h-4 w-4" /> 
                                             Asset Focus (Collateral)
@@ -418,7 +419,7 @@ export default function LendingParametersContent() {
 
                                     <Separator />
 
-                                    <div className="space-y-4 text-left text-foreground">
+                                    <div className="space-y-4 text-left text-foreground text-foreground">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground">
                                             <MapPin className="h-4 w-4" /> 
                                             Target Funding Regions

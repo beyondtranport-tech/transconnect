@@ -11,6 +11,7 @@ import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
 
 interface FulfillmentWizardProps {
     load: any;
@@ -103,17 +104,17 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 <CheckCircle className="h-10 w-10 text-primary" />
                                 Work Fulfillment Gateway
                             </CardTitle>
-                            <CardDescription className="text-slate-400 text-lg mt-2">
+                            <CardDescription className="text-slate-400 text-lg mt-2 text-left">
                                 Close the loop for Instruction <strong>{load.instructionNumber}</strong>
                             </CardDescription>
                         </div>
                     </div>
                 </CardHeader>
                 
-                <CardContent className="p-10 space-y-10 bg-white">
+                <CardContent className="p-10 space-y-10 bg-white text-left">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                         <div className="space-y-6 text-left">
-                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground">
+                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
                                 <FileUp className="h-6 w-6 text-primary" />
                                 1. Proof of Delivery (POD)
                             </h3>
@@ -147,7 +148,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                         </div>
 
                         <div className="space-y-6 text-left">
-                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground">
+                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
                                 <Banknote className="h-6 w-6 text-primary" />
                                 2. Settlement Summary
                             </h3>
@@ -165,7 +166,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                             <Alert className="bg-blue-50 border-blue-200">
                                 <Zap className="h-4 w-4 text-blue-600" />
                                 <AlertTitle className="text-blue-900 font-bold">Factoring Available</AlertTitle>
-                                <AlertDescription className="text-blue-800 text-xs mt-1">
+                                <AlertDescription className="text-blue-800 text-xs mt-1 text-left">
                                     This load is **Factoring Ready**. Once POD is uploaded, you can request an immediate 75% advance from the Finance Division.
                                 </AlertDescription>
                             </Alert>
@@ -173,7 +174,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                     </div>
                 </CardContent>
 
-                <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center">
+                <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center text-left">
                     <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground">Return to Details</Button>
                     <Button 
                         onClick={handleConfirmFulfillment} 
