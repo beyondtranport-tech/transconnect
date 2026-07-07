@@ -14,7 +14,7 @@ service cloud.firestore {
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
         request.auth.uid == 'ylVC4F2FIYV8o9jjq13wCYiAyyM2' ||
         request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
-        (request.auth.token.admin == true)
+        (request.auth.token.get('admin', false) == true)
       );
     }
 
@@ -39,8 +39,10 @@ service cloud.firestore {
     function isSaleParticipant(sale) {
         return isSignedIn() && (
             isAdmin() || 
-            sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
-            sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
+            (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+                sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
+                sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
+            ))
         );
     }
 
@@ -74,9 +76,9 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow read: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
+      allow read: if isSignedIn() && (isMember(companyId) || (exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid));
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); }
@@ -110,7 +112,7 @@ service cloud.firestore {
     match /sales/{saleId} {
       allow read: if isSignedIn() && (isAdmin() || isSaleParticipant(resource.data));
       allow write: if isAdmin() || (isSignedIn() && (
-        (!exists(/databases/$(database)/documents/sales/$(saleId)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
+        (!exists(/databases/$(database)/documents/sales/$(saleId)) && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
         isSaleParticipant(resource.data)
       ));
     }
@@ -128,7 +130,6 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // Explicit matches for all collection group queries
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
