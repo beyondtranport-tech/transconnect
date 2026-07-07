@@ -89,9 +89,9 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
                     </AlertDescription>
                 </Alert>
 
-                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left text-foreground text-foreground">
+                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left text-foreground text-foreground text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-foreground">Sequence Sync</Label>
-                    <div className="space-y-1.5 text-foreground">
+                    <div className="space-y-1.5 text-foreground text-left">
                         <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
                         <Input 
                             type="number" 
@@ -108,7 +108,7 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
                 </Button>
             </div>
 
-            <div className="space-y-2 text-left text-foreground text-foreground">
+            <div className="space-y-2 text-left text-foreground text-foreground text-left">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                     <Terminal className="h-3 w-3"/> AI Forensic Command
                 </Label>
@@ -124,18 +124,18 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
 
 export default function FinanceDiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none text-left text-foreground text-foreground">
+        <Card className="shadow-none border-none text-left text-foreground text-foreground text-left">
             <Tabs defaultValue="Banks" className="w-full text-left">
-                <CardHeader className="px-0 pt-0 text-left text-foreground">
-                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground">
+                <CardHeader className="px-0 pt-0 text-left text-foreground text-left">
+                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-left">
                         <Database className="h-6 w-6 text-amber-500" />
                         Capital Intelligence Discovery
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground text-left text-foreground text-foreground">
+                    <CardDescription className="text-muted-foreground text-left text-foreground text-foreground text-left">
                         Identify credit providers, private lenders, and specialized fintechs.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left text-foreground text-foreground">
+                <CardContent className="px-0 text-left text-foreground text-foreground text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground text-foreground">
                         {financeCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
