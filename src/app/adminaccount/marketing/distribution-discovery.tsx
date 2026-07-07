@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,7 +35,7 @@ TASK: Discover and extract exactly 30 UNIQUE, LIVE South African distribution pa
 FORENSIC PROTOCOL:
 1. SPOKE VERIFICATION: Identify the primary regional focus (e.g. Gauteng North, Southern Suburbs CPT).
 2. FLEET ANALYSIS: Identify the typical vehicle profile (e.g. 1-ton, 4-ton, motorbikes, tuk-tuks).
-3. HUMAN IDENTITY (CRITICAL): You MUST find the ACTUAL FIRST AND LAST NAME of the Logistics Lead or Managing Director.
+3. HUMAN IDENTITY (CRITICAL): You MUST find the ACTUAL VERIFIED FIRST AND LAST NAME of the Logistics Lead or Managing Director.
 4. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
 5. RECORD KEY: Generate a unique "record_id" starting with "DISC_DIST_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -47,7 +46,7 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "DISTRIBUTION AGENT NAME",
     "industrial_category": "${category}",
-    "contactPerson": "FULL NAME (FIRST AND LAST)",
+    "contactPerson": "FULL HUMAN NAME (FIRST AND LAST)",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL CHANNEL URL",

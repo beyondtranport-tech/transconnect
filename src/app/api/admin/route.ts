@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -55,12 +54,13 @@ export async function POST(req: NextRequest) {
                 const members = await Promise.all(snap.docs.map(async (doc) => {
                     const data = doc.data();
                     const userSnap = await db.collection('users').doc(data.ownerId).get();
+                    const uData = userSnap.exists ? userSnap.data() : {};
                     return { 
                         id: doc.id, 
                         ...data, 
-                        firstName: userSnap.data()?.firstName || 'Member', 
-                        lastName: userSnap.data()?.lastName || '', 
-                        email: userSnap.data()?.email || 'N/A' 
+                        firstName: uData?.firstName || 'Member', 
+                        lastName: uData?.lastName || '', 
+                        email: uData?.email || 'N/A' 
                     };
                 }));
                 return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
@@ -69,13 +69,13 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
                 const logs = await Promise.all(snap.docs.map(async (doc) => {
                     const data = doc.data();
-                    const userSnap = await db.collection('users').doc(data.userId).get();
+                    const userSnap = await db.collection('users').doc(data.userId || 'unknown').get();
                     const companySnap = await db.collection('companies').doc(data.companyId || 'N/A').get();
                     return { 
                         id: doc.id, 
                         ...data, 
-                        userName: userSnap.data()?.firstName || 'System',
-                        companyName: companySnap.data()?.companyName || 'Platform'
+                        userName: userSnap.exists ? userSnap.data()?.firstName : 'System',
+                        companyName: companySnap.exists ? companySnap.data()?.companyName : 'Platform'
                     };
                 }));
                 return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
@@ -84,6 +84,7 @@ export async function POST(req: NextRequest) {
             // --- REGISTRY MANAGEMENT (CRM) ---
             case 'searchRegistry': {
                 const { type, term, outreachFilter, limit = 100 } = payload;
+                // Unified logic for all mall types
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
                 
                 let query: any = db.collection(collectionName);
@@ -140,6 +141,8 @@ export async function POST(req: NextRequest) {
                     batch.set(ref, {
                         ...p,
                         id: ref.id,
+                        // AI output normalized to CRM schema
+                        contactPerson: p.contactPerson || p.contact_person,
                         type: type === 'lead' ? 'lead' : type,
                         status: p.status || 'new',
                         updatedAt: FieldValue.serverTimestamp(),
@@ -149,6 +152,28 @@ export async function POST(req: NextRequest) {
 
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, collection: colName = 'partners', type, subject, notes } = payload;
+                const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type,
+                    subject,
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                
+                // Update outreach status on parent record
+                await db.collection(colName).doc(partnerId).update({
+                    status: 'contacted',
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                return NextResponse.json({ success: true });
             }
 
             // --- LOADS & WAREHOUSE OVERSIGHT ---
@@ -189,6 +214,7 @@ export async function POST(req: NextRequest) {
                 const { saleId, commissionRate } = payload;
                 const saleRef = db.collection('sales').doc(saleId);
                 const saleSnap = await saleRef.get();
+                if (!saleSnap.exists) throw new Error("Sale node not found.");
                 const saleData = saleSnap.data()!;
 
                 await db.runTransaction(async (transaction) => {
@@ -215,6 +241,17 @@ export async function POST(req: NextRequest) {
                     status: 'contacted',
                     updatedAt: FieldValue.serverTimestamp()
                 });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const col = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection(col).doc(id), { status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                });
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -278,8 +315,7 @@ export async function POST(req: NextRequest) {
 
             case 'dispatchEngagement': {
                 const { partnerId, email, subject } = payload;
-                // In a production environment, this triggers SendGrid/AWS SES.
-                // For the prototype, we log the intent and update the record.
+                // Protocol to update parent record after background dispatch
                 await db.collection('leads').doc(partnerId).update({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,

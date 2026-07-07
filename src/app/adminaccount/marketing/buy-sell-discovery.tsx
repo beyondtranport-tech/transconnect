@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -36,7 +35,7 @@ TASK: Discover and extract exactly 30 UNIQUE, LIVE South African asset providers
 FORENSIC PROTOCOL:
 1. INVENTORY SCAN: Identify the primary brands handled (e.g. Scania, Volvo, Afrit, Henred).
 2. DEPOT VERIFICATION: Map the primary showroom or yard location.
-3. HUMAN IDENTITY (CRITICAL): You MUST find the ACTUAL FIRST AND LAST NAME of the Sales Lead, MD, or Owner.
+3. HUMAN IDENTITY (CRITICAL): You MUST find the ACTUAL VERIFIED FIRST AND LAST NAME of the Sales Lead, MD, or Owner.
 4. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
 5. RECORD KEY: Generate a unique "record_id" starting with "DISC_ASSET_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -47,7 +46,7 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "DEALERSHIP / MAKER NAME",
     "industrial_category": "${category}",
-    "contactPerson": "FULL NAME (FIRST AND LAST)",
+    "contactPerson": "FULL HUMAN NAME (FIRST AND LAST)",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL INVENTORY URL",
@@ -120,7 +119,7 @@ export default function BuySellDiscovery() {
         <Card className="shadow-none border-none text-left text-foreground text-foreground text-foreground">
             <Tabs defaultValue="Truck Dealership" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left text-foreground text-foreground text-foreground text-foreground">
-                    <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left text-foreground text-foreground text-foreground">
+                    <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <Database className="h-6 w-6 text-primary" />
                         Asset Trading Discovery Engine
                     </CardTitle>

@@ -35,6 +35,7 @@ import {
   Star,
   Award,
   Gift,
+  Wrench,
   Share2,
   Facebook,
   Linkedin,
@@ -43,15 +44,14 @@ import {
   Lock,
   Banknote,
   Search,
-  Eye,
   HelpCircle,
-  RefreshCcw,
-  Globe,
-  ClipboardList,
-  ShoppingCart,
-  Warehouse,
   Network,
   PackageSearch,
+  ShoppingCart,
+  Warehouse,
+  ClipboardList,
+  Eye,
+  Globe,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -75,7 +75,6 @@ import AssetGallery from '@/app/adminaccount/asset-gallery';
 import SalesRoadmap from '@/app/account/sales-roadmap';
 import TargetsPage from '@/app/account/targets';
 import FinancialProjections from '@/app/backend/financial-projections';
-import FinancialsGeneralSettings from '@/app/adminaccount/financials-general-settings';
 import FinancialSetup from '@/app/account/financial-setup';
 import BudgetPage from '@/app/account/budget/page';
 import SalaryForecastPage from '@/app/backend/salary-forecast';
@@ -98,10 +97,10 @@ import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 import AdminGuides from '@/app/adminaccount/guides';
 
-// Dynamic Imports
-const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const WarehouseOversight = dynamic(() => import('@/app/backend/warehouse-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+// Dynamic Oversights
+const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-12 w-12 animate-spin text-primary" /> });
+const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-12 w-12 animate-spin text-primary" /> });
+const WarehouseOversight = dynamic(() => import('@/app/backend/warehouse-oversight'), { ssr: false, loading: () => <Loader2 className="h-12 w-12 animate-spin text-primary" /> });
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -154,11 +153,11 @@ function AdminAccountContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('social-')) {
-        const platform = activeView.split('-')[1] as any;
+        const platform = activeView.replace('social-', '') as any;
         return <SocialStudio platform={platform} />;
     }
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.split('-')[1] as any;
+        const audience = activeView.replace('marketing-', '') as any;
         return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
@@ -173,7 +172,6 @@ function AdminAccountContent() {
       case 'sales-roadmap': return <SalesRoadmap />;
       case 'targets': return <TargetsPage />;
       case 'financial-projections': return <FinancialProjections />;
-      case 'financial-settings': return <FinancialsGeneralSettings />;
       case 'financial-setup': return <FinancialSetup />;
       case 'budget': return <BudgetPage />;
       case 'salary-forecast': return <SalaryForecastPage />;
@@ -232,7 +230,7 @@ function AdminAccountContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView === 'associate-oversight' || activeView === 'market-origination' || activeView === 'loads-oversight' || activeView === 'buy-sell-oversight' || activeView === 'warehouse-oversight'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView.includes('oversight') || activeView === 'market-origination'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Finance Mall</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -297,7 +295,7 @@ function AdminAccountContent() {
                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}>Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
               </SidebarMenuSub>
             </SidebarMenuItem>
-             <SidebarMenuItem>
+            <SidebarMenuItem>
                 <SidebarMenuButton tooltip="Help & Guides" isActive={activeView === 'guides'} onClick={() => navigate('guides')}>
                     <HelpCircle /><span>Help & Guides</span>
                 </SidebarMenuButton>
