@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { PremiumFeaturePrompt } from '@/components/PremiumFeaturePrompt';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -177,7 +178,7 @@ export default function MyFacilitiesContent() {
                             <Landmark className="h-12 w-12 text-muted-foreground/30" />
                         </div>
                         <h3 className="text-xl font-bold">No Active Facilities Found</h3>
-                        <p className="text-muted-foreground max-w-sm mx-auto">You haven't been issued any funding facilities yet. Start by submitting a forensic application.</p>
+                        <p className="text-muted-foreground max-sm mx-auto">You haven't been issued any funding facilities yet. Start by submitting a forensic application.</p>
                         <Button asChild className="mt-4 font-bold" size="lg">
                             <Link href="/funding">Apply for Funding <ArrowRight className="ml-2 h-4 w-4"/></Link>
                         </Button>

@@ -21,11 +21,6 @@ const fundingNeedsMap: { [key: string]: string } = {
     'disclosed-confirmed-factoring': 'Factoring',
 };
 
-const fundingReasonsMap: { [key: string]: string } = {
-    problem: 'I have a problem',
-    opportunity: 'I have an opportunity',
-};
-
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
   pending: 'secondary',
   under_review: 'outline',
