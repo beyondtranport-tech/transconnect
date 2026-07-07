@@ -11,8 +11,7 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
-        request.auth.uid == 'ylVC4F2FIYV8o9jjq13wCYiAyyM2' ||
+        request.auth.uid in ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'] ||
         request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
         (request.auth.token.get('admin', false) == true)
       );
@@ -44,6 +43,12 @@ service cloud.firestore {
                 sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
             ))
         );
+    }
+
+    // --- ADMIN OVERRIDE ---
+    // Universal catch-all to ensure administrators can bypass all other logic.
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
     }
 
     // --- PUBLIC / CONFIGURATION RULES ---
@@ -130,6 +135,7 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
+    // Explicit authorization for cross-company industrial registries.
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
@@ -147,9 +153,5 @@ service cloud.firestore {
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
-    
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
-    }
   }
 }

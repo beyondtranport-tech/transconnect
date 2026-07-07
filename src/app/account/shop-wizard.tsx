@@ -157,7 +157,7 @@ function StepLegal() {
                 <Gavel className="h-6 w-6 text-primary" />
                 Legal Authorization
             </h3>
-            <div className="space-y-6">
+            <div className="space-y-6 text-left">
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="font-bold text-left">Operational Compliance Audit</AlertTitle>
@@ -448,9 +448,9 @@ function StepGallery() {
                 <Camera className="h-6 w-6 text-primary" /> 
                 Facility Gallery
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                 {imageUrls.map((url: string, i: number) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-100 group shadow-sm">
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-100 group shadow-sm text-left text-foreground">
                         <Image src={url} alt="Gallery" fill className="object-cover" />
                         <Button 
                             type="button" 
@@ -514,55 +514,55 @@ function StepBrokerageCommercials() {
                 Commercial Configuration
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
                     <FormField control={control} name="brokerageMargin" render={({ field }) => (
-                        <FormItem className="text-left">
-                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
+                        <FormItem className="text-left text-foreground">
+                            <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                                 Your Clearing Margin (%)
                                 <HelpCircle className="h-3 w-3 opacity-50" />
                             </FormLabel>
                             <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                            <FormDescription className="text-[10px] leading-tight mt-2 font-bold text-primary text-left">
+                            <FormDescription className="text-[10px] leading-tight mt-2 font-bold text-primary text-left text-foreground">
                                 The profit you, as the Primary Contractor (Broker), retain from the total load value for your role in securing the freight.
                             </FormDescription>
                         </FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2 text-left">
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left text-foreground">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2 text-left text-foreground">
                         Platform Success Fee
                         <ShieldCheck className="h-3 w-3 text-primary" />
                     </p>
-                    <p className="text-4xl font-black text-primary text-left">2.5%</p>
-                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic text-left">
+                    <p className="text-4xl font-black text-primary text-left text-foreground">2.5%</p>
+                    <p className="text-[10px] text-slate-400 leading-tight pt-2 italic text-left text-foreground">
                         The fee paid to Logistics Flow for the forensic match and automated documentation.
                     </p>
                 </div>
             </div>
 
-            <Card className="border-none bg-slate-50 shadow-inner text-left">
-                <CardContent className="p-6 text-left">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
+            <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
+                <CardContent className="p-6 text-left text-foreground">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left text-foreground">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
-                    <div className="space-y-2 text-sm text-left">
-                        <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground text-left">Total Load Value (Example)</span>
-                            <span className="font-bold text-left">R 10,000.00</span>
+                    <div className="space-y-2 text-sm text-left text-foreground">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground">
+                            <span className="text-muted-foreground text-left text-foreground">Total Load Value (Example)</span>
+                            <span className="font-bold text-left text-foreground">R 10,000.00</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
-                            <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground">
+                            <span className="text-muted-foreground text-left text-foreground">Your Clearing Margin ({margin}%)</span>
+                            <span className="font-bold text-green-600 text-left text-foreground">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
-                            <span className="font-bold text-slate-600 text-left">- R 250.00</span>
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground">
+                            <span className="text-muted-foreground text-left text-foreground">Platform Success Fee (2.5%)</span>
+                            <span className="font-bold text-slate-600 text-left text-foreground">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-left">
-                            <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
-                            <span className="font-black text-primary text-left">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
+                        <div className="flex justify-between pt-2 text-left text-foreground">
+                            <span className="font-black uppercase text-xs text-left text-foreground">Available Haulier Payout</span>
+                            <span className="font-black text-primary text-left text-foreground">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
                     </div>
                 </CardContent>
@@ -580,24 +580,24 @@ function StepRateSheet() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
                 <ListOrdered className="h-6 w-6 text-primary" />
                 Fleet Rate Sheet (Optional)
             </h3>
 
             <FormField control={control} name="rateType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left">
-                    <FormLabel className="font-bold">Select Rate Structure</FormLabel>
+                <FormItem className="space-y-4 text-left text-foreground">
+                    <FormLabel className="font-bold text-left text-foreground">Select Rate Structure</FormLabel>
                     <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left text-foreground">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'none' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="none" id="r-none" /><Label htmlFor="r-none" className="cursor-pointer">No Sheet</Label>
+                                <RadioGroupItem value="none" id="r-none" /><Label htmlFor="r-none" className="cursor-pointer text-left text-foreground">No Sheet</Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'route' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="route" id="r-route" /><Label htmlFor="r-route" className="cursor-pointer">Route-Based</Label>
+                                <RadioGroupItem value="route" id="r-route" /><Label htmlFor="r-route" className="cursor-pointer text-left text-foreground">Route-Based</Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'per_km' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="per_km" id="r-km" /><Label htmlFor="r-km" className="cursor-pointer">Rate per KM</Label>
+                                <RadioGroupItem value="per_km" id="r-km" /><Label htmlFor="r-km" className="cursor-pointer text-left text-foreground">Rate per KM</Label>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -606,7 +606,7 @@ function StepRateSheet() {
 
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
                         <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                     </FormItem>
@@ -614,37 +614,37 @@ function StepRateSheet() {
             )}
 
             {rateType === 'route' && (
-                <div className="space-y-4 animate-in slide-in-from-top-2 text-left">
-                    <div className="flex justify-between items-center text-left">
-                        <Label className="font-bold text-left">Common Route Rates</Label>
+                <div className="space-y-4 animate-in slide-in-from-top-2 text-left text-foreground">
+                    <div className="flex justify-between items-center text-left text-foreground">
+                        <Label className="font-bold text-left text-foreground">Common Route Rates</Label>
                         <Button type="button" size="sm" variant="outline" onClick={() => append({ origin: '', destination: '', price: 0 })}>
                             <PlusCircle className="h-4 w-4 mr-2" /> Add Route
                         </Button>
                     </div>
                     {fields.map((item, index) => (
-                        <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
+                        <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left text-foreground">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
+                                <FormItem className="text-left text-foreground">
+                                    <FormLabel className="text-[10px] uppercase font-black text-left text-foreground">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
+                                <FormItem className="text-left text-foreground">
+                                    <FormLabel className="text-[10px] uppercase font-black text-left text-foreground">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2 text-left">
+                            <div className="flex items-center gap-2 text-left text-foreground">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
-                                    <FormItem className="flex-1 text-left">
-                                        <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
+                                    <FormItem className="flex-1 text-left text-foreground">
+                                        <FormLabel className="text-[10px] uppercase font-black text-left text-foreground">Total Price</FormLabel>
                                         <FormControl><Input type="number" {...field} className="h-9 bg-white" /></FormControl>
                                     </FormItem>
                                 )} />
@@ -663,22 +663,22 @@ function StepLoadAgreement() {
     const contractType = watch('contractType');
 
     return (
-        <div className="space-y-8 text-left text-foreground text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left text-foreground">
                 <FileSignature className="h-6 w-6 text-primary" />
                 Contractual Framework
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left">
-                    <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
+                <FormItem className="space-y-4 text-left text-foreground">
+                    <FormLabel className="font-bold text-left text-foreground">Default Agreement Preference</FormLabel>
                     <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></Label>
+                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold text-left text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></Label>
+                                <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold text-left text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></Label>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -687,7 +687,7 @@ function StepLoadAgreement() {
 
             {contractType === 'master' && (
                 <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
                         <FormLabel>Committed Loads per Month</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                         <FormDescription className="text-[10px] text-left">Your node will be prioritized for long-term contract matching.</FormDescription>
@@ -802,7 +802,7 @@ function StepCatalog({ shop }: { shop: any }) {
             
             <div className="min-h-[300px] text-left">
                 {products && products.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left text-foreground">
                         {products.map(p => (
                             <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left">
                                 <div className="relative aspect-square bg-muted">
@@ -820,7 +820,7 @@ function StepCatalog({ shop }: { shop: any }) {
                                         }}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
-                                <CardContent className="p-4 text-left">
+                                <CardContent className="p-4 text-left text-foreground">
                                     <p className="font-bold text-sm text-left">{p.name}</p>
                                     <p className="text-xs text-primary font-black mt-1 text-left">{formatCurrency(p.price)}</p>
                                 </CardContent>
@@ -892,8 +892,8 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
 
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader className="text-left">
-                <DialogTitle>Product Management</DialogTitle>
+            <DialogHeader className="text-left text-foreground">
+                <DialogTitle className="text-left">Product Management</DialogTitle>
                 <DialogDescription className="text-left">Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -957,14 +957,14 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
             </div>
             <div className="min-h-[300px] text-left">
                 {assets && assets.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left text-foreground">
                         {assets.map(asset => (
                             <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left">
                                 <div className="relative aspect-video bg-muted">
                                     {asset.photoUrls?.[0] && <Image src={asset.photoUrls[0]} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2 text-left"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
                                 </div>
-                                <CardContent className="p-4 text-left">
+                                <CardContent className="p-4 text-left text-foreground">
                                     <p className="font-bold text-sm text-left">{asset.year} {asset.make} {asset.model}</p>
                                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1 text-left">{asset.vClass || asset.location}</p>
                                 </CardContent>
@@ -1040,17 +1040,17 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
 
     return (
         <DialogContent className="sm:max-w-2xl text-left text-foreground">
-            <DialogHeader className="text-left">
-                <DialogTitle>{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
+            <DialogHeader className="text-left text-foreground">
+                <DialogTitle className="text-left">{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription className="text-left">Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                         <FormField control={form.control} name="make" render={({ field }) => (<FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem>)} />
                         <FormField control={form.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                          <FormField control={form.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
@@ -1327,6 +1327,8 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     )}
                 </div>
             </CardFooter>
-        </Card>
-    );
+        </form>
+      </FormProvider>
+    </Card>
+  );
 }
