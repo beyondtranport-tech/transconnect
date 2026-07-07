@@ -63,20 +63,20 @@ export default function MyFacilitiesContent() {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-left">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Retrieving Issued Facilities...</p>
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-left">Retrieving Issued Facilities...</p>
             </div>
         );
     }
 
     if (!isPaid && !isAdmin && facilities.length > 0) {
         return (
-            <div className="space-y-8 animate-in fade-in duration-500 text-left">
-                <CardHeader className="px-0">
-                    <div className="flex items-center gap-4 text-left">
+            <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
+                <CardHeader className="px-0 text-left">
+                    <div className="flex items-center gap-4 text-left text-foreground">
                         <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
-                        <div className="text-left">
-                            <CardTitle className="text-2xl font-black font-headline text-left">My Credit Facilities</CardTitle>
-                            <CardDescription className="text-left">Review issued funding offers and manage active agreements.</CardDescription>
+                        <div className="text-left text-foreground">
+                            <CardTitle className="text-2xl font-black font-headline text-left text-foreground">My Credit Facilities</CardTitle>
+                            <CardDescription className="text-left text-foreground">Review issued funding offers and manage active agreements.</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
@@ -87,18 +87,18 @@ export default function MyFacilitiesContent() {
                     description={`We have identified ${facilities.length} issued funding facility matching your business profile. To view the interest rates, term lengths, and drawdown conditions, you must upgrade your account to Intelligence Access.`}
                 />
 
-                <Card className="opacity-50 grayscale pointer-events-none text-left">
-                    <CardHeader>
+                <Card className="opacity-50 grayscale pointer-events-none text-left text-foreground">
+                    <CardHeader className="text-left">
                         <CardTitle className="text-sm uppercase font-black tracking-widest text-muted-foreground text-left">Locked Registry Summary</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="text-left">
                         <Table>
-                            <TableHeader>
-                                <TableRow><TableHead>Type</TableHead><TableHead>Limit</TableHead><TableHead>Status</TableHead></TableRow>
+                            <TableHeader className="text-left">
+                                <TableRow><TableHead className="text-left">Type</TableHead><TableHead className="text-left">Limit</TableHead><TableHead className="text-left">Status</TableHead></TableRow>
                             </TableHeader>
-                            <TableBody>
+                            <TableBody className="text-left">
                                 {facilities.map((f: any) => (
-                                    <TableRow key={f.id}>
+                                    <TableRow key={f.id} className="text-left">
                                         <TableCell><Badge variant="outline" className="blur-sm">XXXXXXX</Badge></TableCell>
                                         <TableCell><span className="blur-sm font-mono text-left">R XX,XXX,XXX</span></TableCell>
                                         <TableCell><Badge className="bg-amber-100 text-amber-700 border-none">Awaiting Upgrade</Badge></TableCell>
@@ -115,9 +115,9 @@ export default function MyFacilitiesContent() {
     return (
         <div className="space-y-8 text-left text-foreground">
             <CardHeader className="px-0 text-left">
-                <div className="flex items-center gap-4 text-left">
+                <div className="flex items-center gap-4 text-left text-foreground">
                     <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
-                    <div className="text-left text-foreground">
+                    <div className="text-left">
                         <CardTitle className="text-2xl font-black font-headline text-left text-foreground">My Credit Facilities</CardTitle>
                         <CardDescription className="text-left text-foreground">Manage and draw down from your authorized industrial funding lines.</CardDescription>
                     </div>
@@ -125,9 +125,9 @@ export default function MyFacilitiesContent() {
             </CardHeader>
 
             {facilities.length > 0 ? (
-                <div className="grid gap-6 text-left">
+                <div className="grid gap-6 text-left text-foreground">
                     {facilities.map((f: any) => (
-                        <Card key={f.id} className="shadow-lg hover:shadow-xl transition-shadow border-primary/10 overflow-hidden text-left bg-white">
+                        <Card key={f.id} className="shadow-lg hover:shadow-xl transition-shadow border-primary/10 overflow-hidden text-left bg-white text-foreground">
                             <CardHeader className="bg-slate-50 border-b text-left">
                                 <div className="flex justify-between items-center text-left text-foreground">
                                     <div className="flex items-center gap-3 text-left">
@@ -146,7 +146,7 @@ export default function MyFacilitiesContent() {
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 text-left text-foreground">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left text-foreground">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
                                     <div className="space-y-1 text-left">
                                         <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Facility Limit</Label>
                                         <p className="text-3xl font-black text-primary text-left">{formatCurrency(f.limit)}</p>
@@ -161,7 +161,7 @@ export default function MyFacilitiesContent() {
                                     </div>
                                 </div>
                             </CardContent>
-                            <CardFooter className="bg-slate-50 border-t p-4 flex justify-between text-left">
+                            <CardFooter className="bg-slate-50 border-t p-4 flex justify-between text-left text-foreground">
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold text-left">
                                     <Calendar className="h-3.5 w-3.5" /> Issued: {formatDateSafe(f.createdAt)}
                                 </div>
@@ -173,8 +173,8 @@ export default function MyFacilitiesContent() {
                     ))}
                 </div>
             ) : (
-                <Card className="border-dashed border-2 bg-muted/20 text-left">
-                    <CardContent className="py-20 text-center space-y-4">
+                <Card className="border-dashed border-2 bg-muted/20 text-left text-foreground">
+                    <CardContent className="py-20 text-center space-y-4 text-foreground">
                         <div className="bg-background p-6 rounded-full w-fit mx-auto shadow-sm">
                             <Landmark className="h-12 w-12 text-muted-foreground/30" />
                         </div>

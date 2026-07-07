@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -232,6 +231,7 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Finance Mall</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><ClipboardList className="h-3.5 w-3.5" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart className="h-3.5 w-3.5" />Buy & Sell Mall</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'associate-oversight'} onClick={() => navigate('associate-oversight')}><Eye className="h-3 w-3" />Associate Monitoring</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -314,7 +314,9 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6 text-left">
-            {renderContent()}
+            <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+                {renderContent()}
+            </Suspense>
         </div>
     </SidebarInset>
     </SidebarProvider>
