@@ -44,14 +44,13 @@ import {
   Lock,
   Banknote,
   Search,
-  HelpCircle,
-  Network,
-  PackageSearch,
-  Warehouse,
-  ClipboardList,
+  ShoppingCart,
   Eye,
   Globe,
-  ShoppingCart,
+  ClipboardList,
+  Warehouse,
+  Network,
+  HelpCircle,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -86,6 +85,7 @@ import MarketplaceFees from '@/app/backend/revenue/marketplace-fees';
 import MallCommissions from '@/app/backend/revenue/mall-commissions';
 import ISAPitchSettings from '@/app/backend/revenue/isa-pitch-settings';
 import SalesIncentives from '@/app/backend/revenue/sales-incentives';
+import ActionPlanSettings from '@/app/backend/loyalty-settings';
 import TierBenefits from '@/app/backend/tier-benefits';
 import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';
@@ -99,8 +99,6 @@ import SocialStudio from '@/app/adminaccount/social-studio';
 
 // Dynamic Oversights
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-12 w-12 animate-spin text-primary" /> });
-const BuySellOversight = dynamic(() => import('@/app/backend/buy-sell-oversight'), { ssr: false, loading: () => <Loader2 className="h-12 w-12 animate-spin text-primary" /> });
-const WarehouseOversight = dynamic(() => import('@/app/backend/warehouse-oversight'), { ssr: false, loading: () => <Loader2 className="h-12 w-12 animate-spin text-primary" /> });
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -192,8 +190,6 @@ function AdminAccountContent() {
       case 'associate-oversight': return <AssociateOversight />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
-      case 'buy-sell-oversight': return <BuySellOversight />;
-      case 'warehouse-oversight': return <WarehouseOversight />;
       case 'guides': return <AdminGuides />;
       default: return <AdminDashboardContent />;
     }
@@ -211,9 +207,9 @@ function AdminAccountContent() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
+          <div className="flex items-center gap-2 p-2 text-left">
             <Shield className="h-6 w-6 text-primary" />
-            <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Portal</h2>
+            <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Portal</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -230,13 +226,11 @@ function AdminAccountContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory' || activeView.includes('oversight') || activeView === 'market-origination'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Finance Mall</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><ClipboardList className="h-3.5 w-3.5" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart className="h-3.5 w-3.5" />Buy & Sell Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'warehouse-oversight'} onClick={() => navigate('warehouse-oversight')}><Warehouse className="h-3.5 w-3.5" />Warehouse Mall</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'associate-oversight'} onClick={() => navigate('associate-oversight')}><Eye className="h-3 w-3" />Associate Monitoring</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -303,13 +297,13 @@ function AdminAccountContent() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate text-left">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Admin'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />
@@ -318,7 +312,7 @@ function AdminAccountContent() {
       </SidebarFooter>
     </Sidebar>
     <SidebarInset>
-        <div className="p-6">
+        <div className="p-6 text-left">
             {renderContent()}
         </div>
     </SidebarInset>
@@ -331,6 +325,7 @@ export default function AdminAccountPage() {
     <AdminAuthGuard>
         <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
             <AdminAccountContent />
-        </AdminAuthGuard>
+        </Suspense>
+    </AdminAuthGuard>
   );
 }

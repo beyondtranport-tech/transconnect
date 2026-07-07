@@ -84,7 +84,7 @@ function EnquiryDetail() {
     }
 
     return (
-        <Card className="w-full max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left">
+        <Card className="w-full max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-900 text-white p-8">
                 <div className="flex justify-between items-start text-left">
                     <div className="text-left space-y-2">
@@ -127,7 +127,7 @@ function EnquiryDetail() {
                      <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
                          <CircleHelp className="h-4 w-4 text-primary" /> Purpose of Funds
                      </h4>
-                     <div className="p-5 bg-muted/30 rounded-xl italic text-muted-foreground leading-relaxed text-sm">
+                     <div className="p-5 bg-muted/30 rounded-xl italic text-muted-foreground leading-relaxed text-sm text-left">
                          "{enquiry.purpose}"
                      </div>
                 </div>
@@ -158,7 +158,7 @@ function EnquiryDetail() {
                     </div>
                 )}
             </CardContent>
-             <CardFooter className="bg-slate-900 p-8 flex justify-between items-center text-white">
+             <CardFooter className="bg-slate-900 p-8 flex justify-between items-center text-white text-left">
                  <div className="space-y-1 text-left">
                     <p className="text-xs font-bold text-primary flex items-center gap-2">
                         <ShieldCheck className="h-4 w-4" /> Professional Oversight Active

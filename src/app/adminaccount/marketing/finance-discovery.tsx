@@ -17,7 +17,7 @@ export const financeCategories = ["Banks", "Government", "AEO", "Niche Lenders"]
 export const financeTags = [
     "Asset Finance", 
     "Working Capital", 
-    "Debt Funding", 
+    "Debt Funders", 
     "Bridging", 
     "SME Loans", 
     "Purchase Order Finance", 
@@ -84,7 +84,7 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
                 <Alert className="bg-primary/5 border-primary/20 text-left text-foreground">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="font-bold text-foreground">Identity Verification Protocol</AlertTitle>
-                    <AlertDescription className="text-xs text-muted-foreground text-foreground">
+                    <AlertDescription className="text-xs text-muted-foreground text-foreground text-left">
                         Batching optimized to extract actual human names for MDs/Heads of Credit to ensure high-velocity conversion.
                     </AlertDescription>
                 </Alert>
@@ -92,7 +92,7 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left text-foreground text-foreground text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-foreground">Sequence Sync</Label>
                     <div className="space-y-1.5 text-foreground text-left">
-                        <Label className="text-xs font-bold text-foreground">Start Sequence #</Label>
+                        <Label className="text-xs font-bold text-foreground text-left">Start Sequence #</Label>
                         <Input 
                             type="number" 
                             value={seqOverride}
@@ -109,9 +109,7 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
             </div>
 
             <div className="space-y-2 text-left text-foreground text-foreground text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                    <Terminal className="h-3 w-3"/> AI Forensic Command
-                </Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> AI Forensic Command</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-foreground text-left">
                         {prompt}
@@ -144,7 +142,7 @@ export default function FinanceDiscoveryEngine() {
                         ))}
                     </TabsList>
                     {financeCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0 text-left text-foreground text-foreground">
+                        <TabsContent key={category} value={category} className="mt-0 text-left text-foreground text-foreground text-left">
                             <DiscoveryTab category={category} />
                         </TabsContent>
                     ))}
