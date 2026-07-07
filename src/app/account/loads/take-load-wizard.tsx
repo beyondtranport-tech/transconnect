@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -13,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 import { LoadInstructionView } from './load-instruction-view';
 
@@ -196,7 +196,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                         )}
                     </div>
                 </CardContent>
-                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left text-foreground">
+                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left text-foreground text-foreground text-foreground text-foreground">
                     <Button variant="ghost" onClick={onCancel} className="font-bold text-muted-foreground">Cancel Transaction</Button>
                     <Button onClick={handleAcceptLoad} disabled={!isIntelligenceMember || !hasRequiredAsset || !hasConfirmedDriver || !noCircumventionAccepted || isLoading} className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white">
                         {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Accept & Issue Instruction"}

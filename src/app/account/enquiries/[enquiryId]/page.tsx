@@ -87,7 +87,7 @@ function EnquiryDetail() {
         <Card className="w-full max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-900 text-white p-8">
                 <div className="flex justify-between items-start text-left">
-                    <div className="text-left space-y-2 text-foreground">
+                    <div className="text-left space-y-2 text-foreground text-left">
                         <Badge variant="outline" className={cn(
                             "uppercase font-black text-[10px] tracking-widest px-3 border-primary/40 text-primary",
                             enquiry.originationType === 'direct' ? "bg-primary/5" : "bg-blue-500/10 text-blue-400 border-blue-500/40"
@@ -98,7 +98,7 @@ function EnquiryDetail() {
                         <CardTitle className="flex items-center gap-2 text-2xl font-black text-white text-left">
                            <FileText className="h-6 w-6 text-primary" /> Enquiry Reference: {enquiry.id.slice(-6).toUpperCase()}
                         </CardTitle>
-                        <CardDescription className="text-slate-400">
+                        <CardDescription className="text-slate-400 text-left">
                             Submitted on {formatDateSafe(enquiry.createdAt, "dd MMMM yyyy")}
                         </CardDescription>
                     </div>
@@ -110,9 +110,9 @@ function EnquiryDetail() {
             <CardContent className="p-8 space-y-10 bg-white text-foreground">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-foreground text-left">
                     <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed text-left text-foreground">
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Total Requested Capital</p>
-                        <h3 className="font-black text-4xl text-primary">{formatCurrency(enquiry.amountRequested)}</h3>
-                        <p className="text-xs text-muted-foreground mt-2 italic">Preferred Term: {enquiry.preferredTerm || 'N/A'}</p>
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1 text-left">Total Requested Capital</p>
+                        <h3 className="font-black text-4xl text-primary text-left">{formatCurrency(enquiry.amountRequested)}</h3>
+                        <p className="text-xs text-muted-foreground mt-2 italic text-left">Preferred Term: {enquiry.preferredTerm || 'N/A'}</p>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-6 text-foreground text-left">
@@ -140,7 +140,7 @@ function EnquiryDetail() {
                          <div className="grid gap-4 text-foreground text-left">
                             {enquiry.assets.map((asset: any, idx: number) => (
                                 <div key={idx} className="p-4 border rounded-xl bg-slate-50/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                                    <div className="space-y-1 text-left">
+                                    <div className="space-y-1 text-left text-foreground">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground text-left">Asset {idx + 1}</p>
                                         <p className="text-sm font-bold text-left">{asset.vehicleYear || asset.assetYear} {asset.vehicleMake || asset.assetBrand} {asset.vehicleModel || asset.assetModel}</p>
                                     </div>

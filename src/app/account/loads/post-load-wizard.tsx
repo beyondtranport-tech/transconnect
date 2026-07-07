@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -112,8 +111,9 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
     };
 
     const handleNext = async () => {
-        const isValid = await methods.trigger(steps[currentStep].id as any);
-        if (isValid) setCurrentStep(prev => prev + 1);
+        const step = steps[currentStep].id as any;
+        const isValid = await methods.trigger(step);
+        if (isValid && currentStep < steps.length - 1) setCurrentStep(prev => prev + 1);
     };
 
     return (
@@ -140,22 +140,22 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             {currentStep === 0 && (
                                 <div className="space-y-8 text-left text-foreground">
                                      <FormField control={methods.control} name="loadType" render={({ field }) => (
-                                        <FormItem className="space-y-4 text-left">
+                                        <FormItem className="space-y-4 text-left text-foreground">
                                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Select Flow Segment</FormLabel>
                                             <FormControl>
-                                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 gap-4">
+                                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 gap-4 text-left">
                                                     <div className={cn("flex items-center space-x-4 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'local_distribution' ? "border-primary bg-primary/5" : "border-muted")}>
                                                         <RadioGroupItem value="local_distribution" id="local" className="h-5 w-5" />
-                                                        <Label htmlFor="local" className="flex-1 cursor-pointer">
-                                                            <p className="font-black text-sm uppercase">Local Distribution</p>
-                                                            <p className="text-[11px] text-muted-foreground">Inner-city urban Spokes. Sourced from Distribution Mall.</p>
+                                                        <Label htmlFor="local" className="flex-1 cursor-pointer text-left">
+                                                            <p className="font-black text-sm uppercase text-left">Local Distribution</p>
+                                                            <p className="text-[11px] text-muted-foreground text-left">Inner-city urban Spokes. Sourced from Distribution Mall.</p>
                                                         </Label>
                                                     </div>
                                                     <div className={cn("flex items-center space-x-4 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'long_haul' ? "border-primary bg-primary/5" : "border-muted")}>
                                                         <RadioGroupItem value="long_haul" id="haul" className="h-5 w-5" />
-                                                        <Label htmlFor="haul" className="flex-1 cursor-pointer">
-                                                            <p className="font-black text-sm uppercase">Long-Haul Transport</p>
-                                                            <p className="text-[11px] text-muted-foreground">Arterial inter-hub movement. Sourced from Transport Mall.</p>
+                                                        <Label htmlFor="haul" className="flex-1 cursor-pointer text-left">
+                                                            <p className="font-black text-sm uppercase text-left">Long-Haul Transport</p>
+                                                            <p className="text-[11px] text-muted-foreground text-left">Arterial inter-hub movement. Sourced from Transport Mall.</p>
                                                         </Label>
                                                     </div>
                                                 </RadioGroup>
@@ -164,34 +164,34 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                      )} />
                                      
                                      <FormField control={methods.control} name="agreementId" render={({ field }) => (
-                                        <FormItem className="text-left">
+                                        <FormItem className="text-left text-foreground">
                                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Authorized Appointment</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl><SelectTrigger className="h-11 border-2"><SelectValue placeholder="Select verified provider..." /></SelectTrigger></FormControl>
+                                                <FormControl><SelectTrigger className="h-11 border-2 text-left"><SelectValue placeholder="Select verified provider..." /></SelectTrigger></FormControl>
                                                 <SelectContent>
                                                     {agreements.filter(a => a.status === 'verified').map(a => <SelectItem key={a.id} value={a.id}>{a.providerName}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
-                                            <FormDescription className="text-[10px] italic">Must be a verified primary contract holder.</FormDescription>
+                                            <FormDescription className="text-[10px] italic text-left">Must be a verified primary contract holder.</FormDescription>
                                         </FormItem>
                                     )} />
                                 </div>
                             )}
 
                             {currentStep === 1 && (
-                                <div className="space-y-6 text-left">
+                                <div className="space-y-6 text-left text-foreground">
                                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground"><MapPin className="h-5 w-5 text-primary" /> Corridor Logistics</h3>
-                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 gap-4 text-left">
                                         <FormField control={methods.control} name="origin" render={({ field }) => (
-                                            <FormItem className="text-left">
+                                            <FormItem className="text-left text-foreground">
                                                 <FormLabel>Origin Hub</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
                                             </FormItem>
                                         )} />
                                         <FormField control={methods.control} name="destination" render={({ field }) => (
-                                            <FormItem className="text-left">
+                                            <FormItem className="text-left text-foreground">
                                                 <FormLabel>Destination Hub</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
                                             </FormItem>
                                         )} />
                                     </div>
@@ -201,29 +201,29 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             {currentStep === 2 && (
                                 <div className="space-y-6 text-left text-foreground">
                                     <h3 className="font-bold text-lg flex items-center gap-2"><ClipboardList className="h-5 w-5 text-primary" /> Execution Specifics</h3>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <FormField control={methods.control} name="collectionDate" render={({ field }) => (<FormItem><FormLabel>Collection Date</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="deliveryDate" render={({ field }) => (<FormItem><FormLabel>Target Delivery</FormLabel><FormControl><Input type="date" {...field} /></FormControl></FormItem>)} />
+                                    <div className="grid grid-cols-2 gap-4 text-left">
+                                        <FormField control={methods.control} name="collectionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Collection Date</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="deliveryDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Delivery</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                     <FormField control={methods.control} name="collectionDetails" render={({ field }) => (
-                                        <FormItem><FormLabel>Collection Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise pickup location..." {...field} /></FormControl></FormItem>
+                                        <FormItem className="text-left"><FormLabel>Collection Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise pickup location..." {...field} className="bg-white" /></FormControl></FormItem>
                                     )} />
                                     <FormField control={methods.control} name="deliveryDetails" render={({ field }) => (
-                                        <FormItem><FormLabel>Delivery Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise offload location..." {...field} /></FormControl></FormItem>
+                                        <FormItem className="text-left"><FormLabel>Delivery Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise offload location..." {...field} className="bg-white" /></FormControl></FormItem>
                                     )} />
                                 </div>
                             )}
 
                             {currentStep === 3 && (
-                                <div className="space-y-6 text-left">
-                                    <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-6 text-left text-foreground">
+                                    <div className="grid grid-cols-2 gap-4 text-left">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
                                                 <FormLabel>Cargo Classification</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>{cargoOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{cargoOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
                                             </FormItem>
                                         )} />
-                                        <FormField control={methods.control} name="weight" render={({ field }) => (<FormItem className="text-left"><FormLabel>Tonnage (Tons)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="weight" render={({ field }) => (<FormItem className="text-left"><FormLabel>Tonnage (Tons)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                     <div className="space-y-3 text-left">
                                         <Label className="font-bold text-foreground">Required Equipment</Label>
@@ -232,7 +232,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                                 <FormField key={opt} control={methods.control} name="requiredEquipment" render={({ field }) => (
                                                     <div className="flex items-center space-x-2 p-2 border rounded-md text-left">
                                                         <Checkbox checked={field.value.includes(opt)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, opt]) : field.onChange(field.value.filter((v:any) => v !== opt))} />
-                                                        <span className="text-xs">{opt}</span>
+                                                        <span className="text-xs text-foreground">{opt}</span>
                                                     </div>
                                                 )} />
                                             ))}
@@ -244,12 +244,12 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             {currentStep === 4 && (
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
-                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono" {...field} /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel><FormControl><Input type="number" className="bg-white" {...field} /></FormControl></FormItem>)} />
                                     </div>
                                     
                                     <div className="bg-slate-50 p-8 rounded-3xl border-2 border-dashed space-y-4 text-left">
-                                        <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4">Clearing Logic</h4>
+                                        <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4 text-left">Clearing Logic</h4>
                                         <div className="space-y-3 text-left text-sm">
                                             <div className="flex justify-between"><span>Your Net Earning</span><span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span></div>
                                             <div className="flex justify-between"><span>Platform Fee (2.5%)</span><span className="font-bold">{formatCurrency(commercials.platformFee)}</span></div>
@@ -263,7 +263,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             {currentStep === 5 && (
                                 <div className="space-y-6 text-center py-10">
                                     <CheckCircle className="h-16 w-16 mx-auto text-primary" />
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 text-center text-foreground">
                                         <h3 className="text-2xl font-black">Audit Verified</h3>
                                         <p className="text-sm text-muted-foreground max-w-sm mx-auto">This load will be broadcasted to the specialized {methods.watch('loadType') === 'local_distribution' ? 'Distribution' : 'Transport'} fleet registry.</p>
                                     </div>

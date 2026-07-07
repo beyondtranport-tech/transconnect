@@ -105,6 +105,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     
+    // Stabilize check with primitive values to prevent loop
     const uid = user?.uid;
     const email = user?.email;
 
@@ -187,6 +188,7 @@ function AdminAccountContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
+      case 'platform-staff': return <PlatformStaffManagement />;
       case 'associate-oversight': return <AssociateOversight />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
