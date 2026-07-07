@@ -144,6 +144,8 @@ service cloud.firestore {
     match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
     
     match /{allPaths=**} {
       allow read, write: if isAdmin();
