@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,7 +36,7 @@ TASK: Discover and extract exactly 30 UNIQUE, LIVE South African load providers 
 DEEP-CRAWLING FORENSIC PROTOCOL:
 1. BROKERAGE SCAN: Identify the primary industry focus (e.g. Mining, FMCG, Containers).
 2. FLOW VERIFICATION: Note if they operate in major corridors (e.g. N3 Durban-JHB, N1 Cape Town).
-3. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the Broker, MD, or Logistics Lead.
+3. HUMAN IDENTITY (CRITICAL): You MUST find the ACTUAL FIRST AND LAST NAME of the Broker, MD, or Logistics Lead responsible for sales or marketing.
 4. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
 5. RECORD KEY: Generate a unique "record_id" starting with "DISC_LOAD_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -46,7 +47,7 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "BROKER / HUB NAME",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME",
+    "contactPerson": "FULL NAME (FIRST AND LAST)",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL CHANNEL URL",

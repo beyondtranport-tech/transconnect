@@ -138,8 +138,16 @@ export async function POST(req: NextRequest) {
                 
                 partners.forEach((p: any) => {
                     const ref = db.collection(collectionName).doc(p.record_id || p.id || db.collection(collectionName).doc().id);
+                    
+                    // Normalize contactPerson if it came from AI as contact_person
+                    const normalizedPartner = { ...p };
+                    if (normalizedPartner.contact_person && !normalizedPartner.contactPerson) {
+                        normalizedPartner.contactPerson = normalizedPartner.contact_person;
+                        delete normalizedPartner.contact_person;
+                    }
+
                     batch.set(ref, {
-                        ...p,
+                        ...normalizedPartner,
                         id: ref.id,
                         type: type === 'lead' ? 'lead' : type,
                         source: p.source || 'AI Discovery',

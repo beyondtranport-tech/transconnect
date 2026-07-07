@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,7 +36,7 @@ TASK: Discover and extract exactly 30 UNIQUE, LIVE South African storage partner
 FORENSIC PROTOCOL:
 1. FACILITY SCAN: Identify the primary facility name and its specific hub (e.g. City Deep, Montague Gardens).
 2. TECHNICAL VERIFICATION: Note the specialized equipment (e.g. multi-temp zones, reach trucks, biometric access).
-3. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the Facility Manager, MD, or Owner.
+3. HUMAN IDENTITY (CRITICAL): You MUST find the ACTUAL FIRST AND LAST NAME of the Facility Manager, MD, or Owner responsible for commercial growth.
 4. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
 5. RECORD KEY: Generate a unique "record_id" starting with "DISC_WARE_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -46,7 +47,7 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "FACILITY NAME",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME",
+    "contactPerson": "FULL NAME (FIRST AND LAST)",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL CORPORATE URL",

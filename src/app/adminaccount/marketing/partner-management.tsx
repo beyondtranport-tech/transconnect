@@ -32,6 +32,7 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -53,7 +54,7 @@ const partnerSchema = z.object({
   mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
+  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.string(), // Dynamic type
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
   notes: z.string().optional(),
@@ -101,18 +102,26 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
         <DialogContent className="sm:max-w-[700px] text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add'} {targetType.charAt(0).toUpperCase() + targetType.slice(1)} Record</DialogTitle>
+                <DialogDescription>Update high-fidelity contact details and forensic notes.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
                     <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company / Identity Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Full Contact Name (Decision Maker)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                    
                     <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
+
+                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website</FormLabel><FormControl><Input placeholder="https://..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Physical Address</FormLabel><FormControl><Textarea placeholder="Full operational address..." {...field} className="bg-white min-h-[80px]" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="notes" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Forensic Notes / Technical Profile</FormLabel><FormControl><Textarea placeholder="Specific fleet details, corridors, or services..." {...field} className="bg-white min-h-[120px]" /></FormControl><FormMessage /></FormItem> )} />
+
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
                             <FormLabel>Pipeline Status</FormLabel>
@@ -163,6 +172,12 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     actions: true
   });
 
+  // Reset state when mall type changes
+  useEffect(() => {
+    setAllRecords([]);
+    setHasLoaded(false);
+  }, [type]);
+
   const fetchData = useCallback(async (limit: number = 20000) => {
     setIsLoading(true);
     try {
@@ -182,7 +197,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     }
   }, [type, searchTerm, outreachFilter, toast]);
 
-  useEffect(() => { if (!hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
+  useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -229,6 +244,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               return (
                   <div className="flex flex-col text-left">
                       <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
+                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
                       {row.original.lastOpenedAt && (
                           <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
                               <UserCheck className="h-2.5 w-2.5" /> Read
