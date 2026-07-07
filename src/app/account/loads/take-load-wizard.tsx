@@ -57,7 +57,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
 
     const hasConfirmedDriver = useMemo(() => {
         if (!staff) return false;
-        return staff.some(s => ['logistics', 'operations', 'driver'].includes(s.role?.toLowerCase()));
+        return staff.some(s => ['logistics', 'operations', 'driver', 'contractor'].includes(s.role?.toLowerCase()));
     }, [staff]);
 
     const handleAcceptLoad = async () => {
@@ -124,10 +124,10 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                             </CardTitle>
                             <CardDescription className="text-slate-400 text-lg mt-2">Verifying haulier node for: <strong>{load.origin}</strong> to <strong>{load.destination}</strong></CardDescription>
                         </div>
-                        <Badge variant="outline" className="border-primary text-primary">OFFER REF: {load.id.slice(-4)}</Badge>
+                        <Badge variant="outline" className="border-primary text-primary">OFFER REF: {load.id?.slice(-4)}</Badge>
                     </div>
                 </CardHeader>
-                <CardContent className="p-10 space-y-10 bg-white text-left text-foreground text-foreground">
+                <CardContent className="p-10 space-y-10 bg-white text-left text-foreground">
                     <div className="p-8 rounded-3xl border-2 border-primary bg-primary/5 shadow-sm text-left">
                         <div className="flex justify-between items-start mb-6">
                             <div className="text-left">

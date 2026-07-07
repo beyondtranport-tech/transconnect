@@ -29,7 +29,6 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const { toast } = useToast();
 
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}`;
-    const isDriver = partner.type === 'driver' || partner.role === 'Drivers';
 
     const getPrompt = () => {
         const currentData = {
@@ -115,30 +114,30 @@ REQUIRED FORMAT:
             </Button>
 
             <Dialog open={isOpen} onOpenChange={(o) => !isLogging && setIsOpen(o)}>
-                <DialogContent className="sm:max-w-xl">
+                <DialogContent className="sm:max-w-xl text-left">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
+                        <DialogTitle className="flex items-center gap-2 text-left">
                             <Sparkles className="h-5 w-5 text-primary" />
                             Forensic Gap-Analysis
                         </DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="text-left">
                             Command the AI to bridge missing data for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4 text-left">
-                        <Alert className="bg-primary/5 border-primary/20">
+                    <div className="space-y-4 py-4 text-left text-foreground">
+                        <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle>Zero-Step Automation</AlertTitle>
-                            <AlertDescription className="text-xs">
+                            <AlertTitle className="text-left font-bold">Zero-Step Automation</AlertTitle>
+                            <AlertDescription className="text-xs text-left">
                                 Clicking the button below will copy the command and automatically record this research event in the **Oversight Timeline**.
                             </AlertDescription>
                         </Alert>
 
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Forensic Command Preview</label>
-                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground">
-                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{getPrompt()}</pre>
+                        <div className="space-y-2 text-left">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-left">Forensic Command Preview</label>
+                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground text-left">
+                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-left">{getPrompt()}</pre>
                             </ScrollArea>
                         </div>
                     </div>
@@ -147,7 +146,7 @@ REQUIRED FORMAT:
                         <Button 
                             onClick={handleCopyAndLog} 
                             disabled={isLogging} 
-                            className="w-full bg-primary hover:bg-primary/90 text-white"
+                            className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
                         >
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                             {isCopied ? 'Prompt Ready!' : 'Copy Forensic Prompt & Start Logging'}

@@ -96,7 +96,7 @@ export default function MyFacilitiesContent() {
                             <TableHeader className="text-left text-foreground">
                                 <TableRow className="text-left text-foreground"><TableHead className="text-left">Type</TableHead><TableHead className="text-left text-foreground">Limit</TableHead><TableHead className="text-left text-foreground">Status</TableHead></TableRow>
                             </TableHeader>
-                            <TableBody className="text-left text-foreground text-foreground">
+                            <TableBody className="text-left text-foreground">
                                 {facilities.map((f: any) => (
                                     <TableRow key={f.id} className="text-left text-foreground">
                                         <TableCell><Badge variant="outline" className="blur-sm">XXXXXXX</Badge></TableCell>

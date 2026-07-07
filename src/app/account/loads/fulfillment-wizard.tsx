@@ -91,7 +91,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 text-left">
-            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground">
+            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-left">
                 <ArrowLeft className="h-4 w-4" /> Back to Instruction
             </Button>
 
@@ -99,7 +99,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 <CardHeader className="bg-slate-900 text-white p-10 text-left">
                     <div className="flex justify-between items-start text-left text-white">
                         <div className="text-left text-white">
-                            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white">
+                            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white text-left">
                                 <CheckCircle className="h-10 w-10 text-primary" />
                                 Work Fulfillment Gateway
                             </CardTitle>
@@ -121,9 +121,9 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 Fulfillment is only authorized once a clear scan or photo of the signed delivery note is uploaded to the platform ledger.
                             </p>
                             
-                            <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 flex flex-col items-center justify-center gap-4 text-center">
+                            <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 flex flex-col items-center justify-center gap-4 text-center text-left">
                                 {podUrl ? (
-                                    <div className="text-center space-y-2">
+                                    <div className="text-center space-y-2 text-left">
                                         <ShieldCheck className="h-12 w-12 text-green-600 mx-auto" />
                                         <p className="text-sm font-bold text-green-700 uppercase text-center">POD Captured</p>
                                         <Button variant="link" asChild className="text-xs">
@@ -131,16 +131,16 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                         </Button>
                                     </div>
                                 ) : (
-                                    <>
-                                        <div className="bg-white p-4 rounded-full shadow-sm">
+                                    <div className="text-center text-left">
+                                        <div className="bg-white p-4 rounded-full shadow-sm mx-auto w-fit">
                                             <FileText className="h-8 w-8 text-muted-foreground" />
                                         </div>
                                         <input type="file" id="pod-input" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
-                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="font-bold">
+                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="mt-4 font-bold text-left">
                                             {isUploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <FileUp className="mr-2 h-4 w-4" />}
                                             Upload Signed POD
                                         </Button>
-                                    </>
+                                    </div>
                                 )}
                                 {isUploading && <Progress value={uploadProgress} className="h-1.5 w-full max-w-[200px]" />}
                             </div>
@@ -158,7 +158,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 </div>
                                 <Separator className="bg-white/10" />
                                 <div className="text-xs text-slate-400 leading-relaxed text-left">
-                                    <p>Upon broker verification of the POD, these funds will be moved from "Pending" to "Available" in your wallet.</p>
+                                    <p className="text-left text-foreground">Upon broker verification of the POD, these funds will be moved from "Pending" to "Available" in your wallet.</p>
                                 </div>
                             </div>
                             
@@ -173,12 +173,12 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                     </div>
                 </CardContent>
 
-                <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center text-left">
-                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground">Return to Details</Button>
+                <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center text-left text-foreground">
+                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground text-left">Return to Details</Button>
                     <Button 
                         onClick={handleConfirmFulfillment} 
                         disabled={!podUrl || isProcessing} 
-                        className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl bg-primary hover:bg-primary/90 text-white"
+                        className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl bg-primary hover:bg-primary/90 text-white text-left"
                     >
                         {isProcessing ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : "Confirm Fulfillment"}
                     </Button>

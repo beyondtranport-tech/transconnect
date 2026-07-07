@@ -118,16 +118,16 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
 
     return (
         <Card className="max-w-4xl mx-auto shadow-2xl border-none text-left overflow-hidden">
-            <CardHeader className="bg-slate-900 text-white p-8">
+            <CardHeader className="bg-slate-900 text-white p-8 text-left">
                 <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white text-left">
                     <Truck className="h-6 w-6 text-primary" />
                     Freight Clearing Wizard
                 </CardTitle>
-                <CardDescription className="text-slate-400">Post verified freight instructions to the specialized haulier network.</CardDescription>
+                <CardDescription className="text-slate-400 text-left">Post verified freight instructions to the specialized haulier network.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 bg-white text-foreground">
                 <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                    <div className="space-y-2 border-r pr-4">
+                    <div className="space-y-2 border-r pr-4 text-left">
                         {steps.map((step, i) => (
                             <Button key={step.id} variant={currentStep === i ? "secondary" : "ghost"} className="w-full justify-start gap-3 h-12" onClick={() => i < currentStep && setCurrentStep(i)}>
                                 <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>{i+1}</div>
@@ -167,7 +167,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                         <FormItem className="text-left text-foreground">
                                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Authorized Appointment</FormLabel>
                                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl><SelectTrigger className="h-11 border-2 text-left"><SelectValue placeholder="Select verified provider..." /></SelectTrigger></FormControl>
+                                                <FormControl><SelectTrigger className="h-11 border-2 text-left text-foreground"><SelectValue placeholder="Select verified provider..." /></SelectTrigger></FormControl>
                                                 <SelectContent>
                                                     {agreements.filter(a => a.status === 'verified').map(a => <SelectItem key={a.id} value={a.id}>{a.providerName}</SelectItem>)}
                                                 </SelectContent>
@@ -185,13 +185,13 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                         <FormField control={methods.control} name="origin" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
                                                 <FormLabel>Origin Hub</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
                                             </FormItem>
                                         )} />
                                         <FormField control={methods.control} name="destination" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
                                                 <FormLabel>Destination Hub</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select>
                                             </FormItem>
                                         )} />
                                     </div>
@@ -200,8 +200,8 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             
                             {currentStep === 2 && (
                                 <div className="space-y-6 text-left text-foreground">
-                                    <h3 className="font-bold text-lg flex items-center gap-2"><ClipboardList className="h-5 w-5 text-primary" /> Execution Specifics</h3>
-                                    <div className="grid grid-cols-2 gap-4 text-left">
+                                    <h3 className="font-bold text-lg flex items-center gap-2 text-foreground text-left"><ClipboardList className="h-5 w-5 text-primary" /> Execution Specifics</h3>
+                                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                                         <FormField control={methods.control} name="collectionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Collection Date</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                         <FormField control={methods.control} name="deliveryDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Delivery</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
@@ -218,21 +218,21 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 <div className="space-y-6 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
-                                            <FormItem className="text-left text-foreground">
+                                            <FormItem className="text-left text-foreground text-left text-foreground">
                                                 <FormLabel>Cargo Classification</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{cargoOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>{cargoOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
                                             </FormItem>
                                         )} />
                                         <FormField control={methods.control} name="weight" render={({ field }) => (<FormItem className="text-left"><FormLabel>Tonnage (Tons)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                     <div className="space-y-3 text-left">
-                                        <Label className="font-bold text-foreground">Required Equipment</Label>
+                                        <Label className="font-bold text-foreground text-left">Required Equipment</Label>
                                         <div className="grid grid-cols-2 gap-2 text-left">
                                             {equipmentOptions.map(opt => (
                                                 <FormField key={opt} control={methods.control} name="requiredEquipment" render={({ field }) => (
                                                     <div className="flex items-center space-x-2 p-2 border rounded-md text-left">
                                                         <Checkbox checked={field.value.includes(opt)} onCheckedChange={(checked) => checked ? field.onChange([...field.value, opt]) : field.onChange(field.value.filter((v:any) => v !== opt))} />
-                                                        <span className="text-xs text-foreground">{opt}</span>
+                                                        <span className="text-xs text-foreground text-left">{opt}</span>
                                                     </div>
                                                 )} />
                                             ))}
@@ -244,7 +244,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             {currentStep === 4 && (
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
-                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</Label><FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl></FormItem>)} />
                                         <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel><FormControl><Input type="number" className="bg-white" {...field} /></FormControl></FormItem>)} />
                                     </div>
                                     
@@ -261,7 +261,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 5 && (
-                                <div className="space-y-6 text-center py-10">
+                                <div className="space-y-6 text-center py-10 text-left">
                                     <CheckCircle className="h-16 w-16 mx-auto text-primary" />
                                     <div className="space-y-2 text-center text-foreground">
                                         <h3 className="text-2xl font-black text-center">Audit Verified</h3>
@@ -273,7 +273,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                     </FormProvider>
                 </div>
             </CardContent>
-            <CardFooter className="p-8 bg-slate-50 border-t flex justify-between">
+            <CardFooter className="p-8 bg-slate-50 border-t flex justify-between text-left">
                 <Button variant="ghost" onClick={currentStep === 0 ? onComplete : () => setCurrentStep(prev => prev - 1)}><ArrowLeft className="mr-2 h-4 w-4"/> {currentStep === 0 ? 'Cancel' : 'Back'}</Button>
                 {currentStep < 5 ? (
                     <Button onClick={handleNext}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>

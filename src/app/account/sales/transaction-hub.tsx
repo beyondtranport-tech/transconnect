@@ -186,15 +186,15 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 </Alert>
                                 {!isSeller && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                        <Card className="border-2 border-primary/20 hover:border-primary transition-colors cursor-pointer group" asChild>
-                                            <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`}>
+                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`} className="block">
+                                            <Card className="border-2 border-primary/20 hover:border-primary transition-colors cursor-pointer group">
                                                 <CardContent className="p-6 space-y-2 text-left">
                                                     <div className="bg-primary/10 p-2 rounded-lg w-fit group-hover:bg-primary group-hover:text-white transition-colors"><Landmark className="h-5 w-5" /></div>
                                                     <p className="font-black text-sm uppercase text-left">Apply for Finance</p>
                                                     <p className="text-xs text-muted-foreground leading-tight text-left">Broadcast this transaction to our specialized lending network.</p>
                                                 </CardContent>
-                                            </Link>
-                                        </Card>
+                                            </Card>
+                                        </Link>
                                         <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors cursor-pointer text-left" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
                                             <CardContent className="p-6 space-y-2 text-left">
                                                 <div className="bg-slate-100 p-2 rounded-lg w-fit"><Banknote className="h-5 w-5" /></div>
@@ -225,7 +225,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 
                                 {currentStatus === 'paid' && (
                                     <div className="p-6 bg-green-50 border-2 border-green-200 rounded-3xl space-y-4 text-left">
-                                        <div className="flex items-center gap-3 text-left">
+                                        <div className="flex items-center gap-3 text-left text-foreground">
                                             <ShieldCheck className="h-6 w-6 text-green-600" />
                                             <p className="font-black text-green-900">Funds Secured in Escrow</p>
                                         </div>

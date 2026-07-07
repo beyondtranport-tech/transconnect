@@ -68,12 +68,12 @@ function EnquiryDetail() {
     }
     
     if (error) {
-        return <div className="text-center py-20 text-destructive font-bold">Error: {error.message}</div>
+        return <div className="text-center py-20 text-destructive font-bold text-left">Error: {error.message}</div>
     }
     
     if (!enquiry) {
         return (
-             <div className="text-center py-20">
+             <div className="text-center py-20 text-left">
                 <h2 className="text-2xl font-bold">Enquiry Not Found</h2>
                 <p className="text-muted-foreground mt-2">The requested enquiry could not be found.</p>
                 <Button onClick={() => router.back()} className="mt-6" variant="outline">
@@ -85,7 +85,7 @@ function EnquiryDetail() {
 
     return (
         <Card className="w-full max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
-            <CardHeader className="bg-slate-900 text-white p-8">
+            <CardHeader className="bg-slate-900 text-white p-8 text-left">
                 <div className="flex justify-between items-start text-left">
                     <div className="text-left space-y-2">
                         <Badge variant="outline" className={cn(
@@ -102,20 +102,20 @@ function EnquiryDetail() {
                             Submitted on {formatDateSafe(enquiry.createdAt, "dd MMMM yyyy")}
                         </CardDescription>
                     </div>
-                    <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize text-sm font-black px-4 py-1 h-auto">
+                    <Badge variant={statusColors[enquiry.status] || 'secondary'} className="capitalize text-sm font-black px-4 py-1 h-auto text-left">
                         {enquiry.status.replace(/_/g, ' ')}
                     </Badge>
                 </div>
             </CardHeader>
-            <CardContent className="p-8 space-y-10 bg-white text-foreground">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+            <CardContent className="p-8 space-y-10 bg-white text-foreground text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-left">
                     <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed text-left">
                         <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Total Requested Capital</p>
-                        <h3 className="font-black text-4xl text-primary">{formatCurrency(enquiry.amountRequested)}</h3>
-                        <p className="text-xs text-muted-foreground mt-2 italic">Preferred Term: {enquiry.preferredTerm || 'N/A'}</p>
+                        <h3 className="font-black text-4xl text-primary text-left">{formatCurrency(enquiry.amountRequested)}</h3>
+                        <p className="text-xs text-muted-foreground mt-2 italic text-left">Preferred Term: {enquiry.preferredTerm || 'N/A'}</p>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-6">
+                    <div className="grid grid-cols-2 gap-6 text-left">
                         <DetailItem label="Funding Need" value={fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed} icon={<Landmark className="h-3 w-3"/>} />
                         <DetailItem label="Origin Region" value={enquiry.primaryRegion || 'National'} icon={<MapPin className="h-3 w-3"/>} />
                         <DetailItem label="Entity Class" value={enquiry.entityType} icon={<Building className="h-3 w-3"/>} />
@@ -139,18 +139,18 @@ function EnquiryDetail() {
                          </h4>
                          <div className="grid gap-4">
                             {enquiry.assets.map((asset: any, idx: number) => (
-                                <div key={idx} className="p-4 border rounded-xl bg-slate-50/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                                <div key={idx} className="p-4 border rounded-xl bg-slate-50/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-left text-foreground">
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground">Asset {idx + 1}</p>
-                                        <p className="text-sm font-bold">{asset.vehicleYear || asset.assetYear} {asset.vehicleMake || asset.assetBrand} {asset.vehicleModel || asset.assetModel}</p>
+                                        <p className="text-sm font-bold text-left">{asset.vehicleYear || asset.assetYear} {asset.vehicleMake || asset.assetBrand} {asset.vehicleModel || asset.assetModel}</p>
                                     </div>
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground">Class / Category</p>
-                                        <p className="text-xs font-medium">{asset.vehicleClass || asset.assetCategory}</p>
+                                        <p className="text-xs font-medium text-left">{asset.vehicleClass || asset.assetCategory}</p>
                                     </div>
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground">Identifier (VIN/Serial)</p>
-                                        <p className="text-xs font-mono">{asset.vehicleVin || asset.assetSerialNumber || 'N/A'}</p>
+                                        <p className="text-xs font-mono text-left">{asset.vehicleVin || asset.assetSerialNumber || 'N/A'}</p>
                                     </div>
                                 </div>
                             ))}
@@ -158,14 +158,14 @@ function EnquiryDetail() {
                     </div>
                 )}
             </CardContent>
-             <CardFooter className="bg-slate-900 p-8 flex justify-between items-center text-white">
+             <CardFooter className="bg-slate-900 p-8 flex justify-between items-center text-white text-left">
                  <div className="space-y-1 text-left">
                     <p className="text-xs font-bold text-primary flex items-center gap-2">
                         <ShieldCheck className="h-4 w-4" /> Professional Oversight Active
                     </p>
                     <p className="text-[10px] text-slate-400 text-left">A funding specialist is reviewing your forensic data profile.</p>
                  </div>
-                 <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold h-12">
+                 <Button asChild variant="outline" className="border-white/20 text-white hover:bg-white/10 font-bold h-12 text-left">
                     <Link href={`/funding/apply?enquiryId=${enquiryId}`}>
                         <Edit className="mr-2 h-4 w-4" /> Refine Application
                     </Link>

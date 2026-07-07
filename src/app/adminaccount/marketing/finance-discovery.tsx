@@ -76,22 +76,22 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left text-foreground">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
                     <Landmark className="h-6 w-6 text-primary" />
                     Capital Discovery: {category}
                 </h2>
                 
-                <Alert className="bg-primary/5 border-primary/20 text-left text-foreground">
+                <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="font-bold text-foreground">Identity Verification Protocol</AlertTitle>
-                    <AlertDescription className="text-xs text-muted-foreground text-foreground text-left">
+                    <AlertDescription className="text-xs text-muted-foreground text-left">
                         Batching optimized to extract actual human names for MDs/Heads of Credit to ensure high-velocity conversion.
                     </AlertDescription>
                 </Alert>
 
-                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left text-foreground text-foreground text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-foreground">Sequence Sync</Label>
-                    <div className="space-y-1.5 text-foreground text-left">
+                <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Sequence Sync</Label>
+                    <div className="space-y-1.5 text-left">
                         <Label className="text-xs font-bold text-foreground text-left">Start Sequence #</Label>
                         <Input 
                             type="number" 
@@ -108,10 +108,10 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
                 </Button>
             </div>
 
-            <div className="space-y-2 text-left text-foreground text-foreground text-left">
+            <div className="space-y-2 text-left text-foreground">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> AI Forensic Command</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner">
-                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-foreground text-left">
+                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">
                         {prompt}
                     </pre>
                 </ScrollArea>
@@ -122,19 +122,19 @@ const DiscoveryTab = ({ category, currentCount = 0 }: { category: string, curren
 
 export default function FinanceDiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none text-left text-foreground text-foreground text-left">
+        <Card className="shadow-none border-none text-left text-foreground">
             <Tabs defaultValue="Banks" className="w-full text-left">
-                <CardHeader className="px-0 pt-0 text-left text-foreground text-left">
-                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-left">
+                <CardHeader className="px-0 pt-0 text-left text-foreground">
+                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground">
                         <Database className="h-6 w-6 text-amber-500" />
                         Capital Intelligence Discovery
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground text-left text-foreground text-foreground text-left">
+                    <CardDescription className="text-muted-foreground text-left text-foreground">
                         Identify credit providers, private lenders, and specialized fintechs.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left text-foreground text-foreground text-left">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground text-foreground">
+                <CardContent className="px-0 text-left">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground">
                         {financeCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
                                 {category}
@@ -142,7 +142,7 @@ export default function FinanceDiscoveryEngine() {
                         ))}
                     </TabsList>
                     {financeCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0 text-left text-foreground text-foreground text-left">
+                        <TabsContent key={category} value={category} className="mt-0 text-left text-foreground">
                             <DiscoveryTab category={category} />
                         </TabsContent>
                     ))}
