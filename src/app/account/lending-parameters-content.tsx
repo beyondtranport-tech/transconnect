@@ -21,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 const productHierarchy = [
     {
@@ -247,22 +248,20 @@ export default function LendingParametersContent() {
                                                                         <div className="grid grid-cols-2 gap-2 text-left">
                                                                             {termOptions.map(term => (
                                                                                 <FormField key={term} control={form.control} name={`productCriteria.${product.id}.preferredTerms`} render={({ field }) => (
-                                                                                    <FormItem className="flex items-center space-x-2 space-y-0 p-2 border rounded-md bg-white text-left">
-                                                                                        <FormControl>
-                                                                                            <Checkbox 
-                                                                                                checked={field.value?.includes(term)} 
-                                                                                                onCheckedChange={(checked) => {
-                                                                                                    const current = field.value || [];
-                                                                                                    if (checked) {
-                                                                                                        field.onChange([...current, term]);
-                                                                                                    } else {
-                                                                                                        field.onChange(current.filter((t: string) => t !== term));
-                                                                                                    }
-                                                                                                }} 
-                                                                                            />
-                                                                                        </FormControl>
-                                                                                        <FormLabel className="text-[10px] font-bold cursor-pointer text-foreground text-left">{term}</FormLabel>
-                                                                                    </FormItem>
+                                                                                    <div className="flex items-center space-x-2 space-y-0 p-2 border rounded-md bg-white text-left">
+                                                                                        <Checkbox 
+                                                                                            checked={field.value?.includes(term)} 
+                                                                                            onCheckedChange={(checked) => {
+                                                                                                const current = field.value || [];
+                                                                                                if (checked) {
+                                                                                                    field.onChange([...current, term]);
+                                                                                                } else {
+                                                                                                    field.onChange(current.filter((t: string) => t !== term));
+                                                                                                }
+                                                                                            }} 
+                                                                                        />
+                                                                                        <Label className="text-[10px] font-bold cursor-pointer text-foreground text-left">{term}</Label>
+                                                                                    </div>
                                                                                 )} />
                                                                             ))}
                                                                         </div>
@@ -332,22 +331,20 @@ export default function LendingParametersContent() {
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                         {entityOptions.map(item => (
                                             <FormField key={item} control={form.control} name="entityTypes" render={({ field }) => (
-                                                <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground text-foreground">
-                                                    <FormControl>
-                                                        <Checkbox 
-                                                            checked={field.value?.includes(item)} 
-                                                            onCheckedChange={(checked) => {
-                                                                const current = field.value || [];
-                                                                if (checked) {
-                                                                    field.onChange([...current, item]);
-                                                                } else {
-                                                                    field.onChange(current.filter((v: string) => v !== item));
-                                                                }
-                                                            }} 
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="font-medium text-[11px] cursor-pointer text-left">{item}</FormLabel>
-                                                </FormItem>
+                                                <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
+                                                    <Checkbox 
+                                                        checked={field.value?.includes(item)} 
+                                                        onCheckedChange={(checked) => {
+                                                            const current = field.value || [];
+                                                            if (checked) {
+                                                                field.onChange([...current, item]);
+                                                            } else {
+                                                                field.onChange(current.filter((v: string) => v !== item));
+                                                            }
+                                                        }} 
+                                                    />
+                                                    <Label className="font-medium text-[11px] cursor-pointer text-left">{item}</Label>
+                                                </div>
                                             )} />
                                         ))}
                                     </div>
@@ -370,22 +367,20 @@ export default function LendingParametersContent() {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                             {financeTags.map(item => (
                                                 <FormField key={item} control={form.control} name="industrial_tags" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
-                                                        <FormControl>
-                                                            <Checkbox 
-                                                                checked={field.value?.includes(item)} 
-                                                                onCheckedChange={(checked) => {
-                                                                    const current = field.value || [];
-                                                                    if (checked) {
-                                                                        field.onChange([...current, item]);
-                                                                    } else {
-                                                                        field.onChange(current.filter((v: string) => v !== item));
-                                                                    }
-                                                                }} 
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight text-left">{item}</FormLabel>
-                                                    </FormItem>
+                                                    <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
+                                                        <Checkbox 
+                                                            checked={field.value?.includes(item)} 
+                                                            onCheckedChange={(checked) => {
+                                                                const current = field.value || [];
+                                                                if (checked) {
+                                                                    field.onChange([...current, item]);
+                                                                } else {
+                                                                    field.onChange(current.filter((v: string) => v !== item));
+                                                                }
+                                                            }} 
+                                                        />
+                                                        <Label className="font-medium text-[11px] cursor-pointer leading-tight text-left">{item}</Label>
+                                                    </div>
                                                 )} />
                                             ))}
                                         </div>
@@ -401,22 +396,20 @@ export default function LendingParametersContent() {
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left text-foreground">
                                             {supplierCategories.map(item => (
                                                 <FormField key={item} control={form.control} name="assetTypes" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
-                                                        <FormControl>
-                                                            <Checkbox 
-                                                                checked={field.value?.includes(item)} 
-                                                                onCheckedChange={(checked) => {
-                                                                    const current = field.value || [];
-                                                                    if (checked) {
-                                                                        field.onChange([...current, item]);
-                                                                    } else {
-                                                                        field.onChange(current.filter((v: string) => v !== item));
-                                                                    }
-                                                                }} 
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-medium text-[11px] cursor-pointer leading-tight text-left">{item}</FormLabel>
-                                                    </FormItem>
+                                                    <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
+                                                        <Checkbox 
+                                                            checked={field.value?.includes(item)} 
+                                                            onCheckedChange={(checked) => {
+                                                                const current = field.value || [];
+                                                                if (checked) {
+                                                                    field.onChange([...current, item]);
+                                                                } else {
+                                                                    field.onChange(current.filter((v: string) => v !== item));
+                                                                }
+                                                            }} 
+                                                        />
+                                                        <Label className="font-medium text-[11px] cursor-pointer leading-tight text-left">{item}</Label>
+                                                    </div>
                                                 )} />
                                             ))}
                                         </div>
@@ -432,22 +425,20 @@ export default function LendingParametersContent() {
                                         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left text-foreground">
                                             {regionOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
-                                                    <FormItem className="flex items-center space-x-3 space-y-0 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
-                                                        <FormControl>
-                                                            <Checkbox 
-                                                                checked={field.value?.includes(item)} 
-                                                                onCheckedChange={(checked) => {
-                                                                    const current = field.value || [];
-                                                                    if (checked) {
-                                                                        field.onChange([...current, item]);
-                                                                    } else {
-                                                                        field.onChange(current.filter((v: string) => v !== item));
-                                                                    }
-                                                                }} 
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-medium text-[11px] cursor-pointer text-left">{item}</FormLabel>
-                                                    </FormItem>
+                                                    <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground">
+                                                        <Checkbox 
+                                                            checked={field.value?.includes(item)} 
+                                                            onCheckedChange={(checked) => {
+                                                                const current = field.value || [];
+                                                                if (checked) {
+                                                                    field.onChange([...current, item]);
+                                                                } else {
+                                                                    field.onChange(current.filter((v: string) => v !== item));
+                                                                }
+                                                            }} 
+                                                        />
+                                                        <Label className="font-medium text-[11px] cursor-pointer text-left">{item}</Label>
+                                                    </div>
                                                 )} />
                                             ))}
                                         </div>

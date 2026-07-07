@@ -51,6 +51,7 @@ import {
   Warehouse,
   Network,
   HelpCircle,
+  PackageSearch,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -124,7 +125,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
         return (
             <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest">Verifying Admin Permissions...</p>
+                <p className="mt-4 text-muted-foreground text-sm font-bold uppercase tracking-widest text-center">Verifying Admin Permissions...</p>
             </div>
         );
     }
