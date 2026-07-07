@@ -42,7 +42,7 @@ export default function MyFacilitiesContent() {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) return;
+            if (!token || !user?.companyId) return;
 
             const result = await performAdminAction(token, 'getMemberFacilities', { 
                 companyId: user.companyId 
@@ -97,7 +97,7 @@ export default function MyFacilitiesContent() {
                                 <TableRow><TableHead>Type</TableHead><TableHead>Limit</TableHead><TableHead>Status</TableHead></TableRow>
                             </TableHeader>
                             <TableBody>
-                                {facilities.map(f => (
+                                {facilities.map((f: any) => (
                                     <TableRow key={f.id}>
                                         <TableCell><Badge variant="outline" className="blur-sm">XXXXXXX</Badge></TableCell>
                                         <TableCell><span className="blur-sm font-mono text-left">R XX,XXX,XXX</span></TableCell>

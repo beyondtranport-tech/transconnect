@@ -187,7 +187,6 @@ function AdminAccountContent() {
       case 'incentives-sales': return <SalesIncentives />;
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
-      case 'platform-staff': return <PlatformStaffManagement />;
       case 'associate-oversight': return <AssociateOversight />;
       case 'market-origination': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;

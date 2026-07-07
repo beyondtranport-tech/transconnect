@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -15,12 +15,13 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
-import { financeTags } from '@/app/adminaccount/marketing/finance-discovery';
+import { financeTags, financeCategories } from '@/app/adminaccount/marketing/finance-discovery';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import React from 'react';
 
 const productHierarchy = [
@@ -248,7 +249,7 @@ export default function LendingParametersContent() {
                                                                         <div className="grid grid-cols-2 gap-2 text-left">
                                                                             {termOptions.map(term => (
                                                                                 <FormField key={term} control={form.control} name={`productCriteria.${product.id}.preferredTerms`} render={({ field }) => (
-                                                                                    <div className="flex items-center space-x-2 space-y-0 p-2 border rounded-md bg-white text-left">
+                                                                                    <div className="flex items-center space-x-2 p-2 border rounded-md bg-white text-left">
                                                                                         <Checkbox 
                                                                                             checked={field.value?.includes(term)} 
                                                                                             onCheckedChange={(checked) => {
@@ -289,7 +290,7 @@ export default function LendingParametersContent() {
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 text-left text-foreground">
                                     <div className="space-y-6 text-left">
-                                        <div className="space-y-4 text-left text-foreground">
+                                        <div className="space-y-4 text-left text-foreground text-foreground">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entity Maturity</Label>
                                             <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
                                                 <FormItem className="text-left text-foreground"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} className="border-2 text-foreground" /></FormControl></FormItem>
