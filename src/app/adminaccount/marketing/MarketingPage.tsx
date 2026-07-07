@@ -1,35 +1,13 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy, Database, SearchCode, Sparkles } from 'lucide-react';
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import { Loader2, Database, Sparkles } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { getClientSideAuthToken } from '@/firebase';
-import { copyHtmlToClipboard } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
 
 // Content components
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -65,47 +43,26 @@ const LoadsDiscovery = dynamic(() => import('@/app/adminaccount/marketing/loads-
 const BuySellDiscovery = dynamic(() => import('@/app/adminaccount/marketing/buy-sell-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Management (CRM)
-const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const ISAManagement = dynamic(() => import('@/app/adminaccount/marketing/isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const DeveloperManagement = dynamic(() => import('@/app/adminaccount/marketing/developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const SupplierManagement = dynamic(() => import('@/app/adminaccount/marketing/supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing/transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const AssociateManagement = dynamic(() => import('@/app/adminaccount/marketing/associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const DriverManagement = dynamic(() => import('@/app/adminaccount/marketing/driver-management'), { loading: () => <Loader2 className="animate-spin" /> });
-const FinanceManagement = dynamic(() => import('@/app/adminaccount/marketing/finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
+import PartnerManagement from '@/app/adminaccount/marketing/partner-management';
 
 const audienceConfig: Record<string, any> = {
-    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
-    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement, Discovery: DiscoveryEngine },
-    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement, Discovery: TransporterDiscovery },
-    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
-    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
-    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: PartnerEmails, Management: AssociateManagement, Discovery: AssociateDiscovery },
-    drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Management: DriverManagement, Discovery: DriverDiscovery },
-    finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement, Discovery: FinanceDiscovery },
-    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: WarehouseDiscovery },
-    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: DistributionDiscovery },
-    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: LoadsDiscovery },
-    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: BuySellDiscovery },
+    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, type: 'partner' },
+    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, type: 'isa' },
+    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: PartnerManagement, Discovery: DiscoveryEngine, type: 'supplier' },
+    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: PartnerManagement, Discovery: TransporterDiscovery, type: 'transporter' },
+    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: PartnerManagement, type: 'investor' },
+    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: PartnerManagement, type: 'developer' },
+    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: AssociateDiscovery, type: 'associate' },
+    drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: DriverDiscovery, type: 'driver' },
+    finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Management: PartnerManagement, Discovery: FinanceDiscovery, type: 'finance' },
+    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: WarehouseDiscovery, type: 'warehouse' },
+    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: DistributionDiscovery, type: 'distributor' },
+    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: LoadsDiscovery, type: 'loads' },
+    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: BuySellDiscovery, type: 'buy-sell' },
 };
 
 interface MarketingPageProps {
   audience: string;
-}
-
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
 }
 
 export default function MarketingPage({ audience }: MarketingPageProps) {
@@ -113,43 +70,9 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [activeTab, setActiveTab] = useState('company-profile');
   const { toast } = useToast();
   
-  const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
-  const [partners, setPartners] = useState<any[]>([]);
-  const [isLoadingPartners, setIsLoadingPartners] = useState(true);
-
-  const fetchPartnersForLogging = useCallback(async () => {
-    setIsLoadingPartners(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Not authenticated");
-
-        let apiType = 'partner';
-        if (audience === 'isa') apiType = 'isa';
-        else if (audience === 'investors') apiType = 'investor';
-        else if (audience === 'developers') apiType = 'developer';
-        else if (audience === 'suppliers') apiType = 'supplier';
-        else if (audience === 'transporters') apiType = 'transporter';
-        else if (audience === 'associates') apiType = 'associate';
-        else if (audience === 'drivers') apiType = 'driver';
-        else if (audience === 'finance') apiType = 'finance';
-        
-        const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
-        setPartners(result.data || []);
-        
-    } catch (e: any) {
-        console.warn(`Could not load partners for logging: ${e.message}`);
-    } finally {
-        setIsLoadingPartners(false);
-    }
-  }, [audience]);
-
-  useEffect(() => {
-    fetchPartnersForLogging();
-  }, [fetchPartnersForLogging]);
-
   if (!config) return <div className="p-12 text-center italic">Audience configuration for "{audience}" not found.</div>;
 
-  const { Offer, Emails, Management, Discovery } = config;
+  const { Offer, Emails, Management, Discovery, type } = config;
 
   return (
     <div className="space-y-6 text-left">
@@ -183,7 +106,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 {Management && (
                     <TabsContent value="management">
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
-                            <Management />
+                            <Management type={type} />
                         </div>
                     </TabsContent>
                 )}

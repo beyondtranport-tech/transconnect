@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -74,11 +75,50 @@ export async function POST(req: NextRequest) {
             }
 
             // --- REGISTRY MANAGEMENT (CRM) ---
+            case 'searchRegistry': {
+                const { type, term, outreachFilter, limit = 100 } = payload;
+                
+                // Determine source collection based on type
+                let collectionName = 'leads';
+                const partnerTypes = ['driver', 'transporter', 'supplier', 'finance', 'warehouse', 'distributor', 'isa', 'investor', 'developer', 'associate', 'partner', 'loads', 'buy-sell'];
+                if (partnerTypes.includes(type)) {
+                    collectionName = 'partners';
+                }
+
+                let query: any = db.collection(collectionName);
+
+                // If in partners, filter by explicit type
+                if (collectionName === 'partners') {
+                    query = query.where('type', '==', type);
+                }
+
+                // Capped read for performance
+                const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
+                let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // In-memory filtering for flexible prototype search
+                if (term) {
+                    const lowTerm = term.toLowerCase();
+                    results = results.filter((r: any) => 
+                        (r.companyName || '').toLowerCase().includes(lowTerm) ||
+                        (r.contactPerson || '').toLowerCase().includes(lowTerm) ||
+                        (r.email || '').toLowerCase().includes(lowTerm)
+                    );
+                }
+
+                if (outreachFilter === 'none') {
+                    results = results.filter((r: any) => !r.lastOutreachAt);
+                }
+
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
             case 'getPartnersByType': {
                 const { type } = payload;
                 const snap = await db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
+
             case 'savePartner': {
                 const { partner, collection = 'partners' } = payload;
                 const ref = db.collection(collection).doc(partner.id || db.collection(collection).doc().id);
@@ -90,110 +130,58 @@ export async function POST(req: NextRequest) {
                 }, { merge: true });
                 return NextResponse.json({ success: true, id: ref.id });
             }
-            case 'deletePartner': {
-                const { partnerId, source = 'Partner' } = payload;
-                const coll = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(coll).doc(partnerId).delete();
+
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                const batch = db.batch();
+                const collectionName = type === 'lead' ? 'leads' : 'partners';
+                
+                partners.forEach((p: any) => {
+                    const ref = db.collection(collectionName).doc(p.record_id || p.id || db.collection(collectionName).doc().id);
+                    batch.set(ref, {
+                        ...p,
+                        id: ref.id,
+                        type: type === 'lead' ? 'lead' : type,
+                        source: p.source || 'AI Discovery',
+                        status: p.status || 'new',
+                        updatedAt: FieldValue.serverTimestamp(),
+                        createdAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes, collection = 'partners' } = payload;
+                const logRef = db.collection(collection).doc(partnerId).collection('communications').doc();
+                
+                await db.runTransaction(async (transaction) => {
+                    transaction.set(logRef, {
+                        id: logRef.id,
+                        type,
+                        subject,
+                        notes,
+                        timestamp: FieldValue.serverTimestamp(),
+                        adminId: decodedToken.uid,
+                        adminName: decodedToken.name || 'Admin'
+                    });
+
+                    // Update parent last outreach
+                    transaction.update(db.collection(collection).doc(partnerId), {
+                        lastOutreachAt: FieldValue.serverTimestamp(),
+                        lastOutreachSubject: subject,
+                        status: 'contacted',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
                 return NextResponse.json({ success: true });
             }
+
             case 'getLeads': {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
-            }
-
-            // --- SUPPLIER MALL (SHOPS) ---
-            case 'getShops': {
-                const snap = await db.collectionGroup('shops').get();
-                const shops = snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }));
-                return NextResponse.json({ success: true, data: shops.map(serializeTimestamps) });
-            }
-            case 'approveShop': {
-                const { shopId, companyId } = payload;
-                const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
-                const publicRef = db.collection('shops').doc(shopId);
-                
-                await db.runTransaction(async (transaction) => {
-                    const shopSnap = await transaction.get(shopRef);
-                    if (!shopSnap.exists) throw new Error("Shop record not found.");
-                    const data = shopSnap.data()!;
-                    
-                    transaction.update(shopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
-                    transaction.set(publicRef, { 
-                        ...data, 
-                        status: 'approved', 
-                        updatedAt: FieldValue.serverTimestamp(),
-                        companyId 
-                    }, { merge: true });
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            // --- BUY & SELL MALL ---
-            case 'getGlobalSales': {
-                const snap = await db.collection('sales').orderBy('updatedAt', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
-            }
-            case 'searchListings': {
-                const { term } = payload;
-                const snap = await db.collectionGroup('vehicleListings').where('status', '==', 'active').get();
-                let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                if (term) {
-                    const lowTerm = term.toLowerCase();
-                    results = results.filter((r: any) => 
-                        r.make?.toLowerCase().includes(lowTerm) || 
-                        r.model?.toLowerCase().includes(lowTerm) || 
-                        r.description?.toLowerCase().includes(lowTerm)
-                    );
-                }
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
-            }
-            case 'finalizeSale': {
-                const { saleId, commissionRate } = payload;
-                const saleRef = db.collection('sales').doc(saleId);
-                
-                await db.runTransaction(async (transaction) => {
-                    const saleSnap = await transaction.get(saleRef);
-                    if (!saleSnap.exists) throw new Error("Sale record not found.");
-                    const saleData = saleSnap.data()!;
-                    
-                    const price = saleData.agreedPrice;
-                    const commission = price * (commissionRate / 100);
-                    const sellerNet = price - commission;
-
-                    const sellerRef = db.collection('companies').doc(saleData.sellerId);
-                    
-                    // Disburse to seller
-                    transaction.update(sellerRef, {
-                        walletBalance: FieldValue.increment(sellerNet),
-                        availableBalance: FieldValue.increment(sellerNet),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-
-                    // Log seller transaction
-                    const sellerTxRef = sellerRef.collection('transactions').doc();
-                    transaction.set(sellerTxRef, {
-                        transactionId: sellerTxRef.id,
-                        type: 'credit',
-                        amount: sellerNet,
-                        description: `Sale proceeds: ${saleData.vehicleName}`,
-                        status: 'allocated',
-                        date: FieldValue.serverTimestamp()
-                    });
-
-                    // Isolate commission
-                    const platTxRef = db.collection('platformTransactions').doc();
-                    transaction.set(platTxRef, {
-                        transactionId: platTxRef.id,
-                        type: 'credit',
-                        amount: commission,
-                        description: `Commission from ${saleData.sellerName} on vehicle sale`,
-                        companyId: saleData.sellerId,
-                        date: FieldValue.serverTimestamp()
-                    });
-
-                    transaction.update(saleRef, { status: 'concluded', updatedAt: FieldValue.serverTimestamp() });
-                });
-                return NextResponse.json({ success: true });
             }
 
             // --- STAFF MANAGEMENT ---
