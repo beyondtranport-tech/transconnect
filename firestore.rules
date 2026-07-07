@@ -14,7 +14,7 @@ service cloud.firestore {
         request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
         request.auth.uid == 'ylVC4F2FIYV8o9jjq13wCYiAyyM2' ||
         request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
-        (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
+        (request.auth.token.admin == true)
       );
     }
 
@@ -128,7 +128,7 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // Critical: These explicit paths are required for collectionGroup queries to be authorized.
+    // Explicit matches for all collection group queries
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
