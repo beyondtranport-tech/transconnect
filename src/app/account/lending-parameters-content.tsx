@@ -423,7 +423,7 @@ export default function LendingParametersContent() {
                                             <MapPin className="h-4 w-4" /> 
                                             Target Funding Regions
                                         </Label>
-                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left text-foreground text-foreground text-foreground text-foreground">
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                                             {regionOptions.map(item => (
                                                 <FormField key={item} control={form.control} name="serviceRegions" render={({ field }) => (
                                                     <div className="flex items-center space-x-3 p-3 border rounded-md hover:bg-muted/50 transition-colors text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
