@@ -138,7 +138,7 @@ function AdminAccountContent() {
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
-  const { user, isUserLoading } = useUser();
+  const { user } = useUser();
   const auth = useAuth();
   
   useEffect(() => {

@@ -76,7 +76,7 @@ export default function MyFacilitiesContent() {
                         <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
                         <div className="text-left text-foreground">
                             <CardTitle className="text-2xl font-black font-headline text-left text-foreground">My Credit Facilities</CardTitle>
-                            <CardDescription className="text-left text-foreground text-foreground">Review issued funding offers and manage active agreements.</CardDescription>
+                            <CardDescription className="text-left text-foreground">Review issued funding offers and manage active agreements.</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
@@ -117,7 +117,7 @@ export default function MyFacilitiesContent() {
             <CardHeader className="px-0 text-left text-foreground">
                 <div className="flex items-center gap-4 text-left text-foreground">
                     <div className="bg-primary/10 p-3 rounded-xl"><Landmark className="h-6 w-6 text-primary" /></div>
-                    <div className="text-left text-foreground text-foreground">
+                    <div className="text-left text-foreground">
                         <CardTitle className="text-2xl font-black font-headline text-left text-foreground">My Credit Facilities</CardTitle>
                         <CardDescription className="text-left text-foreground">Manage and draw down from your authorized industrial funding lines.</CardDescription>
                     </div>
@@ -125,7 +125,7 @@ export default function MyFacilitiesContent() {
             </CardHeader>
 
             {facilities.length > 0 ? (
-                <div className="grid gap-6 text-left text-foreground text-foreground">
+                <div className="grid gap-6 text-left text-foreground">
                     {facilities.map((f: any) => (
                         <Card key={f.id} className="shadow-lg hover:shadow-xl transition-shadow border-primary/10 overflow-hidden text-left bg-white text-foreground">
                             <CardHeader className="bg-slate-50 border-b text-left text-foreground">
@@ -145,7 +145,7 @@ export default function MyFacilitiesContent() {
                                     </Badge>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-8 text-left text-foreground text-foreground">
+                            <CardContent className="p-8 text-left text-foreground">
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left text-foreground">
                                     <div className="space-y-1 text-left text-foreground">
                                         <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Facility Limit</Label>
@@ -161,7 +161,7 @@ export default function MyFacilitiesContent() {
                                     </div>
                                 </div>
                             </CardContent>
-                            <CardFooter className="bg-slate-50 border-t p-4 flex justify-between text-left text-foreground text-foreground">
+                            <CardFooter className="bg-slate-50 border-t p-4 flex justify-between text-left text-foreground">
                                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-bold text-left text-foreground">
                                     <Calendar className="h-3.5 w-3.5" /> Issued: {formatDateSafe(f.createdAt)}
                                 </div>
@@ -174,7 +174,7 @@ export default function MyFacilitiesContent() {
                 </div>
             ) : (
                 <Card className="border-dashed border-2 bg-muted/20 text-left text-foreground">
-                    <CardContent className="py-20 text-center space-y-4 text-foreground text-foreground">
+                    <CardContent className="py-20 text-center space-y-4 text-foreground">
                         <div className="bg-background p-6 rounded-full w-fit mx-auto shadow-sm text-foreground">
                             <Landmark className="h-12 w-12 text-muted-foreground/30" />
                         </div>

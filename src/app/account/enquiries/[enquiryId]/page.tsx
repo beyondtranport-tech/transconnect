@@ -87,7 +87,7 @@ function EnquiryDetail() {
         <Card className="w-full max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-900 text-white p-8">
                 <div className="flex justify-between items-start text-left">
-                    <div className="text-left space-y-2 text-foreground text-left">
+                    <div className="text-left space-y-2">
                         <Badge variant="outline" className={cn(
                             "uppercase font-black text-[10px] tracking-widest px-3 border-primary/40 text-primary",
                             enquiry.originationType === 'direct' ? "bg-primary/5" : "bg-blue-500/10 text-blue-400 border-blue-500/40"
@@ -108,14 +108,14 @@ function EnquiryDetail() {
                 </div>
             </CardHeader>
             <CardContent className="p-8 space-y-10 bg-white text-foreground">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start text-foreground text-left">
-                    <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed text-left text-foreground">
-                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1 text-left">Total Requested Capital</p>
-                        <h3 className="font-black text-4xl text-primary text-left">{formatCurrency(enquiry.amountRequested)}</h3>
-                        <p className="text-xs text-muted-foreground mt-2 italic text-left">Preferred Term: {enquiry.preferredTerm || 'N/A'}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed text-left">
+                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Total Requested Capital</p>
+                        <h3 className="font-black text-4xl text-primary">{formatCurrency(enquiry.amountRequested)}</h3>
+                        <p className="text-xs text-muted-foreground mt-2 italic">Preferred Term: {enquiry.preferredTerm || 'N/A'}</p>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-6 text-foreground text-left">
+                    <div className="grid grid-cols-2 gap-6">
                         <DetailItem label="Funding Need" value={fundingNeedsMap[enquiry.fundingNeed] || enquiry.fundingNeed} icon={<Landmark className="h-3 w-3"/>} />
                         <DetailItem label="Origin Region" value={enquiry.primaryRegion || 'National'} icon={<MapPin className="h-3 w-3"/>} />
                         <DetailItem label="Entity Class" value={enquiry.entityType} icon={<Building className="h-3 w-3"/>} />
@@ -123,34 +123,34 @@ function EnquiryDetail() {
                     </div>
                 </div>
 
-                <div className="space-y-4 text-left text-foreground">
-                     <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2 text-left">
+                <div className="space-y-4 text-left">
+                     <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
                          <CircleHelp className="h-4 w-4 text-primary" /> Purpose of Funds
                      </h4>
-                     <div className="p-5 bg-muted/30 rounded-xl italic text-muted-foreground leading-relaxed text-sm text-left">
+                     <div className="p-5 bg-muted/30 rounded-xl italic text-muted-foreground leading-relaxed text-sm">
                          "{enquiry.purpose}"
                      </div>
                 </div>
 
                 {enquiry.assets && enquiry.assets.length > 0 && (
-                    <div className="space-y-4 text-left text-foreground">
-                         <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2 text-left">
+                    <div className="space-y-4 text-left">
+                         <h4 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-2">
                              <Truck className="h-4 w-4 text-primary" /> Asset Portfolio Specification
                          </h4>
-                         <div className="grid gap-4 text-foreground text-left">
+                         <div className="grid gap-4">
                             {enquiry.assets.map((asset: any, idx: number) => (
                                 <div key={idx} className="p-4 border rounded-xl bg-slate-50/50 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                                    <div className="space-y-1 text-left text-foreground">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground text-left">Asset {idx + 1}</p>
-                                        <p className="text-sm font-bold text-left">{asset.vehicleYear || asset.assetYear} {asset.vehicleMake || asset.assetBrand} {asset.vehicleModel || asset.assetModel}</p>
+                                    <div className="space-y-1 text-left">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground">Asset {idx + 1}</p>
+                                        <p className="text-sm font-bold">{asset.vehicleYear || asset.assetYear} {asset.vehicleMake || asset.assetBrand} {asset.vehicleModel || asset.assetModel}</p>
                                     </div>
-                                    <div className="space-y-1 text-left text-foreground text-left">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground text-left">Class / Category</p>
-                                        <p className="text-xs font-medium text-left">{asset.vehicleClass || asset.assetCategory}</p>
+                                    <div className="space-y-1 text-left">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground">Class / Category</p>
+                                        <p className="text-xs font-medium">{asset.vehicleClass || asset.assetCategory}</p>
                                     </div>
-                                    <div className="space-y-1 text-left text-foreground text-left">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground text-left">Identifier (VIN/Serial)</p>
-                                        <p className="text-xs font-mono text-left">{asset.vehicleVin || asset.assetSerialNumber || 'N/A'}</p>
+                                    <div className="space-y-1 text-left">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground">Identifier (VIN/Serial)</p>
+                                        <p className="text-xs font-mono">{asset.vehicleVin || asset.assetSerialNumber || 'N/A'}</p>
                                     </div>
                                 </div>
                             ))}
@@ -158,9 +158,9 @@ function EnquiryDetail() {
                     </div>
                 )}
             </CardContent>
-             <CardFooter className="bg-slate-900 p-8 flex justify-between items-center text-white text-left">
-                 <div className="space-y-1 text-left text-white">
-                    <p className="text-xs font-bold text-primary flex items-center gap-2 text-left">
+             <CardFooter className="bg-slate-900 p-8 flex justify-between items-center text-white">
+                 <div className="space-y-1 text-left">
+                    <p className="text-xs font-bold text-primary flex items-center gap-2">
                         <ShieldCheck className="h-4 w-4" /> Professional Oversight Active
                     </p>
                     <p className="text-[10px] text-slate-400 text-left">A funding specialist is reviewing your forensic data profile.</p>

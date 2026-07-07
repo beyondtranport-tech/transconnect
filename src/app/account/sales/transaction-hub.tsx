@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -14,10 +13,11 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, getClientSideAuthToken,
 import { doc, collection, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Progress } from '@/components/ui/progress';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Link from 'next/link';
 
 const steps = [
@@ -283,4 +283,3 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
         </div>
     );
 }
-

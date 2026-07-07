@@ -96,9 +96,9 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
             </Button>
 
             <Card className="shadow-2xl border-none overflow-hidden text-left">
-                <CardHeader className="bg-slate-900 text-white p-10">
-                    <div className="flex justify-between items-start text-left">
-                        <div className="text-left">
+                <CardHeader className="bg-slate-900 text-white p-10 text-left">
+                    <div className="flex justify-between items-start text-left text-white">
+                        <div className="text-left text-white">
                             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white">
                                 <CheckCircle className="h-10 w-10 text-primary" />
                                 Work Fulfillment Gateway
@@ -125,7 +125,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 {podUrl ? (
                                     <div className="text-center space-y-2">
                                         <ShieldCheck className="h-12 w-12 text-green-600 mx-auto" />
-                                        <p className="text-sm font-bold text-green-700 uppercase">POD Captured</p>
+                                        <p className="text-sm font-bold text-green-700 uppercase text-center">POD Captured</p>
                                         <Button variant="link" asChild className="text-xs">
                                             <a href={podUrl} target="_blank" rel="noopener noreferrer">View Uploaded Doc</a>
                                         </Button>
@@ -152,12 +152,12 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 2. Settlement Summary
                             </h3>
                             <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left">
-                                <div className="space-y-1 text-left">
-                                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Expected Haulier Payout</p>
-                                    <p className="text-4xl font-black text-primary">{formatCurrency(load.haulierPayout)}</p>
+                                <div className="space-y-1 text-left text-white">
+                                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-left">Expected Haulier Payout</p>
+                                    <p className="text-4xl font-black text-primary text-left">{formatCurrency(load.haulierPayout)}</p>
                                 </div>
                                 <Separator className="bg-white/10" />
-                                <div className="text-xs text-slate-400 leading-relaxed text-left text-foreground">
+                                <div className="text-xs text-slate-400 leading-relaxed text-left">
                                     <p>Upon broker verification of the POD, these funds will be moved from "Pending" to "Available" in your wallet.</p>
                                 </div>
                             </div>
@@ -180,7 +180,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                         disabled={!podUrl || isProcessing} 
                         className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl bg-primary hover:bg-primary/90 text-white"
                     >
-                        {isProcessing ? <Loader2 className="animate-spin h-6 w-6" /> : "Confirm Fulfillment"}
+                        {isProcessing ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : "Confirm Fulfillment"}
                     </Button>
                 </CardFooter>
             </Card>

@@ -159,7 +159,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                                 <p className="text-sm font-medium text-amber-800 leading-relaxed text-left">
                                     This load has a verified payout of **{formatCurrency(load.haulierPayout)}**. To accept and start earning, activate your **Loads Intelligence** node.
                                 </p>
-                                <Button asChild size="lg" className="w-full bg-amber-600 hover:bg-amber-700 font-bold h-14"><Link href="/checkout/loads_intelligence">Unlock Earning Power <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
+                                <Button asChild size="lg" className="w-full bg-amber-600 hover:bg-amber-700 font-bold h-14"><Link href="/checkout/loads_intelligence">Unlock Earning Power <ArrowRight className="ml-2 h-4 w-4" /></Link></Button>
                             </div>
                         )}
                     </div>
@@ -196,7 +196,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                         )}
                     </div>
                 </CardContent>
-                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left text-foreground text-foreground text-foreground text-foreground">
+                <CardFooter className="p-10 bg-slate-50 border-t flex flex-col md:flex-row justify-between items-center gap-6 text-left">
                     <Button variant="ghost" onClick={onCancel} className="font-bold text-muted-foreground">Cancel Transaction</Button>
                     <Button onClick={handleAcceptLoad} disabled={!isIntelligenceMember || !hasRequiredAsset || !hasConfirmedDriver || !noCircumventionAccepted || isLoading} className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white">
                         {isLoading ? <Loader2 className="animate-spin h-6 w-6" /> : "Accept & Issue Instruction"}
