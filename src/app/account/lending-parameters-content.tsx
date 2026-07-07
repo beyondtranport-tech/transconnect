@@ -1,16 +1,16 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardFooter } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Card, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useUser, getClientSideAuthToken, forceRefresh } from '@/firebase';
+import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Info, Banknote, ShieldCheck, Zap, Scale, Users, Package, MapPin, Sparkles, ChevronRight, ChevronDown, Truck, Tag } from 'lucide-react';
+import { Loader2, Save, Landmark, Banknote, ShieldCheck, Zap, Truck, Tag, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -94,7 +94,7 @@ const lendingSchema = z.object({
 type LendingFormValues = z.infer<typeof lendingSchema>;
 
 export default function LendingParametersContent() {
-    const { user, isUserLoading } = useUser();
+    const { user, isUserLoading, forceRefresh } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 

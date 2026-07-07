@@ -14,6 +14,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const financeCategories = ["Banks", "Government", "AEO", "Niche Lenders"];
 
+export const financeTags = [
+    "Asset Finance", 
+    "Working Capital", 
+    "Debt Funding", 
+    "Bridging", 
+    "SME Loans", 
+    "Purchase Order Finance", 
+    "Invoice Discounting", 
+    "Mezzanine Finance",
+    "Insurance"
+];
+
 export function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     return `ACT AS AN ELITE CAPITAL INTELLIGENCE AGENT AND FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
