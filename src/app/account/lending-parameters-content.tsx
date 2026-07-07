@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Landmark, Banknote, ShieldCheck, Zap, Truck, Tag, ChevronDown } from 'lucide-react';
+import { Loader2, Save, Landmark, Banknote, ShieldCheck, Zap, Truck, Tag } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -309,7 +309,7 @@ export default function LendingParametersContent() {
                                             )} />
                                             <FormField control={form.control} name="requiresNoDefaults" render={({ field }) => (
                                                 <FormItem className="flex items-center justify-between space-x-3 space-y-0 p-4 border rounded-xl bg-slate-50/50">
-                                                    <FormLabel className="font-bold text-xs">Exclude records with defaults</FormLabel>
+                                                    <FormLabel className="font-bold text-xs">Exclude records with defaults</Label>
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                                 </FormItem>
                                             )} />
