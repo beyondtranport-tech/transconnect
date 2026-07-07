@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, Lock, ClipboardList, Gavel, Network } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, ClipboardList, Network } from 'lucide-react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
@@ -218,7 +218,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 <div className="space-y-6 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
-                                            <FormItem className="text-left text-foreground text-left text-foreground">
+                                            <FormItem className="text-left text-foreground">
                                                 <FormLabel>Cargo Classification</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>{cargoOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent></Select>
                                             </FormItem>
@@ -244,7 +244,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             {currentStep === 4 && (
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
-                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</Label><FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl></FormItem>)} />
                                         <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel><FormControl><Input type="number" className="bg-white" {...field} /></FormControl></FormItem>)} />
                                     </div>
                                     

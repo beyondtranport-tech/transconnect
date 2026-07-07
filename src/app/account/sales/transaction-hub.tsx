@@ -186,8 +186,8 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 </Alert>
                                 {!isSeller && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`} className="block">
-                                            <Card className="border-2 border-primary/20 hover:border-primary transition-colors cursor-pointer group">
+                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`} className="block group">
+                                            <Card className="border-2 border-primary/20 group-hover:border-primary transition-colors cursor-pointer h-full">
                                                 <CardContent className="p-6 space-y-2 text-left">
                                                     <div className="bg-primary/10 p-2 rounded-lg w-fit group-hover:bg-primary group-hover:text-white transition-colors"><Landmark className="h-5 w-5" /></div>
                                                     <p className="font-black text-sm uppercase text-left">Apply for Finance</p>
@@ -195,13 +195,15 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                                 </CardContent>
                                             </Card>
                                         </Link>
-                                        <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors cursor-pointer text-left" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
-                                            <CardContent className="p-6 space-y-2 text-left">
-                                                <div className="bg-slate-100 p-2 rounded-lg w-fit"><Banknote className="h-5 w-5" /></div>
-                                                <p className="font-black text-sm uppercase text-left">Pay with Wallet</p>
-                                                <p className="text-xs text-muted-foreground leading-tight text-left">Use available funds for immediate asset release.</p>
-                                            </CardContent>
-                                        </Card>
+                                        <div className="cursor-pointer" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
+                                            <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors h-full">
+                                                <CardContent className="p-6 space-y-2 text-left">
+                                                    <div className="bg-slate-100 p-2 rounded-lg w-fit"><Banknote className="h-5 w-5" /></div>
+                                                    <p className="font-black text-sm uppercase text-left">Pay with Wallet</p>
+                                                    <p className="text-xs text-muted-foreground leading-tight text-left">Use available funds for immediate asset release.</p>
+                                                </CardContent>
+                                            </Card>
+                                        </div>
                                     </div>
                                 )}
                             </div>

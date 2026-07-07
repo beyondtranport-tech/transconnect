@@ -297,7 +297,7 @@ export default function LendingParametersContent() {
                                         <div className="space-y-4 text-left">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Minimum Annual Turnover (R)</Label>
                                             <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
-                                                <FormItem className="text-left text-foreground text-left text-foreground"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2" /></FormControl></FormItem>
+                                                <FormItem className="text-left text-foreground text-left text-foreground text-foreground"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2" /></FormControl></FormItem>
                                             )} />
                                         </div>
                                     </div>

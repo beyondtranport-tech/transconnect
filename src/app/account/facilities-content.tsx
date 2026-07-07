@@ -22,7 +22,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     });
     const result = await response.json();
     if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
-    return result.data;
+    return result;
 }
 
 export default function MyFacilitiesContent() {
