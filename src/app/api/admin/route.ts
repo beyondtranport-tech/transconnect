@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,13 +54,13 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
                 const members = await Promise.all(snap.docs.map(async (doc) => {
                     const data = doc.data();
-                    const ownerSnap = await db.collection('users').doc(data.ownerId).get();
+                    const userSnap = await db.collection('users').doc(data.ownerId).get();
                     return { 
                         id: doc.id, 
                         ...data, 
-                        firstName: ownerSnap.data()?.firstName || 'Member', 
-                        lastName: ownerSnap.data()?.lastName || '', 
-                        email: ownerSnap.data()?.email || 'N/A' 
+                        firstName: userSnap.data()?.firstName || 'Member', 
+                        lastName: userSnap.data()?.lastName || '', 
+                        email: userSnap.data()?.email || 'N/A' 
                     };
                 }));
                 return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
@@ -69,7 +70,13 @@ export async function POST(req: NextRequest) {
                 const logs = await Promise.all(snap.docs.map(async (doc) => {
                     const data = doc.data();
                     const userSnap = await db.collection('users').doc(data.userId).get();
-                    return { id: doc.id, ...data, userName: userSnap.data()?.firstName || 'System' };
+                    const companySnap = await db.collection('companies').doc(data.companyId || 'N/A').get();
+                    return { 
+                        id: doc.id, 
+                        ...data, 
+                        userName: userSnap.data()?.firstName || 'System',
+                        companyName: companySnap.data()?.companyName || 'Platform'
+                    };
                 }));
                 return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
             }
@@ -77,26 +84,16 @@ export async function POST(req: NextRequest) {
             // --- REGISTRY MANAGEMENT (CRM) ---
             case 'searchRegistry': {
                 const { type, term, outreachFilter, limit = 100 } = payload;
+                let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
                 
-                // Determine source collection based on type
-                let collectionName = 'leads';
-                const partnerTypes = ['driver', 'transporter', 'supplier', 'finance', 'warehouse', 'distributor', 'isa', 'investor', 'developer', 'associate', 'partner', 'loads', 'buy-sell'];
-                if (partnerTypes.includes(type)) {
-                    collectionName = 'partners';
-                }
-
                 let query: any = db.collection(collectionName);
-
-                // If in partners, filter by explicit type
-                if (collectionName === 'partners') {
+                if (collectionName === 'partners' && type !== 'all') {
                     query = query.where('type', '==', type);
                 }
 
-                // Capped read for performance
                 const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
                 let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                // In-memory filtering for flexible prototype search
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     results = results.filter((r: any) => 
@@ -106,16 +103,11 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                if (outreachFilter === 'none') {
-                    results = results.filter((r: any) => !r.lastOutreachAt);
-                }
-
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'getPartnersByType': {
-                const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').get();
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
 
@@ -131,6 +123,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: ref.id });
             }
 
+            case 'deletePartner': {
+                const { partnerId, source } = payload;
+                const collection = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(collection).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
@@ -138,19 +137,10 @@ export async function POST(req: NextRequest) {
                 
                 partners.forEach((p: any) => {
                     const ref = db.collection(collectionName).doc(p.record_id || p.id || db.collection(collectionName).doc().id);
-                    
-                    // Normalize contactPerson if it came from AI as contact_person
-                    const normalizedPartner = { ...p };
-                    if (normalizedPartner.contact_person && !normalizedPartner.contactPerson) {
-                        normalizedPartner.contactPerson = normalizedPartner.contact_person;
-                        delete normalizedPartner.contact_person;
-                    }
-
                     batch.set(ref, {
-                        ...normalizedPartner,
+                        ...p,
                         id: ref.id,
                         type: type === 'lead' ? 'lead' : type,
-                        source: p.source || 'AI Discovery',
                         status: p.status || 'new',
                         updatedAt: FieldValue.serverTimestamp(),
                         createdAt: FieldValue.serverTimestamp()
@@ -161,35 +151,111 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes, collection = 'partners' } = payload;
-                const logRef = db.collection(collection).doc(partnerId).collection('communications').doc();
-                
-                await db.runTransaction(async (transaction) => {
-                    transaction.set(logRef, {
-                        id: logRef.id,
-                        type,
-                        subject,
-                        notes,
-                        timestamp: FieldValue.serverTimestamp(),
-                        adminId: decodedToken.uid,
-                        adminName: decodedToken.name || 'Admin'
-                    });
+            // --- LOADS & WAREHOUSE OVERSIGHT ---
+            case 'getBrokerAgreements': {
+                const snap = await db.collectionGroup('brokerAgreements').orderBy('createdAt', 'desc').get();
+                const data = snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }));
+                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
+            }
 
-                    // Update parent last outreach
-                    transaction.update(db.collection(collection).doc(partnerId), {
-                        lastOutreachAt: FieldValue.serverTimestamp(),
-                        lastOutreachSubject: subject,
-                        status: 'contacted',
-                        updatedAt: FieldValue.serverTimestamp()
+            case 'updateBrokerAgreementStatus': {
+                const { path, status } = payload;
+                await db.doc(path).update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getGlobalLoads': {
+                const snap = await db.collectionGroup('loads').orderBy('createdAt', 'desc').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+            }
+
+            case 'getWarehouseListings': {
+                const snap = await db.collectionGroup('shops').where('shopType', '==', 'warehouse').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+            }
+
+            // --- SALES & MARKETPLACE ---
+            case 'getGlobalSales': {
+                const snap = await db.collection('sales').orderBy('updatedAt', 'desc').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+            }
+
+            case 'searchListings': {
+                const snap = await db.collectionGroup('vehicleListings').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+            }
+
+            case 'finalizeSale': {
+                const { saleId, commissionRate } = payload;
+                const saleRef = db.collection('sales').doc(saleId);
+                const saleSnap = await saleRef.get();
+                const saleData = saleSnap.data()!;
+
+                await db.runTransaction(async (transaction) => {
+                    transaction.update(saleRef, { status: 'concluded', updatedAt: FieldValue.serverTimestamp() });
+                    // Disburse funds to seller wallet minus commission
+                    const commission = saleData.agreedPrice * (commissionRate / 100);
+                    const net = saleData.agreedPrice - commission;
+                    
+                    const sellerRef = db.collection('companies').doc(saleData.sellerId);
+                    transaction.update(sellerRef, { 
+                        walletBalance: FieldValue.increment(net),
+                        availableBalance: FieldValue.increment(net),
+                        pendingBalance: FieldValue.increment(-saleData.agreedPrice) 
                     });
                 });
                 return NextResponse.json({ success: true });
             }
 
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+            // --- FORENSIC AUTOMATION ---
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const col = isLead ? 'leads' : 'partners';
+                await db.collection(col).doc(partnerId).update({
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                const col = type === 'lead' ? 'leads' : 'partners';
+                const ref = db.collection(col).doc(id);
+                const snap = await ref.get();
+                if (!snap.exists) throw new Error("Record not found");
+                
+                const data = snap.data()!;
+                const enrichment = await enrichPartner({ 
+                    companyName: data.companyName || data.company_name || `${data.firstName} ${data.lastName}` 
+                });
+
+                const update = {
+                    ...enrichment,
+                    status: 'qualified',
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+
+                await ref.update(update);
+                return NextResponse.json({ success: true, data: update });
+            }
+
+            case 'bulkDeduplicate': {
+                const { type } = payload;
+                const snap = await db.collection('partners').where('type', '==', type).get();
+                const records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const seen = new Set();
+                let count = 0;
+                for (const r of records) {
+                    const key = (r.companyName || '').toLowerCase().trim();
+                    if (seen.has(key)) {
+                        await db.collection('partners').doc(r.id).delete();
+                        count++;
+                    } else {
+                        seen.add(key);
+                    }
+                }
+                return NextResponse.json({ success: true, count });
             }
 
             // --- STAFF MANAGEMENT ---
@@ -197,6 +263,7 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
             }
+
             case 'savePlatformStaff': {
                 const { staff } = payload;
                 const ref = db.collection('platformStaff').doc(staff.id || db.collection('platformStaff').doc().id);
@@ -204,13 +271,27 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'deletePlatformStaff': {
+                await db.collection('platformStaff').doc(payload.staffId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'dispatchEngagement': {
+                const { partnerId, email, subject } = payload;
+                // In a production environment, this triggers SendGrid/AWS SES.
+                // For the prototype, we log the intent and update the record.
+                await db.collection('leads').doc(partnerId).update({
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    status: 'contacted'
+                });
+                return NextResponse.json({ success: true });
+            }
+
             default: return NextResponse.json({ success: false, error: `Action "${action}" not supported.` }, { status: 400 });
         }
     } catch (error: any) {
         console.error(`Admin API Failure [${currentAction}]:`, error);
-        return NextResponse.json({ 
-            success: false, 
-            error: error.message || 'Internal Server Error' 
-        }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }
