@@ -280,7 +280,7 @@ function AdminAccountContent() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>

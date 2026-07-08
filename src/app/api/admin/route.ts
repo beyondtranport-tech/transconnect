@@ -15,7 +15,9 @@ function serializeTimestamps(docData: any): any {
     if (Array.isArray(docData)) return docData.map(serializeTimestamps);
     if (typeof docData === 'object' && docData !== null) {
         const serialized: { [key: string]: any } = {};
-        for (const key in docData) serialized[key] = serializeTimestamps(docData[key]);
+        for (const key in docData) {
+            serialized[key] = serializeTimestamps(docData[key]);
+        }
         return serialized;
     }
     return docData;

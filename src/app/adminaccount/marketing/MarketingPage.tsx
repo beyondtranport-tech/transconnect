@@ -79,14 +79,14 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const { Offer, Emails, Management, Discovery, type } = config;
 
   return (
-    <div className="space-y-6 text-left">
-        <div className="text-left">
-            <h1 className="text-3xl font-black font-headline text-left">{config.title} Command Hub</h1>
-            <p className="text-muted-foreground text-left">Manage your dataset, bridge gaps with AI, and oversee industrial engagement.</p>
+    <div className="space-y-6 text-left text-foreground">
+        <div className="text-left text-foreground">
+            <h1 className="text-3xl font-black font-headline text-left text-foreground">{config.title} Command Hub</h1>
+            <p className="text-muted-foreground text-left text-foreground">Manage your dataset, bridge gaps with AI, and oversee industrial engagement.</p>
         </div>
 
         <Tabs value={activeTab} className="w-full text-left" onValueChange={setActiveTab}>
-            <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1">
+            <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech</TabsTrigger>
                 <TabsTrigger value="revenue-model">Revenue</TabsTrigger>
@@ -100,7 +100,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <TabsTrigger value="oversight" className="gap-2"><Search className="h-3.5 w-3.5" /> Oversight</TabsTrigger>
             </TabsList>
 
-            <div className="mt-6">
+            <div className="mt-6 text-left text-foreground">
                 <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
                 <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8"><TechArchitecture /></CardContent></Card></TabsContent>
                 <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8"><RevenueModel /></CardContent></Card></TabsContent>
@@ -111,7 +111,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 
                 {Management && (
                     <TabsContent value="management">
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
                             <Management type={type} />
                         </div>
                     </TabsContent>
@@ -119,20 +119,20 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
                 {Discovery && (
                     <TabsContent value="discovery">
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
                             <Discovery />
                         </div>
                     </TabsContent>
                 )}
 
                 <TabsContent value="bridge">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
                         <ForensicBridge audience={audience} />
                     </div>
                 </TabsContent>
 
                 <TabsContent value="oversight">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
                         <AudienceOversightTable audience={audience} />
                     </div>
                 </TabsContent>

@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Globe, Search, Download, Save, 
   Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Mail 
@@ -30,7 +30,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -221,64 +220,67 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
-    { 
-        accessorKey: 'companyName',
-        header: 'Entity Identity', 
-        cell: ({row}) => (
-            <div className="flex flex-col text-left">
-                <span className="font-bold text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
-                    {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
-                    <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
-                </div>
+  const columns: ColumnDef<any>[] = useMemo(() => {
+    const cols: ColumnDef<any>[] = [
+      { 
+          accessorKey: 'companyName',
+          header: 'Entity Identity', 
+          cell: ({row}) => (
+              <div className="flex flex-col text-left">
+                  <span className="font-bold text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                  <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
+                      {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
+                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
+                  </div>
+              </div>
+          )
+      },
+      { 
+          accessorKey: 'contactPerson',
+          header: 'Account Lead',
+          cell: ({ row }) => <div className="text-sm font-medium text-foreground">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
+      },
+      { accessorKey: 'email', header: 'Email' },
+      { 
+          header: 'Outreach Stage',
+          id: 'outreach',
+          accessorKey: 'lastOutreachSubject',
+          cell: ({ row }) => {
+              if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+              return (
+                  <div className="flex flex-col text-left">
+                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
+                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                      {row.original.lastOpenedAt && (
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
+                              <UserCheck className="h-2.5 w-2.5" /> Read
+                          </div>
+                      )}
+                  </div>
+              );
+          }
+      },
+      { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+      { 
+          id: 'actions', 
+          header: <div className="text-right">Actions</div>, 
+          cell: ({ row }) => (
+            <div className="flex justify-end items-center gap-1 text-foreground">
+              <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
+              <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+              <AddCommunicationLogDialog partnerId={row.original.id} collection={row.original.source === 'Lead' ? 'leads' : 'partners'} onLogAdded={() => fetchData()} />
+              <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+              <PartnerTasksDialog partner={row.original} />
+              <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
+              <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
-        )
-    },
-    { 
-        accessorKey: 'contactPerson',
-        header: 'Account Lead',
-        cell: ({ row }) => <div className="text-sm font-medium text-foreground">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
-    },
-    { accessorKey: 'email', header: 'Email' },
-    { 
-        header: 'Outreach Stage',
-        id: 'outreach',
-        accessorKey: 'lastOutreachSubject',
-        cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-            return (
-                <div className="flex flex-col text-left">
-                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
-                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
-                    {row.original.lastOpenedAt && (
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                            <UserCheck className="h-2.5 w-2.5" /> Read
-                        </div>
-                    )}
-                </div>
-            );
-        }
-    },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
-    { 
-        id: 'actions', 
-        header: <div className="text-right">Actions</div>, 
-        cell: ({ row }) => (
-          <div className="flex justify-end items-center gap-1 text-foreground">
-            <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
-            <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-            <AddCommunicationLogDialog partnerId={row.original.id} collection={row.original.source === 'Lead' ? 'leads' : 'partners'} onLogAdded={() => fetchData()} />
-            <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-            <PartnerTasksDialog partner={row.original} />
-            <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
-            <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-          </div>
-        ) 
-    }
-  ], [type, fetchData, handleEngage, visibleColumns]);
+          ) 
+      }
+    ];
+    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
+  }, [type, fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -375,7 +377,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                                 </Select>
                             </div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (

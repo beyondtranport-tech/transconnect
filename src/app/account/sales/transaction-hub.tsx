@@ -118,7 +118,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
     return (
         <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
             <div className="flex justify-between items-center text-left">
-                <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Return to Mall</Button>
+                <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-foreground text-left"><ArrowLeft className="h-4 w-4" /> Return to Mall</Button>
                 <Badge variant="outline" className="h-7 px-4 border-primary text-primary font-black uppercase text-[10px] tracking-widest">
                     Live Handshake Terminal
                 </Badge>
@@ -158,7 +158,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                             <div className="space-y-6 text-left text-foreground">
                                 <div className="p-6 bg-primary/5 border-2 border-primary/20 rounded-3xl space-y-6 text-left">
                                     <div className="space-y-1 text-left text-foreground">
-                                        <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Negotiation</h3>
+                                        <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left text-foreground"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Negotiation</h3>
                                         <p className="text-sm text-muted-foreground text-left">Submit your offer to the seller. Locking the price initiates the legal documentation phase.</p>
                                     </div>
                                     <div className="space-y-2 text-left">
@@ -193,7 +193,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                         <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`} className="text-left no-underline block">
                                             <Card className="border-2 border-primary/20 hover:border-primary transition-colors cursor-pointer h-full bg-white text-left">
                                                 <CardContent className="p-6 space-y-2 text-left text-foreground">
-                                                    <div className="bg-primary/10 p-2 rounded-lg w-fit group-hover:bg-primary group-hover:text-white transition-colors text-left"><Landmark className="h-5 w-5" /></div>
+                                                    <div className="bg-primary/10 p-2 rounded-lg w-fit transition-colors text-left"><Landmark className="h-5 w-5" /></div>
                                                     <p className="font-black text-sm uppercase text-left">Apply for Finance</p>
                                                     <p className="text-xs text-muted-foreground leading-tight text-left">Broadcast this transaction to our specialized lending network.</p>
                                                 </CardContent>
@@ -202,7 +202,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                         <div className="h-full text-left cursor-pointer" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
                                             <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors h-full bg-white text-left">
                                                 <CardContent className="p-6 space-y-2 text-left text-foreground">
-                                                    <div className="bg-slate-100 p-2 rounded-lg w-fit text-left"><Banknote className="h-5 w-5" /></div>
+                                                    <div className="bg-slate-100 p-2 rounded-lg w-fit text-left text-foreground"><Banknote className="h-5 w-5" /></div>
                                                     <p className="font-black text-sm uppercase text-left">Pay with Wallet</p>
                                                     <p className="text-xs text-muted-foreground leading-tight text-left">Use available funds for immediate asset release.</p>
                                                 </CardContent>
@@ -230,10 +230,10 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 </div>
                                 
                                 {currentStatus === 'paid' && (
-                                    <div className="p-6 bg-green-50 border-2 border-green-200 rounded-3xl space-y-4 text-left">
+                                    <div className="p-6 bg-green-50 border-2 border-green-200 rounded-3xl space-y-4 text-left text-foreground">
                                         <div className="flex items-center gap-3 text-left">
                                             <ShieldCheck className="h-6 w-6 text-green-600" />
-                                            <p className="font-black text-green-900">Funds Secured in Escrow</p>
+                                            <p className="font-black text-green-900 text-left">Funds Secured in Escrow</p>
                                         </div>
                                         <p className="text-sm text-green-800 leading-relaxed text-left text-foreground">The platform has secured the full amount. Seller must now coordinate delivery and the buyer must confirm receipt to release funds.</p>
                                         <Button className="w-full h-12 bg-green-600 font-bold" onClick={() => handleAction('confirm_delivery')}>Confirm Physical Delivery</Button>
@@ -245,7 +245,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                         <Separator />
 
                         <div className="space-y-4 text-left text-foreground">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 text-left">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 text-left text-foreground">
                                 <MessageSquare className="h-4 w-4 text-primary" />
                                 Handshake Direct Chat
                             </h4>
@@ -279,7 +279,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
 
                 <CardFooter className="bg-slate-50 border-t p-8 flex justify-between items-center text-left">
                     <div className="flex gap-4 text-left">
-                        <Button variant="ghost" size="sm" className="gap-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground"><Info className="h-3.5 w-3.5"/> Handshake Integrity Shield Active</Button>
+                        <Button variant="ghost" size="sm" className="gap-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground text-left"><Info className="h-3.5 w-3.5"/> Handshake Integrity Shield Active</Button>
                     </div>
                     {currentStatus === 'concluded' && (
                         <Badge className="bg-green-600 text-white font-black uppercase py-2 px-8 rounded-full shadow-lg">Handshake Concluded</Badge>

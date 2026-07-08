@@ -43,9 +43,7 @@ const equipmentOptions = ["Skeletal", "Skeletal + Genset", "Tautliner", "Flatbed
 
 // Process geodata into simple strings for Select options
 const locationOptions = provinces.flatMap(p => 
-    p.cities.flatMap(c => 
-        c.suburbs.map(s => `${s}, ${c.name} (${p.name})`)
-    )
+    p.cities.map(c => `${c.name}, ${p.name}`)
 );
 
 const steps = [
