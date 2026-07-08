@@ -40,7 +40,7 @@ const loadSchema = z.object({
 
 const cargoOptions = ["Containers", "Refrigerated", "General Freight", "Bulk Aggregates", "FMCG", "Hazmat"];
 const equipmentOptions = ["Skeletal", "Skeletal + Genset", "Tautliner", "Flatbed", "Tipper", "Reefer"];
-const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
+const locations = provinces.flatMap(p => p.cities.map(c => `${c.name}, ${p.name}`));
 
 const steps = [
     { id: 'type', title: 'Flow Type', icon: Network },
