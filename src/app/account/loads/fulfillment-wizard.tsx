@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -167,7 +166,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                             
                             <Alert className="bg-blue-50 border-blue-200 text-left">
                                 <Zap className="h-4 w-4 text-blue-600" />
-                                <div className="text-left ml-2">
+                                <div className="text-left ml-2 text-foreground">
                                     <AlertTitle className="text-blue-900 font-bold text-left">Factoring Available</AlertTitle>
                                     <AlertDescription className="text-blue-800 text-xs mt-1 text-left">
                                         This load is **Factoring Ready**. Once POD is uploaded, you can request an immediate 75% advance from the Finance Division.

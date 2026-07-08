@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -37,6 +36,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
@@ -60,6 +60,8 @@ async function performAdminAction(token: string, action: string, payload?: any) 
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   contactPerson: z.string().optional(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
   email: z.string().email('Invalid email address').optional().or(z.literal('')),
   phone: z.string().optional(),
   mobile: z.string().optional(),
@@ -294,8 +296,17 @@ function LeadsDatabaseComponent() {
             <CardDescription className="text-left text-muted-foreground text-left">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground">
-            <Button variant="outline" onClick={() => handleExport('Standard')} disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Standard CSV</Button>
-            <Button variant="outline" onClick={() => handleExport('SendGrid')} disabled={isLoading || !hasLoaded} className="text-left text-foreground border-primary/40 text-primary hover:bg-primary/5"><Mail className="mr-2 h-4 w-4" /> SendGrid Export</Button>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-2 text-left">
+                    <div className="space-y-1 text-left">
+                        <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
+                        <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Upload</Button>
+                    </div>
+                </PopoverContent>
+            </Popover>
             <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>

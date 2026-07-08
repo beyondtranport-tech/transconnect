@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -43,7 +42,11 @@ const cargoOptions = ["Containers", "Refrigerated", "General Freight", "Bulk Agg
 const equipmentOptions = ["Skeletal", "Skeletal + Genset", "Tautliner", "Flatbed", "Tipper", "Reefer"];
 
 // Process geodata into simple strings for Select options
-const locations = provinces.flatMap(p => p.cities.flatMap(c => c.suburbs.map(s => `${s}, ${c.name} (${p.name})`)));
+const locationOptions = provinces.flatMap(p => 
+    p.cities.flatMap(c => 
+        c.suburbs.map(s => `${s}, ${c.name} (${p.name})`)
+    )
+);
 
 const steps = [
     { id: 'type', title: 'Flow Type', icon: Network },
@@ -194,7 +197,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                                     <SelectContent>
-                                                        {locations.slice(0, 100).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                                        {locationOptions.slice(0, 100).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </FormItem>
@@ -205,7 +208,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                     <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                                     <SelectContent>
-                                                        {locations.slice(0, 100).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                                        {locationOptions.slice(0, 100).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </FormItem>

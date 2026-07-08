@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,7 +69,7 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
     };
 
     return (
-        <div className="grid md:grid-cols-2 gap-6 text-left">
+        <div className="grid md:grid-cols-2 gap-6 text-left text-foreground">
             <div className="space-y-4 text-left">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
                     <Database className="h-6 w-6 text-primary" />

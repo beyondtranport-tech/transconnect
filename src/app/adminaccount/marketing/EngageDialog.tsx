@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -84,35 +83,39 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
              '';
   }, [currentPartner]);
 
+  const normalizedAudience = useMemo(() => {
+      let aud = audience.toLowerCase();
+      if (aud.endsWith('s')) aud = aud.slice(0, -1);
+      return aud;
+  }, [audience]);
+
   const audienceLabel = useMemo(() => {
-    if (audience === 'isa') return 'ISA Agent';
-    if (audience === 'suppliers' || audience === 'supplier') return 'Supplier';
-    if (audience === 'transporters' || audience === 'transporter') return currentPartner?.industrial_category || 'Transporter';
-    if (audience === 'drivers' || audience === 'driver') return 'Professional Driver';
-    if (audience === 'finance') return 'Finance Partner';
-    if (audience === 'associates' || audience === 'associate') return 'Associate';
+    if (normalizedAudience === 'isa') return 'ISA Agent';
+    if (normalizedAudience === 'supplier') return 'Supplier';
+    if (normalizedAudience === 'transporter') return currentPartner?.industrial_category || 'Transporter';
+    if (normalizedAudience === 'driver') return 'Professional Driver';
+    if (normalizedAudience === 'finance') return 'Finance Partner';
+    if (normalizedAudience === 'associate') return 'Associate';
     return audience.charAt(0).toUpperCase() + audience.slice(1);
-  }, [audience, currentPartner]);
+  }, [normalizedAudience, currentPartner, audience]);
 
   const Offer = useMemo(() => {
-    const aud = audience.toLowerCase();
-    if (aud.includes('investor') || aud === 'finance') return InvestorOffer;
-    if (aud.includes('developer')) return DeveloperOffer;
-    if (aud.includes('supplier')) return SupplierOffer;
-    if (aud.includes('transporter')) return TransporterOffer;
-    if (aud.includes('associate')) return AssociateOffer;
+    if (normalizedAudience === 'investor' || normalizedAudience === 'finance') return InvestorOffer;
+    if (normalizedAudience === 'developer') return DeveloperOffer;
+    if (normalizedAudience === 'supplier') return SupplierOffer;
+    if (normalizedAudience === 'transporter') return TransporterOffer;
+    if (normalizedAudience === 'associate') return AssociateOffer;
     return PartnerOffer;
-  }, [audience]);
+  }, [normalizedAudience]);
 
   const Emails = useMemo(() => {
-    const aud = audience.toLowerCase();
-    if (aud.includes('investor') || aud === 'finance') return InvestorEmails;
-    if (aud.includes('developer')) return DeveloperEmails;
-    if (aud.includes('supplier')) return SupplierEmails;
-    if (aud.includes('transporter')) return TransporterEmails;
-    if (aud.includes('associate')) return AssociateEmails;
+    if (normalizedAudience === 'investor' || normalizedAudience === 'finance') return InvestorEmails;
+    if (normalizedAudience === 'developer') return DeveloperEmails;
+    if (normalizedAudience === 'supplier') return SupplierEmails;
+    if (normalizedAudience === 'transporter') return TransporterEmails;
+    if (normalizedAudience === 'associate') return AssociateEmails;
     return PartnerEmails;
-  }, [audience]);
+  }, [normalizedAudience]);
 
   const getSubject = () => {
       const company = currentPartner?.companyName || currentPartner?.company_name || 'your business';
@@ -235,7 +238,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
             <div className="flex-1 flex overflow-hidden">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
-                    <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left">
+                    <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left text-foreground">
                         <ShieldAlert className="h-4 w-4 text-amber-600" />
                         <div className="ml-2 text-left">
                             <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
@@ -243,7 +246,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         </div>
                     </Alert>
 
-                    <div className="space-y-1 text-left">
+                    <div className="space-y-1 text-left text-foreground">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 1: Selection</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
@@ -267,17 +270,17 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
-                    <div className="max-w-[850px] mx-auto space-y-6 text-left">
+                    <div className="max-w-[850px] mx-auto space-y-6 text-left text-foreground">
                         {activeTab === 'digital-handshake' && (
                             <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm text-left">
                                 <div className="flex items-center gap-3 text-left">
                                     <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
-                                    <div className="text-left text-foreground">
+                                    <div className="text-left text-foreground text-foreground">
                                         <p className="text-sm font-bold text-amber-900">Pattern Randomization</p>
                                         <p className="text-[10px] text-amber-700 leading-none mt-1">Deterministically unique text per partner.</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-3 text-left text-foreground">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
                                     <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
                                         <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200"><SelectValue /></SelectTrigger>
@@ -293,9 +296,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
 
-                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full">
-                            {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} version={handshakeVersion} />}
-                            {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
+                            {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} version={handshakeVersion} />}
+                            {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
                             {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
                             {activeTab === 'offer' && <Offer partner={currentPartner} />}
