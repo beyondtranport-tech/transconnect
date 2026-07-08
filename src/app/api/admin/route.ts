@@ -72,58 +72,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'savePartner': {
-                const { partner, collection: colName = 'partners' } = payload;
-                const ref = partner.id ? db.collection(colName).doc(partner.id) : db.collection(colName).doc();
-                await ref.set({
-                    ...partner,
-                    id: ref.id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-
-            case 'deletePartner': {
-                const { partnerId, source } = payload;
-                const colName = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(colName).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'searchRegistry': {
-                const { type, term, outreachFilter, limit = 100 } = payload;
-                let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
-                
-                let query: any = db.collection(collectionName);
-                if (collectionName === 'partners' && type !== 'all') {
-                    query = query.where('type', '==', type);
-                }
-
-                const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
-                let results = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
-
-                if (term) {
-                    const lowTerm = term.toLowerCase();
-                    results = results.filter((r: any) => 
-                        (r.companyName || r.company_name || '').toLowerCase().includes(lowTerm) ||
-                        (r.contactPerson || r.contact_person || '').toLowerCase().includes(lowTerm) ||
-                        (r.email || r.email_address || '').toLowerCase().includes(lowTerm)
-                    );
-                }
-
-                if (outreachFilter === 'none') {
-                    results = results.filter((r: any) => !r.lastOutreachAt);
-                }
-
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
-            }
-
-            case 'getAudienceCommunications': {
-                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
-                const logs = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
-            }
-
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
                 const members = await Promise.all(snap.docs.map(async (docSnap: any) => {
@@ -139,6 +87,12 @@ export async function POST(req: NextRequest) {
                     };
                 }));
                 return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                const leads = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: leads.map(serializeTimestamps) });
             }
 
             case 'logCommunication': {
@@ -195,26 +149,32 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                const batch = db.batch();
-                const collectionName = type === 'lead' ? 'leads' : 'partners';
+            case 'searchRegistry': {
+                const { type, term, outreachFilter, limit = 100 } = payload;
+                let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
                 
-                partners.forEach((p: any) => {
-                    const ref = db.collection(collectionName).doc(p.record_id || p.id || db.collection(collectionName).doc().id);
-                    batch.set(ref, {
-                        ...p,
-                        id: ref.id,
-                        contactPerson: p.contactPerson || p.contact_person,
-                        type: type === 'lead' ? 'lead' : type,
-                        status: p.status || 'new',
-                        updatedAt: FieldValue.serverTimestamp(),
-                        createdAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
+                let query: any = db.collection(collectionName);
+                if (collectionName === 'partners' && type !== 'all') {
+                    query = query.where('type', '==', type);
+                }
 
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
+                const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
+                let results = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+
+                if (term) {
+                    const lowTerm = term.toLowerCase();
+                    results = results.filter((r: any) => 
+                        (r.companyName || r.company_name || '').toLowerCase().includes(lowTerm) ||
+                        (r.contactPerson || r.contact_person || '').toLowerCase().includes(lowTerm) ||
+                        (r.email || r.email_address || '').toLowerCase().includes(lowTerm)
+                    );
+                }
+
+                if (outreachFilter === 'none') {
+                    results = results.filter((r: any) => !r.lastOutreachAt);
+                }
+
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
             case 'getAuditLogs': {

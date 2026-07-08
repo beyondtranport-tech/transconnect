@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Globe, Search, Download, Save, 
   Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Mail 
@@ -141,6 +141,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
 
 export default function PartnerManagement({ type = 'partner' }: { type?: string }) {
   const { toast } = useToast();
+  const { user } = useUser();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -193,14 +194,14 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       const dataToExport = filteredRecords.map(p => {
           const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://logisticsflow.co.za';
           const handshakeUrl = `${baseUrl}/opt-in/${p.id}`;
-          const directJoinUrl = `${baseUrl}/join?email=${encodeURIComponent(p.email || '')}&ref=${p.id}`;
+          const directJoinUrl = `${baseUrl}/join?email=${encodeURIComponent(p.email || '')}&ref=${user?.companyId || 'SYSTEM'}`;
 
           if (format === 'SendGrid') {
               return {
-                  email: p.email,
+                  email: p.email || p.email_address || '',
                   first_name: p.firstName || p.contactPerson?.split(' ')[0] || '',
                   last_name: p.lastName || p.contactPerson?.split(' ').slice(1).join(' ') || '',
-                  company_name: p.companyName,
+                  company_name: p.companyName || p.company_name || '',
                   handshake_url: handshakeUrl,
                   direct_join_url: directJoinUrl
               };

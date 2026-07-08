@@ -270,7 +270,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
-                    <div className="max-w-[850px] mx-auto space-y-6 text-left text-foreground">
+                    <div className="max-w-[850px] mx-auto space-y-8 text-left text-foreground">
                         {activeTab === 'digital-handshake' && (
                             <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm text-left">
                                 <div className="flex items-center gap-3 text-left">
