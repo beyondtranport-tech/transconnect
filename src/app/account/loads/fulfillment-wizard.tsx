@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -37,7 +38,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
         try {
             const token = await getClientSideAuthToken();
             const reader = new FileReader();
-            const dataUri = await new Promise<string>(res => {
+            dataUri = await new Promise<string>(res => {
                 reader.onload = () => res(reader.result as string);
                 reader.readAsDataURL(file);
             });

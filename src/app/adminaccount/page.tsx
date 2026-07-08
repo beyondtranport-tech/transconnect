@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -209,7 +210,7 @@ function AdminAccountContent() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2 text-left">
+          <div className="flex items-center gap-2 p-2 text-left text-foreground">
             <Shield className="h-6 w-6 text-primary" />
             <h2 className="text-lg font-semibold text-sidebar-foreground text-left">Admin Portal</h2>
           </div>
@@ -231,10 +232,10 @@ function AdminAccountContent() {
                   <SidebarMenuButton tooltip="Leads" isActive={activeView.includes('leads') || activeView === 'unified-directory'}><UserPlus /><span>Leads & CRM</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'unified-directory'} onClick={() => navigate('unified-directory')}>Unified Directory</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5" />Finance Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><ClipboardList className="h-3.5 w-3.5" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart className="h-3.5 w-3.5" />Buy & Sell Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'associate-oversight'} onClick={() => navigate('associate-oversight')}><Eye className="h-3 w-3" />Associate Monitoring</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'market-origination'} onClick={() => navigate('market-origination')}><Globe className="h-3.5 w-3.5 mr-2" />Finance Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'loads-oversight'} onClick={() => navigate('loads-oversight')}><ClipboardList className="h-3.5 w-3.5 mr-2" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'buy-sell-oversight'} onClick={() => navigate('buy-sell-oversight')}><ShoppingCart className="h-3.5 w-3.5 mr-2" />Buy & Sell Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'associate-oversight'} onClick={() => navigate('associate-oversight')}><Eye className="h-3 w-3 mr-2" />Associate Monitoring</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-agent'} onClick={() => navigate('leads-agent')}>Leads Agent</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -304,7 +305,7 @@ function AdminAccountContent() {
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left">
+            <div className="flex flex-col truncate text-left text-foreground">
                 <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
                 <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>

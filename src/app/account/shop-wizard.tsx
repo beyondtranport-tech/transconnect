@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -201,7 +202,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                 <UserCheck className="h-6 w-6 text-primary" /> 
                 Node Identity & Labeling
             </h3>
-            <div className="space-y-4 text-left text-foreground">
+            <div className="space-y-4 text-left text-foreground text-foreground">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem className="text-left text-foreground">
                         <FormLabel>Public Identity Label</FormLabel>
@@ -255,7 +256,7 @@ function StepBranding() {
                 <Sparkles className="h-6 w-6 text-primary" /> 
                 Branding & Narrative
             </h3>
-            <div className="space-y-4 text-left text-foreground">
+            <div className="space-y-4 text-left text-foreground text-foreground">
                 <FileUploadField name="logoUrl" label="Company Logo" folder="node-branding" />
                 <FormField control={control} name="homeHeading" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
@@ -378,7 +379,7 @@ function StepWarehouseSecurity() {
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground text-foreground">
                 <FormField control={control} name="accessControl" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
                         <FormLabel>Access Control Type</FormLabel>
@@ -394,8 +395,8 @@ function StepWarehouseSecurity() {
             </div>
 
             <FormField control={control} name="operatingHours" render={({ field }) => (
-                <FormItem className="text-left text-foreground text-foreground">
-                    <FormLabel className="flex items-center gap-2"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
+                <FormItem className="text-left text-foreground text-foreground text-foreground">
+                    <FormLabel className="flex items-center gap-2 text-foreground"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
                     <FormControl><Input placeholder="e.g. Mon-Fri: 08:00 - 16:30, Sat: 08:00 - 12:00" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     <FormDescription className="text-[10px] text-left">Critical for haulier planning and matching.</FormDescription>
                 </FormItem>
@@ -543,12 +544,12 @@ function StepBrokerageCommercials() {
             </div>
 
             <Card className="border-none bg-slate-50 shadow-inner text-left text-foreground">
-                <CardContent className="p-6 text-left">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left text-foreground">
+                <CardContent className="p-6 text-left text-foreground">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
-                    <div className="space-y-2 text-sm text-left text-foreground">
+                    <div className="space-y-2 text-sm text-left">
                         <div className="flex justify-between border-b pb-2 text-left">
                             <span className="text-muted-foreground text-left">Total Load Value (Example)</span>
                             <span className="font-bold text-left">R 10,000.00</span>
@@ -558,10 +559,10 @@ function StepBrokerageCommercials() {
                             <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground text-left text-foreground">Platform Success Fee (2.5%)</span>
+                            <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600 text-left">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-left text-foreground">
+                        <div className="flex justify-between pt-2 text-left">
                             <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
                             <span className="font-black text-primary text-left">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
@@ -587,7 +588,7 @@ function StepRateSheet() {
             </h3>
 
             <FormField control={control} name="rateType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground">
                     <FormLabel className="font-bold">Select Rate Structure</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
@@ -615,7 +616,7 @@ function StepRateSheet() {
             )}
 
             {rateType === 'route' && (
-                <div className="space-y-4 animate-in slide-in-from-top-2 text-left">
+                <div className="space-y-4 animate-in slide-in-from-top-2 text-left text-foreground">
                     <div className="flex justify-between items-center text-left">
                         <Label className="font-bold">Common Route Rates</Label>
                         <Button type="button" size="sm" variant="outline" onClick={() => append({ origin: '', destination: '', price: 0 })}>
@@ -671,7 +672,7 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -741,13 +742,13 @@ function StepCommercials({ shop }: { shop: any }) {
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left">
+                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left text-foreground">
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Standard Platform Rate</p>
                     <p className="text-3xl font-black text-left">2.5%</p>
                     <p className="text-xs text-muted-foreground leading-relaxed text-left">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
                 </div>
                 
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest text-left">Your Proposal (%)</p>
                     <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white" />
                     <Button className="w-full h-10 font-bold text-white" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
@@ -759,7 +760,7 @@ function StepCommercials({ shop }: { shop: any }) {
 
             {agreements && agreements.length > 0 && (
                 <div className="space-y-4 text-left text-foreground">
-                    <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
+                    <h4 className="font-bold text-sm uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left text-foreground">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -893,18 +894,18 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
 
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader className="text-left">
+            <DialogHeader className="text-left text-foreground">
                 <DialogTitle>Product Management</DialogTitle>
                 <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left text-foreground">
-                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
-                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>)} />
                     
                     <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
@@ -1041,24 +1042,24 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
 
     return (
         <DialogContent className="sm:max-w-2xl text-left text-foreground">
-            <DialogHeader className="text-left text-foreground">
+            <DialogHeader className="text-left text-foreground text-foreground">
                 <DialogTitle>{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription>Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left text-foreground">
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem> )} />
-                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem> )} />
+                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem> )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                         <FormField control={form.control} name="year" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                         <FormField control={form.control} name="year" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
                                 <FormItem className="text-left text-foreground">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="Heavy Truck (Horse)">Heavy Truck (Horse)</SelectItem>
                                             <SelectItem value="Trailer">Trailer</SelectItem>
@@ -1076,9 +1077,9 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                          )}
                     </div>
 
-                    <div className="space-y-4 text-left text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Vehicle Gallery</Label>
-                        <div className="grid grid-cols-3 gap-2 text-left">
+                    <div className="space-y-4 text-left text-foreground text-foreground">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Vehicle Gallery</Label>
+                        <div className="grid grid-cols-3 gap-2 text-left text-foreground">
                              {(form.watch('photoUrls') || []).map((url: string, i: number) => (
                                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border text-left">
                                      <Image src={url} alt="pic" fill className="object-cover" />
@@ -1092,7 +1093,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground text-foreground">
                         <FileUploadField name="rc1Url" label="RC1 Doc" folder="fleet-docs" />
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
                     </div>
@@ -1130,11 +1131,11 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     return (
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left text-foreground">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
-            <div className="space-y-2 text-center">
+            <div className="space-y-2 text-center text-foreground">
                 <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
                 <p className="text-muted-foreground max-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
-            <div className="flex justify-center text-left">
+            <div className="flex justify-center text-left text-foreground">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
                   {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-4 w-4"/>}
                   Activate Commercial Hub
@@ -1263,7 +1264,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
-                <div className="text-left text-foreground">
+                <div className="text-left text-foreground text-foreground">
                     <CardTitle className="text-2xl font-black font-headline text-left text-foreground">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
                     <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
@@ -1301,7 +1302,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     </div>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground text-foreground">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground text-left">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
