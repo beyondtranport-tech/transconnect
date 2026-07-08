@@ -91,7 +91,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 text-left">
-            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-left text-foreground">
+            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground">
                 <ArrowLeft className="h-4 w-4" /> Back to Instruction
             </Button>
 
@@ -121,11 +121,11 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 Fulfillment is only authorized once a clear scan or photo of the signed delivery note is uploaded to the platform ledger.
                             </p>
                             
-                            <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 flex flex-col items-center justify-center gap-4 text-center text-left">
+                            <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 flex flex-col items-center justify-center gap-4 text-center">
                                 {podUrl ? (
-                                    <div className="text-center space-y-2 text-left">
+                                    <div className="text-center space-y-2">
                                         <ShieldCheck className="h-12 w-12 text-green-600 mx-auto" />
-                                        <p className="text-sm font-bold text-green-700 uppercase text-center">POD Captured</p>
+                                        <p className="text-sm font-bold text-green-700 uppercase">POD Captured</p>
                                         <Button variant="link" asChild className="text-xs">
                                             <a href={podUrl} target="_blank" rel="noopener noreferrer">View Uploaded Doc</a>
                                         </Button>
@@ -136,8 +136,8 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                             <FileText className="h-8 w-8 text-muted-foreground" />
                                         </div>
                                         <input type="file" id="pod-input" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
-                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="mt-4 font-bold text-left text-foreground">
-                                            {isUploading ? <Loader2 className="animate-spin mr-2 h-4 w-4 text-left" /> : <FileUp className="mr-2 h-4 w-4 text-left" />}
+                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="mt-4 font-bold">
+                                            {isUploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <FileUp className="mr-2 h-4 w-4" />}
                                             Upload Signed POD
                                         </Button>
                                     </div>
@@ -147,24 +147,24 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                         </div>
 
                         <div className="space-y-6 text-left">
-                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
+                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground">
                                 <Banknote className="h-6 w-6 text-primary" />
                                 2. Settlement Summary
                             </h3>
                             <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left">
                                 <div className="space-y-1 text-left">
                                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Expected Haulier Payout</p>
-                                    <p className="text-4xl font-black text-primary text-left">{formatCurrency(load.haulierPayout)}</p>
+                                    <p className="text-4xl font-black text-primary">{formatCurrency(load.haulierPayout)}</p>
                                 </div>
                                 <Separator className="bg-white/10" />
-                                <div className="text-xs text-slate-400 leading-relaxed text-left text-foreground">
-                                    <p className="text-left text-foreground">Upon broker verification of the POD, these funds will be moved from "Pending" to "Available" in your wallet.</p>
+                                <div className="text-xs text-slate-400 leading-relaxed text-left">
+                                    <p>Upon broker verification of the POD, these funds will be moved from "Pending" to "Available" in your wallet.</p>
                                 </div>
                             </div>
                             
-                            <Alert className="bg-blue-50 border-blue-200 text-left">
+                            <Alert className="bg-blue-50 border-blue-200">
                                 <Zap className="h-4 w-4 text-blue-600" />
-                                <AlertTitle className="text-blue-900 font-bold text-left">Factoring Available</AlertTitle>
+                                <AlertTitle className="text-blue-900 font-bold">Factoring Available</AlertTitle>
                                 <AlertDescription className="text-blue-800 text-xs mt-1 text-left">
                                     This load is **Factoring Ready**. Once POD is uploaded, you can request an immediate 75% advance from the Finance Division.
                                 </AlertDescription>
@@ -173,12 +173,12 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                     </div>
                 </CardContent>
 
-                <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center text-left text-foreground">
-                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground text-left text-foreground">Return to Details</Button>
+                <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center text-left">
+                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground">Return to Details</Button>
                     <Button 
                         onClick={handleConfirmFulfillment} 
                         disabled={!podUrl || isProcessing} 
-                        className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl bg-primary hover:bg-primary/90 text-white text-left"
+                        className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl bg-primary hover:bg-primary/90 text-white"
                     >
                         {isProcessing ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : "Confirm Fulfillment"}
                     </Button>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, ArrowRight, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, ClipboardList, Network } from 'lucide-react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
@@ -18,7 +19,6 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 
 const loadSchema = z.object({
   agreementId: z.string().min(1, "Please select an authorized appointment."),
@@ -146,16 +146,16 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 gap-4 text-left">
                                                     <div className={cn("flex items-center space-x-4 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'local_distribution' ? "border-primary bg-primary/5" : "border-muted")}>
                                                         <RadioGroupItem value="local_distribution" id="local" className="h-5 w-5" />
-                                                        <Label htmlFor="local" className="flex-1 cursor-pointer text-left">
-                                                            <p className="font-black text-sm uppercase text-left">Local Distribution</p>
-                                                            <p className="text-[11px] text-muted-foreground text-left">Inner-city urban Spokes. Sourced from Distribution Mall.</p>
+                                                        <Label htmlFor="local" className="flex-1 cursor-pointer">
+                                                            <p className="font-black text-sm uppercase">Local Distribution</p>
+                                                            <p className="text-[11px] text-muted-foreground">Inner-city urban Spokes. Sourced from Distribution Mall.</p>
                                                         </Label>
                                                     </div>
                                                     <div className={cn("flex items-center space-x-4 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'long_haul' ? "border-primary bg-primary/5" : "border-muted")}>
                                                         <RadioGroupItem value="long_haul" id="haul" className="h-5 w-5" />
-                                                        <Label htmlFor="haul" className="flex-1 cursor-pointer text-left">
-                                                            <p className="font-black text-sm uppercase text-left">Long-Haul Transport</p>
-                                                            <p className="text-[11px] text-muted-foreground text-left">Arterial inter-hub movement. Sourced from Transport Mall.</p>
+                                                        <Label htmlFor="haul" className="flex-1 cursor-pointer">
+                                                            <p className="font-black text-sm uppercase">Long-Haul Transport</p>
+                                                            <p className="text-[11px] text-muted-foreground">Arterial inter-hub movement. Sourced from Transport Mall.</p>
                                                         </Label>
                                                     </div>
                                                 </RadioGroup>

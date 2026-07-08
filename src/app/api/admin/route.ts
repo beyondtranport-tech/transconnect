@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'searchRegistry': {
-                const { type, term, outreachFilter, limit = 100 } = payload;
+                const { type, term, limit = 100 } = payload;
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
                 
                 let query: any = db.collection(collectionName);
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
-                const members = await Promise.all(snap.docs.map(async (doc) => {
+                const members = await Promise.all(snap.docs.map(async (doc: any) => {
                     const data = doc.data();
                     const userSnap = await db.collection('users').doc(data.ownerId || 'system').get();
                     const uData = userSnap.exists ? userSnap.data() : {};

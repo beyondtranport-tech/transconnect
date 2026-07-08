@@ -101,7 +101,8 @@ export default function LendingParametersContent() {
     const isAdmin = user && (
         user.email === 'beyondtransport@gmail.com' || 
         user.email === 'mkoton100@gmail.com' || 
-        user.email === 'michael@logisticsflow.co.za'
+        user.email === 'michael@logisticsflow.co.za' ||
+        user.claims?.admin === true
     );
 
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
@@ -358,7 +359,7 @@ export default function LendingParametersContent() {
                                     <CardDescription className="text-left">Target specific industrial categories and forensic tags derived from registry notes.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-10 pt-8 text-left text-foreground">
-                                    <div className="space-y-4 text-left text-foreground">
+                                    <div className="space-y-4 text-left text-foreground text-foreground">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground">
                                             <Zap className="h-4 w-4" /> 
                                             Specialized Credit Products

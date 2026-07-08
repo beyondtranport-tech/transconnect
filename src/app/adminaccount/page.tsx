@@ -85,7 +85,7 @@ import MarketplaceFees from '@/app/backend/revenue/marketplace-fees';
 import MallCommissions from '@/app/backend/revenue/mall-commissions';
 import ISAPitchSettings from '@/app/backend/revenue/isa-pitch-settings';
 import SalesIncentives from '@/app/backend/revenue/sales-incentives';
-import ActionPlanSettings from '@/app/backend/loyalty-settings';
+import ActionPlanSettings from '@/app/backend/revenue/action-plan-settings';
 import TierBenefits from '@/app/backend/tier-benefits';
 import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';

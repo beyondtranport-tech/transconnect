@@ -201,7 +201,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                 <UserCheck className="h-6 w-6 text-primary" /> 
                 Node Identity & Labeling
             </h3>
-            <div className="space-y-4 text-left text-foreground text-foreground">
+            <div className="space-y-4 text-left text-foreground">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem className="text-left text-foreground">
                         <FormLabel>Public Identity Label</FormLabel>
@@ -255,7 +255,7 @@ function StepBranding() {
                 <Sparkles className="h-6 w-6 text-primary" /> 
                 Branding & Narrative
             </h3>
-            <div className="space-y-4 text-left text-foreground text-foreground">
+            <div className="space-y-4 text-left text-foreground">
                 <FileUploadField name="logoUrl" label="Company Logo" folder="node-branding" />
                 <FormField control={control} name="homeHeading" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
@@ -378,7 +378,7 @@ function StepWarehouseSecurity() {
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
                 <FormField control={control} name="accessControl" render={({ field }) => (
                     <FormItem className="text-left text-foreground">
                         <FormLabel>Access Control Type</FormLabel>
@@ -394,7 +394,7 @@ function StepWarehouseSecurity() {
             </div>
 
             <FormField control={control} name="operatingHours" render={({ field }) => (
-                <FormItem className="text-left text-foreground text-foreground text-foreground">
+                <FormItem className="text-left text-foreground">
                     <FormLabel className="flex items-center gap-2 text-foreground"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
                     <FormControl><Input placeholder="e.g. Mon-Fri: 08:00 - 16:30, Sat: 08:00 - 12:00" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     <FormDescription className="text-[10px] text-left">Critical for haulier planning and matching.</FormDescription>
@@ -482,7 +482,7 @@ function StepWarehouseFees() {
                 <Banknote className="h-6 w-6 text-primary" />
                 Storage Yield Settings
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-6 text-left">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
                         <FormItem className="text-left text-foreground"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
@@ -587,7 +587,7 @@ function StepRateSheet() {
             </h3>
 
             <FormField control={control} name="rateType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground text-foreground text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground">
                     <FormLabel className="font-bold">Select Rate Structure</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
@@ -671,7 +671,7 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground text-foreground text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -791,7 +791,7 @@ function StepCatalog({ shop }: { shop: any }) {
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
-                <div className="text-left text-foreground text-foreground">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
@@ -947,7 +947,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left text-foreground text-foreground">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
                     <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
                 </div>
@@ -987,7 +987,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const form = useForm({ 
-        defaultValues: { photoUrls: [], rc1Url: '', licenseUrl: '', status: 'active', make: '', model: '', year: '', vClass: '', price: 0 } 
+        defaultValues: { photoUrls: [] as string[], rc1Url: '', licenseUrl: '', status: 'active', make: '', model: '', year: '', vClass: '', price: 0 } 
     });
 
     const onSubmit = async (values: any) => {
@@ -1019,7 +1019,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     const handleMultiUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || !shop) return;
-        const urls: any[] = [...(form.getValues('photoUrls') || [])];
+        const urls: string[] = [...(form.getValues('photoUrls') || [])];
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const token = await getClientSideAuthToken();
@@ -1036,12 +1036,12 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
             const result = await response.json();
             if (response.ok) urls.push(result.url);
         }
-        form.setValue('photoUrls', urls as any);
+        form.setValue('photoUrls', urls);
     };
 
     return (
         <DialogContent className="sm:max-w-2xl text-left text-foreground">
-            <DialogHeader className="text-left text-foreground text-foreground">
+            <DialogHeader className="text-left text-foreground">
                 <DialogTitle>{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription>Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
@@ -1076,7 +1076,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                          )}
                     </div>
 
-                    <div className="space-y-4 text-left text-foreground text-foreground">
+                    <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Vehicle Gallery</Label>
                         <div className="grid grid-cols-3 gap-2 text-left text-foreground">
                              {(form.watch('photoUrls') || []).map((url: string, i: number) => (
@@ -1092,7 +1092,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                         <FileUploadField name="rc1Url" label="RC1 Doc" folder="fleet-docs" />
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
                     </div>
@@ -1263,7 +1263,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
-                <div className="text-left text-foreground text-foreground">
+                <div className="text-left text-foreground">
                     <CardTitle className="text-2xl font-black font-headline text-left text-foreground">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
                     <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
@@ -1301,7 +1301,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     </div>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground text-foreground">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground text-left">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
