@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -220,8 +221,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 <Button variant="ghost" size="icon" onClick={nextRecord} disabled={currentIndex === partners.length - 1}><ChevronRight className="h-4 w-4" /></Button>
                             </div>
                         )}
-                        <div className="flex gap-2">
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentEmail}>
+                        <div className="flex gap-2 text-white">
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentEmail}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />} Outlook
                             </Button>
                             <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentEmail}>
@@ -233,10 +234,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto">
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left">
                         <ShieldAlert className="h-4 w-4 text-amber-600" />
-                        <div className="ml-2">
+                        <div className="ml-2 text-left">
                             <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
                             <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">Use **Automated Dispatch** to route mail through SendGrid API. This bypasses local blocks.</AlertDescription>
                         </div>
@@ -265,11 +266,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
-                    <div className="max-w-[850px] mx-auto space-y-6">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
+                    <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
-                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm">
-                                <div className="flex items-center gap-3">
+                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm text-left">
+                                <div className="flex items-center gap-3 text-left">
                                     <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left text-foreground">
                                         <p className="text-sm font-bold text-amber-900">Pattern Randomization</p>

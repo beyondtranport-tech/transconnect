@@ -1,10 +1,11 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-    Loader2, ShoppingCart, Landmark, ArrowLeft, ArrowRight, MessageSquare, 
+    Loader2, Landmark, ArrowLeft, ArrowRight, MessageSquare, 
     FileCheck, ShieldCheck, Scale, FileText, Send, Building, Info, CheckCircle, Banknote, Zap, Download, Lock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
