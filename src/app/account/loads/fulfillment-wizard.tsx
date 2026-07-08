@@ -101,7 +101,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 <CardHeader className="bg-slate-900 text-white p-10 text-left">
                     <div className="flex justify-between items-start text-left">
                         <div className="text-left text-white">
-                            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white">
+                            <CardTitle className="text-3xl font-black font-headline flex items-gap-3 text-white">
                                 <CheckCircle className="h-10 w-10 text-primary" />
                                 Work Fulfillment Gateway
                             </CardTitle>
@@ -115,7 +115,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 <CardContent className="p-10 space-y-10 bg-white text-left">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                         <div className="space-y-6 text-left">
-                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left text-foreground">
+                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
                                 <FileUp className="h-6 w-6 text-primary" />
                                 1. Proof of Delivery (POD)
                             </h3>
@@ -153,8 +153,8 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 <Banknote className="h-6 w-6 text-primary" />
                                 2. Settlement Summary
                             </h3>
-                            <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left text-foreground">
-                                <div className="space-y-1 text-left text-white">
+                            <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left">
+                                <div className="space-y-1 text-left">
                                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Expected Haulier Payout</p>
                                     <p className="text-4xl font-black text-primary">{formatCurrency(load.haulierPayout)}</p>
                                 </div>
@@ -178,7 +178,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 </CardContent>
 
                 <CardFooter className="p-10 bg-slate-50 border-t flex justify-between items-center text-left">
-                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground">Return to Details</Button>
+                    <Button variant="ghost" onClick={onBack} className="font-bold text-muted-foreground text-left">Return to Details</Button>
                     <Button 
                         onClick={handleConfirmFulfillment} 
                         disabled={!podUrl || isProcessing} 

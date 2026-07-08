@@ -48,6 +48,65 @@ export async function POST(req: NextRequest) {
         currentAction = action;
 
         switch (action) {
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                const staff = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: staff.map(serializeTimestamps) });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = staff.id ? db.collection('platformStaff').doc(staff.id) : db.collection('platformStaff').doc();
+                await ref.set({
+                    ...staff,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deletePlatformStaff': {
+                const { staffId } = payload;
+                await db.collection('platformStaff').doc(staffId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').get();
+                const staff = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: staff.map(serializeTimestamps) });
+            }
+
+            case 'savePartner': {
+                const { partner, collection: colName = 'partners' } = payload;
+                const ref = partner.id ? db.collection(colName).doc(partner.id) : db.collection(colName).doc();
+                await ref.set({
+                    ...partner,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deletePartner': {
+                const { partnerId, source } = payload;
+                const colName = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(colName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPartnersByType': {
+                const { type } = payload;
+                let snap;
+                if (type === 'lead') {
+                    snap = await db.collection('leads').get();
+                } else {
+                    snap = await db.collection('partners').where('type', '==', type).get();
+                }
+                const partners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: partners.map(serializeTimestamps) });
+            }
+
             case 'searchRegistry': {
                 const { type, term, limit = 100 } = payload;
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
@@ -121,15 +180,14 @@ export async function POST(req: NextRequest) {
 
                 const msg = {
                     to: email,
-                    from: 'michael@logisticsflow.co.za', // Verified SendGrid Sender
+                    from: 'michael@logisticsflow.co.za', 
                     subject: subject,
                     html: html,
                 };
 
                 await sgMail.send(msg);
 
-                // Log interaction after successful send
-                const colName = audience === 'partners' ? 'partners' : 'leads';
+                const colName = (audience === 'partners' || audience === 'transporters' || audience === 'suppliers' || audience === 'investors' || audience === 'developers' || audience === 'isa' || audience === 'finance' || audience === 'associates') ? 'partners' : 'leads';
                 const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
@@ -191,6 +249,12 @@ export async function POST(req: NextRequest) {
 
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(500).get();
+                const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
             }
 
             default: return NextResponse.json({ success: false, error: `Action "${action}" not supported.` }, { status: 400 });
