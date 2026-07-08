@@ -29,6 +29,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { collection, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
 import { provinces } from '@/lib/geodata';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
@@ -352,7 +353,7 @@ function StepWarehouseSecurity() {
             </div>
 
             <div className="space-y-4 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground text-foreground">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground text-foreground text-foreground">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     Security Infrastructure
                 </Label>
@@ -394,7 +395,7 @@ function StepWarehouseSecurity() {
             </div>
 
             <FormField control={control} name="operatingHours" render={({ field }) => (
-                <FormItem className="text-left text-foreground text-foreground">
+                <FormItem className="text-left text-foreground text-foreground text-foreground">
                     <FormLabel className="flex items-center gap-2 text-foreground"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
                     <FormControl><Input placeholder="e.g. Mon-Fri: 08:00 - 16:30, Sat: 08:00 - 12:00" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     <FormDescription className="text-[10px] text-left">Critical for haulier planning and matching.</FormDescription>
@@ -477,7 +478,7 @@ function StepGallery() {
 function StepWarehouseFees() {
     const { control } = useFormContext<NodeFormValues>();
     return (
-        <div className="space-y-8 text-left text-foreground">
+        <div className="space-y-8 text-left text-foreground text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <Banknote className="h-6 w-6 text-primary" />
                 Storage Yield Settings
@@ -544,7 +545,7 @@ function StepBrokerageCommercials() {
 
             <Card className="border-none bg-slate-50 shadow-inner text-left">
                 <CardContent className="p-6 text-left text-foreground">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left text-foreground">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
@@ -625,7 +626,7 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground">
+                                <FormItem className="text-left text-foreground text-foreground text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -634,7 +635,7 @@ function StepRateSheet() {
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground">
+                                <FormItem className="text-left text-foreground text-foreground text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -642,7 +643,7 @@ function StepRateSheet() {
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2 text-left text-foreground">
+                            <div className="flex items-center gap-2 text-left text-foreground text-foreground">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
                                     <FormItem className="flex-1 text-left text-foreground">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
@@ -671,7 +672,7 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -688,7 +689,7 @@ function StepLoadAgreement() {
 
             {contractType === 'master' && (
                 <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground text-foreground">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground text-foreground text-foreground">
                         <FormLabel>Committed Loads per Month</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                         <FormDescription className="text-[10px] text-left">Your node will be prioritized for long-term contract matching.</FormDescription>
@@ -741,10 +742,10 @@ function StepCommercials({ shop }: { shop: any }) {
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left text-foreground">
+                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left text-foreground text-foreground">
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Standard Platform Rate</p>
-                    <p className="text-3xl font-black text-left text-foreground">2.5%</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
+                    <p className="text-3xl font-black text-left text-foreground text-foreground">2.5%</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground text-foreground">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
                 </div>
                 
                 <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
@@ -758,8 +759,8 @@ function StepCommercials({ shop }: { shop: any }) {
             </div>
 
             {agreements && agreements.length > 0 && (
-                <div className="space-y-4 text-left">
-                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left text-foreground">
+                <div className="space-y-4 text-left text-foreground">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left text-foreground text-foreground">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -790,8 +791,8 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+                <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
@@ -946,7 +947,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground text-foreground">
                 <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
                     <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
@@ -965,7 +966,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                                     {asset.photoUrls?.[0] && <Image src={asset.photoUrls[0]} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
                                 </div>
-                                <CardContent className="p-4 text-left text-foreground">
+                                <CardContent className="p-4 text-left text-foreground text-foreground">
                                     <p className="font-bold text-sm text-left">{asset.year} {asset.make} {asset.model}</p>
                                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1 text-left">{asset.vClass || asset.location}</p>
                                 </CardContent>
@@ -1112,7 +1113,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
 function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
-    const handlePublish = async () => {
+    handlePublish = async () => {
         setLoading(true);
         try {
             const token = await getClientSideAuthToken();
@@ -1135,7 +1136,7 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
                 <p className="text-muted-foreground max-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
             <div className="flex justify-center">
-              <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
+              <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white text-center">
                   {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-4 w-4"/>}
                   Activate Commercial Hub
               </Button>
@@ -1258,7 +1259,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     const currentStepConfig = wizardSteps[currentStep];
 
-    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-foreground text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Steps...</p></div>;
+    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-foreground text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Terminal...</p></div>;
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
@@ -1288,7 +1289,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                         </div>
                         <div className="p-10 min-h-[500px] text-left">
                             {currentStepConfig ? (
-                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground text-foreground">
                                     {currentStepConfig.component}
                                 </div>
                             ) : (

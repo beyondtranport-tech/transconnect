@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
                     results = results.filter((r: any) => 
                         (r.companyName || '').toLowerCase().includes(lowTerm) ||
                         (r.contactPerson || '').toLowerCase().includes(lowTerm) ||
-                        (r.email || '').toLowerCase().includes(lowTerm)
+                        (r.email || r.email_address || '').toLowerCase().includes(lowTerm)
                     );
                 }
 

@@ -151,7 +151,6 @@ function AdminAccountContent() {
         return <SocialStudio platform={platform} />;
     }
     if (activeView.startsWith('marketing-')) {
-        // Corrected splitting for hyphenated audience IDs
         const audience = activeView.replace('marketing-', '');
         return <MarketingPage audience={audience} />;
     }

@@ -79,6 +79,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     return partners[currentIndex] || partners[0];
   }, [partners, currentIndex]);
 
+  const currentEmail = currentPartner?.email || currentPartner?.email_address;
+
   const audienceLabel = useMemo(() => {
     if (audience === 'isa') return 'ISA Agent';
     if (audience === 'suppliers') return 'Supplier';
@@ -157,10 +159,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         toast({ title: "Content Ready", description: `Interaction logged. Opening ${channel}...` });
 
         if (channel === 'outlook') {
-            const mailtoUrl = `mailto:${currentPartner.email}?subject=${encodeURIComponent(getSubject())}`;
+            const mailtoUrl = `mailto:${currentEmail}?subject=${encodeURIComponent(getSubject())}`;
             window.location.href = mailtoUrl;
         } else {
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${currentPartner.email}&su=${encodeURIComponent(getSubject())}`;
+            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${currentEmail}&su=${encodeURIComponent(getSubject())}`;
             window.open(gmailUrl, '_blank');
         }
         
@@ -173,7 +175,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   };
 
   const handleAutomatedDispatch = async () => {
-    if (!currentPartner?.email) {
+    if (!currentEmail) {
         toast({ variant: 'destructive', title: "No Email", description: "This record has no email address." });
         return;
     }
@@ -193,7 +195,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         // Call the automated dispatcher
         await performAdminAction(token, 'dispatchEngagement', {
             partnerId: currentPartner.id,
-            email: currentPartner.email,
+            email: currentEmail,
             subject: getSubject(),
             html: contentClone.innerHTML,
             audience
@@ -243,7 +245,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <div className="flex items-center gap-2 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground text-left">•</span>
-                           <span className="text-muted-foreground font-medium text-left">{currentPartner.email || 'No email recorded'}</span>
+                           <span className="text-muted-foreground font-medium text-left">{currentEmail || 'No email recorded'}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-4 text-left">
@@ -261,15 +263,15 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
                         <div className="flex gap-2 text-left">
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-foreground" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentPartner.email}>
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-foreground" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentEmail}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />}
                                 Outlook
                             </Button>
-                            <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-red-200 hover:bg-red-50 text-foreground" onClick={() => handleLogCopyAndLaunch('gmail')} disabled={isProcessing || isDispatching || !currentPartner.email}>
+                            <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-red-200 hover:bg-red-50 text-foreground" onClick={() => handleLogCopyAndLaunch('gmail')} disabled={isProcessing || isDispatching || !currentEmail}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <div className="h-4 w-4 bg-red-600 rounded-sm" />}
                                 Gmail Web
                             </Button>
-                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-foreground" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentPartner.email}>
+                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-foreground" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentEmail}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                                 Automated Dispatch
                             </Button>
