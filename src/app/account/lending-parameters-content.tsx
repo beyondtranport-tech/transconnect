@@ -336,9 +336,9 @@ export default function LendingParametersContent() {
                                                         onCheckedChange={(checked) => {
                                                             const current = field.value || [];
                                                             if (checked) {
-                                                                field.onChange([...current, item]);
+                                                                    field.onChange([...current, item]);
                                                             } else {
-                                                                field.onChange(current.filter((v: string) => v !== item));
+                                                                    field.onChange(current.filter((v: string) => v !== item));
                                                             }
                                                         }} 
                                                     />
@@ -372,9 +372,9 @@ export default function LendingParametersContent() {
                                                             onCheckedChange={(checked) => {
                                                                 const current = field.value || [];
                                                                 if (checked) {
-                                                                    field.onChange([...current, item]);
+                                                                        field.onChange([...current, item]);
                                                                 } else {
-                                                                    field.onChange(current.filter((v: string) => v !== item));
+                                                                        field.onChange(current.filter((v: string) => v !== item));
                                                                 }
                                                             }} 
                                                         />
@@ -401,9 +401,9 @@ export default function LendingParametersContent() {
                                                             onCheckedChange={(checked) => {
                                                                 const current = field.value || [];
                                                                 if (checked) {
-                                                                    field.onChange([...current, item]);
+                                                                        field.onChange([...current, item]);
                                                                 } else {
-                                                                    field.onChange(current.filter((v: string) => v !== item));
+                                                                        field.onChange(current.filter((v: string) => v !== item));
                                                                 }
                                                             }} 
                                                         />
@@ -430,9 +430,9 @@ export default function LendingParametersContent() {
                                                             onCheckedChange={(checked) => {
                                                                 const current = field.value || [];
                                                                 if (checked) {
-                                                                    field.onChange([...current, item]);
+                                                                        field.onChange([...current, item]);
                                                                 } else {
-                                                                    field.onChange(current.filter((v: string) => v !== item));
+                                                                        field.onChange(current.filter((v: string) => v !== item));
                                                                 }
                                                             }} 
                                                         />

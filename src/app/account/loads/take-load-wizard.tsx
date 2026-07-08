@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft, ArrowRight, ShieldCheck, Truck, Users, Lock, CheckCircle, Info, Landmark, MapPin, AlertTriangle, Gavel, FileSignature, FileText } from 'lucide-react';
-import { useUser, useFirestore, useCollection, useMemoFirebase, getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { doc, collection, query, where, serverTimestamp, setDoc } from 'firebase/firestore';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -100,8 +100,8 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
             <div className="space-y-6 text-left">
                 <Alert className="bg-green-50 border-green-200">
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                    <AlertTitle className="font-bold">Transaction Confirmed</AlertTitle>
-                    <AlertDescription>The formal instruction has been issued. You can view or print it below.</AlertDescription>
+                    <AlertTitle className="font-bold text-left">Transaction Confirmed</AlertTitle>
+                    <AlertDescription className="text-left">The formal instruction has been issued. You can view or print it below.</AlertDescription>
                 </Alert>
                 <LoadInstructionView load={acceptedLoadData} onBack={onComplete} />
             </div>
@@ -122,7 +122,7 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
                                 <ShieldCheck className="h-10 w-10 text-primary" />
                                 Registry Compliance Audit
                             </CardTitle>
-                            <CardDescription className="text-slate-400 text-lg mt-2">Verifying haulier node for: <strong>{load.origin}</strong> to <strong>{load.destination}</strong></CardDescription>
+                            <CardDescription className="text-slate-400 text-lg mt-2 text-left">Verifying haulier node for: <strong>{load.origin}</strong> to <strong>{load.destination}</strong></CardDescription>
                         </div>
                         <Badge variant="outline" className="border-primary text-primary">OFFER REF: {load.id?.slice(-4)}</Badge>
                     </div>

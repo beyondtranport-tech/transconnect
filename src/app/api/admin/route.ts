@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
                 }
 
                 const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
-                let results = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                let results = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
                 if (term) {
                     const lowTerm = term.toLowerCase();
@@ -74,12 +74,12 @@ export async function POST(req: NextRequest) {
             case 'getPartnersByType': {
                 const { type } = payload;
                 const snap = await db.collection('partners').where('type', '==', type).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
 
             case 'getLeads': {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
 
             case 'getMembers': {
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
 
             case 'logCommunication': {
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
 
             case 'getBrokerAgreements': {
                 const snap = await db.collectionGroup('brokerAgreements').orderBy('createdAt', 'desc').get();
-                const data = snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }));
+                const data = snap.docs.map((d: any) => ({ id: d.id, path: d.ref.path, ...d.data() }));
                 return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
             }
 
