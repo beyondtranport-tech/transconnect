@@ -157,7 +157,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                         {currentStep === 0 && (
                             <div className="space-y-6 text-left text-foreground">
                                 <div className="p-6 bg-primary/5 border-2 border-primary/20 rounded-3xl space-y-6 text-left">
-                                    <div className="space-y-1 text-left text-foreground text-left">
+                                    <div className="space-y-1 text-left text-foreground">
                                         <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Negotiation</h3>
                                         <p className="text-sm text-muted-foreground text-left">Submit your offer to the seller. Locking the price initiates the legal documentation phase.</p>
                                     </div>
@@ -190,7 +190,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 </Alert>
                                 {!isSeller && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`} className="text-left">
+                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`} className="text-left no-underline block">
                                             <Card className="border-2 border-primary/20 hover:border-primary transition-colors cursor-pointer h-full bg-white text-left">
                                                 <CardContent className="p-6 space-y-2 text-left text-foreground">
                                                     <div className="bg-primary/10 p-2 rounded-lg w-fit group-hover:bg-primary group-hover:text-white transition-colors text-left"><Landmark className="h-5 w-5" /></div>
@@ -199,8 +199,8 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                                 </CardContent>
                                             </Card>
                                         </Link>
-                                        <div className="h-full text-left" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
-                                            <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors h-full bg-white cursor-pointer text-left">
+                                        <div className="h-full text-left cursor-pointer" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
+                                            <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors h-full bg-white text-left">
                                                 <CardContent className="p-6 space-y-2 text-left text-foreground">
                                                     <div className="bg-slate-100 p-2 rounded-lg w-fit text-left"><Banknote className="h-5 w-5" /></div>
                                                     <p className="font-black text-sm uppercase text-left">Pay with Wallet</p>
@@ -219,11 +219,11 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                     <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left"><FileCheck className="h-6 w-6 text-primary" /> Transaction Document Vault</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                                         <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2 bg-white" onClick={() => toast({ title: "OTP Generated", description: "Offer to Purchase is ready for download." })}>
-                                            <div className="bg-blue-100 p-2 rounded-lg"><FileText className="h-5 w-5 text-blue-600" /></div>
-                                            <div className="text-left"><p className="font-black text-xs uppercase text-left">Offer to Purchase</p><p className="text-[10px] text-muted-foreground">Legally Binding Contract</p></div>
+                                            <div className="bg-blue-100 p-2 rounded-lg text-left"><FileText className="h-5 w-5 text-blue-600" /></div>
+                                            <div className="text-left"><p className="font-black text-xs uppercase text-left">Offer to Purchase</p><p className="text-[10px] text-muted-foreground text-left">Legally Binding Contract</p></div>
                                         </Button>
                                         <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2 bg-white" onClick={() => toast({ title: "Invoice Generated", description: "VAT Invoice has been isolated." })}>
-                                            <div className="bg-green-100 p-2 rounded-lg"><Banknote className="h-5 w-5 text-green-600" /></div>
+                                            <div className="bg-green-100 p-2 rounded-lg text-left"><Banknote className="h-5 w-5 text-green-600" /></div>
                                             <div className="text-left text-foreground text-left"><p className="font-black text-xs uppercase text-left">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground text-left">Financial Settlement Record</p></div>
                                         </Button>
                                     </div>
@@ -244,12 +244,12 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
 
                         <Separator />
 
-                        <div className="space-y-4 text-left text-foreground text-foreground">
+                        <div className="space-y-4 text-left text-foreground">
                             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 text-left">
                                 <MessageSquare className="h-4 w-4 text-primary" />
                                 Handshake Direct Chat
                             </h4>
-                            <div className="bg-slate-50 border rounded-3xl p-6 h-80 flex flex-col shadow-inner text-left text-foreground text-foreground">
+                            <div className="bg-slate-50 border rounded-3xl p-6 h-80 flex flex-col shadow-inner text-left text-foreground">
                                 <ScrollArea className="flex-1 pr-4 text-left">
                                     <div className="space-y-4 text-left">
                                         {messages?.map((msg: any) => (

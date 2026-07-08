@@ -10,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, ArrowRight, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, ClipboardList, Network } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Truck, MapPin, Package, DollarSign, ShieldCheck, CheckCircle, ClipboardList, Network, HelpCircle } from 'lucide-react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
@@ -224,7 +224,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 3 && (
-                                <div className="space-y-6 text-left text-foreground text-foreground">
+                                <div className="space-y-6 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-4 text-left">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
@@ -238,7 +238,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                         <FormField control={methods.control} name="weight" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Tonnage (Tons)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                     <div className="space-y-3 text-left">
-                                        <Label className="font-bold text-foreground">Required Equipment</Label>
+                                        <Label className="font-bold text-foreground text-left">Required Equipment</Label>
                                         <div className="grid grid-cols-2 gap-2 text-left">
                                             {equipmentOptions.map(opt => (
                                                 <FormField key={opt} control={methods.control} name="requiredEquipment" render={({ field }) => (
@@ -258,13 +258,13 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                     <div className="grid grid-cols-2 gap-6 text-left">
                                         <FormField control={methods.control} name="totalValue" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
-                                                <FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel>
+                                                <FormLabel className="font-black text-primary uppercase text-[10px] text-left">Gross Load Value (ZAR)</FormLabel>
                                                 <FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl>
                                             </FormItem>
                                         )} />
                                         <FormField control={methods.control} name="brokerMargin" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
-                                                <FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel>
+                                                <FormLabel className="font-black uppercase text-[10px] text-left">Broker Participation (%)</FormLabel>
                                                 <FormControl><Input type="number" className="bg-white" {...field} /></FormControl>
                                             </FormItem>
                                         )} />

@@ -112,13 +112,13 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 </CardHeader>
                 
                 <CardContent className="p-10 space-y-10 bg-white text-left text-foreground">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                        <div className="space-y-6 text-left text-foreground">
-                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                        <div className="space-y-6 text-left">
+                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left text-foreground">
                                 <FileUp className="h-6 w-6 text-primary" />
                                 1. Proof of Delivery (POD)
                             </h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed text-left text-foreground">
+                            <p className="text-sm text-muted-foreground leading-relaxed text-left">
                                 Fulfillment is only authorized once a clear scan or photo of the signed delivery note is uploaded to the platform ledger.
                             </p>
                             
@@ -147,7 +147,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                             </div>
                         </div>
 
-                        <div className="space-y-6 text-left text-foreground">
+                        <div className="space-y-6 text-left text-foreground text-foreground">
                             <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
                                 <Banknote className="h-6 w-6 text-primary" />
                                 2. Settlement Summary

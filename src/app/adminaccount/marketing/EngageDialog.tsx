@@ -77,7 +77,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const currentEmail = useMemo(() => {
       if (!currentPartner) return '';
-      return currentPartner.email || currentPartner.email_address || currentPartner.emailAddress || currentPartner.contact_email || '';
+      // Robust detection across all lead and member field types
+      return currentPartner.email || 
+             currentPartner.email_address || 
+             currentPartner.emailAddress || 
+             currentPartner.contact_email || 
+             '';
   }, [currentPartner]);
 
   const audienceLabel = useMemo(() => {
@@ -224,20 +229,20 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
-            <DialogHeader className="p-6 border-b bg-muted/50 text-left text-foreground">
-                <div className="flex justify-between items-center text-left text-foreground">
+            <DialogHeader className="p-6 border-b bg-muted/50 text-left">
+                <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
                         </DialogTitle>
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-2 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground">•</span>
                            <span className={cn("font-medium", !currentEmail ? "text-destructive" : "text-muted-foreground")}>{currentEmail || 'No email recorded'}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 text-left">
                         {partners.length > 1 && (
                             <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm text-foreground">
                                 <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}><ChevronLeft className="h-4 w-4" /></Button>
@@ -268,7 +273,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <ShieldAlert className="h-4 w-4 text-amber-600" />
                         <div className="ml-2 text-left">
                             <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
-                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">Use **Automated Dispatch** to route mail through SendGrid API. This bypasses local blocks.</AlertDescription>
+                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1 text-left">Use **Automated Dispatch** to route mail through SendGrid API. This bypasses local blocks.</AlertDescription>
                         </div>
                     </Alert>
 
@@ -295,7 +300,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
                     <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
                             <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm text-left">
@@ -303,7 +308,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">
                                         <p className="text-sm font-bold text-amber-900">Pattern Randomization</p>
-                                        <p className="text-[10px] text-amber-700 leading-none mt-1">Deterministically unique text per partner.</p>
+                                        <p className="text-[10px] text-amber-700 leading-none mt-1 text-left">Deterministically unique text per partner.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-left">
@@ -322,7 +327,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
 
-                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground text-foreground">
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} version={handshakeVersion} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}

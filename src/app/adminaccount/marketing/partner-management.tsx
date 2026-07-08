@@ -104,7 +104,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                 <DialogDescription>Update high-fidelity contact details and forensic notes.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
@@ -112,7 +112,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company / Identity Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Full Contact Name (Decision Maker)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                         <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
@@ -236,7 +236,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
   }, [allRecords, statusFilter, assigneeFilter]);
 
   const columns: ColumnDef<any>[] = useMemo(() => {
-    const cols: ColumnDef<any>[] = [
+    return [
       { 
           accessorKey: 'companyName',
           header: 'Entity Identity', 
@@ -281,24 +281,27 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           header: 'Status', 
           cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
       },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end items-center gap-1">
-          <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-          <AddCommunicationLogDialog 
-              partnerId={row.original.id} 
-              collection={row.original.source === 'Lead' ? 'leads' : 'partners'} 
-              onLogAdded={() => fetchData()} 
-          />
-          <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-          <PartnerTasksDialog partner={row.original} />
-          <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-        </div>
-      ) }
-    ];
-    return cols.filter(c => {
+      { 
+          id: 'actions', 
+          header: 'Actions', 
+          cell: ({ row }) => (
+            <div className="flex justify-end items-center gap-1">
+              <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
+              <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+              <AddCommunicationLogDialog 
+                  partnerId={row.original.id} 
+                  collection={row.original.source === 'Lead' ? 'leads' : 'partners'} 
+                  onLogAdded={() => fetchData()} 
+              />
+              <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+              <PartnerTasksDialog partner={row.original} />
+              <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
+              <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </div>
+          ) 
+      }
+    ].filter(c => {
         const id = c.id || (c.accessorKey as string);
         return visibleColumns[id];
     });
@@ -326,7 +329,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       <PartnerDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType={type} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-left">Delete Record?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -446,7 +449,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6">
+                            <div className="space-y-6 text-left">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
                                      <div className="flex justify-center pt-4">
@@ -465,4 +468,3 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     </div>
   );
 }
-
