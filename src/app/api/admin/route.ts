@@ -122,8 +122,8 @@ export async function POST(req: NextRequest) {
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     results = results.filter((r: any) => 
-                        (r.companyName || '').toLowerCase().includes(lowTerm) ||
-                        (r.contactPerson || '').toLowerCase().includes(lowTerm) ||
+                        (r.companyName || r.company_name || '').toLowerCase().includes(lowTerm) ||
+                        (r.contactPerson || r.contact_person || '').toLowerCase().includes(lowTerm) ||
                         (r.email || r.email_address || '').toLowerCase().includes(lowTerm)
                     );
                 }

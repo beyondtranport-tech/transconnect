@@ -176,7 +176,7 @@ function AdminAccountContent() {
       case 'pricing-memberships': return <PricingManagement />;
       case 'pricing-connect': return <ConnectPlanPricing />;
       case 'pricing-tech': return <TechPricing />;
-      case 'pricing-marketplace': return <MarketplaceFees />;
+      case 'pricing-marketplace': return < MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'commissions-isa': return <ISAPitchSettings />;
       case 'incentives-sales': return <SalesIncentives />;
@@ -232,7 +232,7 @@ function AdminAccountContent() {
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-associates'} onClick={() => navigate('marketing-associates')}>Digital Associates</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -299,7 +299,9 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6 text-left">
-            {renderContent()}
+            <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+                {renderContent()}
+            </Suspense>
         </div>
     </SidebarInset>
     </SidebarProvider>

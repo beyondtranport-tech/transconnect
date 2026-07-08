@@ -79,7 +79,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     return partners[currentIndex] || partners[0];
   }, [partners, currentIndex]);
 
-  const currentEmail = currentPartner?.email || currentPartner?.email_address;
+  // ROBUST EMAIL DETECTION: Handles all registry field variants
+  const currentEmail = useMemo(() => {
+      if (!currentPartner) return '';
+      return currentPartner.email || currentPartner.email_address || currentPartner.emailAddress || '';
+  }, [currentPartner]);
 
   const audienceLabel = useMemo(() => {
     if (audience === 'isa') return 'ISA Agent';
@@ -110,7 +114,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   }, [audience]);
 
   const getSubject = () => {
-      const company = currentPartner?.companyName || 'your business';
+      const company = currentPartner?.companyName || currentPartner?.company_name || 'your business';
       let label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       if (activeTab === 'digital-handshake') {
           label = `Digital Handshake (${handshakeVersion.toUpperCase()})`;
@@ -192,7 +196,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const versionSelector = contentClone.querySelector('[data-id="version-selector-ui"]');
         if (versionSelector) versionSelector.remove();
 
-        // Call the automated dispatcher
+        // Call the automated dispatcher (Uses SENDGRID Node.js API on server)
         await performAdminAction(token, 'dispatchEngagement', {
             partnerId: currentPartner.id,
             email: currentEmail,
@@ -201,7 +205,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             audience
         });
 
-        toast({ title: "Dispatch Successful", description: "Background dispatch initiated. This bypasses local Defender blocks." });
+        toast({ title: "Dispatch Successful", description: "Background dispatch initiated via SendGrid." });
         if (onEngageSuccess) onEngageSuccess();
         
         if (partners.length > 1 && currentIndex < partners.length - 1) {
@@ -230,7 +234,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   if (!currentPartner) return null;
 
-  const partnerDisplayName = currentPartner.companyName || currentPartner.contactPerson || `${currentPartner.firstName || ''} ${currentPartner.lastName || ''}`.trim() || 'Partner';
+  const partnerDisplayName = currentPartner.companyName || currentPartner.company_name || currentPartner.contactPerson || `${currentPartner.firstName || ''} ${currentPartner.lastName || ''}`.trim() || 'Partner';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -245,7 +249,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <div className="flex items-center gap-2 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground text-left">•</span>
-                           <span className="text-muted-foreground font-medium text-left">{currentEmail || 'No email recorded'}</span>
+                           <span className={cn("font-medium text-left", !currentEmail ? "text-destructive" : "text-muted-foreground")}>
+                               {currentEmail || 'No email recorded'}
+                           </span>
                         </div>
                     </div>
                     <div className="flex items-center gap-4 text-left">
@@ -271,7 +277,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <div className="h-4 w-4 bg-red-600 rounded-sm" />}
                                 Gmail Web
                             </Button>
-                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-foreground" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentEmail}>
+                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentEmail}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
                                 Automated Dispatch
                             </Button>
@@ -287,7 +293,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <div className="ml-2 text-left">
                             <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
                             <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">
-                                Use **Automated Dispatch** to route mail through our Transactional API. This bypasses your local account limits and blocks.
+                                Use **Automated Dispatch** to route mail through our SendGrid API. This bypasses local account blocks.
                             </AlertDescription>
                         </div>
                     </Alert>
@@ -302,7 +308,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             { id: 'offer', label: '4. The Offer' },
                             { id: 'pitch', label: '5. The Pitch' },
                             { id: 'framework', label: '6. The Framework' },
-                            { id: 'emails', label: 'Reference: Emails' },
                         ].map((tab) => (
                             <Button
                                 key={tab.id}
@@ -356,7 +361,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             {activeTab === 'offer' && <Offer partner={currentPartner} />}
                             {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
                             {activeTab === 'framework' && <Framework partner={currentPartner} />}
-                            {activeTab === 'emails' && <Emails partner={currentPartner} />}
                         </div>
                     </div>
                 </div>
