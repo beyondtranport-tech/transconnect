@@ -3,6 +3,7 @@ import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
+import sgMail from '@sendgrid/mail';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,17 +72,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'getPartnersByType': {
-                const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
-            }
-
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
-            }
-
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
                 const members = await Promise.all(snap.docs.map(async (doc: any) => {
@@ -97,11 +87,6 @@ export async function POST(req: NextRequest) {
                     };
                 }));
                 return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: snap.docs.map((d: any) => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
             }
 
             case 'logCommunication': {
@@ -125,10 +110,43 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getBrokerAgreements': {
-                const snap = await db.collectionGroup('brokerAgreements').orderBy('createdAt', 'desc').get();
-                const data = snap.docs.map((d: any) => ({ id: d.id, path: d.ref.path, ...d.data() }));
-                return NextResponse.json({ success: true, data: data.map(serializeTimestamps) });
+            case 'dispatchEngagement': {
+                const { partnerId, email, subject, html, audience } = payload;
+                
+                if (!process.env.SENDGRID_API_KEY) {
+                    throw new Error("SENDGRID_API_KEY is not configured on the server.");
+                }
+
+                sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+                const msg = {
+                    to: email,
+                    from: 'michael@logisticsflow.co.za', // Verified SendGrid Sender
+                    subject: subject,
+                    html: html,
+                };
+
+                await sgMail.send(msg);
+
+                // Log interaction after successful send
+                const colName = audience === 'partners' ? 'partners' : 'leads';
+                const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type: 'Automated Dispatch',
+                    subject: subject,
+                    notes: `Automated ${audience} dispatch via SendGrid.`,
+                    timestamp: FieldValue.serverTimestamp()
+                });
+
+                await db.collection(colName).doc(partnerId).update({
+                    status: 'contacted',
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                return NextResponse.json({ success: true });
             }
 
             case 'autoEnrichRecord': {

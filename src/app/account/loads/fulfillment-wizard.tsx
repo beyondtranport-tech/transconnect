@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -40,7 +39,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
             if (!token) throw new Error("Auth failed.");
             
             const reader = new FileReader();
-            const dataUri = await new Promise<string>(res => {
+            const dataUri: string = await new Promise<string>(res => {
                 reader.onload = () => res(reader.result as string);
                 reader.readAsDataURL(file);
             });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -132,7 +131,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                 <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
                     <div className="space-y-2 border-r pr-4 text-left">
                         {steps.map((step, i) => (
-                            <Button key={step.id} variant={currentStep === i ? "secondary" : "ghost"} className="w-full justify-start gap-3 h-12" onClick={() => i < currentStep && setCurrentStep(i)}>
+                            <Button key={step.id} variant={currentStep === i ? "secondary" : "ghost"} className="w-full justify-start gap-3 h-12 px-4 transition-all text-left text-foreground" onClick={() => i < currentStep && setCurrentStep(i)}>
                                 <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>{i+1}</div>
                                 <span className="font-bold">{step.title}</span>
                             </Button>
