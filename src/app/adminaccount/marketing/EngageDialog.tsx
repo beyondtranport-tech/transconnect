@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -42,7 +41,7 @@ interface EngageDialogProps {
   onOpenChange: (open: boolean) => void;
   partners: any[]; 
   initialIndex?: number;
-  audience: "partners" | "isa" | "transporters" | "suppliers" | "investors" | "developers" | "drivers" | "finance" | "associates";
+  audience: string;
   onEngageSuccess?: () => void;
 }
 
@@ -86,29 +85,31 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const audienceLabel = useMemo(() => {
     if (audience === 'isa') return 'ISA Agent';
-    if (audience === 'suppliers') return 'Supplier';
-    if (audience === 'transporters') return currentPartner?.industrial_category || 'Transporter';
-    if (audience === 'drivers') return 'Professional Driver';
+    if (audience === 'suppliers' || audience === 'supplier') return 'Supplier';
+    if (audience === 'transporters' || audience === 'transporter') return currentPartner?.industrial_category || 'Transporter';
+    if (audience === 'drivers' || audience === 'driver') return 'Professional Driver';
     if (audience === 'finance') return 'Finance Partner';
-    if (audience === 'associates') return 'Associate';
-    return audience.slice(0, -1).charAt(0).toUpperCase() + audience.slice(1, -1);
+    if (audience === 'associates' || audience === 'associate') return 'Associate';
+    return audience.charAt(0).toUpperCase() + audience.slice(1);
   }, [audience, currentPartner]);
 
   const Offer = useMemo(() => {
-    if (audience === 'investors' || audience === 'finance') return InvestorOffer;
-    if (audience === 'developers') return DeveloperOffer;
-    if (audience === 'suppliers') return SupplierOffer;
-    if (audience === 'transporters') return TransporterOffer;
-    if (audience === 'associates') return AssociateOffer;
+    const aud = audience.toLowerCase();
+    if (aud.includes('investor') || aud === 'finance') return InvestorOffer;
+    if (aud.includes('developer')) return DeveloperOffer;
+    if (aud.includes('supplier')) return SupplierOffer;
+    if (aud.includes('transporter')) return TransporterOffer;
+    if (aud.includes('associate')) return AssociateOffer;
     return PartnerOffer;
   }, [audience]);
 
   const Emails = useMemo(() => {
-    if (audience === 'investors' || audience === 'finance') return InvestorOffer;
-    if (audience === 'developers') return DeveloperOffer;
-    if (audience === 'suppliers') return SupplierOffer;
-    if (audience === 'transporters') return TransporterEmails;
-    if (audience === 'associates') return AssociateEmails;
+    const aud = audience.toLowerCase();
+    if (aud.includes('investor') || aud === 'finance') return InvestorEmails;
+    if (aud.includes('developer')) return DeveloperEmails;
+    if (aud.includes('supplier')) return SupplierEmails;
+    if (aud.includes('transporter')) return TransporterEmails;
+    if (aud.includes('associate')) return AssociateEmails;
     return PartnerEmails;
   }, [audience]);
 
