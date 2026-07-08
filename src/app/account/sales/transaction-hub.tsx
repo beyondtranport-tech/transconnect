@@ -113,7 +113,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
         }
     };
 
-    if (isSaleLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" /></div>;
+    if (isSaleLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin text-primary mx-auto" /><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">Initializing Handshake...</p></div>;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
@@ -126,7 +126,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
 
             <Card className="shadow-2xl border-none overflow-hidden text-left">
                 <CardHeader className="bg-slate-900 text-white p-8 text-left">
-                    <div className="flex justify-between items-start text-left">
+                    <div className="flex justify-between items-start text-left text-white">
                         <div className="text-left text-white">
                             <CardTitle className="text-3xl font-black font-headline text-white">{vehicle.year} {vehicle.make} {vehicle.model}</CardTitle>
                             <CardDescription className="text-slate-400 mt-1">HANDSHAKE ID: <span className="font-mono">{saleId}</span></CardDescription>
@@ -157,7 +157,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                         {currentStep === 0 && (
                             <div className="space-y-6 text-left">
                                 <div className="p-6 bg-primary/5 border-2 border-primary/20 rounded-3xl space-y-6 text-left">
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 text-left text-foreground">
                                         <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Negotiation</h3>
                                         <p className="text-sm text-muted-foreground">Submit your offer to the seller. Locking the price initiates the legal documentation phase.</p>
                                     </div>
@@ -182,7 +182,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 <Alert className="bg-amber-50 border-amber-200 p-6 rounded-2xl">
                                     <Landmark className="h-6 w-6 text-amber-600" />
                                     <div className="ml-2 text-left">
-                                        <AlertTitle className="font-black text-lg text-amber-900 text-left">Capital Commitment Required</AlertTitle>
+                                        <AlertTitle className="font-black text-lg text-amber-900">Capital Commitment Required</AlertTitle>
                                         <AlertDescription className="text-sm text-amber-800 leading-relaxed mt-1 text-left">
                                             Price is locked at **{formatCurrency(sale.agreedPrice)}**. {isSeller ? 'Awaiting buyer payment or finance approval.' : 'Finalize payment or trigger a finance mall enquiry to move to documentation.'}
                                         </AlertDescription>
@@ -190,9 +190,9 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 </Alert>
                                 {!isSeller && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`} className="block group">
+                                        <Link href={`/funding/apply?type=vehicles&amount=${sale.agreedPrice}&vehicleId=${vehicle.id}&origination=market`}>
                                             <Card className="border-2 border-primary/20 hover:border-primary transition-colors cursor-pointer h-full">
-                                                <CardContent className="p-6 space-y-2 text-left">
+                                                <CardContent className="p-6 space-y-2 text-left text-foreground">
                                                     <div className="bg-primary/10 p-2 rounded-lg w-fit group-hover:bg-primary group-hover:text-white transition-colors"><Landmark className="h-5 w-5" /></div>
                                                     <p className="font-black text-sm uppercase text-left">Apply for Finance</p>
                                                     <p className="text-xs text-muted-foreground leading-tight text-left">Broadcast this transaction to our specialized lending network.</p>
@@ -215,27 +215,27 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
 
                         {currentStep >= 2 && (
                             <div className="space-y-6 text-left text-foreground">
-                                <div className="space-y-4 text-left text-foreground">
+                                <div className="space-y-4 text-left">
                                     <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left"><FileCheck className="h-6 w-6 text-primary" /> Transaction Document Vault</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                                         <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2" onClick={() => toast({ title: "OTP Generated", description: "Offer to Purchase is ready for download." })}>
                                             <div className="bg-blue-100 p-2 rounded-lg"><FileText className="h-5 w-5 text-blue-600" /></div>
-                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase">Offer to Purchase</p><p className="text-[10px] text-muted-foreground text-left">Legally Binding Contract</p></div>
+                                            <div className="text-left"><p className="font-black text-xs uppercase">Offer to Purchase</p><p className="text-[10px] text-muted-foreground">Legally Binding Contract</p></div>
                                         </Button>
                                         <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2" onClick={() => toast({ title: "Invoice Generated", description: "VAT Invoice has been isolated." })}>
                                             <div className="bg-green-100 p-2 rounded-lg"><Banknote className="h-5 w-5 text-green-600" /></div>
-                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground text-left">Financial Settlement Record</p></div>
+                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground">Financial Settlement Record</p></div>
                                         </Button>
                                     </div>
                                 </div>
                                 
                                 {currentStatus === 'paid' && (
                                     <div className="p-6 bg-green-50 border-2 border-green-200 rounded-3xl space-y-4 text-left">
-                                        <div className="flex items-center gap-3 text-left text-foreground">
+                                        <div className="flex items-center gap-3 text-left">
                                             <ShieldCheck className="h-6 w-6 text-green-600" />
                                             <p className="font-black text-green-900">Funds Secured in Escrow</p>
                                         </div>
-                                        <p className="text-sm text-green-800 leading-relaxed text-left">The platform has secured the full amount. Seller must now coordinate delivery and the buyer must confirm receipt to release funds.</p>
+                                        <p className="text-sm text-green-800 leading-relaxed text-left text-foreground">The platform has secured the full amount. Seller must now coordinate delivery and the buyer must confirm receipt to release funds.</p>
                                         <Button className="w-full h-12 bg-green-600 font-bold" onClick={() => handleAction('confirm_delivery')}>Confirm Physical Delivery</Button>
                                     </div>
                                 )}
@@ -245,13 +245,13 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                         <Separator />
 
                         <div className="space-y-4 text-left text-foreground">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 text-left">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                                 <MessageSquare className="h-4 w-4 text-primary" />
                                 Handshake Direct Chat
                             </h4>
-                            <div className="bg-slate-50 border rounded-3xl p-6 h-80 flex flex-col shadow-inner text-left">
+                            <div className="bg-slate-50 border rounded-3xl p-6 h-80 flex flex-col shadow-inner text-left text-foreground">
                                 <ScrollArea className="flex-1 pr-4 text-left">
-                                    <div className="space-y-4 text-left text-foreground">
+                                    <div className="space-y-4 text-left">
                                         {messages?.map((msg: any) => (
                                             <div key={msg.id} className={cn("flex flex-col", msg.senderId === user.uid ? "items-end" : "items-start")}>
                                                 <div className={cn("px-4 py-2 rounded-2xl text-sm shadow-sm", msg.senderId === user.uid ? "bg-primary text-white rounded-br-none" : "bg-white border rounded-bl-none")}>
@@ -277,8 +277,8 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                     </CardContent>
                 </div>
 
-                <CardFooter className="bg-slate-50 border-t p-8 flex justify-between items-center text-left text-foreground">
-                    <div className="flex gap-4 text-left">
+                <CardFooter className="bg-slate-50 border-t p-8 flex justify-between items-center text-left">
+                    <div className="flex gap-4">
                         <Button variant="ghost" size="sm" className="gap-2 font-black text-[10px] uppercase tracking-widest text-muted-foreground"><Info className="h-3.5 w-3.5"/> Handshake Integrity Shield Active</Button>
                     </div>
                     {currentStatus === 'concluded' && (

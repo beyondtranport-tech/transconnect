@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
-                const staff = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const staff = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: staff.map(serializeTimestamps) });
             }
 
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
 
             case 'getStaff': {
                 const snap = await db.collectionGroup('staff').get();
-                const staff = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const staff = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: staff.map(serializeTimestamps) });
             }
 
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
                 } else {
                     snap = await db.collection('partners').where('type', '==', type).get();
                 }
-                const partners = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const partners = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: partners.map(serializeTimestamps) });
             }
 
@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
 
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(500).get();
-                const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const logs = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
             }
 

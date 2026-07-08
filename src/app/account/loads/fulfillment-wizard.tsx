@@ -93,15 +93,15 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 text-left">
-            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground">
+            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-left">
                 <ArrowLeft className="h-4 w-4" /> Back to Instruction
             </Button>
 
-            <Card className="shadow-2xl border-none overflow-hidden text-left">
+            <Card className="shadow-2xl border-none overflow-hidden text-left bg-white">
                 <CardHeader className="bg-slate-900 text-white p-10 text-left">
                     <div className="flex justify-between items-start text-left">
                         <div className="text-left text-white">
-                            <CardTitle className="text-3xl font-black font-headline flex items-gap-3 text-white">
+                            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white text-left">
                                 <CheckCircle className="h-10 w-10 text-primary" />
                                 Work Fulfillment Gateway
                             </CardTitle>
@@ -112,14 +112,14 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                     </div>
                 </CardHeader>
                 
-                <CardContent className="p-10 space-y-10 bg-white text-left">
+                <CardContent className="p-10 space-y-10 bg-white text-left text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                         <div className="space-y-6 text-left">
                             <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
                                 <FileUp className="h-6 w-6 text-primary" />
                                 1. Proof of Delivery (POD)
                             </h3>
-                            <p className="text-sm text-muted-foreground leading-relaxed text-left">
+                            <p className="text-sm text-muted-foreground leading-relaxed text-left text-foreground">
                                 Fulfillment is only authorized once a clear scan or photo of the signed delivery note is uploaded to the platform ledger.
                             </p>
                             
@@ -128,7 +128,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                     <div className="text-center space-y-2">
                                         <ShieldCheck className="h-12 w-12 text-green-600 mx-auto" />
                                         <p className="text-sm font-bold text-green-700 uppercase text-center">POD Captured</p>
-                                        <Button variant="link" asChild className="text-xs">
+                                        <Button variant="link" asChild className="text-xs text-center">
                                             <a href={podUrl} target="_blank" rel="noopener noreferrer">View Uploaded Doc</a>
                                         </Button>
                                     </div>
@@ -155,8 +155,8 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                             </h3>
                             <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left">
                                 <div className="space-y-1 text-left">
-                                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Expected Haulier Payout</p>
-                                    <p className="text-4xl font-black text-primary">{formatCurrency(load.haulierPayout)}</p>
+                                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-left">Expected Haulier Payout</p>
+                                    <p className="text-4xl font-black text-primary text-left">{formatCurrency(load.haulierPayout)}</p>
                                 </div>
                                 <Separator className="bg-white/10" />
                                 <div className="text-xs text-slate-400 leading-relaxed text-left">
@@ -167,7 +167,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                             <Alert className="bg-blue-50 border-blue-200 text-left">
                                 <Zap className="h-4 w-4 text-blue-600" />
                                 <div className="text-left ml-2">
-                                    <AlertTitle className="text-blue-900 font-bold text-left">Factoring Available</AlertTitle>
+                                    <AlertTitle className="text-blue-900 font-bold">Factoring Available</AlertTitle>
                                     <AlertDescription className="text-blue-800 text-xs mt-1 text-left">
                                         This load is **Factoring Ready**. Once POD is uploaded, you can request an immediate 75% advance from the Finance Division.
                                     </AlertDescription>

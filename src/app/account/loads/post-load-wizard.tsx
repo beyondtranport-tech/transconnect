@@ -139,11 +139,11 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                         ))}
                     </div>
                     <FormProvider {...methods}>
-                        <div className="space-y-8 min-h-[450px] text-left">
+                        <div className="space-y-8 min-h-[450px] text-left text-foreground">
                             {currentStep === 0 && (
-                                <div className="space-y-8 text-left text-foreground">
+                                <div className="space-y-8 text-left">
                                      <FormField control={methods.control} name="loadType" render={({ field }) => (
-                                        <FormItem className="space-y-4 text-left text-foreground">
+                                        <FormItem className="space-y-4 text-left">
                                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Select Flow Segment</FormLabel>
                                             <FormControl>
                                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 gap-4 text-left">
@@ -182,7 +182,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 1 && (
-                                <div className="space-y-6 text-left text-foreground">
+                                <div className="space-y-6 text-left">
                                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground text-left"><MapPin className="h-5 w-5 text-primary" /> Corridor Logistics</h3>
                                     <div className="grid grid-cols-2 gap-4 text-left">
                                         <FormField control={methods.control} name="origin" render={({ field }) => (
@@ -208,24 +208,24 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
                             
                             {currentStep === 2 && (
-                                <div className="space-y-6 text-left text-foreground">
+                                <div className="space-y-6 text-left">
                                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground text-left"><ClipboardList className="h-5 w-5 text-primary" /> Execution Specifics</h3>
-                                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-                                        <FormField control={methods.control} name="collectionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Collection Date</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="deliveryDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Target Delivery</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                    <div className="grid grid-cols-2 gap-4 text-left">
+                                        <FormField control={methods.control} name="collectionDate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Collection Date</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="deliveryDate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Target Delivery</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                     <FormField control={methods.control} name="collectionDetails" render={({ field }) => (
-                                        <FormItem className="text-left"><FormLabel>Collection Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise pickup location..." {...field} className="bg-white" /></FormControl></FormItem>
+                                        <FormItem className="text-left text-foreground"><FormLabel>Collection Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise pickup location..." {...field} className="bg-white" /></FormControl></FormItem>
                                     )} />
                                     <FormField control={methods.control} name="deliveryDetails" render={({ field }) => (
-                                        <FormItem className="text-left"><FormLabel>Delivery Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise offload location..." {...field} className="bg-white" /></FormControl></FormItem>
+                                        <FormItem className="text-left text-foreground"><FormLabel>Delivery Full Address & Contact</FormLabel><FormControl><Textarea placeholder="Precise offload location..." {...field} className="bg-white" /></FormControl></FormItem>
                                     )} />
                                 </div>
                             )}
 
                             {currentStep === 3 && (
-                                <div className="space-y-6 text-left text-foreground">
-                                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                                <div className="space-y-6 text-left">
+                                    <div className="grid grid-cols-2 gap-4 text-left">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
                                                 <FormLabel>Cargo Classification</FormLabel>
@@ -235,10 +235,10 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                                 </Select>
                                             </FormItem>
                                         )} />
-                                        <FormField control={methods.control} name="weight" render={({ field }) => (<FormItem className="text-left"><FormLabel>Tonnage (Tons)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="weight" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Tonnage (Tons)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                     <div className="space-y-3 text-left">
-                                        <Label className="font-bold text-foreground text-left">Required Equipment</Label>
+                                        <Label className="font-bold text-foreground">Required Equipment</Label>
                                         <div className="grid grid-cols-2 gap-2 text-left">
                                             {equipmentOptions.map(opt => (
                                                 <FormField key={opt} control={methods.control} name="requiredEquipment" render={({ field }) => (
@@ -272,7 +272,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                     
                                     <div className="bg-slate-50 p-8 rounded-3xl border-2 border-dashed space-y-4 text-left">
                                         <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4 text-left">Clearing Logic</h4>
-                                        <div className="space-y-3 text-left text-sm">
+                                        <div className="space-y-3 text-left text-sm text-foreground">
                                             <div className="flex justify-between"><span>Your Net Earning</span><span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span></div>
                                             <div className="flex justify-between"><span>Platform Fee (2.5%)</span><span className="font-bold">{formatCurrency(commercials.platformFee)}</span></div>
                                             <Separator />
@@ -283,10 +283,10 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 5 && (
-                                <div className="space-y-6 text-center py-10 text-left">
+                                <div className="space-y-6 text-center py-10">
                                     <CheckCircle className="h-16 w-16 mx-auto text-primary" />
                                     <div className="space-y-2 text-center text-foreground">
-                                        <h3 className="text-2xl font-black text-center">Audit Verified</h3>
+                                        <h3 className="text-2xl font-black">Audit Verified</h3>
                                         <p className="text-sm text-muted-foreground max-sm mx-auto text-center">This load will be broadcasted to the specialized {methods.watch('loadType') === 'local_distribution' ? 'Distribution' : 'Transport'} fleet registry.</p>
                                     </div>
                                 </div>
@@ -296,7 +296,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                 </div>
             </CardContent>
             <CardFooter className="p-8 bg-slate-50 border-t flex justify-between text-left">
-                <Button variant="ghost" onClick={currentStep === 0 ? onComplete : () => setCurrentStep(prev => prev - 1)}><ArrowLeft className="mr-2 h-4 w-4"/> {currentStep === 0 ? 'Cancel' : 'Back'}</Button>
+                <Button variant="ghost" onClick={currentStep === 0 ? onComplete : () => setCurrentStep(prev => prev - 1)} className="text-foreground"><ArrowLeft className="mr-2 h-4 w-4"/> {currentStep === 0 ? 'Cancel' : 'Back'}</Button>
                 {currentStep < 5 ? (
                     <Button onClick={handleNext}>Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
                 ) : (
