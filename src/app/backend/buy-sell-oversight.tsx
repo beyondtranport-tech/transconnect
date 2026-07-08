@@ -84,6 +84,8 @@ export default function BuySellOversight() {
         setIsActionLoading(sale.id);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
             await fetchFromAdminAPI(token, 'finalizeSale', { 
                 saleId: sale.id,
                 commissionRate: sale.commissionRate || 2.5
@@ -102,7 +104,8 @@ export default function BuySellOversight() {
         setIsActionLoading(negotiateSale.id);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) return;
+            if (!token) throw new Error("Authentication failed.");
+            
             await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

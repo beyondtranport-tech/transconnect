@@ -67,6 +67,8 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
         if (!chatMessage.trim()) return;
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication failed.");
+            
             await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -83,6 +85,8 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
         setIsProcessing(true);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+            
             const data: any = { updatedAt: serverTimestamp() };
             
             if (action === 'negotiate') {

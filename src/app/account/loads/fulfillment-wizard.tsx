@@ -36,6 +36,8 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
         setProgress(10);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+            
             const reader = new FileReader();
             const dataUri = await new Promise<string>(res => {
                 reader.onload = () => res(reader.result as string);

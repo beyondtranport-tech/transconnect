@@ -759,7 +759,7 @@ function StepCommercials({ shop }: { shop: any }) {
 
             {agreements && agreements.length > 0 && (
                 <div className="space-y-4 text-left text-foreground">
-                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left text-foreground">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left text-foreground text-foreground text-foreground">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -1293,7 +1293,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full text-foreground gap-3 text-center">
-                                    <Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Initializing Terminal Module...</p>
                                 </div>
                             )}

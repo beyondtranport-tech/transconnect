@@ -85,6 +85,8 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+            
             const res = await fetch('/api/addUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
