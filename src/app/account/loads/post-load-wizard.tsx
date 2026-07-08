@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -254,8 +253,18 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             {currentStep === 4 && (
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
-                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel><FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (<FormItem className="text-left"><FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel><FormControl><Input type="number" className="bg-white" {...field} /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="totalValue" render={({ field }) => (
+                                            <FormItem className="text-left">
+                                                <FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel>
+                                                <FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl>
+                                            </FormItem>
+                                        )} />
+                                        <FormField control={methods.control} name="brokerMargin" render={({ field }) => (
+                                            <FormItem className="text-left">
+                                                <FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel>
+                                                <FormControl><Input type="number" className="bg-white" {...field} /></FormControl>
+                                            </FormItem>
+                                        )} />
                                     </div>
                                     
                                     <div className="bg-slate-50 p-8 rounded-3xl border-2 border-dashed space-y-4 text-left">

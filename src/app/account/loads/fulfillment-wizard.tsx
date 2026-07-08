@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -49,7 +48,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 body: JSON.stringify({ 
                     fileDataUri: dataUri, 
                     folder: `pods/${user.companyId}`, 
-                    fileName: `POD_${load.instructionNumber}_${Date.now()}.pdf` 
+                    fileName: `POD_${load.instructionNumber || Date.now()}_${Date.now()}.pdf` 
                 })
             });
             const result = await response.json();
@@ -105,7 +104,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 Work Fulfillment Gateway
                             </CardTitle>
                             <CardDescription className="text-slate-400 text-lg mt-2 text-left">
-                                Close the loop for Instruction <strong>{load.instructionNumber}</strong>
+                                Close the loop for Instruction <strong>{load.instructionNumber || 'REF-PENDING'}</strong>
                             </CardDescription>
                         </div>
                     </div>

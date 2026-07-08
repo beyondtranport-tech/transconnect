@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -196,7 +195,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                                 </CardContent>
                                             </Card>
                                         </Link>
-                                        <div className="cursor-pointer" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
+                                        <div className="cursor-pointer h-full" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
                                             <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors h-full">
                                                 <CardContent className="p-6 space-y-2 text-left">
                                                     <div className="bg-slate-100 p-2 rounded-lg w-fit"><Banknote className="h-5 w-5" /></div>

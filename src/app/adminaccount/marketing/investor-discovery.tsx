@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -60,7 +59,7 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
     const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
     const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
-    const prompt = useMemo(() => generateDiscoveryPrompt(category, startSeq), [category, startSeq]);
+    const prompt = useMemo(() => generateInvestorPrompt(category, startSeq), [category, startSeq]);
 
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);

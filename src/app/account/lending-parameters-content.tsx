@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -279,7 +278,7 @@ export default function LendingParametersContent() {
                         </TabsContent>
 
                         <TabsContent value="risk" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left text-foreground">
-                             <Card className="text-left text-foreground text-left text-foreground">
+                             <Card className="text-left text-foreground">
                                 <CardHeader className="border-b bg-muted/20 text-left">
                                     <CardTitle className="text-lg flex items-center gap-2 text-left text-foreground">
                                         <ShieldCheck className="h-5 w-5 text-primary"/> 
@@ -298,7 +297,7 @@ export default function LendingParametersContent() {
                                         <div className="space-y-4 text-left">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Minimum Annual Turnover (R)</Label>
                                             <FormField control={form.control} name="minAnnualTurnover" render={({ field }) => (
-                                                <FormItem className="text-left text-foreground text-foreground"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2" /></FormControl></FormItem>
+                                                <FormItem className="text-left text-foreground"><FormControl><Input type="number" placeholder="e.g. 1000000" {...field} className="border-2" /></FormControl></FormItem>
                                             )} />
                                         </div>
                                     </div>
@@ -353,7 +352,7 @@ export default function LendingParametersContent() {
                         </TabsContent>
 
                         <TabsContent value="portfolio" className="mt-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 text-left text-foreground">
-                             <Card className="text-left text-foreground text-left text-foreground">
+                             <Card className="text-left text-foreground">
                                 <CardHeader className="border-b bg-muted/20 text-left">
                                     <CardTitle className="text-lg flex items-center gap-2 text-left text-foreground"><Tag className="h-5 w-5 text-primary"/> Specialized Product Focus</CardTitle>
                                     <CardDescription className="text-left">Target specific industrial categories and forensic tags derived from registry notes.</CardDescription>

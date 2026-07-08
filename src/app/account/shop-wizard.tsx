@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -1020,7 +1019,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     const handleMultiUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || !shop) return;
-        const urls: string[] = [...(form.getValues('photoUrls') || [])];
+        const urls: any[] = [...(form.getValues('photoUrls') || [])];
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const token = await getClientSideAuthToken();
