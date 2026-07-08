@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -107,15 +106,15 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left text-foreground">
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company / Identity Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     <FormField control={form.control} name="contactPerson" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Full Contact Name (Decision Maker)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
 
                     <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website</FormLabel><FormControl><Input placeholder="https://..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
@@ -203,7 +202,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       const dataToExport = filteredRecords.map(p => {
           const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://logisticsflow.co.za';
           const handshakeUrl = `${baseUrl}/opt-in/${p.id}`;
-          const directJoinUrl = `${baseUrl}/join?email=${encodeURIComponent(p.email || '')}&ref=${user?.companyId || 'SYSTEM'}`;
+          const directJoinUrl = `${baseUrl}/join?email=${encodeURIComponent(p.email || p.email_address || '')}&ref=${user?.companyId || 'SYSTEM'}`;
 
           if (format === 'SendGrid') {
               return {
@@ -244,8 +243,8 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
             <div className="flex flex-col text-left">
                 <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                 <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
-                    {row.original.website && <Globe className="h-3 w-3 text-primary" />}
+                    <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
+                    {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
                     <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
                 </div>
             </div>
@@ -342,7 +341,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                         <div className="space-y-1">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Status</Label>
                             <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="none">No Outreach Yet</SelectItem>
@@ -352,7 +351,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                         <div className="space-y-1">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="new">New Lead</SelectItem>
@@ -363,7 +362,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                         <div className="space-y-1">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
                             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Staff</SelectItem>
                                     <SelectItem value="none">Unallocated</SelectItem>
@@ -389,7 +388,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       ) : (
             <div className="space-y-6 text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left">Full database view ({allRecords.length} records).</CardDescription></div>
+                    <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left">Full database view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2"><RotateCcw className="h-4 w-4" /> New Search</Button>
                         
@@ -397,8 +396,8 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className="gap-2"><Download className="h-4 w-4" /> Export</Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2 text-left">
-                                <div className="space-y-1">
+                            <PopoverContent className="w-56 p-2 text-left text-foreground">
+                                <div className="space-y-1 text-left text-foreground">
                                     <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                                     <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                                 </div>
@@ -411,8 +410,8 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                 </CardHeader>
                 <Card className="text-left">
                     <CardContent className="pt-6 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                            <div className="space-y-1">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                            <div className="space-y-1 text-left text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="h-9 bg-white text-xs"><SelectValue placeholder="All Statuses" /></SelectTrigger>
@@ -423,10 +422,10 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
@@ -434,10 +433,10 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Send className="h-3 w-3"/> Outreach</Label>
+                            <div className="space-y-1 text-left text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>

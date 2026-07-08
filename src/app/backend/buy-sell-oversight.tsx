@@ -243,7 +243,7 @@ export default function BuySellOversight() {
 
             {error ? (
                 <Card className="border-destructive bg-destructive/5 text-left">
-                    <CardContent className="p-8 text-center space-y-4">
+                    <CardContent className="p-8 text-center space-y-4 text-foreground">
                         <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
                         <div className="space-y-1">
                             <h3 className="font-bold text-destructive">Registry Connection Failed</h3>
@@ -270,7 +270,7 @@ export default function BuySellOversight() {
                                     <Handshake className="h-5 w-5 text-primary" />
                                     Active Handshakes
                                 </CardTitle>
-                                <CardDescription className="text-left">Reviewing price negotiations and finance division triggers.</CardDescription>
+                                <CardDescription className="text-left text-foreground">Reviewing price negotiations and finance division triggers.</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6 text-left">
                                 {isLoading ? <div className="flex justify-center p-20 text-left"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /></div> : <DataTable columns={saleColumns} data={sales} />}
@@ -281,7 +281,7 @@ export default function BuySellOversight() {
                     <TabsContent value="inventory" className="mt-8 text-left text-foreground">
                         <Card className="border-none shadow-xl text-left">
                             <CardHeader className="border-b bg-muted/10 text-left">
-                                <CardTitle className="text-lg flex items-center gap-2 text-left">
+                                <CardTitle className="text-lg flex items-center gap-2 text-left text-foreground">
                                     <Database className="h-5 w-5 text-primary" />
                                     National Vehicle Registry
                                 </CardTitle>

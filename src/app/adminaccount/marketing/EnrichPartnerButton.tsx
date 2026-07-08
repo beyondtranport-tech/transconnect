@@ -114,13 +114,13 @@ REQUIRED FORMAT:
             </Button>
 
             <Dialog open={isOpen} onOpenChange={(o) => !isLogging && setIsOpen(o)}>
-                <DialogContent className="sm:max-w-xl text-left">
+                <DialogContent className="sm:max-w-xl text-left text-foreground">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-left">
                             <Sparkles className="h-5 w-5 text-primary" />
                             Forensic Gap-Analysis
                         </DialogTitle>
-                        <DialogDescription className="text-left">
+                        <DialogDescription className="text-left text-foreground">
                             Command the AI to bridge missing data for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>

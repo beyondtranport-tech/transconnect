@@ -92,13 +92,13 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
 
     return (
         <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 text-left">
-            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-left">
+            <Button variant="ghost" onClick={onBack} className="gap-2 text-muted-foreground text-left text-foreground">
                 <ArrowLeft className="h-4 w-4" /> Back to Instruction
             </Button>
 
             <Card className="shadow-2xl border-none overflow-hidden text-left bg-white">
                 <CardHeader className="bg-slate-900 text-white p-10 text-left">
-                    <div className="flex justify-between items-start text-left">
+                    <div className="flex justify-between items-start text-left text-foreground">
                         <div className="text-left text-white">
                             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white text-left">
                                 <CheckCircle className="h-10 w-10 text-primary" />

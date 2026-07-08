@@ -120,7 +120,7 @@ export default function InvestorDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         App Launch Investor Discovery
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground text-foreground text-left">Identify foundational partners for the platform equity launch.</CardDescription>
+                    <CardDescription className="text-muted-foreground text-left text-muted-foreground text-foreground text-left">Identify foundational partners for the platform equity launch.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">

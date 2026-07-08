@@ -1,13 +1,15 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, Database, Sparkles } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { Loader2, Database, Sparkles, Send, Mail, Download, Upload, RotateCcw, Search, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { downloadDataAsCSV, cn } from '@/lib/utils';
 
 // Content components
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -44,6 +46,8 @@ const BuySellDiscovery = dynamic(() => import('@/app/adminaccount/marketing/buy-
 
 // Management (CRM)
 import PartnerManagement from '@/app/adminaccount/marketing/partner-management';
+import ForensicBridge from '@/app/adminaccount/marketing/ForensicBridge';
+import AudienceOversightTable from '@/app/adminaccount/marketing/AudienceOversightTable';
 
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, type: 'partner' },
@@ -75,14 +79,14 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const { Offer, Emails, Management, Discovery, type } = config;
 
   return (
-    <div className="space-y-6 text-left">
-        <div className="text-left">
-            <h1 className="text-3xl font-black font-headline text-left">{config.title} Command Hub</h1>
-            <p className="text-muted-foreground text-left">Build your dataset, discover new participants, and manage engagement.</p>
+    <div className="space-y-6 text-left text-foreground">
+        <div className="text-left text-foreground">
+            <h1 className="text-3xl font-black font-headline text-left text-foreground">{config.title} Command Hub</h1>
+            <p className="text-muted-foreground text-left">Manage your dataset, bridge gaps with AI, and oversee industrial engagement.</p>
         </div>
 
-        <Tabs defaultValue="company-profile" className="w-full text-left" onValueChange={setActiveTab}>
-            <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left">
+        <Tabs value={activeTab} className="w-full text-left" onValueChange={setActiveTab}>
+            <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
                 <TabsTrigger value="company-profile">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture">Tech</TabsTrigger>
                 <TabsTrigger value="revenue-model">Revenue</TabsTrigger>
@@ -92,9 +96,11 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <TabsTrigger value="emails">Emails</TabsTrigger>
                 {Management && <TabsTrigger value="management" className="gap-2"><Database className="h-3.5 w-3.5" /> Registry (CRM)</TabsTrigger>}
                 {Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5" /> Discovery (AI)</TabsTrigger>}
+                <TabsTrigger value="bridge" className="gap-2 text-primary"><Zap className="h-3.5 w-3.5" /> Forensic Bridge</TabsTrigger>
+                <TabsTrigger value="oversight" className="gap-2"><Search className="h-3.5 w-3.5" /> Oversight</TabsTrigger>
             </TabsList>
 
-            <div className="mt-6 text-left">
+            <div className="mt-6 text-left text-foreground">
                 <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
                 <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left"><TechArchitecture /></CardContent></Card></TabsContent>
                 <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left"><RevenueModel /></CardContent></Card></TabsContent>
@@ -118,6 +124,18 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                         </div>
                     </TabsContent>
                 )}
+
+                <TabsContent value="bridge">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
+                        <ForensicBridge audience={audience} />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="oversight">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
+                        <AudienceOversightTable audience={audience} />
+                    </div>
+                </TabsContent>
             </div>
         </Tabs>
     </div>

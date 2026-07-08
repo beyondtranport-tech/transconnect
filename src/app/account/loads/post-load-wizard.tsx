@@ -129,7 +129,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                 <CardDescription className="text-slate-400 text-left">Post verified freight instructions to the specialized haulier network.</CardDescription>
             </CardHeader>
             <CardContent className="p-8 bg-white text-foreground">
-                <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8 text-left">
                     <div className="space-y-2 border-r pr-4 text-left">
                         {steps.map((step, i) => (
                             <Button key={step.id} variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left text-foreground", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(i)}>
@@ -182,7 +182,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 1 && (
-                                <div className="space-y-6 text-left">
+                                <div className="space-y-6 text-left text-foreground">
                                     <h3 className="font-bold text-lg flex items-center gap-2 text-foreground text-left"><MapPin className="h-5 w-5 text-primary" /> Corridor Logistics</h3>
                                     <div className="grid grid-cols-2 gap-4 text-left">
                                         <FormField control={methods.control} name="origin" render={({ field }) => (
@@ -224,7 +224,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                             )}
 
                             {currentStep === 3 && (
-                                <div className="space-y-6 text-left">
+                                <div className="space-y-6 text-left text-foreground text-foreground">
                                     <div className="grid grid-cols-2 gap-4 text-left">
                                         <FormField control={methods.control} name="cargoType" render={({ field }) => (
                                             <FormItem className="text-left text-foreground">
@@ -257,13 +257,13 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                 <div className="space-y-8 text-left text-foreground">
                                     <div className="grid grid-cols-2 gap-6 text-left">
                                         <FormField control={methods.control} name="totalValue" render={({ field }) => (
-                                            <FormItem className="text-left">
+                                            <FormItem className="text-left text-foreground">
                                                 <FormLabel className="font-black text-primary uppercase text-[10px]">Gross Load Value (ZAR)</FormLabel>
                                                 <FormControl><Input type="number" className="h-12 text-xl font-mono bg-white" {...field} /></FormControl>
                                             </FormItem>
                                         )} />
                                         <FormField control={methods.control} name="brokerMargin" render={({ field }) => (
-                                            <FormItem className="text-left">
+                                            <FormItem className="text-left text-foreground">
                                                 <FormLabel className="font-black uppercase text-[10px]">Broker Participation (%)</FormLabel>
                                                 <FormControl><Input type="number" className="bg-white" {...field} /></FormControl>
                                             </FormItem>
@@ -273,10 +273,10 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                     <div className="bg-slate-50 p-8 rounded-3xl border-2 border-dashed space-y-4 text-left">
                                         <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4 text-left">Clearing Logic</h4>
                                         <div className="space-y-3 text-left text-sm text-foreground">
-                                            <div className="flex justify-between text-left"><span>Your Net Earning</span><span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span></div>
+                                            <div className="flex justify-between text-left text-foreground"><span>Your Net Earning</span><span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span></div>
                                             <div className="flex justify-between text-left"><span>Platform Fee (2.5%)</span><span className="font-bold">{formatCurrency(commercials.platformFee)}</span></div>
                                             <Separator />
-                                            <div className="flex justify-between text-lg font-black text-primary pt-2 text-left"><span>HAULIER PAYOUT</span><span>{formatCurrency(commercials.haulierPayout)}</span></div>
+                                            <div className="flex justify-between text-lg font-black text-primary pt-2 text-left text-foreground"><span>HAULIER PAYOUT</span><span>{formatCurrency(commercials.haulierPayout)}</span></div>
                                         </div>
                                     </div>
                                 </div>
@@ -287,7 +287,7 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                     <CheckCircle className="h-16 w-16 mx-auto text-primary" />
                                     <div className="space-y-2 text-center text-foreground">
                                         <h3 className="text-2xl font-black">Audit Verified</h3>
-                                        <p className="text-sm text-muted-foreground max-sm mx-auto text-center">This load will be broadcasted to the specialized {methods.watch('loadType') === 'local_distribution' ? 'Distribution' : 'Transport'} fleet registry.</p>
+                                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">This load will be broadcasted to the specialized {methods.watch('loadType') === 'local_distribution' ? 'Distribution' : 'Transport'} fleet registry.</p>
                                     </div>
                                 </div>
                             )}

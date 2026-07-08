@@ -1,14 +1,14 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Globe, RefreshCcw, Search, Sparkles, CheckCircle2, UserCheck, Smartphone } from 'lucide-react';
+import { Loader2, Globe, RefreshCcw, Search, Sparkles, CheckCircle2, UserCheck, Smartphone, Send, Database } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { formatDateSafe, cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 export default function AudienceOversightTable({ audience }: { audience: string }) {
     const [records, setRecords] = useState<any[]>([]);
@@ -41,13 +41,13 @@ export default function AudienceOversightTable({ audience }: { audience: string 
             header: 'Entity Name', 
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
-                    <span className="font-bold">{row.original.companyName || row.original.company_name || row.original.trading_name || `${row.original.firstName} ${row.original.lastName}`}</span>
-                    <span className="text-[10px] text-muted-foreground uppercase">{row.original.id}</span>
+                    <span className="font-bold text-foreground">{row.original.companyName || row.original.company_name || row.original.trading_name || `${row.original.firstName} ${row.original.lastName}`}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase font-mono">{row.original.id}</span>
                 </div>
             )
         },
         { 
-            header: 'Enrichment', 
+            header: 'Data Fidelity', 
             cell: ({row}) => (
                 <div className="flex items-center gap-2">
                     {row.original.website ? <Globe className="h-4 w-4 text-primary" /> : <Globe className="h-4 w-4 text-muted-foreground opacity-20" />}
@@ -57,60 +57,67 @@ export default function AudienceOversightTable({ audience }: { audience: string 
             )
         },
         { 
-            header: 'Read & Access', 
+            header: 'Interaction Tracking', 
             cell: ({row}) => (
                 <div className="flex flex-col gap-1 items-start">
                     {row.original.lastOpenedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 w-fit">
                             <UserCheck className="h-2.5 w-2.5" />
-                            Opened {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}
+                            Email Read {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}
                         </div>
                     )}
                     {row.original.lastAccessedAt && (
                         <div className="flex items-center gap-1 text-[9px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-100 w-fit">
                             <Smartphone className="h-2.5 w-2.5" />
-                            Accessed {formatDateSafe(row.original.lastAccessedAt, "dd/MM")}
+                            App Accessed {formatDateSafe(row.original.lastAccessedAt, "dd/MM")}
                         </div>
                     )}
                     {!row.original.lastOpenedAt && !row.original.lastAccessedAt && (
-                        <span className="text-[10px] text-muted-foreground italic">No activity</span>
+                        <span className="text-[10px] text-muted-foreground italic text-left">No engagement logs</span>
                     )}
                 </div>
             )
         },
         { 
-            header: 'CRM Status', 
+            header: 'Status', 
             cell: ({row}) => (
-                <div className="flex flex-col gap-1 items-start">
-                    <Badge variant="outline" className="capitalize text-[9px]">{row.original.status}</Badge>
+                <div className="flex flex-col gap-1 items-start text-left">
+                    <Badge variant="outline" className="capitalize text-[9px] font-black tracking-widest">{row.original.status}</Badge>
                 </div>
             )
         },
         { 
-            header: 'Allocation', 
+            header: 'Platform Staff', 
             cell: ({row}) => (
-                <div className="text-xs italic text-muted-foreground">
-                    {row.original.assigneeId ? 'Allocated' : 'Unassigned'}
+                <div className="text-xs italic text-muted-foreground text-left">
+                    {row.original.assigneeId ? 'Allocated Node' : 'Unassigned'}
                 </div>
             )
         },
     ];
 
     return (
-        <div className="space-y-4 text-left">
-             <div className="flex items-center justify-between text-left">
-                <div className="text-left">
-                    <h3 className="text-lg font-bold flex items-center gap-2"><Search className="h-5 w-5 text-primary" /> Forensic Oversight</h3>
-                    <p className="text-xs text-muted-foreground">Tracking engagement opens and landing pings for {audience}.</p>
+        <Card className="text-left shadow-xl border-none">
+             <CardHeader className="flex items-center justify-between flex-row text-left border-b bg-muted/20">
+                <div className="text-left text-foreground">
+                    <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2"><Database className="h-5 w-5 text-primary" /> Forensic Oversight Timeline</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">Tracking engagement opens and link landings for {audience}.</CardDescription>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
-                        <RefreshCcw className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} />
-                        Refresh Oversight
-                    </Button>
-                </div>
-            </div>
-            {isLoading ? <div className="flex justify-center p-12 text-left"><Loader2 className="animate-spin text-primary" /></div> : <DataTable columns={columns} data={records} />}
-        </div>
+                <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading} className="text-foreground">
+                    <RefreshCcw className={cn("h-3 w-3 mr-2", isLoading && "animate-spin")} />
+                    Refresh Feed
+                </Button>
+            </CardHeader>
+            <CardContent className="pt-6 text-left">
+                {isLoading ? (
+                    <div className="flex flex-col items-center justify-center p-20 gap-4 text-center text-foreground">
+                        <Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />
+                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Aggregating Interaction Logs...</p>
+                    </div>
+                ) : (
+                    <DataTable columns={columns} data={records} />
+                )}
+            </CardContent>
+        </Card>
     );
 }
