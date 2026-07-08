@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, CheckCircle, FileUp, ShieldCheck, Banknote, FileText, AlertTriangle, Zap } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, FileUp, ShieldCheck, Banknote, FileText, Zap } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { formatCurrency } from '@/lib/utils';
@@ -38,7 +38,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
         try {
             const token = await getClientSideAuthToken();
             const reader = new FileReader();
-            dataUri = await new Promise<string>(res => {
+            const dataUri = await new Promise<string>(res => {
                 reader.onload = () => res(reader.result as string);
                 reader.readAsDataURL(file);
             });
