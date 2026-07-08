@@ -196,6 +196,7 @@ function AdminAccountContent() {
   };
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
+  const isSocialActive = activeView.startsWith('social-');
   const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
@@ -234,7 +235,7 @@ function AdminAccountContent() {
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Marketing" isActive={isMarketingActive}><BookOpen /><span>Marketing Library</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Strategic Partners</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-partners'} onClick={() => navigate('marketing-partners')}>Partners</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-isa'} onClick={() => navigate('marketing-isa')}>ISA Agents</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-associates'} onClick={() => navigate('marketing-associates')}>Digital Associates</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-suppliers'} onClick={() => navigate('marketing-suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -249,7 +250,7 @@ function AdminAccountContent() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Social" isActive={activeView.startsWith('social-')}><Share2 /><span>Social</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -302,9 +303,7 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6 text-left">
-            <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-                {renderContent()}
-            </Suspense>
+            {renderContent()}
         </div>
     </SidebarInset>
     </SidebarProvider>

@@ -172,11 +172,12 @@ export async function POST(req: NextRequest) {
             case 'dispatchEngagement': {
                 const { partnerId, email, subject, html, audience } = payload;
                 
-                if (!process.env.SENDGRID_API_KEY) {
-                    throw new Error("SENDGRID_API_KEY is not configured on the server.");
+                const apiKey = process.env.SENDGRID_API_KEY;
+                if (!apiKey) {
+                    throw new Error("SENDGRID_API_KEY is not configured on the server. Please verify your .env file and restart the process.");
                 }
 
-                sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+                sgMail.setApiKey(apiKey);
 
                 const msg = {
                     to: email,
