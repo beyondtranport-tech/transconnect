@@ -113,7 +113,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 
                 <CardContent className="p-10 space-y-10 bg-white text-left text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                        <div className="space-y-6 text-left">
+                        <div className="space-y-6 text-left text-foreground">
                             <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
                                 <FileUp className="h-6 w-6 text-primary" />
                                 1. Proof of Delivery (POD)

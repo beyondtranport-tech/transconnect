@@ -100,8 +100,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   }, [audience]);
 
   const Emails = useMemo(() => {
-    if (audience === 'investors' || audience === 'finance') return InvestorEmails;
-    if (audience === 'developers') return DeveloperEmails;
+    if (audience === 'investors' || audience === 'finance') return InvestorOffer;
+    if (audience === 'developers') return DeveloperOffer;
     if (audience === 'suppliers') return SupplierOffer;
     if (audience === 'transporters') return TransporterEmails;
     if (audience === 'associates') return AssociateEmails;
@@ -322,7 +322,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
 
-                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground text-foreground">
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} version={handshakeVersion} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}

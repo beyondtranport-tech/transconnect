@@ -128,6 +128,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
+                const logs = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
+            }
+
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
                 const members = await Promise.all(snap.docs.map(async (docSnap: any) => {

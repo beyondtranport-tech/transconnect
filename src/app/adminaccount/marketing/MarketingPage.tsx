@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, Database, Sparkles, Send, Mail, Download, Upload, RotateCcw, Search, ChevronDown } from 'lucide-react';
+import { Loader2, Database, Sparkles, Send, Mail, Download, Upload, RotateCcw, Search, ChevronDown, Zap } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
