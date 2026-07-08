@@ -190,7 +190,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                 warehouse: 'Warehouse Hub',
                 transport: 'Fleet Node',
                 'buy-sell': 'Marketplace Profile',
-                supplier: 'Supplier Store'
+                supplier: 'Supplier Shop'
             };
             const label = labelMap[nodeType] || 'Node';
             setValue('shopName', `${user.displayName}'s ${label}`);
@@ -1045,7 +1045,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     };
 
     return (
-        <DialogContent className="sm:max-w-2xl text-left text-foreground text-foreground">
+        <DialogContent className="sm:max-w-2xl text-left text-foreground text-foreground text-foreground">
             <DialogHeader>
                 <DialogTitle className="text-left">{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription className="text-left">Attach verified documents and technical specifics.</DialogDescription>

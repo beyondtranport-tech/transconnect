@@ -54,7 +54,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
-  type: z.string(), // Dynamic type
+  type: z.string(), 
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
   notes: z.string().optional(),
   address: z.string().optional(),
@@ -235,53 +235,54 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
-    { 
-        accessorKey: 'companyName',
-        header: 'Entity Identity', 
-        cell: ({row}) => (
-            <div className="flex flex-col text-left">
-                <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                <div className="flex items-center gap-2 mt-1">
-                    <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
-                    {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
-                    <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
-                </div>
-            </div>
-        )
-    },
-    { 
-        accessorKey: 'contactPerson',
-        header: 'Account Lead',
-        cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
-    },
-    { accessorKey: 'email', header: 'Email' },
-    { 
-        header: 'Outreach Stage',
-        id: 'outreach',
-        accessorKey: 'lastOutreachSubject',
-        cell: ({ row }) => {
-            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-            return (
-                <div className="flex flex-col text-left">
-                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
-                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
-                    {row.original.lastOpenedAt && (
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                            <UserCheck className="h-2.5 w-2.5" /> Read
-                        </div>
-                    )}
-                </div>
-            );
-        }
-    },
-    { 
-        accessorKey: 'status', 
-        header: 'Status', 
-        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
-    },
-    { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end items-center gap-1 text-left">
+  const columns: ColumnDef<any>[] = useMemo(() => {
+    const cols: ColumnDef<any>[] = [
+      { 
+          accessorKey: 'companyName',
+          header: 'Entity Identity', 
+          cell: ({row}) => (
+              <div className="flex flex-col text-left">
+                  <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                  <div className="flex items-center gap-2 mt-1">
+                      <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
+                      {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
+                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
+                  </div>
+              </div>
+          )
+      },
+      { 
+          accessorKey: 'contactPerson',
+          header: 'Account Lead',
+          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
+      },
+      { accessorKey: 'email', header: 'Email' },
+      { 
+          header: 'Outreach Stage',
+          id: 'outreach',
+          accessorKey: 'lastOutreachSubject',
+          cell: ({ row }) => {
+              if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+              return (
+                  <div className="flex flex-col text-left">
+                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
+                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                      {row.original.lastOpenedAt && (
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
+                              <UserCheck className="h-2.5 w-2.5" /> Read
+                          </div>
+                      )}
+                  </div>
+              );
+          }
+      },
+      { 
+          accessorKey: 'status', 
+          header: 'Status', 
+          cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
+      },
+      { id: 'actions', header: 'Actions', cell: ({ row }) => (
+        <div className="flex justify-end items-center gap-1">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog 
@@ -295,9 +296,12 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
           <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
-      ) },
+      ) }
     ];
-    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
+    return cols.filter(c => {
+        const id = c.id || (c.accessorKey as string);
+        return visibleColumns[id];
+    });
   }, [type, fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
@@ -461,3 +465,4 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     </div>
   );
 }
+
