@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -99,7 +100,6 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     
-    // Stabilize check with primitive values to prevent loop
     const uid = user?.uid;
     const email = user?.email;
 
@@ -172,7 +172,7 @@ function AdminAccountContent() {
       case 'pricing-memberships': return <PricingManagement />;
       case 'pricing-connect': return <ConnectPlanPricing />;
       case 'pricing-tech': return <TechPricing />;
-      case 'pricing-marketplace': return < MarketplaceFees />;
+      case 'pricing-marketplace': return <MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'commissions-isa': return <ISAPitchSettings />;
       case 'incentives-sales': return <SalesIncentives />;

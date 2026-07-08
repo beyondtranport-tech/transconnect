@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -88,18 +89,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getPartnersByType': {
-                const { type } = payload;
-                let snap;
-                if (type === 'lead') {
-                    snap = await db.collection('leads').get();
-                } else {
-                    snap = await db.collection('partners').where('type', '==', type).get();
-                }
-                const partners = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: partners.map(serializeTimestamps) });
-            }
-
             case 'searchRegistry': {
                 const { type, term, outreachFilter, limit = 100 } = payload;
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
@@ -129,7 +118,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const { type } = payload;
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
                 const logs = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });

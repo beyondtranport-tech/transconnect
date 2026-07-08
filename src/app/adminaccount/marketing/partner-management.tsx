@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -150,7 +151,6 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
 
 export default function PartnerManagement({ type = 'partner' }: { type?: string }) {
   const { toast } = useToast();
-  const { user } = useUser();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -259,7 +259,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     },
     { 
         id: 'actions', 
-        header: 'Actions', 
+        header: <div className="text-right">Actions</div>, 
         cell: ({ row }) => (
           <div className="flex justify-end items-center gap-1">
             <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
@@ -367,7 +367,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       ) : (
             <div className="space-y-6">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div><CardTitle className="flex items-center gap-2 font-black font-headline"><Database /> {audienceLabel} Registry</CardTitle><CardDescription>Full database view ({allRecords.length} records).</CardDescription></div>
+                    <div><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2"><RotateCcw className="h-4 w-4" /> New Search</Button>
                         
@@ -377,8 +377,8 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2">
                                 <div className="space-y-1">
-                                    <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
-                                    <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
+                                    <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => downloadDataAsCSV(filteredRecords, `${type}-standard.csv`)}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
+                                    <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => downloadDataAsCSV(filteredRecords, `${type}-sendgrid.csv`)}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                                 </div>
                             </PopoverContent>
                         </Popover>

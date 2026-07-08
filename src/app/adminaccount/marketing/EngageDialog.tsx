@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -63,7 +64,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
-  const [isBulkDispatching, setIsBulkDispatching] = useState(false);
   const [handshakeVersion, setHandshakeVersion] = useState('v1');
 
   useEffect(() => {
@@ -201,7 +201,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
                         </DialogTitle>
