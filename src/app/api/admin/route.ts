@@ -133,12 +133,12 @@ export async function POST(req: NextRequest) {
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
-                const members = await Promise.all(snap.docs.map(async (doc: any) => {
-                    const data = doc.data();
+                const members = await Promise.all(snap.docs.map(async (docSnap: any) => {
+                    const data = docSnap.data();
                     const userSnap = await db.collection('users').doc(data.ownerId || 'system').get();
                     const uData = userSnap.exists ? userSnap.data() : {};
                     return { 
-                        id: doc.id, 
+                        id: docSnap.id, 
                         ...data, 
                         firstName: uData?.firstName || 'Member', 
                         lastName: uData?.lastName || '', 

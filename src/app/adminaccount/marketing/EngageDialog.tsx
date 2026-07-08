@@ -79,10 +79,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     return partners[currentIndex] || partners[0];
   }, [partners, currentIndex]);
 
-  // ROBUST EMAIL DETECTION: Handles all registry field variants
+  // Robust email detection for all registry variants
   const currentEmail = useMemo(() => {
       if (!currentPartner) return '';
-      return currentPartner.email || currentPartner.email_address || currentPartner.emailAddress || '';
+      return currentPartner.email || currentPartner.email_address || currentPartner.emailAddress || currentPartner.contact_email || '';
   }, [currentPartner]);
 
   const audienceLabel = useMemo(() => {

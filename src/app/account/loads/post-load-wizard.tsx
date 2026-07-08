@@ -273,10 +273,10 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                     <div className="bg-slate-50 p-8 rounded-3xl border-2 border-dashed space-y-4 text-left">
                                         <h4 className="font-black uppercase text-[10px] tracking-widest text-muted-foreground mb-4 text-left">Clearing Logic</h4>
                                         <div className="space-y-3 text-left text-sm text-foreground">
-                                            <div className="flex justify-between"><span>Your Net Earning</span><span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span></div>
-                                            <div className="flex justify-between"><span>Platform Fee (2.5%)</span><span className="font-bold">{formatCurrency(commercials.platformFee)}</span></div>
+                                            <div className="flex justify-between text-left"><span>Your Net Earning</span><span className="font-bold text-green-700">{formatCurrency(commercials.brokerEarn)}</span></div>
+                                            <div className="flex justify-between text-left"><span>Platform Fee (2.5%)</span><span className="font-bold">{formatCurrency(commercials.platformFee)}</span></div>
                                             <Separator />
-                                            <div className="flex justify-between text-lg font-black text-primary pt-2"><span>HAULIER PAYOUT</span><span>{formatCurrency(commercials.haulierPayout)}</span></div>
+                                            <div className="flex justify-between text-lg font-black text-primary pt-2 text-left"><span>HAULIER PAYOUT</span><span>{formatCurrency(commercials.haulierPayout)}</span></div>
                                         </div>
                                     </div>
                                 </div>

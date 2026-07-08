@@ -94,6 +94,7 @@ import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import SocialStudio from '@/app/adminaccount/social-studio';
+import AdminGuides from '@/app/adminaccount/guides';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -184,6 +185,7 @@ function AdminAccountContent() {
       case 'settings-bank': return <PlatformSettingsContent />;
       case 'platform-staff': return <PlatformStaffManagement />;
       case 'associate-oversight': return <AssociateOversight />;
+      case 'guides': return <AdminGuides />;
       default: return <AdminDashboardContent />;
     }
   }, [activeView]);
@@ -274,10 +276,11 @@ function AdminAccountContent() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Platform Settings" isActive={activeView === 'settings-bank' || activeView === 'permissions'}><Settings /><span>Platform Settings</span></SidebarMenuButton>
+              <SidebarMenuButton tooltip="Platform Settings" isActive={activeView === 'settings-bank' || activeView === 'permissions' || activeView === 'guides'}><Settings /><span>Platform Settings</span></SidebarMenuButton>
               <SidebarMenuSub>
                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>Permissions</SidebarMenuSubButton></SidebarMenuSubItem>
                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'settings-bank'} onClick={() => navigate('settings-bank')}>Bank Details</SidebarMenuSubButton></SidebarMenuSubItem>
+                 <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'guides'} onClick={() => navigate('guides')}><HelpCircle className="h-3.5 w-3.5 mr-2" />Help & Guides</SidebarMenuSubButton></SidebarMenuSubItem>
               </SidebarMenuSub>
             </SidebarMenuItem>
         </SidebarGroup>

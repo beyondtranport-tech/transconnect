@@ -20,7 +20,7 @@ export const investorClasses = [
     { id: 'Institutional', label: 'Institutional / DFIs', icon: Landmark, focus: 'Development Finance Institutions (DFIs) and pension funds targeting infrastructure.' }
 ];
 
-function generateInvestorPrompt(category: string, startSeq: number = 1) {
+export function generateInvestorPrompt(category: string, startSeq: number = 1) {
     return `ACT AS AN ELITE VENTURE INTELLIGENCE AGENT AND FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
