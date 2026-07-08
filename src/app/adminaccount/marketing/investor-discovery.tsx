@@ -101,10 +101,10 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
                     Copy Discovery Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Intelligence Command</Label>
-                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
-                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
+            <div className="space-y-2 text-left text-foreground text-foreground">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> Intelligence Command</Label>
+                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left text-foreground">
+                    <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left text-foreground">{prompt}</pre>
                 </ScrollArea>
             </div>
         </div>

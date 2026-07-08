@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -361,7 +360,7 @@ export default function LendingParametersContent() {
                                 </CardHeader>
                                 <CardContent className="space-y-10 pt-8 text-left text-foreground">
                                     <div className="space-y-4 text-left text-foreground text-foreground">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground text-foreground">
                                             <Zap className="h-4 w-4" /> 
                                             Specialized Credit Products
                                         </Label>

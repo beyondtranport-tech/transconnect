@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -193,10 +192,10 @@ export default function BuySellOversight() {
     return (
         <div className="space-y-8 text-left text-foreground">
             <Dialog open={!!negotiateSale} onOpenChange={(o) => !o && setNegotiateSale(null)}>
-                <DialogContent className="max-w-md text-left text-foreground">
+                <DialogContent className="max-w-md text-left text-foreground text-foreground">
                     <DialogHeader>
-                        <DialogTitle className="text-left">Adjust Platform Commercials</DialogTitle>
-                        <DialogDescription className="text-left">Override the standard 2.5% commission rate for this transaction.</DialogDescription>
+                        <DialogTitle className="text-left text-foreground">Adjust Platform Commercials</DialogTitle>
+                        <DialogDescription className="text-left text-foreground">Override the standard 2.5% commission rate for this transaction.</DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-4 text-left text-foreground">
                         <div className="space-y-2 text-left">
