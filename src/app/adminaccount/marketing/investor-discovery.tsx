@@ -1,16 +1,17 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Sparkles, Copy, ClipboardCheck, Info, Search, Terminal, MapPin, ListOrdered, Loader2, DollarSign, ShieldCheck, UserCheck, Landmark, Briefcase, Banknote, Database } from "lucide-react";
+import { Copy, ClipboardCheck, Terminal, Database, ShieldCheck, Info, UserCheck, Zap, Target, Landmark, Briefcase, Banknote, Sparkles } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export const investorClasses = [
     { id: 'Angels', label: 'Individuals / Angels', icon: UserCheck, focus: 'High-net-worth individuals and angel syndicates interested in early-stage logistics tech.' },
@@ -72,7 +73,7 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4 text-left">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
-                    <DollarSign className="h-6 w-6 text-primary" />
+                    <Database className="h-6 w-6 text-primary" />
                     Capital Scouting: {category}
                 </h2>
 
@@ -132,7 +133,7 @@ export default function InvestorDiscoveryEngine() {
                     </TabsList>
                     {investorClasses.map(cls => (
                         <TabsContent key={cls.id} value={cls.id} className="text-left">
-                            <DiscoveryTab category={cls.label} focus={cls.focus} />
+                            <DiscoveryTab category={cls.id} focus={cls.focus} />
                         </TabsContent>
                     ))}
                 </CardContent>

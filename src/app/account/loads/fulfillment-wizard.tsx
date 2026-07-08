@@ -1,16 +1,16 @@
+
 'use client';
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ArrowLeft, CheckCircle, FileUp, ShieldCheck, Banknote, FileText, Zap } from 'lucide-react';
+import { Loader2, ArrowLeft, CheckCircle, FileUp, ShieldCheck, Banknote, FileText, Zap, SeparatorHorizontal as Separator } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { formatCurrency } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 
 interface FulfillmentWizardProps {
     load: any;
@@ -158,7 +158,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-left">Expected Haulier Payout</p>
                                     <p className="text-4xl font-black text-primary text-left">{formatCurrency(load.haulierPayout)}</p>
                                 </div>
-                                <Separator className="bg-white/10" />
+                                <div className="h-px bg-white/10" />
                                 <div className="text-xs text-slate-400 leading-relaxed text-left">
                                     <p>Upon broker verification of the POD, these funds will be moved from "Pending" to "Available" in your wallet.</p>
                                 </div>

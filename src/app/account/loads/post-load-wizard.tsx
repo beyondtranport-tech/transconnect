@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -149,17 +150,17 @@ export function PostLoadWizard({ agreements, onComplete }: { agreements: any[], 
                                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 gap-4 text-left">
                                                     <div className={cn("flex items-center space-x-4 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'local_distribution' ? "border-primary bg-primary/5" : "border-muted")}>
                                                         <RadioGroupItem value="local_distribution" id="local" className="h-5 w-5" />
-                                                        <Label htmlFor="local" className="flex-1 cursor-pointer">
+                                                        <div className="flex-1 cursor-pointer">
                                                             <p className="font-black text-sm uppercase text-left">Local Distribution</p>
                                                             <p className="text-[11px] text-muted-foreground text-left">Inner-city urban Spokes. Sourced from Distribution Mall.</p>
-                                                        </Label>
+                                                        </div>
                                                     </div>
                                                     <div className={cn("flex items-center space-x-4 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'long_haul' ? "border-primary bg-primary/5" : "border-muted")}>
                                                         <RadioGroupItem value="long_haul" id="haul" className="h-5 w-5" />
-                                                        <Label htmlFor="haul" className="flex-1 cursor-pointer">
+                                                        <div className="flex-1 cursor-pointer">
                                                             <p className="font-black text-sm uppercase text-left">Long-Haul Transport</p>
                                                             <p className="text-[11px] text-muted-foreground text-left">Arterial inter-hub movement. Sourced from Transport Mall.</p>
-                                                        </Label>
+                                                        </div>
                                                     </div>
                                                 </RadioGroup>
                                             </FormControl>

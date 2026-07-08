@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -152,9 +153,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         });
 
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
-        const versionSelector = contentClone.querySelector('[data-id="version-selector-ui"]');
-        if (versionSelector) versionSelector.remove();
-
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
 
         const success = await copyHtmlToClipboard(wrappedHtml);
@@ -193,8 +191,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         if (!contentElement) throw new Error("Content not found.");
 
         const contentClone = contentElement.cloneNode(true) as HTMLElement;
-        const versionSelector = contentClone.querySelector('[data-id="version-selector-ui"]');
-        if (versionSelector) versionSelector.remove();
 
         // Call the automated dispatcher (Uses SENDGRID Node.js API on server)
         await performAdminAction(token, 'dispatchEngagement', {
@@ -327,7 +323,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
                     <div className="max-w-[850px] mx-auto space-y-6 text-left">
                         {activeTab === 'digital-handshake' && (
-                            <div data-id="version-selector-ui" className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left shadow-sm">
+                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left shadow-sm">
                                 <div className="flex items-center gap-3 text-left">
                                     <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">

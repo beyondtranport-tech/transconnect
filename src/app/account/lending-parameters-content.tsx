@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -288,8 +289,8 @@ export default function LendingParametersContent() {
                                     <CardDescription className="text-left">Universal risk filters applied across all deal origination.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 text-left text-foreground">
-                                    <div className="space-y-6 text-left">
-                                        <div className="space-y-4 text-left">
+                                    <div className="space-y-6 text-left text-foreground text-foreground">
+                                        <div className="space-y-4 text-left text-foreground">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Entity Maturity</Label>
                                             <FormField control={form.control} name="minYearsInBusiness" render={({ field }) => (
                                                 <FormItem className="text-left"><FormLabel>Min Entity Age (Years)</FormLabel><FormControl><Input type="number" placeholder="e.g. 2" {...field} className="border-2"/></FormControl></FormItem>

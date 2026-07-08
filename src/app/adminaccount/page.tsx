@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -303,7 +304,9 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6 text-left">
-            {renderContent()}
+            <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+                {renderContent()}
+            </Suspense>
         </div>
     </SidebarInset>
     </SidebarProvider>
@@ -313,9 +316,7 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <AdminAuthGuard>
-        <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-            <AdminAccountContent />
-        </Suspense>
+        <AdminAccountContent />
     </AdminAuthGuard>
   );
 }

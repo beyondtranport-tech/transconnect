@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -108,7 +109,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'searchRegistry': {
-                const { type, term, limit = 100 } = payload;
+                const { type, term, outreachFilter, limit = 100 } = payload;
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
                 
                 let query: any = db.collection(collectionName);
@@ -126,6 +127,10 @@ export async function POST(req: NextRequest) {
                         (r.contactPerson || r.contact_person || '').toLowerCase().includes(lowTerm) ||
                         (r.email || r.email_address || '').toLowerCase().includes(lowTerm)
                     );
+                }
+
+                if (outreachFilter === 'none') {
+                    results = results.filter((r: any) => !r.lastOutreachAt);
                 }
 
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
