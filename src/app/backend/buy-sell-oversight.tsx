@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -148,7 +149,7 @@ export default function BuySellOversight() {
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-black text-foreground text-left">{formatCurrency(row.original.agreedPrice)}</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className="flex items-center gap-1.5 mt-0.5 text-left">
                         <span className="text-[9px] font-black text-green-700 uppercase tracking-widest text-left">
                             {formatCurrency(row.original.agreedPrice * ((row.original.commissionRate || 2.5) / 100))}
                         </span>
@@ -199,17 +200,17 @@ export default function BuySellOversight() {
                     </DialogHeader>
                     <div className="py-4 space-y-4 text-left text-foreground">
                         <div className="space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Negotiated Rate (%)</Label>
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Negotiated Rate (%)</Label>
                             <Input type="number" step="0.1" value={newCommissionRate} onChange={e => setNewCommissionRate(Number(e.target.value))} className="h-12 text-xl font-black" />
                         </div>
                         <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 space-y-2 text-left">
-                            <div className="flex justify-between text-xs">
-                                <span>Platform Yield:</span>
-                                <span className="font-black text-green-700">{formatCurrency((negotiateSale?.agreedPrice || 0) * (newCommissionRate / 100))}</span>
+                            <div className="flex justify-between text-xs text-left">
+                                <span className="text-left">Platform Yield:</span>
+                                <span className="font-black text-green-700 text-left">{formatCurrency((negotiateSale?.agreedPrice || 0) * (newCommissionRate / 100))}</span>
                             </div>
-                            <div className="flex justify-between text-xs">
-                                <span>Seller Net:</span>
-                                <span className="font-bold">{formatCurrency((negotiateSale?.agreedPrice || 0) * (1 - newCommissionRate / 100))}</span>
+                            <div className="flex justify-between text-xs text-left">
+                                <span className="text-left">Seller Net:</span>
+                                <span className="font-bold text-left">{formatCurrency((negotiateSale?.agreedPrice || 0) * (1 - newCommissionRate / 100))}</span>
                             </div>
                         </div>
                     </div>
@@ -238,7 +239,7 @@ export default function BuySellOversight() {
             </div>
 
             {error ? (
-                <Card className="border-destructive bg-destructive/5">
+                <Card className="border-destructive bg-destructive/5 text-left">
                     <CardContent className="p-8 text-center space-y-4">
                         <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
                         <div className="space-y-1">
@@ -250,7 +251,7 @@ export default function BuySellOversight() {
                 </Card>
             ) : (
                 <Tabs defaultValue="ledger" className="w-full text-left">
-                    <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start text-left">
+                    <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start text-left text-foreground">
                         <TabsTrigger value="ledger" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                             <FileText className="h-3.5 w-3.5" /> Global Handshake Ledger
                         </TabsTrigger>
@@ -259,7 +260,7 @@ export default function BuySellOversight() {
                         </TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="ledger" className="mt-8 text-left">
+                    <TabsContent value="ledger" className="mt-8 text-left text-foreground">
                         <Card className="border-none shadow-xl text-left">
                             <CardHeader className="border-b bg-muted/10 text-left">
                                 <CardTitle className="text-lg flex items-center gap-2 text-left">
@@ -269,12 +270,12 @@ export default function BuySellOversight() {
                                 <CardDescription className="text-left">Reviewing price negotiations and finance division triggers.</CardDescription>
                             </CardHeader>
                             <CardContent className="pt-6 text-left">
-                                {isLoading ? <div className="flex justify-center p-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : <DataTable columns={saleColumns} data={sales} />}
+                                {isLoading ? <div className="flex justify-center p-20 text-left"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /></div> : <DataTable columns={saleColumns} data={sales} />}
                             </CardContent>
                         </Card>
                     </TabsContent>
 
-                    <TabsContent value="inventory" className="mt-8 text-left">
+                    <TabsContent value="inventory" className="mt-8 text-left text-foreground">
                         <Card className="border-none shadow-xl text-left">
                             <CardHeader className="border-b bg-muted/10 text-left">
                                 <CardTitle className="text-lg flex items-center gap-2 text-left">
@@ -283,7 +284,7 @@ export default function BuySellOversight() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="pt-6 text-left">
-                                {isLoading ? <div className="flex justify-center p-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div> : (
+                                {isLoading ? <div className="flex justify-center p-20 text-left"><Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" /></div> : (
                                     <DataTable 
                                         data={inventory}
                                         columns={[

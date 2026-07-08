@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +27,7 @@ RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 CRITICAL INTEGRITY SHIELD: 
 DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
-YOU MUST PERFORM A LIVE SEARCH FOR "${category} investors in South Africa or targeting African logistics/fintech" on LinkedIn, Crunchbase, and VC directories.
+YOU MUST PERFORM A LIVE SEARCH FOR "${category} investors in South Africa" on LinkedIn, Crunchbase, and VC directories.
 VERIFY THE FUND HAS AN ACTIVE INVESTMENT MANDATE.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African investment partners for the class: "${category}".
@@ -59,7 +60,7 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
     const [seqOverride, setSeqOverride] = useState<number | ''>('');
     
     const startSeq = useMemo(() => (seqOverride !== '' ? Number(seqOverride) : currentCount + 1), [seqOverride, currentCount]);
-    const prompt = useMemo(() => generateDiscoveryPrompt(category, startSeq), [category, startSeq]);
+    const prompt = useMemo(() => generateInvestorPrompt(category, startSeq), [category, startSeq]);
 
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);

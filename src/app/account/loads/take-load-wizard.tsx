@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -98,10 +99,12 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
     if (isAccepted && acceptedLoadData) {
         return (
             <div className="space-y-6 text-left">
-                <Alert className="bg-green-50 border-green-200">
+                <Alert className="bg-green-50 border-green-200 text-left">
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                    <AlertTitle className="font-bold text-left">Transaction Confirmed</AlertTitle>
-                    <AlertDescription className="text-left">The formal instruction has been issued. You can view or print it below.</AlertDescription>
+                    <div className="text-left ml-2">
+                        <AlertTitle className="font-bold text-left">Transaction Confirmed</AlertTitle>
+                        <AlertDescription className="text-left">The formal instruction has been issued. You can view or print it below.</AlertDescription>
+                    </div>
                 </Alert>
                 <LoadInstructionView load={acceptedLoadData} onBack={onComplete} />
             </div>
@@ -114,10 +117,10 @@ export function TakeLoadWizard({ load, onComplete, onCancel }: TakeLoadWizardPro
 
     return (
         <div className="animate-in fade-in duration-500 text-left text-foreground">
-            <Card className="max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left">
+            <Card className="max-w-4xl mx-auto shadow-2xl border-none overflow-hidden text-left bg-white">
                 <CardHeader className="bg-slate-900 text-white p-10 text-left">
                     <div className="flex justify-between items-start text-left">
-                        <div className="text-left">
+                        <div className="text-left text-white">
                             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-white">
                                 <ShieldCheck className="h-10 w-10 text-primary" />
                                 Registry Compliance Audit

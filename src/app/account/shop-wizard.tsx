@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -676,7 +677,7 @@ function StepLoadAgreement() {
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></Label>
+                                <RadioGroupItem value="master" id="c-master" /><Label htmlFor="c-master" className="cursor-pointer font-bold text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="one_off" id="c-spot" /><Label htmlFor="c-spot" className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></Label>
@@ -1036,7 +1037,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
             const result = await response.json();
             if (response.ok) urls.push(result.url);
         }
-        form.setValue('photoUrls', urls);
+        form.setValue('photoUrls', urls as any);
     };
 
     return (

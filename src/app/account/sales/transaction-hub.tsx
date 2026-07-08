@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -127,7 +128,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
             <Card className="shadow-2xl border-none overflow-hidden text-left">
                 <CardHeader className="bg-slate-900 text-white p-8 text-left">
                     <div className="flex justify-between items-start text-left">
-                        <div className="text-left">
+                        <div className="text-left text-white">
                             <CardTitle className="text-3xl font-black font-headline text-white">{vehicle.year} {vehicle.make} {vehicle.model}</CardTitle>
                             <CardDescription className="text-slate-400 mt-1">HANDSHAKE ID: <span className="font-mono">{saleId}</span></CardDescription>
                         </div>
@@ -251,7 +252,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                             </h4>
                             <div className="bg-slate-50 border rounded-3xl p-6 h-80 flex flex-col shadow-inner text-left">
                                 <ScrollArea className="flex-1 pr-4 text-left">
-                                    <div className="space-y-4 text-left">
+                                    <div className="space-y-4 text-left text-foreground">
                                         {messages?.map((msg: any) => (
                                             <div key={msg.id} className={cn("flex flex-col", msg.senderId === user.uid ? "items-end" : "items-start")}>
                                                 <div className={cn("px-4 py-2 rounded-2xl text-sm shadow-sm", msg.senderId === user.uid ? "bg-primary text-white rounded-br-none" : "bg-white border rounded-bl-none")}>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -113,9 +114,9 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                 </CardHeader>
                 
                 <CardContent className="p-10 space-y-10 bg-white text-left">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                         <div className="space-y-6 text-left">
-                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
+                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left text-foreground">
                                 <FileUp className="h-6 w-6 text-primary" />
                                 1. Proof of Delivery (POD)
                             </h3>
@@ -127,7 +128,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 {podUrl ? (
                                     <div className="text-center space-y-2">
                                         <ShieldCheck className="h-12 w-12 text-green-600 mx-auto" />
-                                        <p className="text-sm font-bold text-green-700 uppercase">POD Captured</p>
+                                        <p className="text-sm font-bold text-green-700 uppercase text-center">POD Captured</p>
                                         <Button variant="link" asChild className="text-xs">
                                             <a href={podUrl} target="_blank" rel="noopener noreferrer">View Uploaded Doc</a>
                                         </Button>
@@ -138,7 +139,7 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                             <FileText className="h-8 w-8 text-muted-foreground" />
                                         </div>
                                         <input type="file" id="pod-input" className="hidden" accept="image/*,.pdf" onChange={handleFileUpload} />
-                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="mt-4 font-bold">
+                                        <Button onClick={() => document.getElementById('pod-input')?.click()} disabled={isUploading} className="mt-4 font-bold text-center">
                                             {isUploading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <FileUp className="mr-2 h-4 w-4" />}
                                             Upload Signed POD
                                         </Button>
@@ -148,13 +149,13 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                             </div>
                         </div>
 
-                        <div className="space-y-6 text-left">
-                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground">
+                        <div className="space-y-6 text-left text-foreground">
+                            <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left">
                                 <Banknote className="h-6 w-6 text-primary" />
                                 2. Settlement Summary
                             </h3>
-                            <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left">
-                                <div className="space-y-1 text-left">
+                            <div className="p-6 bg-slate-900 rounded-3xl text-white space-y-4 shadow-xl text-left text-foreground">
+                                <div className="space-y-1 text-left text-white">
                                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Expected Haulier Payout</p>
                                     <p className="text-4xl font-black text-primary">{formatCurrency(load.haulierPayout)}</p>
                                 </div>
@@ -164,12 +165,14 @@ export function FulfillmentWizard({ load, onComplete, onBack }: FulfillmentWizar
                                 </div>
                             </div>
                             
-                            <Alert className="bg-blue-50 border-blue-200">
+                            <Alert className="bg-blue-50 border-blue-200 text-left">
                                 <Zap className="h-4 w-4 text-blue-600" />
-                                <AlertTitle className="text-blue-900 font-bold">Factoring Available</AlertTitle>
-                                <AlertDescription className="text-blue-800 text-xs mt-1 text-left">
-                                    This load is **Factoring Ready**. Once POD is uploaded, you can request an immediate 75% advance from the Finance Division.
-                                </AlertDescription>
+                                <div className="text-left ml-2">
+                                    <AlertTitle className="text-blue-900 font-bold text-left">Factoring Available</AlertTitle>
+                                    <AlertDescription className="text-blue-800 text-xs mt-1 text-left">
+                                        This load is **Factoring Ready**. Once POD is uploaded, you can request an immediate 75% advance from the Finance Division.
+                                    </AlertDescription>
+                                </div>
                             </Alert>
                         </div>
                     </div>
