@@ -77,7 +77,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const currentEmail = useMemo(() => {
       if (!currentPartner) return '';
-      // Robust detection across all lead and member field types
       return currentPartner.email || 
              currentPartner.email_address || 
              currentPartner.emailAddress || 
@@ -189,36 +188,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     }
   };
 
-  const handleBulkDispatch = async () => {
-      setIsBulkDispatching(true);
-      const token = await getClientSideAuthToken();
-      if (!token) return;
-
-      const contentId = `engage-content-wrapper-${activeTab}`;
-      const contentElement = document.getElementById(contentId);
-      if (!contentElement) return;
-
-      let successCount = 0;
-      for (const partner of partners) {
-          const email = partner.email || partner.email_address || partner.emailAddress;
-          if (!email) continue;
-          try {
-              await performAdminAction(token, 'dispatchEngagement', {
-                  partnerId: partner.id,
-                  email,
-                  subject: `Logistics Flow: Information for ${partner.companyName || 'your business'}`,
-                  html: contentElement.innerHTML,
-                  audience
-              });
-              successCount++;
-          } catch (e) {}
-      }
-      toast({ title: "Bulk Dispatch Complete", description: `Sent to ${successCount} partners.` });
-      setIsBulkDispatching(false);
-      onOpenChange(false);
-      if (onEngageSuccess) onEngageSuccess();
-  }
-
   const nextRecord = () => currentIndex < partners.length - 1 && setCurrentIndex(prev => prev + 1);
   const prevRecord = () => currentIndex > 0 && setCurrentIndex(prev => prev - 1);
 
@@ -229,10 +198,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
-            <DialogHeader className="p-6 border-b bg-muted/50 text-left">
+            <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
                         </DialogTitle>
@@ -244,9 +213,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                     <div className="flex items-center gap-4 text-left">
                         {partners.length > 1 && (
-                            <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm text-foreground">
+                            <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm">
                                 <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}><ChevronLeft className="h-4 w-4" /></Button>
-                                <div className="px-3 text-xs font-black uppercase tracking-tighter tabular-nums text-foreground">{currentIndex + 1} / {partners.length}</div>
+                                <div className="px-3 text-xs font-black uppercase tracking-tighter tabular-nums">{currentIndex + 1} / {partners.length}</div>
                                 <Button variant="ghost" size="icon" onClick={nextRecord} disabled={currentIndex === partners.length - 1}><ChevronRight className="h-4 w-4" /></Button>
                             </div>
                         )}
@@ -257,23 +226,18 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentEmail}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
                             </Button>
-                            {partners.length > 1 && (
-                                <Button variant="secondary" size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg" onClick={handleBulkDispatch} disabled={isBulkDispatching || isProcessing}>
-                                    {isBulkDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-4 w-4" />} Dispatch All ({partners.length})
-                                </Button>
-                            )}
                         </div>
                     </div>
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden text-left">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
+            <div className="flex-1 flex overflow-hidden">
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto">
                     <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left">
                         <ShieldAlert className="h-4 w-4 text-amber-600" />
-                        <div className="ml-2 text-left">
+                        <div className="ml-2">
                             <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
-                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1 text-left">Use **Automated Dispatch** to route mail through SendGrid API. This bypasses local blocks.</AlertDescription>
+                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">Use **Automated Dispatch** to route mail through SendGrid API. This bypasses local blocks.</AlertDescription>
                         </div>
                     </Alert>
 
@@ -301,17 +265,17 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
-                    <div className="max-w-[850px] mx-auto space-y-6 text-left">
+                    <div className="max-w-[850px] mx-auto space-y-6">
                         {activeTab === 'digital-handshake' && (
-                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm text-left">
-                                <div className="flex items-center gap-3 text-left">
-                                    <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
-                                    <div className="text-left">
+                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
+                                    <div className="text-left text-foreground">
                                         <p className="text-sm font-bold text-amber-900">Pattern Randomization</p>
-                                        <p className="text-[10px] text-amber-700 leading-none mt-1 text-left">Deterministically unique text per partner.</p>
+                                        <p className="text-[10px] text-amber-700 leading-none mt-1">Deterministically unique text per partner.</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-left">
+                                <div className="flex items-center gap-3">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
                                     <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
                                         <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200"><SelectValue /></SelectTrigger>
@@ -327,7 +291,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
 
-                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full">
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} version={handshakeVersion} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}

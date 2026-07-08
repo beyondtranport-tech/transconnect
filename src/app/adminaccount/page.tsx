@@ -93,7 +93,6 @@ import PlatformSettingsContent from '@/app/backend/platform-settings';
 import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
-import SocialStudio from '@/app/adminaccount/social-studio';
 import AdminGuides from '@/app/adminaccount/guides';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
@@ -147,10 +146,6 @@ function AdminAccountContent() {
   };
 
   const renderContent = useCallback(() => {
-    if (activeView.startsWith('social-')) {
-        const platform = activeView.split('-')[1] as any;
-        return <SocialStudio platform={platform} />;
-    }
     if (activeView.startsWith('marketing-')) {
         const audience = activeView.replace('marketing-', '');
         return <MarketingPage audience={audience} />;
@@ -196,7 +191,6 @@ function AdminAccountContent() {
   };
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
-  const isSocialActive = activeView.startsWith('social-');
   const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
@@ -250,7 +244,7 @@ function AdminAccountContent() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Social" isActive={activeView.startsWith('social-')}><Share2 /><span>Social</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -287,11 +281,11 @@ function AdminAccountContent() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left text-foreground">
+            <div className="flex flex-col truncate text-left">
                 <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
                 <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>
