@@ -421,7 +421,7 @@ function StepGallery() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) return;
-            const newUrls = [...imageUrls];
+            const newUrls: string[] = [...imageUrls];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const reader = new FileReader();

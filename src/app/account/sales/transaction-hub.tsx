@@ -158,7 +158,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                         {currentStep === 0 && (
                             <div className="space-y-6 text-left">
                                 <div className="p-6 bg-primary/5 border-2 border-primary/20 rounded-3xl space-y-6 text-left">
-                                    <div className="space-y-1 text-left text-foreground">
+                                    <div className="space-y-1 text-left text-foreground text-left">
                                         <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Negotiation</h3>
                                         <p className="text-sm text-muted-foreground">Submit your offer to the seller. Locking the price initiates the legal documentation phase.</p>
                                     </div>
