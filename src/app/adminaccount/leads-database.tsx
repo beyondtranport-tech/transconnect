@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -24,8 +25,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -122,25 +123,25 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
                   <SelectItem value="new">New</SelectItem><SelectItem value="contacted">In Research</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="active">Member</SelectItem>
                 </SelectContent></Select></FormItem>
               )} />
               <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>
-                  {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.title}</SelectItem>)}
+                <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                  {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
                 </SelectContent></Select></FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <DialogFooter className="pt-4 border-t text-left">
+            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <DialogFooter className="pt-4 border-t text-left text-foreground">
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
               </Button>
@@ -156,6 +157,7 @@ function LeadsDatabaseComponent() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { user } = useUser();
 
   const [leads, setLeads] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -165,6 +167,7 @@ function LeadsDatabaseComponent() {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const [deleteLead, setDeleteLead] = useState<any | null>(null);
   const [engageLead, setEngageLead] = useState<any | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const forceRefresh = useCallback(async () => {
     setIsLoading(true);
@@ -185,9 +188,27 @@ function LeadsDatabaseComponent() {
     if (searchParams.get('action') === 'add-member') setIsAddLeadOpen(true);
   }, [searchParams]);
 
-  const handleExport = () => {
-      downloadDataAsCSV(leads, `leads-backup-${Date.now()}.csv`);
-      toast({ title: "Backup Exported" });
+  const handleExport = (format: 'Standard' | 'SendGrid') => {
+      const dataToExport = leads.map(l => {
+          const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://logisticsflow.co.za';
+          const handshakeUrl = `${baseUrl}/opt-in/${l.id}`;
+          const directJoinUrl = `${baseUrl}/join?email=${encodeURIComponent(l.email || '')}&ref=${user?.companyId || 'SYSTEM'}`;
+
+          if (format === 'SendGrid') {
+              return {
+                  email: l.email,
+                  first_name: l.firstName || l.contactPerson?.split(' ')[0] || '',
+                  last_name: l.lastName || l.contactPerson?.split(' ').slice(1).join(' ') || '',
+                  company_name: l.companyName,
+                  handshake_url: handshakeUrl,
+                  direct_join_url: directJoinUrl
+              };
+          }
+          return { ...l, handshakeUrl, directJoinUrl };
+      });
+
+      downloadDataAsCSV(dataToExport, `leads-${format.toLowerCase()}-${Date.now()}.csv`);
+      toast({ title: `${format} Export Ready` });
   };
 
   async function handleDelete() {
@@ -254,7 +275,7 @@ function LeadsDatabaseComponent() {
 
   return (
     <>
-      <EngageDialog open={!!engageLead} onOpenChange={(o) => !o && setEngageLead(null)} partners={[engageLead]} audience="transporters" onEngageSuccess={forceRefresh} />
+      <EngageDialog open={!!engageLead || (selectedIds.length > 0 && dialog?.type === 'engage')} onOpenChange={(o) => { setEngageLead(null); }} partners={engageLead ? [engageLead] : leads.filter(l => selectedIds.includes(l.id))} audience="transporters" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="text-left text-foreground text-left">
@@ -273,7 +294,8 @@ function LeadsDatabaseComponent() {
             <CardDescription className="text-left text-muted-foreground text-left">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground">
-            <Button variant="outline" onClick={handleExport} disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Backup</Button>
+            <Button variant="outline" onClick={() => handleExport('Standard')} disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Standard CSV</Button>
+            <Button variant="outline" onClick={() => handleExport('SendGrid')} disabled={isLoading || !hasLoaded} className="text-left text-foreground border-primary/40 text-primary hover:bg-primary/5"><Mail className="mr-2 h-4 w-4" /> SendGrid Export</Button>
             <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
             <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
@@ -283,7 +305,7 @@ function LeadsDatabaseComponent() {
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Registry Offline</h2>
-                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
+                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
                 <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left">
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
                     Load Lead Registry
@@ -292,7 +314,7 @@ function LeadsDatabaseComponent() {
         ) : (
             <Card className="text-left text-foreground text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center py-10 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} />}
+                    {isLoading ? <div className="flex justify-center py-10 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
                 </CardContent>
             </Card>
         )}

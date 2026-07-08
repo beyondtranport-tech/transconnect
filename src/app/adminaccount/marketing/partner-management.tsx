@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check 
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Mail 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -151,6 +151,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
 
 export default function PartnerManagement({ type = 'partner' }: { type?: string }) {
   const { toast } = useToast();
+  const { user } = useUser();
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -172,7 +173,6 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     actions: true
   });
 
-  // Reset state when mall type changes
   useEffect(() => {
     setAllRecords([]);
     setHasLoaded(false);
@@ -199,6 +199,29 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
 
   useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
+  const handleExport = (format: 'Standard' | 'SendGrid') => {
+      const dataToExport = filteredRecords.map(p => {
+          const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://logisticsflow.co.za';
+          const handshakeUrl = `${baseUrl}/opt-in/${p.id}`;
+          const directJoinUrl = `${baseUrl}/join?email=${encodeURIComponent(p.email || '')}&ref=${user?.companyId || 'SYSTEM'}`;
+
+          if (format === 'SendGrid') {
+              return {
+                  email: p.email || p.email_address || '',
+                  first_name: p.firstName || p.contactPerson?.split(' ')[0] || '',
+                  last_name: p.lastName || p.contactPerson?.split(' ').slice(1).join(' ') || '',
+                  company_name: p.companyName || p.company_name || '',
+                  handshake_url: handshakeUrl,
+                  direct_join_url: directJoinUrl
+              };
+          }
+          return { ...p, handshakeUrl, directJoinUrl };
+      });
+
+      downloadDataAsCSV(dataToExport, `${type}-${format.toLowerCase()}-${Date.now()}.csv`);
+      toast({ title: `${format} Export Ready` });
+  };
+
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
     if (engageList.length === 0) return;
@@ -213,53 +236,52 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => {
-    const cols: ColumnDef<any>[] = [
-      { 
-          accessorKey: 'companyName',
-          header: 'Entity Identity', 
-          cell: ({row}) => (
-              <div className="flex flex-col text-left">
-                  <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                  <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
-                      {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
-                  </div>
-              </div>
-          )
-      },
-      { 
-          accessorKey: 'contactPerson',
-          header: 'Account Lead',
-          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
-      },
-      { accessorKey: 'email', header: 'Email' },
-      { 
-          header: 'Outreach Stage',
-          id: 'outreach',
-          accessorKey: 'lastOutreachSubject',
-          cell: ({ row }) => {
-              if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-              return (
-                  <div className="flex flex-col text-left">
-                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
-                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
-                      {row.original.lastOpenedAt && (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                              <UserCheck className="h-2.5 w-2.5" /> Read
-                          </div>
-                      )}
-                  </div>
-              );
-          }
-      },
-      { 
-          accessorKey: 'status', 
-          header: 'Status', 
-          cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
-      },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    { 
+        accessorKey: 'companyName',
+        header: 'Entity Identity', 
+        cell: ({row}) => (
+            <div className="flex flex-col text-left">
+                <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                <div className="flex items-center gap-2 mt-1">
+                    <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
+                    {row.original.website && <Globe className="h-3 w-3 text-primary" />}
+                    <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
+                </div>
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'contactPerson',
+        header: 'Account Lead',
+        cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
+    },
+    { accessorKey: 'email', header: 'Email' },
+    { 
+        header: 'Outreach Stage',
+        id: 'outreach',
+        accessorKey: 'lastOutreachSubject',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            return (
+                <div className="flex flex-col text-left">
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
+                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
+                    {row.original.lastOpenedAt && (
+                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
+                            <UserCheck className="h-2.5 w-2.5" /> Read
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    },
+    { 
+        accessorKey: 'status', 
+        header: 'Status', 
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
+    },
+    { id: 'actions', header: 'Actions', cell: ({ row }) => (
         <div className="flex justify-end items-center gap-1 text-left">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
@@ -370,25 +392,19 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                     <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left">Full database view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2"><RotateCcw className="h-4 w-4" /> New Search</Button>
-                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="gap-2"><Settings2 className="h-4 w-4" /> Columns</Button>
+                                <Button variant="outline" className="gap-2"><Download className="h-4 w-4" /> Export</Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2 text-left">
                                 <div className="space-y-1">
-                                    {Object.keys(visibleColumns).map(col => (
-                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
-                                            <span>{col.replace(/([A-Z])/g, ' $1')}</span>
-                                            {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
-                                        </div>
-                                    ))}
+                                    <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
+                                    <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
 
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, `${type}-backup.csv`)} disabled={isLoading}><Download className="mr-2 h-4 w-4"/>Export</Button>
                         <BulkImportDialog type={type} onComplete={() => fetchData()}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                         <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>

@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, Zap, ChevronLeft, ChevronRight, Send, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Loader2, Mail, Zap, ChevronLeft, ChevronRight, Send, ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -52,11 +53,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
         body: JSON.stringify({ action, payload }),
         cache: 'no-store'
     });
-
     const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
     return result;
 }
 
@@ -66,12 +64,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
+  const [isBulkDispatching, setIsBulkDispatching] = useState(false);
   const [handshakeVersion, setHandshakeVersion] = useState('v1');
 
   useEffect(() => {
-    if (open) {
-      setCurrentIndex(initialIndex);
-    }
+    if (open) setCurrentIndex(initialIndex);
   }, [open, initialIndex]);
 
   const currentPartner = useMemo(() => {
@@ -79,7 +76,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     return partners[currentIndex] || partners[0];
   }, [partners, currentIndex]);
 
-  // Robust email detection for all registry variants
   const currentEmail = useMemo(() => {
       if (!currentPartner) return '';
       return currentPartner.email || currentPartner.email_address || currentPartner.emailAddress || currentPartner.contact_email || '';
@@ -116,22 +112,15 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const getSubject = () => {
       const company = currentPartner?.companyName || currentPartner?.company_name || 'your business';
       let label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      if (activeTab === 'digital-handshake') {
-          label = `Digital Handshake (${handshakeVersion.toUpperCase()})`;
-      }
+      if (activeTab === 'digital-handshake') label = `Digital Handshake (${handshakeVersion.toUpperCase()})`;
       return `Logistics Flow: ${label} for ${company}`;
   }
 
   const handleLogCopyAndLaunch = async (channel: 'outlook' | 'gmail') => {
     if (!currentPartner) return;
-
     const contentId = `engage-content-wrapper-${activeTab}`;
     const contentElement = document.getElementById(contentId);
-
-    if (!contentElement) {
-        toast({ variant: 'destructive', title: "Content Error", description: "Could not find content tab." });
-        return;
-    }
+    if (!contentElement) return;
 
     setIsProcessing(true);
     try {
@@ -139,34 +128,25 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         if (!token) throw new Error("Auth failed.");
         
         let subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        if (activeTab === 'digital-handshake') {
-            subjectLabel = `Handshake ${handshakeVersion.toUpperCase()}`;
-        }
+        if (activeTab === 'digital-handshake') subjectLabel = `Handshake ${handshakeVersion.toUpperCase()}`;
 
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
             type: channel === 'outlook' ? 'Outlook' : 'Gmail',
             subject: subjectLabel,
-            notes: `Manual engagement launched via ${channel}. Copy/paste initiated.`,
+            notes: `Manual engagement launched via ${channel}.`,
             collection: (!currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners'
         });
 
-        const contentClone = contentElement.cloneNode(true) as HTMLElement;
-        const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentClone.innerHTML}</div>`;
-
-        const success = await copyHtmlToClipboard(wrappedHtml);
-        if (!success) throw new Error("Clipboard operation failed.");
-
+        const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
+        await copyHtmlToClipboard(wrappedHtml);
         toast({ title: "Content Ready", description: `Interaction logged. Opening ${channel}...` });
 
         if (channel === 'outlook') {
-            const mailtoUrl = `mailto:${currentEmail}?subject=${encodeURIComponent(getSubject())}`;
-            window.location.href = mailtoUrl;
+            window.location.href = `mailto:${currentEmail}?subject=${encodeURIComponent(getSubject())}`;
         } else {
-            const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${currentEmail}&su=${encodeURIComponent(getSubject())}`;
-            window.open(gmailUrl, '_blank');
+            window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${currentEmail}&su=${encodeURIComponent(getSubject())}`, '_blank');
         }
-        
         if (onEngageSuccess) onEngageSuccess();
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Engagement Failed', description: e.message });
@@ -176,10 +156,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   };
 
   const handleAutomatedDispatch = async () => {
-    if (!currentEmail) {
-        toast({ variant: 'destructive', title: "No Email", description: "This record has no email address." });
-        return;
-    }
+    if (!currentEmail) return;
     setIsDispatching(true);
     try {
         const token = await getClientSideAuthToken();
@@ -189,25 +166,18 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const contentElement = document.getElementById(contentId);
         if (!contentElement) throw new Error("Content not found.");
 
-        const contentClone = contentElement.cloneNode(true) as HTMLElement;
-
-        // Call the automated dispatcher (Uses SENDGRID Node.js API on server)
         await performAdminAction(token, 'dispatchEngagement', {
             partnerId: currentPartner.id,
             email: currentEmail,
             subject: getSubject(),
-            html: contentClone.innerHTML,
+            html: contentElement.innerHTML,
             audience
         });
 
-        toast({ title: "Dispatch Successful", description: "Background dispatch initiated via SendGrid." });
+        toast({ title: "Dispatch Successful" });
         if (onEngageSuccess) onEngageSuccess();
-        
-        if (partners.length > 1 && currentIndex < partners.length - 1) {
-            setTimeout(nextRecord, 500);
-        } else {
-            setTimeout(() => onOpenChange(false), 1000);
-        }
+        if (partners.length > 1 && currentIndex < partners.length - 1) setTimeout(nextRecord, 500);
+        else setTimeout(() => onOpenChange(false), 1000);
     } catch (e: any) {
         toast({ variant: 'destructive', title: "Dispatch Failed", description: e.message });
     } finally {
@@ -215,17 +185,38 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     }
   };
 
-  const nextRecord = () => {
-    if (currentIndex < partners.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-    }
-  };
+  const handleBulkDispatch = async () => {
+      setIsBulkDispatching(true);
+      const token = await getClientSideAuthToken();
+      if (!token) return;
 
-  const prevRecord = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-    }
-  };
+      const contentId = `engage-content-wrapper-${activeTab}`;
+      const contentElement = document.getElementById(contentId);
+      if (!contentElement) return;
+
+      let successCount = 0;
+      for (const partner of partners) {
+          const email = partner.email || partner.email_address || partner.emailAddress;
+          if (!email) continue;
+          try {
+              await performAdminAction(token, 'dispatchEngagement', {
+                  partnerId: partner.id,
+                  email,
+                  subject: `Logistics Flow: Information for ${partner.companyName || 'your business'}`,
+                  html: contentElement.innerHTML,
+                  audience
+              });
+              successCount++;
+          } catch (e) {}
+      }
+      toast({ title: "Bulk Dispatch Complete", description: `Sent to ${successCount} partners.` });
+      setIsBulkDispatching(false);
+      onOpenChange(false);
+      if (onEngageSuccess) onEngageSuccess();
+  }
+
+  const nextRecord = () => currentIndex < partners.length - 1 && setCurrentIndex(prev => prev + 1);
+  const prevRecord = () => currentIndex > 0 && setCurrentIndex(prev => prev - 1);
 
   if (!currentPartner) return null;
 
@@ -235,65 +226,54 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
-                <div className="flex justify-between items-center text-left text-foreground">
-                    <div className="text-left space-y-1 text-foreground">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
+                <div className="flex justify-between items-center text-left">
+                    <div className="text-left space-y-1">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {partnerDisplayName}
                         </DialogTitle>
-                        <div className="flex items-center gap-2 text-sm text-left">
+                        <div className="flex items-center gap-2 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
-                           <span className="text-muted-foreground text-left">•</span>
-                           <span className={cn("font-medium text-left", !currentEmail ? "text-destructive" : "text-muted-foreground")}>
-                               {currentEmail || 'No email recorded'}
-                           </span>
+                           <span className="text-muted-foreground">•</span>
+                           <span className={cn("font-medium", !currentEmail ? "text-destructive" : "text-muted-foreground")}>{currentEmail || 'No email recorded'}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4 text-left">
+                    <div className="flex items-center gap-4">
                         {partners.length > 1 && (
-                            <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm text-left">
-                                <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}>
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <div className="px-3 text-xs font-black uppercase tracking-tighter tabular-nums text-foreground">
-                                    {currentIndex + 1} / {partners.length}
-                                </div>
-                                <Button variant="ghost" size="icon" onClick={nextRecord} disabled={currentIndex === partners.length - 1}>
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
+                            <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm">
+                                <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}><ChevronLeft className="h-4 w-4" /></Button>
+                                <div className="px-3 text-xs font-black uppercase tracking-tighter tabular-nums">{currentIndex + 1} / {partners.length}</div>
+                                <Button variant="ghost" size="icon" onClick={nextRecord} disabled={currentIndex === partners.length - 1}><ChevronRight className="h-4 w-4" /></Button>
                             </div>
                         )}
-                        <div className="flex gap-2 text-left">
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-foreground" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentEmail}>
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />}
-                                Outlook
-                            </Button>
-                            <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-red-200 hover:bg-red-50 text-foreground" onClick={() => handleLogCopyAndLaunch('gmail')} disabled={isProcessing || isDispatching || !currentEmail}>
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <div className="h-4 w-4 bg-red-600 rounded-sm" />}
-                                Gmail Web
+                        <div className="flex gap-2">
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentEmail}>
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />} Outlook
                             </Button>
                             <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentEmail}>
-                                {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                                Automated Dispatch
+                                {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
                             </Button>
+                            {partners.length > 1 && (
+                                <Button variant="secondary" size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg" onClick={handleBulkDispatch} disabled={isBulkDispatching || isProcessing}>
+                                    {isBulkDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle2 className="mr-2 h-4 w-4" />} Dispatch All ({partners.length})
+                                </Button>
+                            )}
                         </div>
                     </div>
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden text-left text-foreground">
+            <div className="flex-1 flex overflow-hidden text-left">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
-                    <Alert className="bg-amber-50 py-3 border-amber-200 text-left shadow-sm">
+                    <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm">
                         <ShieldAlert className="h-4 w-4 text-amber-600" />
                         <div className="ml-2 text-left">
                             <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
-                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">
-                                Use **Automated Dispatch** to route mail through our SendGrid API. This bypasses local account blocks.
-                            </AlertDescription>
+                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">Use **Automated Dispatch** to route mail through SendGrid API. This bypasses local blocks.</AlertDescription>
                         </div>
                     </Alert>
 
-                    <div className="space-y-1 text-left text-foreground">
+                    <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 1: Selection</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
@@ -307,10 +287,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             <Button
                                 key={tab.id}
                                 variant={activeTab === tab.id ? "secondary" : "ghost"}
-                                className={cn(
-                                    "w-full justify-start font-medium text-left text-xs h-10 px-3 text-foreground",
-                                    activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20"
-                                )}
+                                className={cn("w-full justify-start font-medium text-left text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
                                 onClick={() => setActiveTab(tab.id)}
                             >
                                 {tab.label}
@@ -319,23 +296,21 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
-                    <div className="max-w-[850px] mx-auto space-y-6 text-left">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
+                    <div className="max-w-[850px] mx-auto space-y-6">
                         {activeTab === 'digital-handshake' && (
-                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 text-left shadow-sm">
+                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm text-left">
                                 <div className="flex items-center gap-3 text-left">
-                                    <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
+                                    <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
                                     <div className="text-left">
-                                        <p className="text-sm font-bold text-amber-900 text-left">Pattern Randomization</p>
-                                        <p className="text-[10px] text-amber-700 text-left leading-none mt-1">Deterministically unique text per partner.</p>
+                                        <p className="text-sm font-bold text-amber-900">Pattern Randomization</p>
+                                        <p className="text-[10px] text-amber-700 leading-none mt-1">Deterministically unique text per partner.</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-left text-foreground">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800 text-left">Version</Label>
+                                <div className="flex items-center gap-3">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
                                     <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
-                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200 text-left text-foreground">
-                                            <SelectValue />
-                                        </SelectTrigger>
+                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200"><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="v1">V1: Standard (Low Friction)</SelectItem>
                                             <SelectItem value="v2">V2: Market Access</SelectItem>
@@ -348,7 +323,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
 
-                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left text-foreground min-h-full">
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full">
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={audience} version={handshakeVersion} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={audience} partner={currentPartner} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}

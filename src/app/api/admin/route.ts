@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -69,12 +70,6 @@ export async function POST(req: NextRequest) {
                 const { staffId } = payload;
                 await db.collection('platformStaff').doc(staffId).delete();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'getStaff': {
-                const snap = await db.collectionGroup('staff').get();
-                const staff = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: staff.map(serializeTimestamps) });
             }
 
             case 'savePartner': {
@@ -175,24 +170,18 @@ export async function POST(req: NextRequest) {
 
             case 'dispatchEngagement': {
                 const { partnerId, email, subject, html, audience } = payload;
-                
                 const apiKey = process.env.SENDGRID_API_KEY;
-                if (!apiKey) {
-                    throw new Error("SENDGRID_API_KEY is not configured on the server. Please verify your .env file and restart the process.");
-                }
+                if (!apiKey) throw new Error("SENDGRID_API_KEY is not configured on the server.");
 
                 sgMail.setApiKey(apiKey);
-
-                const msg = {
+                await sgMail.send({
                     to: email,
                     from: 'michael@logisticsflow.co.za', 
                     subject: subject,
                     html: html,
-                };
+                });
 
-                await sgMail.send(msg);
-
-                const colName = (audience === 'partners' || audience === 'transporters' || audience === 'suppliers' || audience === 'investors' || audience === 'developers' || audience === 'isa' || audience === 'finance' || audience === 'associates') ? 'partners' : 'leads';
+                const colName = ['partners', 'transporters', 'suppliers', 'investors', 'developers', 'isa', 'finance', 'associates'].includes(audience) ? 'partners' : 'leads';
                 const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
@@ -210,28 +199,6 @@ export async function POST(req: NextRequest) {
                 });
 
                 return NextResponse.json({ success: true });
-            }
-
-            case 'autoEnrichRecord': {
-                const { id, type } = payload;
-                const col = type === 'lead' ? 'leads' : 'partners';
-                const ref = db.collection(col).doc(id);
-                const snap = await ref.get();
-                if (!snap.exists) throw new Error("Record not found");
-                
-                const data = snap.data()!;
-                const enrichment = await enrichPartner({ 
-                    companyName: data.companyName || data.company_name || `${data.firstName} ${data.lastName}` 
-                });
-
-                const update = {
-                    ...enrichment,
-                    status: 'qualified',
-                    updatedAt: FieldValue.serverTimestamp()
-                };
-
-                await ref.update(update);
-                return NextResponse.json({ success: true, data: update });
             }
 
             case 'bulkSavePartners': {
