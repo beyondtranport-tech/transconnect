@@ -81,11 +81,14 @@ export default function BuySellOversight() {
     useEffect(() => { loadData(); }, [loadData]);
 
     const handleFinalize = async (sale: any) => {
-        setIsActionLoading(sale.id);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+            if (!token) {
+                toast({ variant: 'destructive', title: "Auth Required", description: "Authentication failed. Please sign in again." });
+                return;
+            }
             
+            setIsActionLoading(sale.id);
             await fetchFromAdminAPI(token, 'finalizeSale', { 
                 saleId: sale.id,
                 commissionRate: sale.commissionRate || 2.5
@@ -101,11 +104,12 @@ export default function BuySellOversight() {
 
     const handleAdjustCommission = async () => {
         if (!negotiateSale) return;
-        setIsActionLoading(negotiateSale.id);
+        
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
+            setIsActionLoading(negotiateSale.id);
             await fetch('/api/updateUserDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },

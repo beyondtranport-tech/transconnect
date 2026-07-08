@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -354,7 +353,7 @@ function StepWarehouseSecurity() {
                 <p className="text-sm text-muted-foreground mt-1 text-left">Provide forensic clarity on how cargo is protected within your node.</p>
             </div>
 
-            <div className="space-y-4 text-left text-foreground text-foreground text-foreground">
+            <div className="space-y-4 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1 text-left text-foreground">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     Security Infrastructure
@@ -383,7 +382,7 @@ function StepWarehouseSecurity() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
                 <FormField control={control} name="accessControl" render={({ field }) => (
-                    <FormItem className="text-left text-foreground">
+                    <FormItem className="text-left text-foreground text-foreground">
                         <FormLabel>Access Control Type</FormLabel>
                         <FormControl><Input placeholder="e.g. Biometric / Keycard / Manual log" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     </FormItem>
@@ -488,7 +487,7 @@ function StepWarehouseFees() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-6 text-left">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
-                        <FormItem className="text-left text-foreground"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                        <FormItem className="text-left text-foreground text-foreground"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                     <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
                         <FormItem className="text-left text-foreground"><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
@@ -519,7 +518,7 @@ function StepBrokerageCommercials() {
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
                     <FormField control={control} name="brokerageMargin" render={({ field }) => (
                         <FormItem className="text-left text-foreground text-foreground">
                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2">
@@ -546,21 +545,21 @@ function StepBrokerageCommercials() {
             </div>
 
             <Card className="border-none bg-slate-50 shadow-inner text-left">
-                <CardContent className="p-6 text-left text-foreground">
+                <CardContent className="p-6 text-left text-foreground text-foreground">
                     <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
                     <div className="space-y-2 text-sm text-left">
-                        <div className="flex justify-between border-b pb-2 text-left">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground">
                             <span className="text-muted-foreground text-left">Total Load Value (Example)</span>
                             <span className="font-bold text-left">R 10,000.00</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground text-foreground">
                             <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
                             <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground text-foreground">
                             <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600 text-left">- R 250.00</span>
                         </div>
@@ -583,14 +582,14 @@ function StepRateSheet() {
     const locations = provinces.flatMap(p => p.cities.map(c => `${c}, ${p.name}`));
 
     return (
-        <div className="space-y-8 text-left text-foreground text-foreground">
+        <div className="space-y-8 text-left text-foreground text-foreground text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <ListOrdered className="h-6 w-6 text-primary" />
                 Fleet Rate Sheet (Optional)
             </h3>
 
             <FormField control={control} name="rateType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground">
                     <FormLabel className="font-bold">Select Rate Structure</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
@@ -628,7 +627,7 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left text-foreground text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -637,7 +636,7 @@ function StepRateSheet() {
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left text-foreground text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -647,7 +646,7 @@ function StepRateSheet() {
                             )} />
                             <div className="flex items-center gap-2 text-left">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
-                                    <FormItem className="flex-1 text-left text-foreground">
+                                    <FormItem className="flex-1 text-left text-foreground text-foreground">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
                                         <FormControl><Input type="number" {...field} className="h-9 bg-white" /></FormControl>
                                     </FormItem>
@@ -674,15 +673,15 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></div>
+                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></div>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></div>
+                                <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></div>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -750,7 +749,7 @@ function StepCommercials({ shop }: { shop: any }) {
                     <p className="text-xs text-muted-foreground leading-relaxed text-left">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
                 </div>
                 
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
                     <p className="text-[10px] font-black uppercase text-primary tracking-widest text-left">Your Proposal (%)</p>
                     <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white" />
                     <Button className="w-full h-10 font-bold text-white" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
@@ -762,7 +761,7 @@ function StepCommercials({ shop }: { shop: any }) {
 
             {agreements && agreements.length > 0 && (
                 <div className="space-y-4 text-left">
-                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left text-foreground">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -794,7 +793,7 @@ function StepCatalog({ shop }: { shop: any }) {
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
@@ -811,7 +810,7 @@ function StepCatalog({ shop }: { shop: any }) {
                             <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left">
                                 <div className="relative aspect-square bg-muted">
                                     {p.imageUrls?.[0] ? <Image src={p.imageUrls[0]} alt={p.name} fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="h-10 w-10 opacity-10" /></div>}
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 text-left text-foreground">
                                         <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setEditingProduct(p)}><Edit className="h-4 w-4"/></Button>
                                         <Button variant="destructive" size="icon" className="h-8 w-8" onClick={async () => {
                                             const token = await getClientSideAuthToken();
@@ -832,7 +831,7 @@ function StepCatalog({ shop }: { shop: any }) {
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-foreground">
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-foreground text-left">
                         <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">Catalog Empty</p>
                     </div>
@@ -896,7 +895,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     };
 
     return (
-        <DialogContent className="sm:max-w-xl text-left text-foreground">
+        <DialogContent className="sm:max-w-xl text-left text-foreground text-foreground">
             <DialogHeader>
                 <DialogTitle className="text-left">Product Management</DialogTitle>
                 <DialogDescription className="text-left">Define the technical and commercial details of this item.</DialogDescription>
@@ -951,7 +950,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
     return (
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
                     <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
                 </div>
@@ -977,7 +976,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-foreground">
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-foreground text-left">
                         <Truck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No records found.</p>
                     </div>
@@ -1046,7 +1045,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     };
 
     return (
-        <DialogContent className="sm:max-w-2xl text-left text-foreground">
+        <DialogContent className="sm:max-w-2xl text-left text-foreground text-foreground">
             <DialogHeader>
                 <DialogTitle className="text-left">{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription className="text-left">Attach verified documents and technical specifics.</DialogDescription>
@@ -1061,7 +1060,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
@@ -1092,7 +1091,7 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('multi-up')?.click()}>
                                  <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center">Add Photo</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center text-foreground">Add Photo</span>
                              </Button>
                              <input type="file" id="multi-up" multiple className="hidden" onChange={handleMultiUpload} />
                         </div>
@@ -1264,7 +1263,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     const currentStepConfig = wizardSteps[currentStep];
 
-    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Terminal...</p></div>;
+    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Initializing Terminal Module...</p></div>;
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
@@ -1326,7 +1325,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                             onUpdate();
                         } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
                         finally { setIsSaving(false); }
-                    })} disabled={isSaving} className="font-bold text-foreground">
+                    })} disabled={isSaving} className="font-bold text-foreground text-foreground">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (

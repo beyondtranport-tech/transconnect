@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -160,7 +159,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                 <div className="p-6 bg-primary/5 border-2 border-primary/20 rounded-3xl space-y-6 text-left">
                                     <div className="space-y-1 text-left text-foreground text-left">
                                         <h3 className="font-black text-xl flex items-center gap-2 text-foreground text-left"><Scale className="h-6 w-6 text-primary" /> 1. Commercial Negotiation</h3>
-                                        <p className="text-sm text-muted-foreground">Submit your offer to the seller. Locking the price initiates the legal documentation phase.</p>
+                                        <p className="text-sm text-muted-foreground text-left">Submit your offer to the seller. Locking the price initiates the legal documentation phase.</p>
                                     </div>
                                     <div className="space-y-2 text-left">
                                         <Label className="font-black uppercase text-[10px] text-muted-foreground ml-1">Proposed Sales Price (Excl. VAT)</Label>
@@ -202,7 +201,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                         </Link>
                                         <div className="h-full" onClick={() => toast({ title: "Simulation: Payment Logged", description: "In production, this triggers a wallet debit." })}>
                                             <Card className="border-2 border-slate-100 hover:border-slate-900 transition-colors h-full bg-white cursor-pointer">
-                                                <CardContent className="p-6 space-y-2 text-left">
+                                                <CardContent className="p-6 space-y-2 text-left text-foreground">
                                                     <div className="bg-slate-100 p-2 rounded-lg w-fit"><Banknote className="h-5 w-5" /></div>
                                                     <p className="font-black text-sm uppercase text-left">Pay with Wallet</p>
                                                     <p className="text-xs text-muted-foreground leading-tight text-left">Use available funds for immediate asset release.</p>
@@ -225,7 +224,7 @@ export function SalesTransactionHub({ vehicle, onBack }: { vehicle: any, onBack:
                                         </Button>
                                         <Button variant="outline" className="h-16 justify-start gap-4 px-6 border-2 bg-white" onClick={() => toast({ title: "Invoice Generated", description: "VAT Invoice has been isolated." })}>
                                             <div className="bg-green-100 p-2 rounded-lg"><Banknote className="h-5 w-5 text-green-600" /></div>
-                                            <div className="text-left text-foreground"><p className="font-black text-xs uppercase text-left">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground text-left">Financial Settlement Record</p></div>
+                                            <div className="text-left text-foreground text-left"><p className="font-black text-xs uppercase text-left">Pro-forma Invoice</p><p className="text-[10px] text-muted-foreground text-left">Financial Settlement Record</p></div>
                                         </Button>
                                     </div>
                                 </div>
