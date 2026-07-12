@@ -45,6 +45,7 @@ const enrichPartnerFlow = ai.defineFlow(
         }
 
         // Parallel targeted search modeled after high-success discovery agents
+        // Explicitly instructions to look for variations (e.g. TGD)
         const [generalResults, socialResults, directoryResults] = await Promise.all([
             googleSearchTool({ query: `"${company}" official website contact email South Africa` }),
             googleSearchTool({ query: `"${company}" Facebook page mobile number South Africa` }),
@@ -71,7 +72,7 @@ const enrichPartnerFlow = ai.defineFlow(
             system: `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR.
             Your mission is to aggregate every scrap of verified evidence for "${company}".
             
-            EXTRACTION PROTOCOL:
+            EXTRACTION PROTOPROTOCOL:
             1. BEST-EFFORT SCAVENGING: If a formal corporate website is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex). 
             2. IDENTITY CAPTURE: Prioritize finding actual human names associated with "Director", "Owner", or "MD".
             3. VERBATIM AGGREGATION: In 'minedServiceWording', concatenate the most descriptive technical sentences found in the search results. DO NOT summarize.
