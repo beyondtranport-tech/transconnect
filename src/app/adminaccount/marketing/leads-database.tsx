@@ -170,7 +170,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
                     <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                        <Users2 className="h-4 w-4" /> Marketing Manager
+                        <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
                     <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
                     <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
@@ -179,7 +179,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
-                        <UserCheck2 className="h-4 w-4" /> CEO / Principal
+                        <UserCheck className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
                     <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
@@ -201,7 +201,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             </div>
 
             <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10 text-left text-foreground">
-              <Button type="submit" disabled={isLoading} size="lg" className="w-full">
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>

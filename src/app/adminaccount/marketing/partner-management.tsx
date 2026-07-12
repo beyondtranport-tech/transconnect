@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail, MapPin, Info
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail, MapPin, Info, Building
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -122,16 +122,16 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                             <Building className="h-4 w-4" /> Core Entity Identity
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="industrial_category" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Industrial Trade</FormLabel><FormControl><Input {...field} className="bg-white" placeholder="e.g. Injectors, Brakes" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="industrial_category" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Industrial Trade</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="e.g. Injectors, Brakes" /></FormControl></FormItem> )} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} className="bg-white" placeholder="https://..." /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
                             <FormField control={form.control} name="status" render={({ field }) => ( 
                                 <FormItem className="text-left">
                                     <FormLabel>Status</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="new">New Lead</SelectItem>
                                             <SelectItem value="contacted">Researching</SelectItem>
@@ -142,7 +142,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                                 </FormItem> 
                             )} />
                         </div>
-                        <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Verified Physical Address</FormLabel><FormControl><Textarea {...field} className="bg-white h-20" /></FormControl></FormItem> )} />
+                        <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Verified Physical Address</FormLabel><FormControl><Textarea {...field} className="bg-white h-20 border-2" /></FormControl></FormItem> )} />
                     </div>
 
                     <Separator />
@@ -150,23 +150,23 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                     {/* Side-by-Side Leadership Form */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                         {/* Column 1: Marketing Manager */}
-                        <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                        <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner">
                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                                 <Users className="h-4 w-4" /> Marketing Manager
                             </h4>
-                            <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
 
                         {/* Column 2: CEO / MD */}
-                        <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                        <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
                             <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
                                 <UserCheck className="h-4 w-4" /> CEO / Principal
                             </h4>
-                            <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
                     </div>
 
@@ -179,7 +179,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                         </h4>
                         <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
                             <FormItem className="text-left">
-                                <FormControl><Textarea {...field} className="bg-white min-h-[150px] font-sans text-sm leading-relaxed" placeholder="Verbatim extraction from sitemap pages..." /></FormControl>
+                                <FormControl><Textarea {...field} className="bg-white min-h-[150px] font-sans text-sm leading-relaxed border-2" placeholder="Verbatim extraction from sitemap pages..." /></FormControl>
                             </FormItem> 
                         )} />
                     </div>
@@ -286,7 +286,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
                   <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left">
+                  <div className="flex items-center gap-2 mt-1 text-left text-foreground">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
                       {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
@@ -381,7 +381,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
 
       <div className="space-y-6 text-left text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left text-foreground text-foreground">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
                   <Popover>
@@ -411,7 +411,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       </PopoverContent>
                   </Popover>
                   <BulkImportDialog type={type} onComplete={() => fetchData()}><Button variant="outline" className="text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                  <Button onClick={() => setDialog({ type: 'add' })} className="text-white"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                  <Button onClick={() => setDialog({ type: 'add' })} className="text-white font-bold"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
               </div>
           </CardHeader>
 
@@ -448,7 +448,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                           </Select>
                       </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                       <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
