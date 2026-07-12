@@ -132,8 +132,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const colName = type === 'lead' ? 'leads' : 'partners';
+                const { leadIds, type: targetType } = payload;
+                const colName = targetType === 'lead' ? 'leads' : 'partners';
                 const batch = db.batch();
                 for (const id of leadIds) {
                     const logRef = db.collection(colName).doc(id).collection('communications').doc();
@@ -206,6 +206,25 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeTimestamps(update) });
             }
 
+            case 'bulkSavePartners': {
+                const { partners: partnerList, type: targetType } = payload;
+                const batch = db.batch();
+                let collectionName = targetType === 'lead' ? 'leads' : 'partners';
+                
+                for (const p of partnerList) {
+                    const id = p.record_id || p.id || db.collection(collectionName).doc().id;
+                    const ref = db.collection(collectionName).doc(id);
+                    batch.set(ref, {
+                        ...p,
+                        id,
+                        type: targetType || p.type || 'supplier',
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partnerList.length });
+            }
+
             case 'searchRegistry': {
                 const { type, term, outreachFilter, limit = 100 } = payload;
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
@@ -215,7 +234,6 @@ export async function POST(req: NextRequest) {
                     query = query.where('type', '==', type);
                 }
 
-                // Support for high-capacity bulk retrieval
                 const snap = await query.orderBy('updatedAt', 'desc').limit(Math.min(limit, 20000)).get();
                 let results = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
@@ -248,6 +266,13 @@ export async function POST(req: NextRequest) {
                     ...partner,
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePartner': {
+                const { partnerId, source } = payload;
+                const colName = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(colName).doc(partnerId).delete();
                 return NextResponse.json({ success: true });
             }
 

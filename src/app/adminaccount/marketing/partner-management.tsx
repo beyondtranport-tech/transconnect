@@ -242,7 +242,6 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           id: 'industrial_category',
           header: 'Industrial Category', 
           cell: ({row}) => {
-              // RESOLVE SPECIFIC NICHE: Logic strictly prioritizes classification over generic type
               const rawCat = (row.original.industrial_category || row.original.category || '').trim();
               const isGeneric = rawCat.toLowerCase() === type.toLowerCase() || !rawCat;
               const displayLabel = isGeneric ? 'General' : rawCat;
