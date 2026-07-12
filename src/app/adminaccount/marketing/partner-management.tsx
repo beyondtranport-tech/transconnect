@@ -203,7 +203,6 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
-  const [outreachFilter, setOutreachFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
@@ -222,7 +221,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
         const token = await getClientSideAuthToken();
         if (!token) return;
         const [res, staffRes] = await Promise.all([
-          performAdminAction(token, 'searchRegistry', { type, term: searchTerm, outreachFilter, limit }),
+          performAdminAction(token, 'searchRegistry', { type, term: searchTerm, limit }),
           performAdminAction(token, 'getPlatformStaff', {})
         ]);
         setAllRecords(res.data || []);
@@ -232,7 +231,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     } finally {
         setIsLoading(false);
     }
-  }, [type, searchTerm, outreachFilter, toast]);
+  }, [type, searchTerm, toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -279,9 +278,9 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           accessorKey: 'companyName',
           header: 'Entity Identity', 
           cell: ({row}) => (
-              <div className="flex flex-col text-left">
-                  <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left text-foreground">
+              <div className="flex flex-col text-left text-foreground">
+                  <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                  <div className="flex items-center gap-2 mt-1 text-left">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
                       {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
@@ -305,7 +304,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       { 
           accessorKey: 'contactPerson',
           header: 'Account Lead',
-          cell: ({ row }) => <div className="text-sm font-medium text-foreground text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
+          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
       },
       { accessorKey: 'email', header: 'Email' },
       { 
@@ -341,7 +340,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           id: 'actions', 
           header: <div className="text-right">Actions</div>, 
           cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1 text-foreground">
+            <div className="flex justify-end items-center gap-1">
               <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
               <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
               <AddCommunicationLogDialog partnerId={row.original.id} collection={row.original.source === 'Lead' ? 'leads' : 'partners'} onLogAdded={() => fetchData()} />
@@ -389,8 +388,8 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
 
       <div className="space-y-6 text-left text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
-              <div className="flex gap-2 text-left text-foreground text-foreground">
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
+              <div className="flex gap-2 text-left text-foreground">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
                   <Popover>
                       <PopoverTrigger asChild>
@@ -401,7 +400,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                               {Object.keys(visibleColumns).map(col => (
                                   <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                       <span>{col.replace(/([A-Z])/g, ' $1')}</span>
-                                      {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
+                                      {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                   </div>
                               ))}
                           </div>
@@ -411,7 +410,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground">
                           <div className="space-y-1 text-left text-foreground">
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
@@ -423,11 +422,11 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               </div>
           </CardHeader>
 
-          <Card className="text-left text-foreground text-foreground text-foreground">
+          <Card className="text-left text-foreground">
               <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
-                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Filter className="h-3 w-3"/> Status Filter</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                      <div className="space-y-1 text-left text-foreground text-foreground">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
                               <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                               <SelectContent>
@@ -437,10 +436,10 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                               </SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                      <div className="space-y-1 text-left text-foreground">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                              <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                              <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="all">All Staff</SelectItem>
                                   <SelectItem value="none">Unallocated</SelectItem>
@@ -448,20 +447,13 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                               </SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
-                          <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
-                              <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
-                          </Select>
-                      </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                      <div className="space-y-6 text-left text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
-                               <div className="flex justify-center pt-4 text-foreground text-foreground text-foreground">
-                                  <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground">
+                               <div className="flex justify-center pt-4">
+                                  <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
                                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                       Load Next 100 Records
                                   </Button>

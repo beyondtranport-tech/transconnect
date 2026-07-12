@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Users2, Sparkles, UserCheck2, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Sparkles, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -141,7 +141,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                     <Building className="h-4 w-4" /> Core Entity Details
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -155,7 +155,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     </SelectContent></Select></FormItem>
                 )} />
                 <FormField control={form.control} name="role" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                    <FormItem className="text-left text-foreground"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
                     {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
                     </SelectContent></Select></FormItem>
                 )} />
@@ -165,9 +165,9 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
                     <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -175,9 +175,9 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
 
-                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
-                        <UserCheck2 className="h-4 w-4" /> CEO / Principal
+                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left">
+                        <UserCheck className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
                     <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -187,19 +187,19 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <Separator />
 
-            <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+            <div className="space-y-4 text-left text-foreground">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4" /> Technical Profile (300 Words)
                 </h4>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground text-foreground text-foreground">
                         <FormControl><Textarea {...field} className="bg-white min-h-[150px] border-2" /></FormControl>
                     </FormItem> 
                 )} />
             </div>
 
-            <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10 text-left text-foreground">
-              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold">
+            <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10 text-left text-foreground text-foreground">
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>
@@ -357,7 +357,7 @@ function LeadsDatabaseComponent() {
       </AlertDialog>
 
       <div className="space-y-6 text-left text-foreground">
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left">
           <div className="text-left text-foreground text-left text-foreground">
             <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Master Lead Database</CardTitle>
             <CardDescription className="text-left text-muted-foreground text-left text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
@@ -380,8 +380,8 @@ function LeadsDatabaseComponent() {
           </div>
         </CardHeader>
 
-        <Card className="text-left text-foreground text-foreground">
-            <CardContent className="pt-6 text-left text-foreground">
+        <Card className="text-left text-foreground text-foreground text-foreground">
+            <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                 {isLoading ? <div className="flex justify-center py-20 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
