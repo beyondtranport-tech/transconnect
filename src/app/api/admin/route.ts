@@ -53,10 +53,8 @@ export async function POST(req: NextRequest) {
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
 
-                // Strip brand prefix for clean logging
                 const cleanSubject = subject.replace('Logistics Flow: ', '').split('(')[0].trim();
 
-                // 1. Send via SendGrid
                 const sgKey = process.env.SENDGRID_API_KEY;
                 if (sgKey) {
                     try {
@@ -71,7 +69,6 @@ export async function POST(req: NextRequest) {
                     } catch (e) { console.error("SendGrid failed", e); }
                 }
 
-                // 2. Log Interaction
                 const logRef = partnerRef.collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
@@ -81,7 +78,6 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp()
                 });
 
-                // 3. Update Registry Status
                 await partnerRef.update({
                     status: 'contacted',
                     lastOutreachAt: FieldValue.serverTimestamp(),
@@ -103,7 +99,24 @@ export async function POST(req: NextRequest) {
                 const companyName = current.companyName || current.company_name || '';
                 
                 const enrichment = await enrichPartner({ companyName });
-                await docRef.set({ ...enrichment, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                
+                // Record the enrichment as a status and outreach event
+                await docRef.set({ 
+                    ...enrichment, 
+                    status: 'contacted',
+                    lastOutreachSubject: 'Forensic Research',
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp() 
+                }, { merge: true });
+
+                const logRef = docRef.collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    subject: 'Forensic Research (Auto-Bridge)',
+                    type: 'System',
+                    notes: 'Automated gap-analysis completed via Forensic Bridge.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
                 
                 return NextResponse.json({ success: true, data: enrichment });
             }
@@ -119,7 +132,12 @@ export async function POST(req: NextRequest) {
                     notes: 'AI research session launched to bridge data gaps.',
                     timestamp: FieldValue.serverTimestamp()
                 });
-                await db.collection(colName).doc(partnerId).update({ status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                await db.collection(colName).doc(partnerId).update({ 
+                    status: 'contacted', 
+                    lastOutreachSubject: 'Research Initiated',
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
                 return NextResponse.json({ success: true });
             }
 
@@ -130,7 +148,12 @@ export async function POST(req: NextRequest) {
                 for (const id of leadIds) {
                     const logRef = db.collection(colName).doc(id).collection('communications').doc();
                     batch.set(logRef, { id: logRef.id, subject: 'Forensic Batch Research', type: 'System', notes: 'Included in automated forensic batch.', timestamp: FieldValue.serverTimestamp() });
-                    batch.update(db.collection(colName).doc(id), { status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                    batch.update(db.collection(colName).doc(id), { 
+                        status: 'contacted', 
+                        lastOutreachSubject: 'Batch Research',
+                        lastOutreachAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp() 
+                    });
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true });
@@ -142,7 +165,17 @@ export async function POST(req: NextRequest) {
                 let collectionName = (targetType === 'lead' || !targetType) ? 'leads' : 'partners';
                 for (const p of partnerList) {
                     const id = p.record_id || p.id || db.collection(collectionName).doc().id;
-                    batch.set(db.collection(collectionName).doc(id), { ...p, id, type: targetType || p.type || 'supplier', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                    const hasTechnicalData = !!p.minedServiceWording || !!p.marketingManager || !!p.ceo;
+                    
+                    batch.set(db.collection(collectionName).doc(id), { 
+                        ...p, 
+                        id, 
+                        type: targetType || p.type || 'supplier', 
+                        status: hasTechnicalData ? 'contacted' : (p.status || 'new'),
+                        lastOutreachSubject: hasTechnicalData ? 'Forensic Research' : (p.lastOutreachSubject || null),
+                        lastOutreachAt: hasTechnicalData ? FieldValue.serverTimestamp() : (p.lastOutreachAt || null),
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
                 }
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partnerList.length });
