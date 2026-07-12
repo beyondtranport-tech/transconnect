@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Users2, Sparkles, UserCheck2 } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Users2, Sparkles, UserCheck2, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -310,7 +310,20 @@ function LeadsDatabaseComponent() {
             );
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black">{row.original.status}</Badge> },
+    { 
+        accessorKey: 'status', 
+        header: 'Status & Intelligence', 
+        cell: ({ row }) => (
+            <div className="flex flex-col gap-1 text-left">
+                <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
+                {row.original.enhancementMethod && (
+                    <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
+                        <Zap className="h-2 w-2 fill-current" /> {row.original.enhancementMethod} {formatDateSafe(row.original.lastEnrichedAt, "dd/MM")}
+                    </Badge>
+                )}
+            </div>
+        )
+    },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,

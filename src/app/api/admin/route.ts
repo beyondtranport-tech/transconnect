@@ -104,8 +104,10 @@ export async function POST(req: NextRequest) {
                 await docRef.set({ 
                     ...enrichment, 
                     status: 'contacted',
-                    lastOutreachSubject: 'Forensic Research',
+                    lastOutreachSubject: 'Forensic Bridge',
                     lastOutreachAt: FieldValue.serverTimestamp(),
+                    enhancementMethod: 'Forensic Bridge',
+                    lastEnrichedAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp() 
                 }, { merge: true });
 
@@ -172,8 +174,10 @@ export async function POST(req: NextRequest) {
                         id, 
                         type: targetType || p.type || 'supplier', 
                         status: hasTechnicalData ? 'contacted' : (p.status || 'new'),
-                        lastOutreachSubject: hasTechnicalData ? 'Forensic Research' : (p.lastOutreachSubject || null),
+                        lastOutreachSubject: hasTechnicalData ? 'Gap Analysis' : (p.lastOutreachSubject || null),
                         lastOutreachAt: hasTechnicalData ? FieldValue.serverTimestamp() : (p.lastOutreachAt || null),
+                        enhancementMethod: hasTechnicalData ? 'Gap Analysis' : null,
+                        lastEnrichedAt: hasTechnicalData ? FieldValue.serverTimestamp() : null,
                         updatedAt: FieldValue.serverTimestamp() 
                     }, { merge: true });
                 }

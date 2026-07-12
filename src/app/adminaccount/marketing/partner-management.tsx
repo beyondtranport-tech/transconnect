@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail, MapPin, Info, Building
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail, MapPin, Info, Building, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -323,7 +323,20 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               );
           }
       },
-      { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black">{row.original.status}</Badge> },
+      { 
+        accessorKey: 'status', 
+        header: 'Status & Intelligence', 
+        cell: ({ row }) => (
+            <div className="flex flex-col gap-1 text-left">
+                <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
+                {row.original.enhancementMethod && (
+                    <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
+                        <Zap className="h-2 w-2 fill-current" /> {row.original.enhancementMethod} {formatDateSafe(row.original.lastEnrichedAt, "dd/MM")}
+                    </Badge>
+                )}
+            </div>
+        )
+      },
       { 
           id: 'actions', 
           header: <div className="text-right">Actions</div>, 
@@ -414,7 +427,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
                       <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Filter className="h-3 w-3"/> Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
                               <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                               <SelectContent>
