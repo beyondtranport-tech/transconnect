@@ -415,7 +415,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               </div>
           </CardHeader>
 
-          <Card className="text-left text-foreground text-foreground">
+          <Card className="text-left text-foreground text-foreground text-foreground">
               <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
                       <div className="space-y-1 text-left text-foreground text-foreground text-foreground">

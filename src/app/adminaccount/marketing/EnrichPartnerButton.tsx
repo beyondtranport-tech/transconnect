@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Info, Zap, Search } from 'lucide-react';
+import { Sparkles, Loader2, Info, Zap, Search, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -44,7 +44,7 @@ STRICT DUAL-IDENTITY PROTOCOL:
 CONTENT MINING MANDATE:
 1. SITE MAP CONTENT: Extract the FIRST 300 WORDS of verbatim technical copy found across the official website or business snippets. Focus on "About Us", "Services", and "Product Range".
 
-REQUIRED JSON FORMAT:
+REQUIRED JSON FORMAT (USE EXACT KEY FOR UPDATE):
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
@@ -74,7 +74,7 @@ REQUIRED JSON FORMAT:
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Forensic Command Ready", description: "Oversight timeline updated." });
+            toast({ title: "Forensic Prompt Ready", description: "Oversight timeline updated. Paste in AI, then use Import to apply results." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -125,6 +125,15 @@ REQUIRED JSON FORMAT:
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-foreground text-left">
                                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-left">{getPrompt()}</pre>
                             </ScrollArea>
+                        </div>
+
+                        <div className="p-4 bg-slate-50 border rounded-xl space-y-2 text-left">
+                             <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                                 <ClipboardCheck className="h-3 w-3"/> Update Loop
+                             </p>
+                             <p className="text-[11px] leading-relaxed italic text-muted-foreground">
+                                 1. Copy this prompt. 2. Paste in Gemini/AI Studio. 3. Copy the resulting JSON. 4. Use the **Import** button in the main table to apply the update.
+                             </p>
                         </div>
                     </div>
 

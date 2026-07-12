@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
 
+                // Strip brand prefix for clean logging
+                const cleanSubject = subject.replace('Logistics Flow: ', '').split('(')[0].trim();
+
                 // 1. Send via SendGrid
                 const sgKey = process.env.SENDGRID_API_KEY;
                 if (sgKey) {
@@ -73,7 +76,7 @@ export async function POST(req: NextRequest) {
                 await logRef.set({
                     id: logRef.id,
                     type: 'Automated Dispatch',
-                    subject: subject,
+                    subject: cleanSubject,
                     notes: `System outreach sent to ${email}.`,
                     timestamp: FieldValue.serverTimestamp()
                 });
@@ -82,7 +85,7 @@ export async function POST(req: NextRequest) {
                 await partnerRef.update({
                     status: 'contacted',
                     lastOutreachAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
+                    lastOutreachSubject: cleanSubject,
                     updatedAt: FieldValue.serverTimestamp()
                 });
 
