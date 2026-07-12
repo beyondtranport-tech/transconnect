@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
-import sgMail from '@sendgrid/mail';
 import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';

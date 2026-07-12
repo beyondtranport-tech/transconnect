@@ -9,9 +9,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Mail, Phone,
-  Tag, ShieldAlert, Smartphone
+  Loader2, PlusCircle, Edit, Trash2, Send, Globe, Search, Download, Save, 
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -108,7 +107,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
                         <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     <div className="grid grid-cols-2 gap-4 text-left">
@@ -349,7 +348,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> New Search</Button>
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="gap-2 text-foreground"><Download className="h-4 w-4" /> Export</Button>
+                                <Button variant="outline" className="gap-2 text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2 text-left text-foreground">
                                 <div className="space-y-1 text-left text-foreground">
