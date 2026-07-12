@@ -43,26 +43,27 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
 
-STRICT INSTRUCTION: DO NOT USE SYNTHETIC LANGUAGE OR CORPORATE FLUFF.
-FORBIDDEN WORDS: "Spearheads", "Ecosystem", "Backbone", "Solutions", "Innovative", "Commitment".
+STRICT IDENTITY HIERARCHY:
+1. PRIMARY: Find the ACTUAL NAME of the Marketing Manager for each record.
+2. FALLBACK: Find the Managing Director (MD), CEO, or Owner.
+3. EMAIL FIDELITY: Prioritize personal corporate emails (e.g. name@domain.co.za) over generic sales/info aliases.
 
 TASK: Bridge ALL data gaps for the South African businesses listed below. 
 
 INVESTIGATIVE PROTOCOL:
-1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). 
+1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). If missing, scavenge Facebook/LinkedIn snippets.
 2. CLASSIFY INDUSTRIAL CATEGORY: Pick the MOST ACCURATE category from this specific list: [${validCategories}].
 3. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code).
-4. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner via LinkedIn.
-5. MAP CONTACTS: Identify professional email and direct mobile numbers (+27 format).
-6. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of THEIR SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo) or specific SADC corridors they service.
+4. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of THEIR SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo) or specific SADC corridors they service.
 
 REQUIRED JSON FIELDS:
 - "record_id": (Return exactly the KEY provided in the list below)
 - "industrial_category": (Select from the valid list provided above)
 - "website": (OFFICIAL CORPORATE URL ONLY)
 - "address": (FULL Verified Physical Address)
-- "contact_person": (Full Human Name of Decision Maker)
-- "email": (Professional Email)
+- "contact_person": (Full Human Name of Decision Maker - prioritized as per hierarchy)
+- "contact_title": (The job title found)
+- "email": (Direct Professional Email)
 - "phone": (Landline)
 - "mobile": (Direct Cell)
 - "notes": (Technical Service Summary)
@@ -114,7 +115,7 @@ ${companyList}`;
                     </DialogDescription>
                 </DialogHeader>
                 
-                <div className="space-y-4 py-4 text-left">
+                <div className="space-y-4 py-4 text-left text-foreground">
                     {selectedLeads.length > 30 && (
                         <Alert variant="destructive" className="bg-destructive/10 text-left">
                             <AlertTriangle className="h-4 w-4" />
@@ -127,15 +128,15 @@ ${companyList}`;
 
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">Classification Engine</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">Identity Hierarchy Active</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            This prompt now forces the AI to select an industrial category from your defined list, ensuring your tally badges update correctly.
+                            The agent will prioritize <strong>Marketing Managers</strong> and personal professional emails across the entire batch.
                         </AlertDescription>
                     </Alert>
 
                     <div className="space-y-2 text-left">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Forensic Command</label>
-                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left">
+                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground">
                             <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground text-left">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>

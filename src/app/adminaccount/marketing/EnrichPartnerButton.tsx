@@ -34,19 +34,18 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         return `ACT AS AN ELITE CORPORATE FORENSIC INTELLIGENCE AGENT. 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
+IDENTITY CAPTURE HIERARCHY:
+1. PRIMARY: Find the ACTUAL NAME of the Marketing Manager.
+2. FALLBACK: Find the Managing Director (MD), CEO, or Owner.
+3. TITLE: Return the verified job title in "contactTitle".
+
 CRITICAL PROTOCOL: 
 1. DO NOT RETURN MOCK DATA. 
-2. SEARCH GOOGLE, LINKEDIN, FACEBOOK, AND DIRECTORIES (YELLOSA, YANDEX).
-3. PRIORITIZE FINDING ANY VERIFIED EVIDENCE (PHONE, EMAIL, ADDRESS) OVER RETURNING NULL.
+2. SEARCH GOOGLE, LINKEDIN, FACEBOOK, AND DIRECTORIES (YELLOSA, INFOISINFO).
+3. EMAIL FIDELITY: Prioritize personal professional emails over generic "sales@" or "info@" aliases.
 4. SEARCH FOR ABBREVIATIONS: e.g. "TGD" for "Trans-Gauteng Diesel".
 
 TASK: Discover and bridge ALL data gaps for record "${partner.id}".
-
-INVESTIGATION CHECKLIST:
-- OFFICIAL WEBSITE: Find the corporate domain. If missing, find the Facebook or LinkedIn page.
-- LEADERSHIP: Find the ACTUAL NAME of the CEO, MD, or Owner.
-- VERBATIM MINING: Concatenate the first 300 words of real-world text from Home/Services sub-pages.
-- CONTACTS: Extract verified professional email and mobile numbers (+27 format).
 
 REQUIRED JSON FORMAT:
 {
@@ -54,7 +53,8 @@ REQUIRED JSON FORMAT:
   "companyName": "${companyName}",
   "industrial_category": "...",
   "contactPerson": "FULL HUMAN NAME",
-  "email": "...",
+  "contactTitle": "JOB TITLE",
+  "email": "PERSONAL PROFESSIONAL EMAIL",
   "phone": "Verified Landline",
   "mobile": "VERIFIED DIRECT CELL",
   "website": "OFFICIAL URL",
@@ -117,9 +117,9 @@ REQUIRED JSON FORMAT:
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground">Multi-Source Scavenging</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground">Identity Hierarchy Active</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                This prompt now explicitly targets social media and industrial directories to ensure results even for entities without traditional websites.
+                                The agent is now ordered to prioritize the <strong>Marketing Manager</strong>, with the CEO as fallback. It will also aggressively hunt for personal professional emails.
                             </AlertDescription>
                         </Alert>
 
