@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Users2, Sparkles, UserCheck2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -38,6 +38,7 @@ import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
@@ -59,6 +60,12 @@ async function performAdminAction(token: string, action: string, payload?: any) 
   return result;
 }
 
+const contactSchema = z.object({
+  name: z.string().optional().or(z.literal('')),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  mobile: z.string().optional().or(z.literal('')),
+});
+
 const leadSchema = z.object({
   companyName: z.string().min(1, 'Company name is required'),
   contactPerson: z.string().optional(),
@@ -70,8 +77,11 @@ const leadSchema = z.object({
   role: z.string().min(1, 'Role is required'),
   status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'active']).default('new'),
   notes: z.string().optional(),
-  website: z.string().url().optional().or(z.literal('')),
+  website: z.string().optional().or(z.literal('')),
   address: z.string().optional(),
+  minedServiceWording: z.string().optional(),
+  marketingManager: contactSchema.optional(),
+  ceo: contactSchema.optional(),
 });
 
 type LeadFormValues = z.infer<typeof leadSchema>;
@@ -100,6 +110,9 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           notes: '',
           website: defaultValues?.website || '',
           address: defaultValues?.address || '',
+          marketingManager: { name: '', email: '', mobile: '' },
+          ceo: { name: '', email: '', mobile: '' },
+          minedServiceWording: ''
         });
       }
     }
@@ -123,31 +136,73 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl text-left text-foreground">
+      <DialogContent className="sm:max-w-4xl text-left text-foreground">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem className="text-left"><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left text-foreground">
+            {/* Core Data */}
+            <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Building className="h-4 w-4" /> Core Entity Details
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem>)} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                <FormField control={form.control} name="status" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                    <SelectItem value="new">New</SelectItem><SelectItem value="contacted">In Research</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="active">Member</SelectItem>
+                    </SelectContent></Select></FormItem>
+                )} />
+                <FormField control={form.control} name="role" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                    {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
+                    </SelectContent></Select></FormItem>
+                )} />
+                </div>
+                <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Address</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
-                  <SelectItem value="new">New</SelectItem><SelectItem value="contacted">In Research</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="active">Member</SelectItem>
-                </SelectContent></Select></FormItem>
-              )} />
-              <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
-                  {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
-                </SelectContent></Select></FormItem>
-              )} />
+
+            <Separator />
+
+            {/* Side-by-Side Contacts */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                        <Users2 className="h-4 w-4" /> Marketing Manager
+                    </h4>
+                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                </div>
+
+                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                        <UserCheck2 className="h-4 w-4" /> CEO / Principal
+                    </h4>
+                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                </div>
             </div>
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem className="text-left"><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <DialogFooter className="pt-4 border-t text-left text-foreground">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
+
+            <Separator />
+
+            <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" /> Technical Profile (300 Words)
+                </h4>
+                <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
+                    <FormItem className="text-left">
+                        <FormControl><Textarea {...field} className="bg-white min-h-[150px] border-2" /></FormControl>
+                    </FormItem> 
+                )} />
+            </div>
+
+            <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10 text-left text-foreground">
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>
           </form>
@@ -190,7 +245,8 @@ function LeadsDatabaseComponent() {
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
   useEffect(() => {
-    if (searchParams.get('action') === 'add-member') setIsAddLeadOpen(true);
+    const action = searchParams.get('action');
+    if (action === 'add-member') setIsAddLeadOpen(true);
   }, [searchParams]);
 
   const handleExport = (format: 'Standard' | 'SendGrid') => {
@@ -248,10 +304,7 @@ function LeadsDatabaseComponent() {
         header: 'Outreach Stage',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-            
-            // Clean subject for display
             const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
-
             return (
                 <div className="flex flex-col text-left">
                     <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>

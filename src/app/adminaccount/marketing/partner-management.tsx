@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail, MapPin, Info
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,6 +32,7 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -45,6 +46,12 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
+const contactSchema = z.object({
+  name: z.string().optional().or(z.literal('')),
+  email: z.string().email('Invalid email').optional().or(z.literal('')),
+  mobile: z.string().optional().or(z.literal('')),
+});
+
 const partnerSchema = z.object({
   firstName: z.string().optional().or(z.literal('')),
   lastName: z.string().optional().or(z.literal('')),
@@ -56,9 +63,12 @@ const partnerSchema = z.object({
   industrial_category: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.string(), 
-  website: z.string().url("Invalid URL").optional().or(z.literal('')),
+  website: z.string().optional().or(z.literal('')),
   notes: z.string().optional(),
   address: z.string().optional(),
+  minedServiceWording: z.string().optional(),
+  marketingManager: contactSchema.optional(),
+  ceo: contactSchema.optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -73,7 +83,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: targetType, website: '', notes: '', address: '' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: targetType, website: '', notes: '', address: '', minedServiceWording: '', marketingManager: { name: '', email: '', mobile: '' }, ceo: { name: '', email: '', mobile: '' } });
     }
   }, [open, partner, form, targetType]);
 
@@ -99,40 +109,85 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] text-left text-foreground">
+        <DialogContent className="sm:max-w-4xl text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>{partner ? 'Edit' : 'Add'} {targetType.charAt(0).toUpperCase() + targetType.slice(1)} Record</DialogTitle>
-                <DialogDescription>Update contact details and technical profile for matching.</DialogDescription>
+                <DialogDescription>Manage high-fidelity contacts and industrial profile data.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left">
+                    {/* Core Identity */}
+                    <div className="space-y-4">
+                        <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <Building className="h-4 w-4" /> Core Entity Identity
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="industrial_category" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Industrial Trade</FormLabel><FormControl><Input {...field} className="bg-white" placeholder="e.g. Injectors, Brakes" /></FormControl></FormItem> )} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                            <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} className="bg-white" placeholder="https://..." /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="status" render={({ field }) => ( 
+                                <FormItem className="text-left">
+                                    <FormLabel>Status</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="new">New Lead</SelectItem>
+                                            <SelectItem value="contacted">Researching</SelectItem>
+                                            <SelectItem value="qualified">Qualified</SelectItem>
+                                            <SelectItem value="active">Active Member</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem> 
+                            )} />
+                        </div>
+                        <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Verified Physical Address</FormLabel><FormControl><Textarea {...field} className="bg-white h-20" /></FormControl></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+
+                    <Separator />
+
+                    {/* Side-by-Side Leadership Form */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                        {/* Column 1: Marketing Manager */}
+                        <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <Users className="h-4 w-4" /> Marketing Manager
+                            </h4>
+                            <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                        </div>
+
+                        {/* Column 2: CEO / MD */}
+                        <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                                <UserCheck className="h-4 w-4" /> CEO / Principal
+                            </h4>
+                            <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                        </div>
                     </div>
-                    <FormField control={form.control} name="status" render={({ field }) => ( 
-                        <FormItem className="text-left">
-                            <FormLabel>Pipeline Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="new">New Lead</SelectItem>
-                                    <SelectItem value="contacted">Researching</SelectItem>
-                                    <SelectItem value="qualified">Qualified</SelectItem>
-                                    <SelectItem value="active">Active Member</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem> 
-                    )} />
-                     <DialogFooter className="pt-4 border-t text-left">
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
+
+                    <Separator />
+
+                    {/* Mined Technical Content */}
+                    <div className="space-y-4">
+                        <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <Sparkles className="h-4 w-4" /> Technical Profile (300 Words)
+                        </h4>
+                        <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
+                            <FormItem className="text-left">
+                                <FormControl><Textarea {...field} className="bg-white min-h-[150px] font-sans text-sm leading-relaxed" placeholder="Verbatim extraction from sitemap pages..." /></FormControl>
+                            </FormItem> 
+                        )} />
+                    </div>
+
+                    <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10">
+                        <Button type="submit" disabled={isLoading} size="lg" className="w-full h-12 font-bold shadow-lg">
+                            {isLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="mr-2 h-4 w-4" />} 
+                            Update Forensic Record
                         </Button>
                     </DialogFooter>
                 </form>
@@ -184,7 +239,6 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     }
   }, [type, searchTerm, outreachFilter, toast]);
 
-  // AUTO-SYNC ON MOUNT: Removing the splash page requirement
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleEngage = useCallback((record: any) => {
@@ -265,10 +319,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           accessorKey: 'lastOutreachSubject',
           cell: ({ row }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-              
-              // Clean subject for display (Strip branding if present)
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
-              
               return (
                   <div className="flex flex-col text-left">
                       <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
