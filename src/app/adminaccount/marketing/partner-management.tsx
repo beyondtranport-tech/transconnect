@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -183,6 +184,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     }
   }, [type, searchTerm, outreachFilter, toast]);
 
+  // AUTO-SYNC ON MOUNT: Removing the splash page requirement
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleEngage = useCallback((record: any) => {
@@ -263,15 +265,14 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           accessorKey: 'lastOutreachSubject',
           cell: ({ row }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+              
+              // Clean subject for display (Strip branding if present)
+              const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
+              
               return (
                   <div className="flex flex-col text-left">
-                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
-                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
-                      {row.original.lastOpenedAt && (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                              <UserCheck className="h-2.5 w-2.5" /> Read
-                          </div>
-                      )}
+                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
+                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
                   </div>
               );
           }
@@ -332,6 +333,21 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left text-foreground text-foreground">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
+                  <Popover>
+                      <PopoverTrigger asChild>
+                          <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2 text-left text-foreground">
+                          <div className="space-y-1 text-left text-foreground">
+                              {Object.keys(visibleColumns).map(col => (
+                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                      <span>{col.replace(/([A-Z])/g, ' $1')}</span>
+                                      {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
+                                  </div>
+                              ))}
+                          </div>
+                      </PopoverContent>
+                  </Popover>
                   <Popover>
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
@@ -400,4 +416,3 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     </div>
   );
 }
-

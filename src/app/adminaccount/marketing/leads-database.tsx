@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -44,6 +45,7 @@ import { CommunicationLogDialog } from '@/app/adminaccount/marketing/Communicati
 import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
 import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
 import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
+import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -108,7 +110,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { ...values, id: lead?.id, type: 'lead' } });
+      await performAdminAction(token, 'savePartner', { collection: 'leads', partner: { ...values, id: lead?.id, type: 'lead' } });
       toast({ title: 'Record Updated!' });
       onSave();
       onOpenChange(false);
@@ -184,6 +186,7 @@ function LeadsDatabaseComponent() {
     }
   }, [toast]);
 
+  // AUTO-SYNC ON MOUNT
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
   useEffect(() => {
@@ -245,14 +248,14 @@ function LeadsDatabaseComponent() {
         header: 'Outreach Stage',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            
+            // Clean subject for display
+            const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
+
             return (
                 <div className="flex flex-col text-left">
-                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] border-primary/20 text-primary text-left">{row.original.lastOutreachSubject}</Badge>
-                    {row.original.lastOpenedAt && (
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                            <UserCheck className="h-2.5 w-2.5" /> Read
-                        </div>
-                    )}
+                    <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
+                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
                 </div>
             );
         }
@@ -265,6 +268,7 @@ function LeadsDatabaseComponent() {
         <div className="text-right flex items-center justify-end gap-1 text-foreground text-left">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+          <AddCommunicationLogDialog partnerId={row.original.id} collection="leads" onLogAdded={forceRefresh} />
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
           <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
@@ -296,14 +300,15 @@ function LeadsDatabaseComponent() {
             <CardDescription className="text-left text-muted-foreground text-left">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground">
+             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button variant="outline" className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground">
                     <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground">
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
-                        <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Upload</Button>
+                        <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                     </div>
                 </PopoverContent>
             </Popover>
@@ -329,4 +334,3 @@ export default function LeadsDatabase() {
     </Suspense>
   );
 }
-

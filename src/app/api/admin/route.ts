@@ -1,8 +1,8 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
-import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
                     id: logRef.id,
                     type: 'Automated Dispatch',
                     subject: subject,
-                    notes: `System-generated outreach sent to ${email}. Status: Pushed to Gateway.`,
+                    notes: `System-generated outreach sent to ${email}.`,
                     timestamp: FieldValue.serverTimestamp()
                 });
 
@@ -228,6 +228,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: staff.map(serializeTimestamps) });
             }
 
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                const leads = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: leads.map(serializeTimestamps) });
+            }
+
             case 'savePartner': {
                 const { partner, collection: colName = 'partners' } = payload;
                 const ref = db.collection(colName).doc(partner.id);
@@ -239,6 +245,14 @@ export async function POST(req: NextRequest) {
                 const { partnerId, source } = payload;
                 const colName = source === 'Lead' ? 'leads' : 'partners';
                 await db.collection(colName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+            
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
