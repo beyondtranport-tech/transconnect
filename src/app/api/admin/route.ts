@@ -95,6 +95,43 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: leads.map(serializeTimestamps) });
             }
 
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const colName = isLead ? 'leads' : 'partners';
+                await db.collection(colName).doc(partnerId).collection('communications').add({
+                    subject: 'Forensic Research Initiated',
+                    type: 'System',
+                    notes: 'AI research session launched to bridge data gaps.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                await db.collection(colName).doc(partnerId).update({
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const colName = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                for (const id of leadIds) {
+                    const logRef = db.collection(colName).doc(id).collection('communications').doc();
+                    batch.set(logRef, {
+                        subject: 'Forensic Batch Research',
+                        type: 'System',
+                        notes: 'Record included in automated forensic batch.',
+                        timestamp: FieldValue.serverTimestamp()
+                    });
+                    batch.update(db.collection(colName).doc(id), {
+                        status: 'contacted',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
             case 'logCommunication': {
                 const { partnerId, collection: colName = 'partners', type, subject, notes } = payload;
                 const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
@@ -129,7 +166,7 @@ export async function POST(req: NextRequest) {
                     html: html,
                 });
 
-                const colName = ['partners', 'transporters', 'suppliers', 'investors', 'developers', 'isa', 'finance', 'associates'].includes(audience) ? 'partners' : 'leads';
+                const colName = ['partners', 'transporters', 'suppliers', 'investors', 'developers', 'isa', 'finance', 'associates', 'warehouse'].includes(audience) ? 'partners' : 'leads';
                 const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,

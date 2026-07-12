@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, ClipboardCheck, Info, Zap, Search } from 'lucide-react';
+import { Sparkles, Loader2, Info, Zap, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -33,6 +33,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const getPrompt = () => {
         const currentData = {
             companyName: companyName,
+            industrial_category: partner.industrial_category || partner.category || 'General',
             contactPerson: partner.contactPerson || 'Unknown',
             email: partner.email || 'Missing',
             phone: partner.phone || 'Missing',
@@ -45,29 +46,38 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
             .filter(([_, v]) => v === 'Missing' || v === 'Unknown')
             .map(([k]) => k);
 
-        return `ACT AS AN ELITE CORPORATE INTELLIGENCE AGENT. 
+        return `ACT AS AN ELITE CORPORATE FORENSIC INTELLIGENCE AGENT. 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+STRICT INSTRUCTION: DO NOT USE SYNTHETIC LANGUAGE OR CORPORATE FLUFF.
+FORBIDDEN WORDS: "Spearheads", "Ecosystem", "Backbone", "Solutions", "Innovative", "Commitment".
 
 GIVEN DATA:
 ${JSON.stringify(currentData, null, 2)}
 
 GAP ANALYSIS: ${gaps.join(', ')}.
 
-TASK: Discover and bridge these gaps.
-1. FIND ACTUAL NAME: CEO/MD/Owner. 
-2. FIND DIRECT CONTACTS: Professional email and DIRECT MOBILE (+27...).
-3. PERSISTENCE: Return "record_id": "${partner.id}".
+TASK: Discover and bridge ALL data gaps. 
+
+INVESTIGATIVE PROTOCOL:
+1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). If missing, crawl Facebook, Yandex, and Yellosa.
+2. VERBATIM SITEMAP MINING: Extract the first 300 words of real-world data from the Home, About, and Services pages.
+3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner.
+4. MAP CONTACTS: Identify professional email and a direct mobile number (+27 format).
+5. RECORD KEY: Return "record_id": "${partner.id}".
 
 REQUIRED FORMAT:
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
-  "contactPerson": "FULL NAME",
+  "industrial_category": "...",
+  "contactPerson": "FULL HUMAN NAME",
   "email": "...",
   "phone": "Landline",
   "mobile": "DIRECT CELL",
   "website": "...",
-  "address": "..."
+  "address": "FULL PHYSICAL ADDRESS",
+  "minedServiceWording": "FULL CONCATENATED RAW TEXT FROM SITE HERO SECTIONS"
 }`;
     };
 
@@ -120,7 +130,7 @@ REQUIRED FORMAT:
                             <Sparkles className="h-5 w-5 text-primary" />
                             Forensic Gap-Analysis
                         </DialogTitle>
-                        <DialogDescription className="text-left text-foreground">
+                        <DialogDescription className="text-left text-foreground text-left">
                             Command the AI to bridge missing data for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
@@ -128,9 +138,9 @@ REQUIRED FORMAT:
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold">Zero-Step Automation</AlertTitle>
-                            <AlertDescription className="text-xs text-left">
-                                Clicking the button below will copy the command and automatically record this research event in the **Oversight Timeline**.
+                            <AlertTitle className="text-left font-bold text-foreground">Multi-Source Scavenging</AlertTitle>
+                            <AlertDescription className="text-xs text-left text-foreground">
+                                This prompt now explicitly targets social media and industrial directories to ensure high-fidelity results for entities without traditional websites.
                             </AlertDescription>
                         </Alert>
 

@@ -10,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Handshake, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Mail 
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Mail, Phone,
+  Tag, ShieldAlert, Smartphone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,6 +31,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -51,6 +53,7 @@ const partnerSchema = z.object({
   mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
+  industrial_category: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
   type: z.string(), 
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
@@ -156,6 +159,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
+    industrial_category: true,
     contactPerson: true,
     email: true,
     outreach: true,
@@ -228,7 +232,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           header: 'Entity Identity', 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
-                  <span className="font-bold text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                  <span className="font-bold text-foreground text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                   <div className="flex items-center gap-2 mt-1">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
                       {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
@@ -238,9 +242,18 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           )
       },
       { 
+          accessorKey: 'industrial_category',
+          header: 'Category', 
+          cell: ({row}) => (
+              <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">
+                  {row.original.industrial_category || row.original.category || 'General'}
+              </Badge>
+          )
+      },
+      { 
           accessorKey: 'contactPerson',
           header: 'Account Lead',
-          cell: ({ row }) => <div className="text-sm font-medium text-foreground">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
+          cell: ({ row }) => <div className="text-sm font-medium text-foreground text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
       },
       { accessorKey: 'email', header: 'Email' },
       { 
