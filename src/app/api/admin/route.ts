@@ -3,6 +3,7 @@ import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 import sgMail from '@sendgrid/mail';
+import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 
 export const dynamic = 'force-dynamic';
 
@@ -156,37 +157,36 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'dispatchEngagement': {
-                const { partnerId, email, subject, html, audience } = payload;
-                const apiKey = process.env.SENDGRID_API_KEY;
-                if (!apiKey) throw new Error("SENDGRID_API_KEY is not configured on the server.");
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                const colName = type === 'lead' ? 'leads' : 'partners';
+                const docRef = db.collection(colName).doc(id);
+                const docSnap = await docRef.get();
+                if (!docSnap.exists) throw new Error("Record not found.");
 
-                sgMail.setApiKey(apiKey);
-                await sgMail.send({
-                    to: email,
-                    from: 'michael@logisticsflow.co.za', 
-                    subject: subject,
-                    html: html,
-                });
+                const data = docSnap.data()!;
+                const companyName = data.companyName || data.trading_name || `${data.firstName} ${data.lastName}`;
+                
+                const enriched = await enrichPartner({ companyName });
+                
+                const update = {
+                    ...enriched,
+                    status: 'qualified',
+                    updatedAt: FieldValue.serverTimestamp()
+                };
 
-                const colName = ['partners', 'transporters', 'suppliers', 'investors', 'developers', 'isa', 'finance', 'associates', 'warehouse'].includes(audience) ? 'partners' : 'leads';
-                const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
+                await docRef.set(update, { merge: true });
+
+                const logRef = docRef.collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
-                    type: 'Automated Dispatch',
-                    subject: subject,
-                    notes: `Automated ${audience} dispatch via SendGrid.`,
+                    subject: 'Forensic Bridge Successful',
+                    type: 'System',
+                    notes: 'AI automatically mapped domain and leadership data.',
                     timestamp: FieldValue.serverTimestamp()
                 });
 
-                await db.collection(colName).doc(partnerId).update({
-                    status: 'contacted',
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ success: true, data: serializeTimestamps(update) });
             }
 
             case 'searchRegistry': {

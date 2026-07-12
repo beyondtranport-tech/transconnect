@@ -386,7 +386,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>

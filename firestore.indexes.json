@@ -47,79 +47,15 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionId": "companies",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "contributions",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "auditLogs",
-      "fields": [
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "communications",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "timestamp", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "tasks",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "loads",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "brokerAgreements",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "vehicleListings",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionId": "sales",
-      "fields": [
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
     }
   ],
   "fieldOverrides": [
     {
-      "collectionId": "shops",
-      "fieldPath": "updatedAt",
+      "collectionId": "communications",
+      "fieldPath": "timestamp",
       "indexes": [
         { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" },
-        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" },
-        { "order": "ASCENDING", "queryScope": "COLLECTION" },
-        { "order": "DESCENDING", "queryScope": "COLLECTION" }
+        { "order": "DESCENDING", "queryScope": "COLLECTION_GROUP" }
       ]
     }
   ]

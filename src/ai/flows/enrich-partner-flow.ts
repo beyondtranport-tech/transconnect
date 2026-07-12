@@ -1,7 +1,8 @@
 'use server';
 /**
  * @fileOverview High-intelligence AI research agent for partner contact info.
- * Hardened with Multi-Source Scavenging to prevent null results.
+ * Hardened with Multi-Source Scavenging to prevent null results and ensure 
+ * human identity capture for South African industrial entities.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -43,14 +44,20 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, contactPerson: null, industrial_category: null, minedServiceWording: null };
         }
 
-        // Parallel deep-search targeting official sites AND social/directory clusters
-        const [generalResults, socialResults, directoryResults] = await Promise.all([
+        // Parallel deep-search targeting official sites, social platforms, and regional directories
+        const [generalResults, socialResults, directoryResults, identityResults] = await Promise.all([
             googleSearchTool({ query: `"${company}" official website contact email South Africa` }),
             googleSearchTool({ query: `"${company}" Facebook page LinkedIn profile mobile number` }),
-            googleSearchTool({ query: `"${company}" Yellosa Yandex infoisinfo toprated business profile` })
+            googleSearchTool({ query: `"${company}" Yellosa Yandex infoisinfo toprated business profile` }),
+            googleSearchTool({ query: `"${company}" South Africa CEO Director Owner name` })
         ]);
         
-        const allResults = [...(generalResults || []), ...(socialResults || []), ...(directoryResults || [])];
+        const allResults = [
+            ...(generalResults || []), 
+            ...(socialResults || []), 
+            ...(directoryResults || []),
+            ...(identityResults || [])
+        ];
         
         if (allResults.length === 0) {
             return { email: null, phone: null, mobile: null, website: null, address: null, contactPerson: null, industrial_category: null, minedServiceWording: null };
@@ -67,10 +74,10 @@ const enrichPartnerFlow = ai.defineFlow(
             Your mission is to aggregate every scrap of verified evidence for "${company}".
             
             EXTRACTION PROTOCOL:
-            1. BEST-EFFORT SCAVENGING: If a formal site is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex). 
-            2. IDENTITY CAPTURE: Prioritize finding personal names associated with "Director", "Owner", or "Branch Manager".
+            1. BEST-EFFORT SCAVENGING: If a formal corporate website is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex, LinkedIn).
+            2. IDENTITY CAPTURE: Prioritize finding actual human names associated with "Director", "Owner", "MD", or "Branch Manager". Do not return generic roles.
             3. VERBATIM AGGREGATION: In 'minedServiceWording', concatenate the most descriptive technical sentences found in the search results. DO NOT summarize.
-            4. INTEGRITY: Return null only if absolutely zero verifiable evidence exists across all 30+ search results.
+            4. ACCURACY: Return data only if it is explicitly associated with "${company}".
             5. RETURN RAW JSON ONLY.`,
             prompt: `ANALYZE SEARCH RESULTS FOR "${company}":\n\n${allContent}`,
             output: {
