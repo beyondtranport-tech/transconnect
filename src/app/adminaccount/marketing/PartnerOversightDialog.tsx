@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye, Globe, BookOpen, Smartphone, User, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye, Globe, BookOpen, Smartphone, User, Mail, Phone, ShieldCheck, MapPin, Users, Sparkles } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { collection, query, orderBy, serverTimestamp, limit, doc } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -32,9 +33,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 function ContactCard({ title, contact }: { title: string, contact: any }) {
     if (!contact || (!contact.name && !contact.email)) {
         return (
-            <div className="p-4 border rounded-xl bg-slate-50/50 flex flex-col items-center justify-center gap-2 opacity-40 grayscale">
+            <div className="p-4 border rounded-xl bg-slate-50/50 flex flex-col items-center justify-center gap-2 opacity-40 grayscale text-center">
                 <User className="h-5 w-5 text-muted-foreground" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-center">{title} Not Mapped</p>
+                <p className="text-[10px] font-black uppercase tracking-widest">{title} Not Mapped</p>
             </div>
         );
     }
@@ -80,7 +81,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             limit(50)
         );
     }, [firestore, partner?.id, isOpen, parentCollection]);
-    const { data: logs, isLoading: isLoadingLogs, error: logsError } = useCollection(logsQuery);
+    const { data: logs, isLoading: isLoadingLogs } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
         if (!firestore || !partner?.id || partner.id === '' || !isOpen) return null;
@@ -90,7 +91,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             limit(50)
         );
     }, [firestore, partner?.id, isOpen, parentCollection]);
-    const { data: tasks, isLoading: isLoadingTasks, error: tasksError, forceRefresh: refreshTasks } = useCollection(tasksQuery);
+    const { data: tasks, isLoading: isLoadingTasks, forceRefresh: refreshTasks } = useCollection(tasksQuery);
 
     const timeline = useMemo(() => {
         const events: any[] = [];
@@ -218,7 +219,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 <div className="flex-1 overflow-y-auto p-8 space-y-10 bg-slate-50/50 text-left">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                         <div className="space-y-4 text-left">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                                 <Users className="h-4 w-4 text-primary"/>
                                 Key Decision Makers
                             </h3>
@@ -229,11 +230,11 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         </div>
 
                         <div className="space-y-4 text-left">
-                            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                                 <Globe className="h-4 w-4 text-primary"/>
                                 Core Logistics
                             </h3>
-                            <Card className="shadow-none bg-white h-[142px] overflow-hidden">
+                            <Card className="shadow-none bg-white h-[142px] overflow-hidden text-left">
                                 <CardContent className="p-4 space-y-4 text-left">
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Official Domain</p>
@@ -245,7 +246,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                     </div>
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Physical Operational Node</p>
-                                        <div className="flex items-start gap-1.5 text-xs text-foreground leading-tight">
+                                        <div className="flex items-start gap-1.5 text-xs text-foreground leading-tight text-left">
                                             <MapPin className="h-3 w-3 shrink-0 mt-0.5" />
                                             <span>{partner.address || "No verified address recorded."}</span>
                                         </div>
@@ -256,19 +257,19 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     </div>
 
                     <div className="space-y-4 text-left text-foreground">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                             <BookOpen className="h-4 w-4 text-primary"/>
                             Technical Intelligence Extraction
                         </h3>
-                        <Card className="shadow-none border-primary/20 bg-white">
+                        <Card className="shadow-none border-primary/20 bg-white text-left">
                             <CardHeader className="p-4 border-b bg-primary/5">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
                                     <Sparkles className="h-3 w-3" /> Mined Site Content (First 300 Words)
                                 </p>
                             </CardHeader>
-                            <CardContent className="p-6">
+                            <CardContent className="p-6 text-left">
                                 <ScrollArea className="h-40 w-full text-left">
-                                    <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap italic">
+                                    <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap italic text-left">
                                         {partner.minedServiceWording || partner.notes || "No technical service wording has been mined for this record yet."}
                                     </p>
                                 </ScrollArea>
@@ -279,7 +280,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     <Separator />
 
                     <div className="space-y-6 text-left text-foreground">
-                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                             <Activity className="h-4 w-4 text-primary"/>
                             Relationship Timeline & Engagement
                         </h3>
@@ -289,7 +290,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         ) : timeline.length > 0 ? (
                             <div className="relative space-y-4 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-muted text-left">
                                 {timeline.map((event, idx) => (
-                                    <div key={event.id || idx} className="relative pl-10">
+                                    <div key={event.id || idx} className="relative pl-10 text-left">
                                         <div className={cn(
                                             "absolute left-2 top-1.5 h-4 w-4 rounded-full border-2 border-background z-10",
                                             event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : 
@@ -297,19 +298,19 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                             event.type === 'access' ? "bg-purple-600" :
                                             "bg-primary"
                                         )} />
-                                        <Card className="shadow-none text-left border-none bg-white">
+                                        <Card className="shadow-none text-left border-none bg-white text-left">
                                             <CardContent className="p-4 text-left">
-                                                <div className="flex justify-between items-start text-left">
+                                                <div className="flex justify-between items-start text-left text-foreground">
                                                     <div className="space-y-1 text-left">
                                                         <div className="flex items-center gap-2 text-left">
                                                             {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : 
                                                              event.type === 'tracking' ? <Eye className="h-3.5 w-3.5 text-blue-600" /> :
                                                              event.type === 'access' ? <Smartphone className="h-3.5 w-3.5 text-purple-600" /> :
                                                              <MessageSquare className="h-3.5 w-3.5 text-primary" />}
-                                                            <span className="font-bold text-sm text-foreground">{event.subject || event.title}</span>
+                                                            <span className="font-bold text-sm text-foreground text-left">{event.subject || event.title}</span>
                                                             <Badge variant="outline" className="text-[10px] h-4 uppercase border-muted text-muted-foreground">{event.type}</Badge>
                                                         </div>
-                                                        <p className="text-xs text-muted-foreground leading-relaxed">{event.notes || event.description || 'Action recorded.'}</p>
+                                                        <p className="text-xs text-muted-foreground leading-relaxed text-left">{event.notes || event.description || 'Action recorded.'}</p>
                                                     </div>
                                                     <div className="text-right space-y-1">
                                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(event.date, "dd MMM, HH:mm")}</p>
