@@ -53,7 +53,7 @@ INVESTIGATIVE PROTOCOL:
 2. CLASSIFY INDUSTRIAL CATEGORY: Pick the MOST ACCURATE category from this specific list: [${validCategories}].
 3. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code).
 4. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner via LinkedIn.
-5. MAP CONTACTS: Identify professional email and a direct mobile number (+27 format).
+5. MAP CONTACTS: Identify professional email and direct mobile numbers (+27 format).
 6. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of THEIR SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo) or specific SADC corridors they service.
 
 REQUIRED JSON FIELDS:
@@ -103,7 +103,7 @@ ${companyList}`;
 
     return (
         <Dialog open={open} onOpenChange={(o) => !isLoading && onOpenChange(o)}>
-            <DialogContent className="sm:max-w-2xl text-left">
+            <DialogContent className="sm:max-w-2xl text-left text-foreground">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-left">
                         <Globe className="h-5 w-5 text-primary" />

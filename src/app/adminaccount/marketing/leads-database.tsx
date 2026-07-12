@@ -162,8 +162,7 @@ function LeadsDatabaseComponent() {
   const { user } = useUser();
 
   const [leads, setLeads] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -178,13 +177,14 @@ function LeadsDatabaseComponent() {
       if (!token) return;
       const res = await performAdminAction(token, 'getLeads');
       setLeads(res.data || []);
-      setHasLoaded(true);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Registry Load Failed', description: e.message });
     } finally {
       setIsLoading(false);
     }
   }, [toast]);
+
+  useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
   useEffect(() => {
     if (searchParams.get('action') === 'add-member') setIsAddLeadOpen(true);
@@ -298,7 +298,7 @@ function LeadsDatabaseComponent() {
           <div className="flex items-center gap-2 text-left text-foreground">
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button variant="outline" disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56 p-2 text-left">
                     <div className="space-y-1 text-left">
@@ -312,23 +312,11 @@ function LeadsDatabaseComponent() {
           </div>
         </CardHeader>
 
-        {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
-                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Registry Offline</h2>
-                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                    Load Lead Registry
-                </Button>
-            </Card>
-        ) : (
-            <Card className="text-left text-foreground text-foreground">
-                <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center py-10 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
-                </CardContent>
-            </Card>
-        )}
+        <Card className="text-left text-foreground text-foreground">
+            <CardContent className="pt-6 text-left text-foreground">
+                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
+            </CardContent>
+        </Card>
       </div>
     </>
   );
