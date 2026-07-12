@@ -313,7 +313,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
   const audienceLabel = type.charAt(0).toUpperCase() + type.slice(1);
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience={type as any} onEngageSuccess={() => fetchData()} />
       <PartnerDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType={type} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
@@ -342,9 +342,9 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                 </div>
             </Card>
       ) : (
-            <div className="space-y-6 text-left">
+            <div className="space-y-6 text-left text-foreground">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
+                    <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2 text-left text-foreground text-foreground">
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> New Search</Button>
                         <Popover>
@@ -396,10 +396,10 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground text-foreground">
+                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4 text-foreground text-foreground">
+                                     <div className="flex justify-center pt-4 text-foreground text-foreground text-foreground">
                                         <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records
