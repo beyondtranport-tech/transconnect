@@ -140,7 +140,6 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left text-foreground">
-            {/* Core Data */}
             <div className="space-y-4">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <Building className="h-4 w-4" /> Core Entity Details
@@ -166,24 +165,23 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <Separator />
 
-            {/* Side-by-Side Contacts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10">
                     <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
-                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
-                        <UserCheck className="h-4 w-4" /> CEO / Principal
+                        <UserCheck2 className="h-4 w-4" /> CEO / Principal
                     </h4>
-                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
             </div>
 
@@ -241,7 +239,6 @@ function LeadsDatabaseComponent() {
     }
   }, [toast]);
 
-  // AUTO-SYNC ON MOUNT
   useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
   useEffect(() => {
@@ -348,9 +345,9 @@ function LeadsDatabaseComponent() {
 
       <div className="space-y-6 text-left text-foreground">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left">
-          <div className="text-left text-foreground text-left">
+          <div className="text-left text-foreground text-left text-foreground">
             <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Master Lead Database</CardTitle>
-            <CardDescription className="text-left text-muted-foreground text-left">Comprehensive registry of prospects and attributed referrals.</CardDescription>
+            <CardDescription className="text-left text-muted-foreground text-left text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground">
              <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>

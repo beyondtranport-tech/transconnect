@@ -165,7 +165,6 @@ export async function POST(req: NextRequest) {
 
             case 'getAudienceCommunications': {
                 const { type } = payload;
-                const colName = (type === 'lead' || !type) ? 'leads' : 'partners';
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
                 const logs = snap.docs.map((d: any) => {
                     const data = d.data();

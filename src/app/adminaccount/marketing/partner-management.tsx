@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -116,7 +116,6 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left">
-                    {/* Core Identity */}
                     <div className="space-y-4">
                         <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                             <Building className="h-4 w-4" /> Core Entity Identity
@@ -147,9 +146,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
 
                     <Separator />
 
-                    {/* Side-by-Side Leadership Form */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                        {/* Column 1: Marketing Manager */}
                         <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner">
                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                                 <Users className="h-4 w-4" /> Marketing Manager
@@ -159,7 +156,6 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                             <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
 
-                        {/* Column 2: CEO / MD */}
                         <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
                             <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
                                 <UserCheck className="h-4 w-4" /> CEO / Principal
@@ -172,8 +168,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
 
                     <Separator />
 
-                    {/* Mined Technical Content */}
-                    <div className="space-y-4">
+                    <div className="space-y-4 text-left text-foreground">
                         <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                             <Sparkles className="h-4 w-4" /> Technical Profile (300 Words)
                         </h4>
@@ -432,7 +427,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                              <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                              <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="all">All Staff</SelectItem>
                                   <SelectItem value="none">Unallocated</SelectItem>

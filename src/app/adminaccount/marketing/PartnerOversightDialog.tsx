@@ -301,7 +301,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                         <Card className="shadow-none text-left border-none bg-white text-left">
                                             <CardContent className="p-4 text-left">
                                                 <div className="flex justify-between items-start text-left text-foreground">
-                                                    <div className="space-y-1 text-left">
+                                                    <div className="space-y-1 text-left text-foreground">
                                                         <div className="flex items-center gap-2 text-left">
                                                             {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : 
                                                              event.type === 'tracking' ? <Eye className="h-3.5 w-3.5 text-blue-600" /> :
