@@ -1,8 +1,8 @@
 'use server';
 /**
  * @fileOverview High-intelligence AI research agent for partner contact info.
- * Hardened with Multi-Source Scavenging to prevent null results and ensure 
- * human identity capture for South African industrial entities.
+ * Re-engineered with the "Multi-Source Scavenging" mandate to prioritize partial 
+ * evidence (Social/Directories) over returning null.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -44,19 +44,17 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, contactPerson: null, industrial_category: null, minedServiceWording: null };
         }
 
-        // Parallel deep-search targeting official sites, social platforms, and regional directories
-        const [generalResults, socialResults, directoryResults, identityResults] = await Promise.all([
+        // Parallel targeted search modeled after high-success discovery agents
+        const [generalResults, socialResults, directoryResults] = await Promise.all([
             googleSearchTool({ query: `"${company}" official website contact email South Africa` }),
-            googleSearchTool({ query: `"${company}" Facebook page LinkedIn profile mobile number` }),
-            googleSearchTool({ query: `"${company}" Yellosa Yandex infoisinfo toprated business profile` }),
-            googleSearchTool({ query: `"${company}" South Africa CEO Director Owner name` })
+            googleSearchTool({ query: `"${company}" Facebook page mobile number South Africa` }),
+            googleSearchTool({ query: `"${company}" Yellosa Yandex infoisinfo business profile` })
         ]);
         
         const allResults = [
             ...(generalResults || []), 
             ...(socialResults || []), 
-            ...(directoryResults || []),
-            ...(identityResults || [])
+            ...(directoryResults || [])
         ];
         
         if (allResults.length === 0) {
@@ -67,15 +65,15 @@ const enrichPartnerFlow = ai.defineFlow(
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
-        // High-Yield Extraction
+        // HIGH-YIELD EXTRACTION ENGINE
         const extraction = await ai.generate({
             model: geminiModel,
             system: `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR.
             Your mission is to aggregate every scrap of verified evidence for "${company}".
             
             EXTRACTION PROTOCOL:
-            1. BEST-EFFORT SCAVENGING: If a formal corporate website is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex, LinkedIn).
-            2. IDENTITY CAPTURE: Prioritize finding actual human names associated with "Director", "Owner", "MD", or "Branch Manager". Do not return generic roles.
+            1. BEST-EFFORT SCAVENGING: If a formal corporate website is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex). 
+            2. IDENTITY CAPTURE: Prioritize finding actual human names associated with "Director", "Owner", or "MD".
             3. VERBATIM AGGREGATION: In 'minedServiceWording', concatenate the most descriptive technical sentences found in the search results. DO NOT summarize.
             4. ACCURACY: Return data only if it is explicitly associated with "${company}".
             5. RETURN RAW JSON ONLY.`,
@@ -88,7 +86,7 @@ const enrichPartnerFlow = ai.defineFlow(
         return extraction.output || { email: null, phone: null, mobile: null, website: null, address: null, contactPerson: null, industrial_category: null, minedServiceWording: null };
 
     } catch (e: any) {
-        console.error("[ENRICHMENT] Flow Error:", e);
+        console.error("[ENRICHMENT_FLOW] Error:", e);
         return { email: null, phone: null, mobile: null, website: null, address: null, contactPerson: null, industrial_category: null, minedServiceWording: null };
     }
   }

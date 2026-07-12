@@ -242,7 +242,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           )
       },
       { 
-          accessorKey: 'industrial_category',
+          id: 'industrial_category',
           header: 'Industrial Category', 
           cell: ({row}) => (
               <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest bg-slate-100 text-slate-800 border-none">
@@ -375,7 +375,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
