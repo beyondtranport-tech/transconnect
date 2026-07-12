@@ -96,6 +96,24 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: leads.map(serializeTimestamps) });
             }
 
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('communications')
+                    .orderBy('timestamp', 'desc')
+                    .limit(200)
+                    .get();
+                
+                const results = snap.docs.map((d: any) => {
+                    const data = d.data();
+                    const pathParts = d.ref.path.split('/');
+                    const partnerId = pathParts[1];
+                    const collName = pathParts[0];
+                    return { id: d.id, partnerId, partnerCollection: collName, ...data };
+                });
+
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
             case 'logForensicInitiated': {
                 const { partnerId, isLead } = payload;
                 const colName = isLead ? 'leads' : 'partners';
@@ -198,7 +216,8 @@ export async function POST(req: NextRequest) {
                     query = query.where('type', '==', type);
                 }
 
-                const snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
+                // Support for high-capacity bulk retrieval
+                const snap = await query.orderBy('updatedAt', 'desc').limit(Math.min(limit, 20000)).get();
                 let results = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
                 if (term) {

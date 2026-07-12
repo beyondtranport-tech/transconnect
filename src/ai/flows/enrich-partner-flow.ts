@@ -72,11 +72,11 @@ const enrichPartnerFlow = ai.defineFlow(
             system: `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR.
             Your mission is to aggregate every scrap of verified evidence for "${company}".
             
-            EXTRACTION PROTOPROTOCOL:
+            EXTRACTION PROTOCOL:
             1. BEST-EFFORT SCAVENGING: If a formal corporate website is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex). 
             2. IDENTITY CAPTURE: Prioritize finding actual human names associated with "Director", "Owner", or "MD".
             3. VERBATIM AGGREGATION: In 'minedServiceWording', concatenate the most descriptive technical sentences found in the search results. DO NOT summarize.
-            4. ACCURACY: Return data only if it is explicitly associated with "${company}" or its variations.
+            4. ACCURACY: Return data only if it is explicitly associated with "${company}" or its variations (e.g. TGD for Trans-Gauteng Diesel).
             5. RETURN RAW JSON ONLY.`,
             prompt: `ANALYZE SEARCH RESULTS FOR "${company}":\n\n${allContent}`,
             output: {
