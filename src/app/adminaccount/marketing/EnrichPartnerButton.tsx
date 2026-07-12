@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -34,32 +35,28 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         return `ACT AS AN ELITE CORPORATE FORENSIC INTELLIGENCE AGENT. 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-IDENTITY CAPTURE HIERARCHY:
-1. PRIMARY: Find the ACTUAL NAME of the Marketing Manager.
-2. FALLBACK: Find the Managing Director (MD), CEO, or Owner.
-3. TITLE: Return the verified job title in "contactTitle".
-
-CRITICAL PROTOCOL: 
-1. DO NOT RETURN MOCK DATA. 
-2. SEARCH GOOGLE, LINKEDIN, FACEBOOK, AND DIRECTORIES (YELLOSA, INFOISINFO).
-3. EMAIL FIDELITY: Prioritize personal professional emails over generic "sales@" or "info@" aliases.
-4. SEARCH FOR ABBREVIATIONS: e.g. "TGD" for "Trans-Gauteng Diesel".
-
 TASK: Discover and bridge ALL data gaps for record "${partner.id}".
+
+STRICT DUAL-IDENTITY PROTOCOL:
+1. MARKETING MANAGER: Discover full name, direct professional email, and direct mobile.
+2. CEO / MD / OWNER: Discover full name, direct professional email, and direct mobile.
+
+CONTENT MINING MANDATE:
+1. SITE MAP CONTENT: Extract the FIRST 300 WORDS of verbatim technical copy found across the official website or business snippets. Focus on "About Us", "Services", and "Product Range".
 
 REQUIRED JSON FORMAT:
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
   "industrial_category": "...",
-  "contactPerson": "FULL HUMAN NAME",
-  "contactTitle": "JOB TITLE",
-  "email": "PERSONAL PROFESSIONAL EMAIL",
-  "phone": "Verified Landline",
-  "mobile": "VERIFIED DIRECT CELL",
   "website": "OFFICIAL URL",
+  "email": "Primary Professional Email",
+  "phone": "Landline",
+  "mobile": "Primary Mobile",
   "address": "FULL PHYSICAL ADDRESS",
-  "minedServiceWording": "CONCATENATED RAW TEXT FROM SITE HERO SECTIONS AND SNIPPETS"
+  "marketingManager": { "name": "...", "email": "...", "mobile": "..." },
+  "ceo": { "name": "...", "email": "...", "mobile": "..." },
+  "minedServiceWording": "CONCATENATED RAW TEXT (APPROX 300 WORDS)"
 }`;
     };
 
@@ -117,9 +114,9 @@ REQUIRED JSON FORMAT:
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground">Identity Hierarchy Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground">High-Fidelity Protocol Active</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                The agent is now ordered to prioritize the <strong>Marketing Manager</strong>, with the CEO as fallback. It will also aggressively hunt for personal professional emails.
+                                The agent is ordered to find <strong>both</strong> Marketing and CEO contacts, plus a <strong>300-word content block</strong> from the site.
                             </AlertDescription>
                         </Alert>
 

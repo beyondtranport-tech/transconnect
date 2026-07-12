@@ -1,15 +1,16 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye, Globe, BookOpen, Smartphone } from 'lucide-react';
+import { Loader2, MessageSquare, ClipboardList, CheckCircle, Circle, Clock, Activity, AlertTriangle, Eye, Globe, BookOpen, Smartphone, User, Mail, Phone, ShieldCheck } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { collection, query, orderBy, serverTimestamp, limit } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, limit, doc } from 'firebase/firestore';
 import { formatDateSafe } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -28,6 +29,39 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
+function ContactCard({ title, contact }: { title: string, contact: any }) {
+    if (!contact || (!contact.name && !contact.email)) {
+        return (
+            <div className="p-4 border rounded-xl bg-slate-50/50 flex flex-col items-center justify-center gap-2 opacity-40 grayscale">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-center">{title} Not Mapped</p>
+            </div>
+        );
+    }
+    return (
+        <Card className="shadow-none border-primary/10 bg-white">
+            <CardHeader className="p-4 pb-2 border-b bg-muted/20">
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <User className="h-3 w-3" /> {title}
+                </p>
+            </CardHeader>
+            <CardContent className="p-4 space-y-2 text-left">
+                <p className="text-sm font-bold text-foreground truncate">{contact.name || 'Anonymous Contact'}</p>
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-primary transition-colors">
+                        <Mail className="h-3 w-3" />
+                        <span className="truncate">{contact.email || 'No email'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <Phone className="h-3 w-3" />
+                        <span>{contact.mobile || 'No mobile'}</span>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, onUpdate: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoadingStaff, setIsLoadingStaff] = useState(false);
@@ -39,7 +73,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const parentCollection = isLead ? 'leads' : 'partners';
 
     const logsQuery = useMemoFirebase(() => {
-        // Robust guard to prevent root listener attempts
         if (!firestore || !partner?.id || partner.id === '' || !isOpen) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'communications'), 
@@ -50,7 +83,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { data: logs, isLoading: isLoadingLogs, error: logsError } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
-        // Robust guard to prevent root listener attempts
         if (!firestore || !partner?.id || partner.id === '' || !isOpen) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'tasks'), 
@@ -75,23 +107,11 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             });
             
             if (partner.lastOpenedAt) {
-                events.push({
-                    id: 'pixel-open',
-                    type: 'tracking',
-                    subject: 'Email Opened',
-                    notes: 'The recipient has opened an engagement email (Pixel fired).',
-                    date: partner.lastOpenedAt
-                });
+                events.push({ id: 'pixel-open', type: 'tracking', subject: 'Email Opened', notes: 'Recipient triggered tracking pixel.', date: partner.lastOpenedAt });
             }
 
             if (partner.lastAccessedAt) {
-                events.push({
-                    id: 'app-access',
-                    type: 'access',
-                    subject: 'App Link Accessed',
-                    notes: 'The lead clicked the handshake link and landed on the app.',
-                    date: partner.lastAccessedAt
-                });
+                events.push({ id: 'app-access', type: 'access', subject: 'App Link LANDED', notes: 'Lead clicked handshake link and landed on portal.', date: partner.lastAccessedAt });
             }
         }
         
@@ -167,20 +187,23 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     <Clock className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl h-[85vh] flex flex-col p-0 text-left text-foreground">
+            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 text-left text-foreground">
                 <DialogHeader className="p-6 border-b bg-muted/30">
                     <div className="flex justify-between items-start text-left">
                         <div className="text-left">
-                            <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                            <DialogTitle className="text-2xl font-black flex items-center gap-2 text-left">
                                 <Clock className="h-6 w-6 text-primary" />
                                 Oversight: {partner.companyName || `${partner.firstName} ${partner.lastName}`}
                             </DialogTitle>
-                            <DialogDescription className="mt-1 text-left">Full engagement history and technical profile.</DialogDescription>
+                            <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">{parentCollection.slice(0,-1)} Registry</Badge>
+                                <span className="text-xs text-muted-foreground">• {partner.industrial_category || 'Industrial'}</span>
+                            </div>
                         </div>
                         <div className="space-y-2 text-right">
-                             <Label className="text-xs font-bold uppercase text-muted-foreground">Allocated Staff</Label>
+                             <Label className="text-[10px] font-black uppercase text-muted-foreground">Allocated Staff</Label>
                              <Select value={partner.assigneeId || 'none'} onValueChange={handleAssign}>
-                                <SelectTrigger className="w-[200px] h-9">
+                                <SelectTrigger className="w-[200px] h-9 bg-white border-primary/20">
                                     <SelectValue placeholder="Unallocated" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -192,57 +215,77 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     </div>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/50 text-left">
-                    <div className="space-y-4 text-left text-foreground">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                            <BookOpen className="h-4 w-4 text-primary"/>
-                            Forensic & Technical Profile
-                        </h3>
-                        <Card className="shadow-none bg-white">
-                            <CardContent className="p-6 space-y-4 text-left">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex-1 overflow-y-auto p-8 space-y-10 bg-slate-50/50 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                        <div className="space-y-4 text-left">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                <Users className="h-4 w-4 text-primary"/>
+                                Key Decision Makers
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                                <ContactCard title="Marketing Lead" contact={partner.marketingManager} />
+                                <ContactCard title="CEO / Principal" contact={partner.ceo} />
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 text-left">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                <Globe className="h-4 w-4 text-primary"/>
+                                Core Logistics
+                            </h3>
+                            <Card className="shadow-none bg-white h-[142px] overflow-hidden">
+                                <CardContent className="p-4 space-y-4 text-left">
                                     <div className="space-y-1 text-left">
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Official Website</p>
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Official Domain</p>
                                         {partner.website ? (
-                                            <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-primary hover:underline flex items-center gap-1.5">
-                                                <Globe className="h-3.5 w-3.5" />
-                                                {partner.website}
+                                            <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary hover:underline flex items-center gap-1.5 truncate">
+                                                <Globe className="h-3 w-3" /> {partner.website}
                                             </a>
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground italic">No website URL recorded.</p>
-                                        )}
+                                        ) : <p className="text-xs text-muted-foreground italic">No website URL recorded.</p>}
                                     </div>
                                     <div className="space-y-1 text-left">
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Mined Service Summary</p>
-                                        <p className="text-sm leading-relaxed text-foreground">
-                                            {partner.notes || "No technical service wording has been mined for this record yet."}
-                                        </p>
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Physical Operational Node</p>
+                                        <div className="flex items-start gap-1.5 text-xs text-foreground leading-tight">
+                                            <MapPin className="h-3 w-3 shrink-0 mt-0.5" />
+                                            <span>{partner.address || "No verified address recorded."}</span>
+                                        </div>
                                     </div>
-                                </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 text-left text-foreground">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <BookOpen className="h-4 w-4 text-primary"/>
+                            Technical Intelligence Extraction
+                        </h3>
+                        <Card className="shadow-none border-primary/20 bg-white">
+                            <CardHeader className="p-4 border-b bg-primary/5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <Sparkles className="h-3 w-3" /> Mined Site Content (First 300 Words)
+                                </p>
+                            </CardHeader>
+                            <CardContent className="p-6">
+                                <ScrollArea className="h-40 w-full text-left">
+                                    <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap italic">
+                                        {partner.minedServiceWording || partner.notes || "No technical service wording has been mined for this record yet."}
+                                    </p>
+                                </ScrollArea>
                             </CardContent>
                         </Card>
                     </div>
 
                     <Separator />
 
-                    <div className="space-y-4 text-left text-foreground">
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                            <Activity className="h-4 w-4"/>
-                            Relationship Timeline
+                    <div className="space-y-6 text-left text-foreground">
+                        <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <Activity className="h-4 w-4 text-primary"/>
+                            Relationship Timeline & Engagement
                         </h3>
                         
                         {(isLoadingLogs || isLoadingTasks) ? (
                             <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin text-primary" /></div>
-                        ) : (logsError || tasksError) ? (
-                            <Card className="border-destructive bg-destructive/10">
-                                <CardContent className="p-6 flex items-center gap-3 text-destructive">
-                                    <AlertTriangle className="h-6 w-6" />
-                                    <div>
-                                        <p className="font-bold">Access Issue</p>
-                                        <p className="text-sm">Ensure your admin rules permit sub-collection listing.</p>
-                                    </div>
-                                </CardContent>
-                            </Card>
                         ) : timeline.length > 0 ? (
                             <div className="relative space-y-4 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-muted text-left">
                                 {timeline.map((event, idx) => (
@@ -254,7 +297,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                             event.type === 'access' ? "bg-purple-600" :
                                             "bg-primary"
                                         )} />
-                                        <Card className="shadow-none text-left">
+                                        <Card className="shadow-none text-left border-none bg-white">
                                             <CardContent className="p-4 text-left">
                                                 <div className="flex justify-between items-start text-left">
                                                     <div className="space-y-1 text-left">
@@ -264,12 +307,12 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                                              event.type === 'access' ? <Smartphone className="h-3.5 w-3.5 text-purple-600" /> :
                                                              <MessageSquare className="h-3.5 w-3.5 text-primary" />}
                                                             <span className="font-bold text-sm text-foreground">{event.subject || event.title}</span>
-                                                            <Badge variant="outline" className="text-[10px] h-4 uppercase">{event.type}</Badge>
+                                                            <Badge variant="outline" className="text-[10px] h-4 uppercase border-muted text-muted-foreground">{event.type}</Badge>
                                                         </div>
-                                                        <p className="text-sm text-muted-foreground">{event.notes || event.description || 'No details.'}</p>
+                                                        <p className="text-xs text-muted-foreground leading-relaxed">{event.notes || event.description || 'Action recorded.'}</p>
                                                     </div>
                                                     <div className="text-right space-y-1">
-                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(event.date, "dd MMM yyyy, HH:mm")}</p>
+                                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(event.date, "dd MMM, HH:mm")}</p>
                                                         {event.type === 'task' && (
                                                             <Button 
                                                                 size="sm" 
@@ -289,15 +332,12 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-12 border-2 border-dashed rounded-lg text-foreground">
+                            <div className="text-center py-20 border-2 border-dashed rounded-3xl text-foreground bg-white/50">
                                 <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                <p className="text-sm text-muted-foreground text-center">No activity recorded for this entity.</p>
+                                <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Relationship Cold</p>
                             </div>
                         )}
                     </div>
-                </div>
-                <div className="p-4 border-t bg-muted/10 flex justify-end px-6 text-foreground">
-                    <Button variant="outline" size="sm" onClick={() => setIsOpen(false)}>Close Oversight</Button>
                 </div>
             </DialogContent>
         </Dialog>

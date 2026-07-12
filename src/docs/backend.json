@@ -35,10 +35,26 @@
         "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
         "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance", "distributor"] },
-        "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
-        "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
+        "minedServiceWording": { "type": "string", "description": "First 300 words of technical content scraped from the sitemap sub-pages." },
+        "industrialTags": { "array": { "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." } },
         "address": { "type": "string" },
         "website": { "type": "string" },
+        "marketingManager": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "mobile": { "type": "string" }
+          }
+        },
+        "ceo": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "mobile": { "type": "string" }
+          }
+        },
         "assigneeId": { "type": "string", "description": "UID of the allocated platform staff member." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }

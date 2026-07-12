@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -41,32 +42,28 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const validCategories = transporterCategories.join(', ');
 
     const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
-RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION. NO EXPLANATORY TEXT.
+RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-STRICT IDENTITY HIERARCHY:
-1. PRIMARY: Find the ACTUAL NAME of the Marketing Manager for each record.
-2. FALLBACK: Find the Managing Director (MD), CEO, or Owner.
-3. EMAIL FIDELITY: Prioritize personal corporate emails (e.g. name@domain.co.za) over generic sales/info aliases.
+STRICT DUAL-IDENTITY PROTOCOL:
+1. MARKETING MANAGER: Find full name, direct professional email, and mobile.
+2. CEO / MD / OWNER: Find full name, direct professional email, and mobile.
+
+CONTENT MINING MANDATE:
+1. SITE MAP CONTENT: For each record, extract approx 300 words of verbatim technical copy from "About", "Services", and "Products" sub-pages.
 
 TASK: Bridge ALL data gaps for the South African businesses listed below. 
 
-INVESTIGATIVE PROTOCOL:
-1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). If missing, scavenge Facebook/LinkedIn snippets.
-2. CLASSIFY INDUSTRIAL CATEGORY: Pick the MOST ACCURATE category from this specific list: [${validCategories}].
-3. EXTRACT PHYSICAL ADDRESS: Find the EXACT OPERATIONAL ADDRESS (Street, Suburb, City, Province, Post Code).
-4. MINE TECHNICAL STANDING: In "notes", provide a 2-3 sentence summary of THEIR SPECIFIC TECHNICAL CAPABILITIES. Include truck makes (e.g. Scania/Volvo) or specific SADC corridors they service.
-
 REQUIRED JSON FIELDS:
-- "record_id": (Return exactly the KEY provided in the list below)
-- "industrial_category": (Select from the valid list provided above)
-- "website": (OFFICIAL CORPORATE URL ONLY)
-- "address": (FULL Verified Physical Address)
-- "contact_person": (Full Human Name of Decision Maker - prioritized as per hierarchy)
-- "contact_title": (The job title found)
-- "email": (Direct Professional Email)
+- "record_id": (Return exactly the KEY provided)
+- "industrial_category": (Select from [${validCategories}])
+- "website": (OFFICIAL CORPORATE URL)
+- "email": (Primary Professional Email)
 - "phone": (Landline)
-- "mobile": (Direct Cell)
-- "notes": (Technical Service Summary)
+- "mobile": (Primary Mobile)
+- "address": (FULL Verified Physical Address)
+- "marketingManager": { "name": "...", "email": "...", "mobile": "..." }
+- "ceo": { "name": "...", "email": "...", "mobile": "..." }
+- "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS)"
 
 LIST TO INVESTIGATE:
 ${companyList}`;
@@ -110,27 +107,17 @@ ${companyList}`;
                         <Globe className="h-5 w-5 text-primary" />
                         Forensic Batch Discovery ({selectedLeads.length})
                     </DialogTitle>
-                    <DialogDescription className="text-left">
+                    <DialogDescription className="text-left text-foreground">
                         Copy this forensic command to bridge gaps for addresses, websites, and technical categories using the provided record keys.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left text-foreground">
-                    {selectedLeads.length > 30 && (
-                        <Alert variant="destructive" className="bg-destructive/10 text-left">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Large Batch Warning</AlertTitle>
-                            <AlertDescription className="text-xs">
-                                You have selected {selectedLeads.length} records. For best results, process in batches of <strong>20-30</strong>.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">Identity Hierarchy Active</AlertTitle>
+                        <AlertTitle className="text-left font-bold text-foreground">Dual-Identity Protocol Active</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            The agent will prioritize <strong>Marketing Managers</strong> and personal professional emails across the entire batch.
+                            The agent will attempt to map <strong>both</strong> the Marketing Manager and CEO for every record in the batch.
                         </AlertDescription>
                     </Alert>
 
