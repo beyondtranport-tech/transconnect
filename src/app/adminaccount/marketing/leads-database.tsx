@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -125,10 +126,10 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem className="text-left"><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <FormField control={form.control} name="status" render={({ field }) => (
@@ -257,7 +258,7 @@ function LeadsDatabaseComponent() {
             );
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black">{row.original.status}</Badge> },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
@@ -300,9 +301,9 @@ function LeadsDatabaseComponent() {
                 <PopoverTrigger asChild>
                     <Button variant="outline" disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-2 text-left">
-                    <div className="space-y-1 text-left">
-                        <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
+                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground">
+                    <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground">
+                        <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Upload</Button>
                     </div>
                 </PopoverContent>
@@ -329,3 +330,4 @@ export default function LeadsDatabase() {
     </Suspense>
   );
 }
+

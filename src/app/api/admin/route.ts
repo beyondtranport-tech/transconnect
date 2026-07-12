@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -100,7 +101,8 @@ export async function POST(req: NextRequest) {
                     if (processed.has(lead.id)) continue;
                     const duplicates = allLeads.filter(l => 
                         l.id !== lead.id && 
-                        l.companyName?.toLowerCase() === (lead as any).companyName?.toLowerCase()
+                        (l.companyName?.toLowerCase() === (lead as any).companyName?.toLowerCase() || 
+                         (l.email && l.email.toLowerCase() === (lead as any).email?.toLowerCase()))
                     );
                     if (duplicates.length > 0) {
                         const group = [lead, ...duplicates];
@@ -361,3 +363,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }
+

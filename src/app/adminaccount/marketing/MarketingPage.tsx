@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,25 +45,25 @@ const DistributionDiscovery = dynamic(() => import('@/app/adminaccount/marketing
 const LoadsDiscovery = dynamic(() => import('@/app/adminaccount/marketing/loads-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 const BuySellDiscovery = dynamic(() => import('@/app/adminaccount/marketing/buy-sell-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Management (CRM)
+// High-Fidelity Unified Management
 import PartnerManagement from '@/app/adminaccount/marketing/partner-management';
 import ForensicBridge from '@/app/adminaccount/marketing/ForensicBridge';
 import AudienceOversightTable from '@/app/adminaccount/marketing/AudienceOversightTable';
 
 const audienceConfig: Record<string, any> = {
-    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, type: 'partner' },
-    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, type: 'isa' },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: PartnerManagement, Discovery: DiscoveryEngine, type: 'supplier' },
-    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: PartnerManagement, Discovery: TransporterDiscovery, type: 'transporter' },
-    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: PartnerManagement, type: 'investor' },
-    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: PartnerManagement, type: 'developer' },
-    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: AssociateDiscovery, type: 'associate' },
-    drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: DriverDiscovery, type: 'driver' },
-    finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Management: PartnerManagement, Discovery: FinanceDiscovery, type: 'finance' },
-    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: WarehouseDiscovery, type: 'warehouse' },
-    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: DistributionDiscovery, type: 'distributor' },
-    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: LoadsDiscovery, type: 'loads' },
-    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement, Discovery: BuySellDiscovery, type: 'buy-sell' },
+    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, type: 'partner' },
+    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, type: 'isa' },
+    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Discovery: DiscoveryEngine, type: 'supplier' },
+    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Discovery: TransporterDiscovery, type: 'transporter' },
+    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, type: 'investor' },
+    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, type: 'developer' },
+    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: PartnerEmails, Discovery: AssociateDiscovery, type: 'associate' },
+    drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DriverDiscovery, type: 'driver' },
+    finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Discovery: FinanceDiscovery, type: 'finance' },
+    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: WarehouseDiscovery, type: 'warehouse' },
+    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DistributionDiscovery, type: 'distributor' },
+    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: LoadsDiscovery, type: 'loads' },
+    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: BuySellDiscovery, type: 'buy-sell' },
 };
 
 interface MarketingPageProps {
@@ -76,7 +77,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   
   if (!config) return <div className="p-12 text-center italic">Audience configuration for "{audience}" not found.</div>;
 
-  const { Offer, Emails, Management, Discovery, type } = config;
+  const { Offer, Emails, Discovery, type } = config;
 
   return (
     <div className="space-y-6 text-left text-foreground">
@@ -94,28 +95,26 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <TabsTrigger value="pitch">Pitch</TabsTrigger>
                 <TabsTrigger value="framework">Framework</TabsTrigger>
                 <TabsTrigger value="emails">Emails</TabsTrigger>
-                {Management && <TabsTrigger value="management" className="gap-2"><Database className="h-3.5 w-3.5" /> Registry (CRM)</TabsTrigger>}
+                <TabsTrigger value="management" className="gap-2"><Database className="h-3.5 w-3.5" /> Registry (CRM)</TabsTrigger>
                 {Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5" /> Discovery (AI)</TabsTrigger>}
                 <TabsTrigger value="bridge" className="gap-2 text-primary"><Zap className="h-3.5 w-3.5" /> Forensic Bridge</TabsTrigger>
                 <TabsTrigger value="oversight" className="gap-2"><Search className="h-3.5 w-3.5" /> Oversight</TabsTrigger>
             </TabsList>
 
             <div className="mt-6 text-left text-foreground">
-                <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
-                <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8"><TechArchitecture /></CardContent></Card></TabsContent>
-                <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8"><RevenueModel /></CardContent></Card></TabsContent>
-                <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8"><Offer /></CardContent></Card></TabsContent>
-                <TabsContent value="pitch"><Card className="border-none shadow-xl"><CardContent className="p-8"><PitchDeck /></CardContent></Card></TabsContent>
-                <TabsContent value="framework"><Card className="border-none shadow-xl"><CardContent className="p-8"><Framework /></CardContent></Card></TabsContent>
-                <TabsContent value="emails"><Card className="border-none shadow-xl"><CardContent className="p-8"><Emails /></CardContent></Card></TabsContent>
+                <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
+                <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><TechArchitecture /></CardContent></Card></TabsContent>
+                <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><RevenueModel /></CardContent></Card></TabsContent>
+                <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><Offer /></CardContent></Card></TabsContent>
+                <TabsContent value="pitch"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><PitchDeck /></CardContent></Card></TabsContent>
+                <TabsContent value="framework"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><Framework /></CardContent></Card></TabsContent>
+                <TabsContent value="emails"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><Emails /></CardContent></Card></TabsContent>
                 
-                {Management && (
-                    <TabsContent value="management">
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
-                            <Management type={type} />
-                        </div>
-                    </TabsContent>
-                )}
+                <TabsContent value="management">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
+                        <PartnerManagement type={type} />
+                    </div>
+                </TabsContent>
 
                 {Discovery && (
                     <TabsContent value="discovery">
@@ -126,7 +125,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 )}
 
                 <TabsContent value="bridge">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground text-foreground">
                         <ForensicBridge audience={audience} />
                     </div>
                 </TabsContent>
@@ -141,3 +140,4 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     </div>
   );
 }
+
