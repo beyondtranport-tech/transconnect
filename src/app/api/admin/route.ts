@@ -49,6 +49,85 @@ export async function POST(req: NextRequest) {
         currentAction = action;
 
         switch (action) {
+            case 'dispatchEngagement': {
+                const { partnerId, email, subject, html, audience } = payload;
+                
+                // 1. Send via SendGrid if key is present
+                const sgKey = process.env.SENDGRID_API_KEY;
+                if (sgKey) {
+                    const sgMail = require('@sendgrid/mail');
+                    sgMail.setApiKey(sgKey);
+                    const msg = {
+                        to: email,
+                        from: 'Michael <michael@logisticsflow.co.za>',
+                        subject: subject,
+                        html: html,
+                    };
+                    await sgMail.send(msg);
+                }
+
+                // 2. Log in sub-collection
+                const colName = (audience === 'suppliers' || audience === 'transporters' || audience === 'partners' || audience === 'isa' || audience === 'investors' || audience === 'developers' || audience === 'associates' || audience === 'drivers') ? 'partners' : 'leads';
+                const partnerRef = db.collection(colName).doc(partnerId);
+                const logRef = partnerRef.collection('communications').doc();
+                
+                await logRef.set({
+                    id: logRef.id,
+                    type: 'Automated Dispatch',
+                    subject: subject,
+                    notes: `System-generated outreach sent to ${email}.`,
+                    timestamp: FieldValue.serverTimestamp()
+                });
+
+                // 3. Update parent record
+                await partnerRef.update({
+                    status: 'contacted',
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                return NextResponse.json({ success: true });
+            }
+
+            case 'findDuplicateLeads': {
+                const snap = await db.collection('leads').get();
+                const allLeads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const groups: any[][] = [];
+                const processed = new Set();
+
+                for (const lead of allLeads) {
+                    if (processed.has(lead.id)) continue;
+                    const duplicates = allLeads.filter(l => 
+                        l.id !== lead.id && 
+                        l.companyName?.toLowerCase() === (lead as any).companyName?.toLowerCase()
+                    );
+                    if (duplicates.length > 0) {
+                        const group = [lead, ...duplicates];
+                        groups.push(group);
+                        group.forEach(l => processed.add(l.id));
+                    }
+                }
+                return NextResponse.json({ success: true, data: serializeTimestamps(groups) });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'inviteLead': {
+                const { leadId } = payload;
+                await db.collection('leads').doc(leadId).update({
+                    status: 'invited',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true, message: "Lead status updated to 'invited'." });
+            }
+
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
                 const staff = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
@@ -96,7 +175,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const { type } = payload;
                 const snap = await db.collectionGroup('communications')
                     .orderBy('timestamp', 'desc')
                     .limit(200)

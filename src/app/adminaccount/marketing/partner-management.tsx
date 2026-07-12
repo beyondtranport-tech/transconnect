@@ -242,12 +242,11 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           id: 'industrial_category',
           header: 'Industrial Category', 
           cell: ({row}) => {
-              const rawCat = (row.original.industrial_category || row.original.category || '').trim();
-              const isGeneric = rawCat.toLowerCase() === type.toLowerCase() || !rawCat;
-              const displayLabel = isGeneric ? 'General' : rawCat;
+              const cat = row.original.industrial_category || row.original.category;
+              const label = (cat && cat.trim().toLowerCase() !== type.toLowerCase()) ? cat : 'General';
               return (
                   <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest bg-slate-100 text-slate-800 border-none">
-                      {displayLabel}
+                      {label}
                   </Badge>
               );
           }
