@@ -31,38 +31,24 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}`;
 
     const getPrompt = () => {
-        const currentData = {
-            companyName: companyName,
-            industrial_category: partner.industrial_category || partner.category || 'General',
-            contactPerson: partner.contactPerson || 'Unknown',
-            email: partner.email || 'Missing',
-            phone: partner.phone || 'Missing',
-            mobile: partner.mobile || 'Missing',
-            website: partner.website || 'Missing',
-            address: partner.address || 'Missing'
-        };
-
-        const gaps = Object.entries(currentData)
-            .filter(([_, v]) => v === 'Missing' || v === 'Unknown' || (typeof v === 'string' && v.includes('Locked')))
-            .map(([k]) => k);
-
         return `ACT AS AN ELITE CORPORATE FORENSIC INTELLIGENCE AGENT. 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-CRITICAL INTEGRITY SHIELD: 
-DO NOT RETURN MOCK, SYNTHETIC, OR PLACEHOLDER DATA. 
-YOU MUST PERFORM A LIVE SEARCH FOR "${companyName} South Africa" on Google, LinkedIn, Facebook, and industrial directories (Yellosa, Yandex, Infoisinfo).
-SEARCH SPECIFICALLY FOR Variations: e.g. "TGD" if name is "Trans-Gauteng Diesel".
+CRITICAL PROTOCOL: 
+1. DO NOT RETURN MOCK DATA. 
+2. SEARCH GOOGLE, LINKEDIN, FACEBOOK, AND DIRECTORIES (YELLOSA, YANDEX).
+3. PRIORITIZE FINDING ANY VERIFIED EVIDENCE (PHONE, EMAIL, ADDRESS) OVER RETURNING NULL.
+4. SEARCH FOR ABBREVIATIONS: e.g. "TGD" for "Trans-Gauteng Diesel".
 
 TASK: Discover and bridge ALL data gaps for record "${partner.id}".
 
-FORENSIC PROTOCOL:
-1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). If missing, crawl verified social pages.
-2. VERBATIM SITEMAP MINING: Extract and concatenate the first 300 words of real-world data from the Home, About, and Services sections.
-3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner.
-4. MAP CONTACTS: Identify professional email and direct mobile numbers (+27 format). Prioritize any verified number found in search snippets.
+INVESTIGATION CHECKLIST:
+- OFFICIAL WEBSITE: Find the corporate domain. If missing, find the Facebook or LinkedIn page.
+- LEADERSHIP: Find the ACTUAL NAME of the CEO, MD, or Owner.
+- VERBATIM MINING: Concatenate the first 300 words of real-world text from Home/Services sub-pages.
+- CONTACTS: Extract verified professional email and mobile numbers (+27 format).
 
-REQUIRED FORMAT:
+REQUIRED JSON FORMAT:
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
@@ -71,9 +57,9 @@ REQUIRED FORMAT:
   "email": "...",
   "phone": "Verified Landline",
   "mobile": "VERIFIED DIRECT CELL",
-  "website": "OFFICIAL CORPORATE URL",
-  "address": "FULL VERIFIED PHYSICAL ADDRESS",
-  "minedServiceWording": "FULL CONCATENATED RAW TEXT FROM SITE HERO SECTIONS AND SNIPPETS"
+  "website": "OFFICIAL URL",
+  "address": "FULL PHYSICAL ADDRESS",
+  "minedServiceWording": "CONCATENATED RAW TEXT FROM SITE HERO SECTIONS AND SNIPPETS"
 }`;
     };
 
@@ -91,7 +77,7 @@ REQUIRED FORMAT:
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Forensic Command Ready", description: "Oversight timeline updated automatically." });
+            toast({ title: "Forensic Command Ready", description: "Oversight timeline updated." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -133,7 +119,7 @@ REQUIRED FORMAT:
                             <Zap className="h-4 w-4 text-primary" />
                             <AlertTitle className="text-left font-bold text-foreground">Multi-Source Scavenging</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                This prompt now explicitly targets social media and industrial directories to ensure high-fidelity results for entities without traditional websites.
+                                This prompt now explicitly targets social media and industrial directories to ensure results even for entities without traditional websites.
                             </AlertDescription>
                         </Alert>
 

@@ -75,7 +75,7 @@ const enrichPartnerFlow = ai.defineFlow(
             1. BEST-EFFORT SCAVENGING: If a formal corporate website is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex). 
             2. IDENTITY CAPTURE: Prioritize finding actual human names associated with "Director", "Owner", or "MD".
             3. VERBATIM AGGREGATION: In 'minedServiceWording', concatenate the most descriptive technical sentences found in the search results. DO NOT summarize.
-            4. ACCURACY: Return data only if it is explicitly associated with "${company}".
+            4. ACCURACY: Return data only if it is explicitly associated with "${company}" or its variations.
             5. RETURN RAW JSON ONLY.`,
             prompt: `ANALYZE SEARCH RESULTS FOR "${company}":\n\n${allContent}`,
             output: {

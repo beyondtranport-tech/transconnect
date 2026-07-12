@@ -15,12 +15,6 @@
       ]
     },
     {
-      "collectionId": "partners",
-      "fields": [
-        { "fieldPath": "updatedAt", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionId": "leads",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
