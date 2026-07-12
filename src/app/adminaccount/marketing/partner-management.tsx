@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -231,7 +230,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
                   <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex items-center gap-2 mt-1 text-left">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
                       {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">{type}</Badge>
@@ -246,7 +245,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               const cat = row.original.industrial_category || row.original.category;
               const label = (cat && cat.trim().toLowerCase() !== type.toLowerCase()) ? cat : 'General';
               return (
-                  <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest bg-slate-100 text-slate-800 border-none">
+                  <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest bg-slate-100 text-slate-800 border-none text-left">
                       {label}
                   </Badge>
               );
@@ -348,6 +347,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                   <Button onClick={() => setDialog({ type: 'add' })} className="text-white"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
               </div>
           </CardHeader>
+
           <Card className="text-left text-foreground text-foreground">
               <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">

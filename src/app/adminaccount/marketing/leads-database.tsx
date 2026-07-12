@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -293,7 +292,7 @@ function LeadsDatabaseComponent() {
       <div className="space-y-6 text-left text-foreground">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left">
           <div className="text-left text-foreground text-left">
-            <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Database</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Master Lead Database</CardTitle>
             <CardDescription className="text-left text-muted-foreground text-left">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground">

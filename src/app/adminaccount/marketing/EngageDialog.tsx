@@ -89,6 +89,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
       return aud;
   }, [audience]);
 
+  const targetCollection = useMemo(() => {
+      if (!currentPartner) return 'partners';
+      return (currentPartner.source === 'Lead' || !currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners';
+  }, [currentPartner]);
+
   const audienceLabel = useMemo(() => {
     if (normalizedAudience === 'isa') return 'ISA Agent';
     if (normalizedAudience === 'supplier') return 'Supplier';
@@ -143,7 +148,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             type: channel === 'outlook' ? 'Outlook' : 'Gmail',
             subject: subjectLabel,
             notes: `Manual engagement launched via ${channel}.`,
-            collection: (!currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners'
+            collection: targetCollection
         });
 
         const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
@@ -164,7 +169,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   };
 
   const handleAutomatedDispatch = async () => {
-    if (!currentEmail) return;
+    if (!currentEmail || !currentPartner) return;
     setIsDispatching(true);
     try {
         const token = await getClientSideAuthToken();
@@ -179,13 +184,17 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             email: currentEmail,
             subject: getSubject(),
             html: contentElement.innerHTML,
-            audience
+            collection: targetCollection
         });
 
-        toast({ title: "Dispatch Successful" });
+        toast({ title: "Dispatch Successful", description: "Record updated with outreach tag." });
         if (onEngageSuccess) onEngageSuccess();
-        if (partners.length > 1 && currentIndex < partners.length - 1) setTimeout(nextRecord, 500);
-        else setTimeout(() => onOpenChange(false), 1000);
+        
+        if (partners.length > 1 && currentIndex < partners.length - 1) {
+            setTimeout(nextRecord, 800);
+        } else {
+            setTimeout(() => onOpenChange(false), 1500);
+        }
     } catch (e: any) {
         toast({ variant: 'destructive', title: "Dispatch Failed", description: e.message });
     } finally {
@@ -312,3 +321,4 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     </Dialog>
   );
 }
+
