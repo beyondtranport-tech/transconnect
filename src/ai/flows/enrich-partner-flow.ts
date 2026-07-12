@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview High-intelligence AI research agent for partner contact info.
- * Reverted to high-success scavenging model.
+ * Hardened with Multi-Source Scavenging to prevent null results.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -43,11 +43,11 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, contactPerson: null, industrial_category: null, minedServiceWording: null };
         }
 
-        // Broadened search query targeting social and directory evidence
+        // Parallel deep-search targeting official sites AND social/directory clusters
         const [generalResults, socialResults, directoryResults] = await Promise.all([
-            googleSearchTool({ query: `"${company}" contact email phone location South Africa` }),
-            googleSearchTool({ query: `"${company}" Facebook page LinkedIn profile South Africa` }),
-            googleSearchTool({ query: `"${company}" Yandex Yellosa infoisinfo toprated profile` })
+            googleSearchTool({ query: `"${company}" official website contact email South Africa` }),
+            googleSearchTool({ query: `"${company}" Facebook page LinkedIn profile mobile number` }),
+            googleSearchTool({ query: `"${company}" Yellosa Yandex infoisinfo toprated business profile` })
         ]);
         
         const allResults = [...(generalResults || []), ...(socialResults || []), ...(directoryResults || [])];
@@ -60,17 +60,17 @@ const enrichPartnerFlow = ai.defineFlow(
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
-        // Extract using high-intelligence LLM pass
+        // High-Yield Extraction
         const extraction = await ai.generate({
             model: geminiModel,
             system: `ACT AS AN ELITE INDUSTRIAL FORENSIC INVESTIGATOR.
-            Analyze search results and extract verified contact and management details for "${company}".
+            Your mission is to aggregate every scrap of verified evidence for "${company}".
             
-            EXTRACTOR RULES:
-            1. MULTI-SOURCE EVIDENCE: Snippets from Facebook and directories are highly reliable. Prioritize discovered info even if a formal site is absent.
-            2. IDENTITY FIRST: Look for personal names associated with "Owner", "Manager", or "Lead".
-            3. VERBATIM MINING: In 'minedServiceWording', concatenate the most descriptive technical sentences found in the snippets.
-            4. INDUSTRIAL CLASSIFICATION: Deduce the specific niche (e.g. Injectors, Auto Electrical, Logistics).
+            EXTRACTION PROTOCOL:
+            1. BEST-EFFORT SCAVENGING: If a formal site is missing, you MUST extract phone numbers and emails found in snippets (Facebook, Yellosa, Yandex). 
+            2. IDENTITY CAPTURE: Prioritize finding personal names associated with "Director", "Owner", or "Branch Manager".
+            3. VERBATIM AGGREGATION: In 'minedServiceWording', concatenate the most descriptive technical sentences found in the search results. DO NOT summarize.
+            4. INTEGRITY: Return null only if absolutely zero verifiable evidence exists across all 30+ search results.
             5. RETURN RAW JSON ONLY.`,
             prompt: `ANALYZE SEARCH RESULTS FOR "${company}":\n\n${allContent}`,
             output: {

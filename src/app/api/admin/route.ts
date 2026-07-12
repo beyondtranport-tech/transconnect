@@ -98,7 +98,9 @@ export async function POST(req: NextRequest) {
             case 'logForensicInitiated': {
                 const { partnerId, isLead } = payload;
                 const colName = isLead ? 'leads' : 'partners';
-                await db.collection(colName).doc(partnerId).collection('communications').add({
+                const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
                     subject: 'Forensic Research Initiated',
                     type: 'System',
                     notes: 'AI research session launched to bridge data gaps.',
@@ -118,6 +120,7 @@ export async function POST(req: NextRequest) {
                 for (const id of leadIds) {
                     const logRef = db.collection(colName).doc(id).collection('communications').doc();
                     batch.set(logRef, {
+                        id: logRef.id,
                         subject: 'Forensic Batch Research',
                         type: 'System',
                         notes: 'Record included in automated forensic batch.',
@@ -218,6 +221,16 @@ export async function POST(req: NextRequest) {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(500).get();
                 const logs = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
                 return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
+            }
+
+            case 'savePartner': {
+                const { partner, collection: colName = 'partners' } = payload;
+                const ref = db.collection(colName).doc(partner.id);
+                await ref.set({
+                    ...partner,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true });
             }
 
             default: return NextResponse.json({ success: false, error: `Action "${action}" not supported.` }, { status: 400 });

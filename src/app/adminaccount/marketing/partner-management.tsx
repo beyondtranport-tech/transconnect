@@ -186,7 +186,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     }
   }, [type, searchTerm, outreachFilter, toast]);
 
-  useEffect(() => { if (!hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
+  useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -232,7 +232,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           header: 'Entity Identity', 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
-                  <span className="font-bold text-foreground text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                  <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                   <div className="flex items-center gap-2 mt-1">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] h-4 uppercase font-bold">{row.original.source || 'Registry'}</Badge>
                       {(row.original.website || row.original.website_url) && <Globe className="h-3 w-3 text-primary" />}
@@ -243,9 +243,9 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       },
       { 
           accessorKey: 'industrial_category',
-          header: 'Category', 
+          header: 'Industrial Category', 
           cell: ({row}) => (
-              <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest">
+              <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest bg-slate-100 text-slate-800 border-none">
                   {row.original.industrial_category || row.original.category || 'General'}
               </Badge>
           )
@@ -363,7 +363,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                     </div>
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-foreground"><Filter className="h-3 w-3"/> Status</Label>

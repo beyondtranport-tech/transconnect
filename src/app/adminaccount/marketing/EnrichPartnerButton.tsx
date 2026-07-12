@@ -43,28 +43,24 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         };
 
         const gaps = Object.entries(currentData)
-            .filter(([_, v]) => v === 'Missing' || v === 'Unknown')
+            .filter(([_, v]) => v === 'Missing' || v === 'Unknown' || (typeof v === 'string' && v.includes('Locked')))
             .map(([k]) => k);
 
         return `ACT AS AN ELITE CORPORATE FORENSIC INTELLIGENCE AGENT. 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-STRICT INSTRUCTION: DO NOT USE SYNTHETIC LANGUAGE OR CORPORATE FLUFF.
-FORBIDDEN WORDS: "Spearheads", "Ecosystem", "Backbone", "Solutions", "Innovative", "Commitment".
+CRITICAL INTEGRITY SHIELD: 
+DO NOT RETURN MOCK, SYNTHETIC, OR PLACEHOLDER DATA. 
+YOU MUST PERFORM A LIVE SEARCH FOR "${companyName} South Africa" on Google, LinkedIn, Facebook, and industrial directories (Yellosa, Yandex, Infoisinfo).
+SEARCH SPECIFICALLY FOR Variations: e.g. "TGD" if name is "Trans-Gauteng Diesel".
 
-GIVEN DATA:
-${JSON.stringify(currentData, null, 2)}
+TASK: Discover and bridge ALL data gaps for record "${partner.id}".
 
-GAP ANALYSIS: ${gaps.join(', ')}.
-
-TASK: Discover and bridge ALL data gaps. 
-
-INVESTIGATIVE PROTOCOL:
-1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). If missing, crawl Facebook, Yandex, and Yellosa.
-2. VERBATIM SITEMAP MINING: Extract the first 300 words of real-world data from the Home, About, and Services pages.
+FORENSIC PROTOCOL:
+1. DISCOVER OFFICIAL WEBSITE: Find the OFFICIAL CORPORATE DOMAIN (e.g. www.companyname.co.za). If missing, crawl verified social pages.
+2. VERBATIM SITEMAP MINING: Extract and concatenate the first 300 words of real-world data from the Home, About, and Services sections.
 3. IDENTIFY LEADERSHIP: Find the ACTUAL NAME (First and Last) of the CEO, MD, or Owner.
-4. MAP CONTACTS: Identify professional email and a direct mobile number (+27 format).
-5. RECORD KEY: Return "record_id": "${partner.id}".
+4. MAP CONTACTS: Identify professional email and direct mobile numbers (+27 format). Prioritize any verified number found in search snippets.
 
 REQUIRED FORMAT:
 {
@@ -73,11 +69,11 @@ REQUIRED FORMAT:
   "industrial_category": "...",
   "contactPerson": "FULL HUMAN NAME",
   "email": "...",
-  "phone": "Landline",
-  "mobile": "DIRECT CELL",
-  "website": "...",
-  "address": "FULL PHYSICAL ADDRESS",
-  "minedServiceWording": "FULL CONCATENATED RAW TEXT FROM SITE HERO SECTIONS"
+  "phone": "Verified Landline",
+  "mobile": "VERIFIED DIRECT CELL",
+  "website": "OFFICIAL CORPORATE URL",
+  "address": "FULL VERIFIED PHYSICAL ADDRESS",
+  "minedServiceWording": "FULL CONCATENATED RAW TEXT FROM SITE HERO SECTIONS AND SNIPPETS"
 }`;
     };
 
@@ -87,19 +83,16 @@ REQUIRED FORMAT:
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed");
 
-            // 1. Copy to clipboard
             await navigator.clipboard.writeText(getPrompt());
             setIsCopied(true);
 
-            // 2. Automate logging and status change
             await performAdminAction(token, 'logForensicInitiated', { 
                 partnerId: partner.id,
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Prompt Copied & Logged", description: "Oversight timeline updated automatically." });
+            toast({ title: "Forensic Command Ready", description: "Oversight timeline updated automatically." });
             
-            // Close after small delay to show feedback
             setTimeout(() => {
                 setIsOpen(false);
                 onUpdate();
