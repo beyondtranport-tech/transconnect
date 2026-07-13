@@ -1,8 +1,7 @@
-
 'use server';
 /**
  * @fileOverview High-fidelity Forensic AI Research Agent.
- * Re-engineered for DUAL-IDENTITY CAPTURE and SITE CONTENT MINING.
+ * RE-ENGINEERED FOR SOUTH AFRICAN REGIONAL LOCK.
  * 
  * Target Persona 1: Marketing Manager (Engagement Lead)
  * Target Persona 2: CEO / Managing Director / Owner
@@ -54,35 +53,37 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
         }
 
-        // PARALLEL FORENSIC CRAWL
+        // PARALLEL FORENSIC CRAWL - STRICT SOUTH AFRICA TARGETING
         const [identityResults, webResults, directoryResults] = await Promise.all([
             googleSearchTool({ query: `"${company}" South Africa Marketing Manager CEO Managing Director Owner LinkedIn` }),
             googleSearchTool({ query: `"${company}" official website contact email address South Africa` }),
-            googleSearchTool({ query: `"${company}" Yellosa Infoisinfo business profile contact` })
+            googleSearchTool({ query: `"${company}" Yellosa Infoisinfo business profile contact South Africa` })
         ]);
         
         const allContent = [...(identityResults || []), ...(webResults || []), ...(directoryResults || [])]
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
-        // HIGH-FIDELITY EXTRACTION
+        // HIGH-FIDELITY EXTRACTION WITH REGIONAL LOCK
         const extraction = await ai.generate({
             model: geminiModel,
-            system: `ACT AS AN ELITE CORPORATE FORENSIC INTELLIGENCE AGENT.
-            Your mission is to bridge all data gaps for "${company}" using provided search evidence.
+            system: `ACT AS AN ELITE SOUTH AFRICAN CORPORATE FORENSIC INTELLIGENCE AGENT.
+            Your mission is to bridge all data gaps for the SOUTH AFRICAN entity of "${company}" using provided search evidence.
+            
+            STRICT REGIONAL LOCK:
+            1. RSA ONLY: You MUST ignore all results for entities in Australia, UK, USA, or other countries. 
+            2. BRANCH VERIFICATION: If the company is international, find the explicit South African branch or headquarters.
             
             STRICT DUAL-IDENTITY PROTOCOL:
             1. MARKETING MANAGER: You MUST attempt to find the full name, direct email, and mobile for the Marketing Manager or Engagement Lead.
             2. CEO/MD: You MUST attempt to find the full name, direct email, and mobile for the CEO, Managing Director, or Owner.
-            3. HIERARCHY: If a specific person is listed as "Head of [Department]", map them to the closest role.
 
             CONTENT MINING PROTOCOL:
-            1. VERBATIM EXTRACTION: In 'minedServiceWording', you MUST provide approximately the first 300 words of technical content found in snippets or titles regarding their services and products. Do NOT summarize. Concatenate the raw evidence.
+            1. VERBATIM EXTRACTION: In 'minedServiceWording', you MUST provide approximately the first 300 words of technical content found in snippets or titles regarding their services and products.
             2. CONTACT FIDELITY: Prioritize personal corporate emails (e.g. john@company.co.za) over generic aliases.
-            3. ADDRESS VERIFICATION: Extract the full verified operational address.
             
             RETURN RAW JSON ONLY.`,
-            prompt: `ANALYZE EVIDENCE FOR "${company}":\n\n${allContent}`,
+            prompt: `ANALYZE EVIDENCE FOR "${company}" IN SOUTH AFRICA:\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }

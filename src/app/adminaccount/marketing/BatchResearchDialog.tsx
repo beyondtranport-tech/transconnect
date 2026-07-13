@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -41,32 +40,32 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     // Explicit list for the AI to pick from
     const validCategories = transporterCategories.join(', ');
 
-    const aiPrompt = `ACT AS AN ELITE CORPORATE FORENSIC INVESTIGATOR. 
+    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN CORPORATE FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+STRICT REGIONAL LOCK:
+You MUST bridge gaps only for the SOUTH AFRICAN operations of the companies listed. Ignore all results for companies in Australia, UK, or USA.
 
 STRICT DUAL-IDENTITY PROTOCOL:
 1. MARKETING MANAGER: Find full name, direct professional email, and mobile.
 2. CEO / MD / OWNER: Find full name, direct professional email, and mobile.
 
 CONTENT MINING MANDATE:
-1. SITE MAP CONTENT: For each record, extract approx 300 words of verbatim technical copy from "About", "Services", and "Products" sub-pages.
+1. SITE MAP CONTENT: For each record, extract approx 300 words of verbatim technical copy from "About", "Services", and "Product" pages.
 
-TASK: Bridge ALL data gaps for the South African businesses listed below. 
+LIST TO INVESTIGATE (SOUTH AFRICA ENTITIES ONLY):
+${companyList}
 
-REQUIRED JSON FIELDS:
+REQUIRED JSON FIELDS PER RECORD:
 - "record_id": (Return exactly the KEY provided)
 - "industrial_category": (Select from [${validCategories}])
 - "website": (OFFICIAL CORPORATE URL)
 - "email": (Primary Professional Email)
-- "phone": (Landline)
-- "mobile": (Primary Mobile)
-- "address": (FULL Verified Physical Address)
+- "phone": (RSA Landline)
+- "address": (FULL Verified Physical Address in South Africa)
 - "marketingManager": { "name": "...", "email": "...", "mobile": "..." }
 - "ceo": { "name": "...", "email": "...", "mobile": "..." }
-- "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS)"
-
-LIST TO INVESTIGATE:
-${companyList}`;
+- "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS)"`;
 
     const handleCopyAndLogBatch = async () => {
         setIsLoading(true);
@@ -85,7 +84,7 @@ ${companyList}`;
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "Forensic Prompt Ready", description: `${leadIds.length} records marked as 'Searching' in Oversight.` });
+            toast({ title: "Forensic Prompt Ready", description: `${leadIds.length} records marked with South Africa Lock in Oversight.` });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -103,28 +102,28 @@ ${companyList}`;
         <Dialog open={open} onOpenChange={(o) => !isLoading && onOpenChange(o)}>
             <DialogContent className="sm:max-w-2xl text-left text-foreground">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-left">
+                    <DialogTitle className="flex items-center gap-2 text-left text-foreground">
                         <Globe className="h-5 w-5 text-primary" />
-                        Forensic Batch Discovery ({selectedLeads.length})
+                        Forensic Batch Discovery (RSA Lock)
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
-                        Copy this forensic command to bridge gaps for addresses, websites, and technical categories using the provided record keys.
+                        Copy this forensic command to bridge gaps specifically for the South African entities listed below.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left text-foreground">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="text-left font-bold text-foreground">Dual-Identity Protocol Active</AlertTitle>
+                        <AlertTitle className="font-bold text-foreground">Regional Enforcement Active</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            The agent will attempt to map <strong>both</strong> the Marketing Manager and CEO for every record in the batch.
+                            The agent is explicitly forbidden from returning international data nodes.
                         </AlertDescription>
                     </Alert>
 
                     <div className="space-y-2 text-left">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Forensic Command</label>
-                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground">
-                            <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground text-left">{aiPrompt}</pre>
+                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left">
+                            <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>
                 </div>
@@ -132,7 +131,7 @@ ${companyList}`;
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Prompt Ready!' : 'Copy Prompt & Update Oversight'}
+                        {isCopied ? 'Prompt Ready!' : 'Copy Batch Prompt (RSA Lock)'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
