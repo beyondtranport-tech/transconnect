@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * UTILITY: TIMESTAMP SERIALIZATION
+ * Ensures Firestore objects are JSON-serializable for the frontend.
  */
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
@@ -88,6 +89,31 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'logCommunication': {
+                const { partnerId, collection: colOverride, type, subject, notes } = payload;
+                const colName = colOverride || 'partners';
+                const partnerRef = db.collection(colName).doc(partnerId);
+
+                const logRef = partnerRef.collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type: type || 'Note',
+                    subject: subject || 'General Interaction',
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+
+                // Update the parent for better visual tracking in table
+                await partnerRef.update({
+                    status: 'contacted',
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                return NextResponse.json({ success: true });
+            }
+
             case 'autoEnrichRecord': {
                 const { id, type: targetType } = payload;
                 const colName = (targetType === 'lead' || !targetType) ? 'leads' : 'partners';
@@ -100,7 +126,6 @@ export async function POST(req: NextRequest) {
                 
                 const enrichment = await enrichPartner({ companyName });
                 
-                // Record the enrichment as a status and outreach event
                 await docRef.set({ 
                     ...enrichment, 
                     status: 'contacted',
@@ -201,7 +226,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const { type } = payload;
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
                 const logs = snap.docs.map((d: any) => {
                     const data = d.data();
@@ -213,7 +237,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceTasks': {
-                const { type } = payload;
                 const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
                 const tasks = snap.docs.map((d: any) => ({ ...d.data(), id: d.id }));
                 return NextResponse.json({ success: true, data: tasks.map(serializeTimestamps) });
@@ -253,6 +276,31 @@ export async function POST(req: NextRequest) {
                     return { id: docSnap.id, ...data, firstName: uData?.firstName || 'Member', lastName: uData?.lastName || '', email: uData?.email || 'N/A' };
                 }));
                 return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
+            }
+
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
+                const companyRef = db.collection('companies').doc(companyId);
+                const payoutRef = companyRef.collection('payoutRequests').doc(payoutId);
+
+                await db.runTransaction(async (t) => {
+                    t.update(companyRef, {
+                        walletBalance: FieldValue.increment(-amount),
+                        availableBalance: FieldValue.increment(-amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                    t.update(payoutRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.collection('companies').doc(companyId).collection('payoutRequests').doc(payoutId).update({
+                    status: 'rejected',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
             }
 
             case 'savePartner': {
