@@ -5,7 +5,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 /**
  * INTERACTION TRACKING ENDPOINT
  * Handles both 1x1 hidden pixels (Email Opens) and Client-side Pings (App Access).
- * distinguish via ?source=app or ?source=email
+ * Distinguish via ?source=app or ?source=email
  */
 export async function GET(req: NextRequest, { params }: { params: { partnerId: string } }) {
   const { partnerId } = params;
@@ -18,17 +18,44 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
         const db = getFirestore(app);
         
         const fieldToUpdate = source === 'app' ? 'lastAccessedAt' : 'lastOpenedAt';
+        const actionLabel = source === 'app' ? 'landing_page_accessed' : 'email_opened';
+        const detailLabel = source === 'app' ? 'Recipient landed on digital handshake link.' : 'Recipient opened engagement email.';
         
         const update = {
             [fieldToUpdate]: FieldValue.serverTimestamp(),
             updatedAt: FieldValue.serverTimestamp()
         };
 
-        // Mirror update to both leads and partners for unified funnel tracking
-        await Promise.all([
-            db.collection('partners').doc(partnerId).set(update, { merge: true }),
-            db.collection('leads').doc(partnerId).set(update, { merge: true })
-        ]);
+        // 1. Update the record in both potential registries
+        const partnerRef = db.collection('partners').doc(partnerId);
+        const leadRef = db.collection('leads').doc(partnerId);
+
+        const [pSnap, lSnap] = await Promise.all([partnerRef.get(), leadRef.get()]);
+        
+        const batch = db.batch();
+        let entityName = 'Unknown Entity';
+
+        if (pSnap.exists) {
+            batch.set(partnerRef, update, { merge: true });
+            entityName = pSnap.data()?.companyName || pSnap.data()?.firstName || entityName;
+        }
+        if (lSnap.exists) {
+            batch.set(leadRef, update, { merge: true });
+            entityName = lSnap.data()?.companyName || lSnap.data()?.firstName || entityName;
+        }
+
+        // 2. Log a forensic audit event for the Backend Activity Feed
+        const auditRef = db.collection('auditLogs').doc();
+        batch.set(auditRef, {
+            action: actionLabel,
+            details: `${entityName}: ${detailLabel}`,
+            companyId: partnerId,
+            companyName: entityName,
+            timestamp: FieldValue.serverTimestamp(),
+            metadata: { source, partnerId }
+        });
+
+        await batch.commit();
         
     } catch (e) {
         console.error("Tracking pixel/ping error:", e);
