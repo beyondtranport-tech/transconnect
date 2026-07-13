@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Bot, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check 
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,6 +31,7 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -103,9 +105,9 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Agency Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email"/></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left text-foreground">
@@ -115,6 +117,7 @@ function ISADialog({ open, onOpenChange, partner, onSave }: { open: boolean; onO
                                 <SelectContent>
                                     <SelectItem value="new">New Lead</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
+                                    <SelectItem value="qualified">Qualified</SelectItem>
                                     <SelectItem value="active">Active ISA</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -213,20 +216,38 @@ export default function ISAManagement() {
       },
       { accessorKey: 'email', header: 'Email' },
       { 
-          header: 'Outreach & Result',
+          header: 'Outreach Stage',
           id: 'outreach',
           accessorKey: 'lastOutreachSubject',
           cell: ({ row }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+              const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
                   <div className="flex flex-col text-left text-foreground">
-                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{row.original.lastOutreachSubject}</Badge>
-                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM")}</span>
-                      {row.original.lastOpenedAt && (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                              <UserCheck className="h-2.5 w-2.5" /> Read
-                          </div>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
+                        {row.original.lastOpenedAt && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                              </TooltipTrigger>
+                              <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {row.original.lastAccessedAt && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                              </TooltipTrigger>
+                              <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
+                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
                   </div>
               );
           }
@@ -282,7 +303,7 @@ export default function ISAManagement() {
       {!hasLoaded ? (
             <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">ISA Registry Scan</h2>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-foreground">ISA Registry Scan</h2>
                 <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground">Scan your professional agent pipeline. Use filters to prioritize recruitment outreach.</p>
                 
                 <div className="max-w-4xl mx-auto space-y-6 text-left">
@@ -300,7 +321,7 @@ export default function ISAManagement() {
                         <div className="space-y-1 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="new">New Lead</SelectItem>
@@ -311,7 +332,7 @@ export default function ISAManagement() {
                         <div className="space-y-1 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
                             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Staff</SelectItem>
                                     <SelectItem value="none">Unallocated</SelectItem>
@@ -363,19 +384,19 @@ export default function ISAManagement() {
                     </div>
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground">
+                            <div className="space-y-1 text-left text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                                    <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New Lead</SelectItem><SelectItem value="active">Active ISA</SelectItem></SelectContent>
+                                    <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active ISA</SelectItem></SelectContent>
                                 </Select>
                             </div>
                             <div className="space-y-1 text-left text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
@@ -412,3 +433,4 @@ export default function ISAManagement() {
     </div>
   );
 }
+

@@ -33,6 +33,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -334,8 +335,26 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                   <div className="flex flex-col text-left">
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
-                        {row.original.lastOpenedAt && <TooltipProvider><Tooltip><TooltipTrigger><div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div></TooltipTrigger><TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent></Tooltip></TooltipProvider>}
-                        {row.original.lastAccessedAt && <TooltipProvider><Tooltip><TooltipTrigger><div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div></TooltipTrigger><TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent></Tooltip></TooltipProvider>}
+                        {row.original.lastOpenedAt && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                              </TooltipTrigger>
+                              <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                        {row.original.lastAccessedAt && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger>
+                                <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                              </TooltipTrigger>
+                              <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
                       </div>
                       <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
                   </div>
@@ -408,7 +427,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
 
       <div className="space-y-6 text-left text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left text-foreground">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
                   <Popover>
@@ -487,3 +506,4 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     </div>
   );
 }
+
