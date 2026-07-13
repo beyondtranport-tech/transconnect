@@ -35,8 +35,9 @@ export async function leadGenerationFlow(input: LeadGenerationInput): Promise<Le
   } catch (error: any) {
     console.error("Lead Gen Flow Error:", error);
     let message = error.message || "Could not connect to AI service.";
-    if (message.includes('429') || message.includes('Quota') || message.includes('parse stream')) {
-        message = "AI Rate Limit Reached (429). Please wait 60 seconds before generating more leads.";
+    // Standardized detection for Resource Exhausted (429)
+    if (message.includes('429') || message.includes('Quota') || message.includes('exhausted') || message.includes('parse stream')) {
+        message = "AI Rate Limit Reached (429). The system is under high load. Please wait 60 seconds before generating more leads.";
     }
     return {
       leads: [],

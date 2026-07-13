@@ -8,10 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
     Loader2, Zap, Play, Pause, RotateCcw, ShieldCheck, Search, Database, 
-    AlertTriangle, CheckCircle2, Globe, Mail, Smartphone, Activity, BarChart3, Users
+    AlertTriangle, CheckCircle2, Globe, Mail, Smartphone, Activity, BarChart3, Users, Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
@@ -30,13 +29,12 @@ const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state';
 
 export default function ForensicBridge({ audience }: { audience: string }) {
     const { toast } = useToast();
-    const [status, setStatus] = useState<'idle' | 'scanning' | 'running' | 'paused' | 'completed'>('idle');
+    const [status, setStatus] = useState<'idle' | 'scanning' | 'running' | 'paused' | 'completed' | 'cooldown'>('idle');
     const [queue, setQueue] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [logs, setLogs] = useState<any[]>([]);
     const [isScanning, setIsScanning] = useState(false);
 
-    // Session Statistics
     const [stats, setStats] = useState({
         domains: 0,
         emails: 0,
@@ -44,7 +42,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         errors: 0
     });
 
-    // Restore state from LocalStorage on mount
     useEffect(() => {
         const saved = localStorage.getItem(BRIDGE_STORAGE_KEY);
         if (saved) {
@@ -62,7 +59,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         }
     }, [audience]);
 
-    // Save state to LocalStorage whenever it changes
     useEffect(() => {
         if (queue.length > 0) {
             localStorage.setItem(BRIDGE_STORAGE_KEY, JSON.stringify({
@@ -142,7 +138,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
-            // Check status at start of each tick
             let currentStatus: string = 'running';
             setStatus(s => {
                 currentStatus = s;
@@ -179,30 +174,43 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                         type: 'success',
                         data: res.data 
                     }, ...prev].slice(0, 50));
+                    
+                    // Standard safety delay between successful records
+                    await new Promise(resolve => setTimeout(resolve, 8000));
                 } else {
                     throw new Error(res.error);
                 }
 
-                // Generous 6-second delay to prevent 429 Rate Limits
-                await new Promise(resolve => setTimeout(resolve, 6000));
-
             } catch (err: any) {
-                setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
-                const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota') || err.message?.includes('stream');
-                
-                setLogs(prev => [{ 
-                    id: Date.now() + 2, 
-                    msg: isRateLimit ? `Rate Limit Hit. Pausing for recovery...` : `Bridge Failed for ${name}: ${err.message}`, 
-                    type: 'error' 
-                }, ...prev].slice(0, 50));
+                const isRateLimit = err.message?.includes('429') || err.message?.includes('Resource exhausted') || err.message?.includes('Quota') || err.message?.includes('parse stream');
                 
                 if (isRateLimit) {
-                    setStatus('paused');
-                    toast({ variant: 'destructive', title: "Throttling Active", description: "Google AI rate limit reached. The bridge will pause for 60 seconds." });
-                    await new Promise(resolve => setTimeout(resolve, 60000));
-                    break;
+                    setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
+                    setStatus('cooldown');
+                    setLogs(prev => [{ 
+                        id: Date.now() + 2, 
+                        msg: `AI Rate Limit Hit. Initiating 65s mandatory cooldown...`, 
+                        type: 'error' 
+                    }, ...prev].slice(0, 50));
+                    
+                    toast({ variant: 'destructive', title: "Quota Exhausted", description: "The bridge is pausing for 65 seconds to allow the AI quota to reset." });
+                    
+                    await new Promise(resolve => setTimeout(resolve, 65000));
+                    
+                    // After cooldown, try to continue with the same pointer
+                    setStatus('running');
+                    continue; 
+                } else {
+                    setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
+                    setLogs(prev => [{ 
+                        id: Date.now() + 3, 
+                        msg: `Bridge Failed for ${name}: ${err.message}`, 
+                        type: 'error' 
+                    }, ...prev].slice(0, 50));
+                    
+                    // Wait 10s on general errors before next
+                    await new Promise(resolve => setTimeout(resolve, 10000));
                 }
-                await new Promise(resolve => setTimeout(resolve, 10000));
             }
 
             pointer++;
@@ -223,7 +231,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     <div className="flex justify-between items-start text-left">
                         <div className="text-left">
                             <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-left text-white">
-                                <Zap className="h-8 w-8 text-primary animate-pulse" />
+                                <Zap className={cn("h-8 w-8 text-primary", status === 'running' && "animate-pulse")} />
                                 Automated Forensic Bridge
                             </CardTitle>
                             <CardDescription className="text-slate-400 mt-1 text-left">
@@ -289,16 +297,23 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                                 <Progress value={progress} className="h-3 bg-white/5" />
                             </div>
 
-                            <div className="flex justify-center gap-4 text-left">
-                                {status !== 'running' ? (
-                                    <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary hover:bg-primary/90 text-white" onClick={startEnrichment} disabled={status === 'completed'}>
-                                        <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Pipeline' : 'Start Auto-Enrichment'}
-                                    </Button>
-                                ) : (
-                                    <Button size="lg" variant="outline" className="h-14 px-12 font-black uppercase text-xs tracking-widest border-white/20 text-white" onClick={() => setStatus('paused')}>
-                                        <Pause className="mr-2 h-4 w-4" /> Pause Pipeline
-                                    </Button>
+                            <div className="flex flex-col items-center gap-4 text-left">
+                                {status === 'cooldown' && (
+                                    <div className="flex items-center gap-2 text-amber-500 animate-pulse text-xs font-bold uppercase tracking-widest">
+                                        <Clock className="h-4 w-4" /> Cooling down AI Quota...
+                                    </div>
                                 )}
+                                <div className="flex justify-center gap-4">
+                                    {status !== 'running' && status !== 'cooldown' ? (
+                                        <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary hover:bg-primary/90 text-white" onClick={startEnrichment} disabled={status === 'completed'}>
+                                            <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Pipeline' : 'Start Auto-Enrichment'}
+                                        </Button>
+                                    ) : (
+                                        <Button size="lg" variant="outline" className="h-14 px-12 font-black uppercase text-xs tracking-widest border-white/20 text-white" onClick={() => setStatus('paused')}>
+                                            <Pause className="mr-2 h-4 w-4" /> Pause Pipeline
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
@@ -370,7 +385,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="p-4 bg-muted/30 rounded-xl text-left border border-dashed border-muted">
                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Rate Limit Protection</p>
                                 <p className="text-[11px] leading-relaxed italic text-foreground text-left">
-                                    A 6-second safety buffer is applied between records to ensure high-fidelity enrichment without triggering AI quota locks.
+                                    Adaptive backoff is active. If the AI quota is exhausted, the bridge will pause for 65 seconds before automatically resuming.
                                 </p>
                             </div>
                         </CardContent>
