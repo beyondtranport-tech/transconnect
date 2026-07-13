@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, Zap, ChevronLeft, ChevronRight, Send, ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Loader2, Mail, Zap, ChevronLeft, ChevronRight, Send, ShieldCheck, ShieldAlert, CheckCircle2, MessageCircle, Smartphone, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -59,31 +59,43 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * UTILITY: HIERARCHICAL CONTACT RESOLVER
- * Filters out "N/A", "null", and empty strings to ensure real routing.
+ * UTILITY: HIERARCHICAL CONTACT RESOLVER (Email & Mobile)
  */
 function resolveContact(partner: any) {
-    if (!partner) return { name: 'Partner', email: '' };
+    if (!partner) return { name: 'Partner', email: '', mobile: '' };
 
-    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
+    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None' && val.length > 5;
 
     // 1. Marketing Manager (Primary)
     if (isValid(partner.marketingManager?.email)) {
-        return { name: partner.marketingManager.name || 'Partner', email: partner.marketingManager.email };
+        return { 
+            name: partner.marketingManager.name || 'Partner', 
+            email: partner.marketingManager.email,
+            mobile: partner.marketingManager.mobile || partner.mobile || partner.phone || ''
+        };
     }
 
     // 2. CEO (Fallback)
     if (isValid(partner.ceo?.email)) {
-        return { name: partner.ceo.name || 'Partner', email: partner.ceo.email };
+        return { 
+            name: partner.ceo.name || 'Partner', 
+            email: partner.ceo.email,
+            mobile: partner.ceo.mobile || partner.mobile || partner.phone || ''
+        };
     }
 
     // 3. Legacy / General
     const legacyEmail = partner.email || partner.email_address || partner.contact_email;
+    const legacyMobile = partner.mobile || partner.phone || partner.telephone_number || '';
     if (isValid(legacyEmail)) {
-        return { name: partner.contactPerson || partner.firstName || 'Partner', email: legacyEmail };
+        return { 
+            name: partner.contactPerson || partner.firstName || 'Partner', 
+            email: legacyEmail,
+            mobile: legacyMobile
+        };
     }
 
-    return { name: 'Partner', email: '' };
+    return { name: 'Partner', email: '', mobile: legacyMobile };
 }
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
@@ -151,7 +163,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
       return `Logistics Flow: ${label} for ${company}`;
   }
 
-  const handleLogCopyAndLaunch = async (channel: 'outlook' | 'gmail') => {
+  const handleLogCopyAndLaunch = async (channel: 'outlook' | 'gmail' | 'whatsapp') => {
     if (!currentPartner) return;
     const contentId = `engage-content-wrapper-${activeTab}`;
     const contentElement = document.getElementById(contentId);
@@ -165,23 +177,36 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         let subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         if (activeTab === 'digital-handshake') subjectLabel = `Handshake ${handshakeVersion.toUpperCase()}`;
 
+        let typeLabel = channel.charAt(0).toUpperCase() + channel.slice(1);
+
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
-            type: channel === 'outlook' ? 'Outlook' : 'Gmail',
+            type: typeLabel,
             subject: subjectLabel,
-            notes: `Manual engagement launched via ${channel}.`,
+            notes: `Manual engagement launched via ${typeLabel}.`,
             collection: targetCollection
         });
 
-        const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
-        await copyHtmlToClipboard(wrappedHtml);
-        toast({ title: "Content Ready", description: `Interaction logged. Opening ${channel}...` });
-
-        if (channel === 'outlook') {
-            window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(getSubject())}`;
+        if (channel === 'whatsapp') {
+            const rawText = contentElement.innerText || contentElement.textContent || '';
+            const cleanNumber = contact.mobile.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
+            const encodedText = encodeURIComponent(rawText);
+            const waUrl = `https://wa.me/${cleanNumber}?text=${encodedText}`;
+            
+            toast({ title: "WhatsApp Prepared", description: "Interaction logged. Launching chat..." });
+            window.open(waUrl, '_blank');
         } else {
-            window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${contact.email}&su=${encodeURIComponent(getSubject())}`, '_blank');
+            const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
+            await copyHtmlToClipboard(wrappedHtml);
+            toast({ title: "Content Ready", description: `Interaction logged. Opening ${typeLabel}...` });
+
+            if (channel === 'outlook') {
+                window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(getSubject())}`;
+            } else {
+                window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${contact.email}&su=${encodeURIComponent(getSubject())}`, '_blank');
+            }
         }
+        
         if (onEngageSuccess) onEngageSuccess();
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Engagement Failed', description: e.message });
@@ -242,7 +267,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <div className="flex items-center gap-2 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground">•</span>
-                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No valid email recorded'}</span>
+                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No email'}</span>
+                           <span className="text-muted-foreground mx-1">|</span>
+                           <span className={cn("font-medium", !contact.mobile ? "text-destructive" : "text-muted-foreground")}>{contact.mobile || 'No mobile'}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-4 text-left">
@@ -254,6 +281,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
                         <div className="flex gap-2">
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-green-200 hover:bg-green-50 text-green-600" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || isDispatching || !contact.mobile}>
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4 text-green-600" />} WhatsApp
+                            </Button>
                              <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !contact.email}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />} Outlook
                             </Button>
@@ -270,13 +300,13 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left">
                         <ShieldAlert className="h-4 w-4 text-amber-600" />
                         <div className="ml-2 text-left">
-                            <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
-                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">Use **Automated Dispatch** to route mail through SendGrid API. This bypasses local blocks.</AlertDescription>
+                            <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Dispatch Shield</AlertTitle>
+                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">Use **WhatsApp** for instant decision-maker access or **Automated Dispatch** to bypass spam filters.</AlertDescription>
                         </div>
                     </Alert>
 
                     <div className="space-y-1 text-left">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 1: Selection</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Engagement Content</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
                             { id: 'company-profile', label: '1. Company Profile' },
@@ -301,7 +331,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
                     <div className="max-w-[850px] mx-auto space-y-8 text-left">
                         <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
-                            <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
+                            <Suspense fallback={<div className="flex justify-center py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                                 {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} version={handshakeVersion} />}
                                 {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
                                 {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
