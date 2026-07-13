@@ -25,7 +25,11 @@ export async function supportQuery(input: SupportInput): Promise<SupportOutput> 
     return await supportFlow(input);
   } catch (error: any) {
     console.error("Support Flow Error:", error);
-    return { response: "I'm experiencing technical difficulties. Please try again shortly." };
+    // Explicit handle for common Stream/Quota errors
+    if (error.message?.includes('429') || error.message?.includes('Quota') || error.message?.includes('parse stream')) {
+        return { response: "I'm currently processing too many requests. Please wait 60 seconds and try again. [Quota Exceeded]" };
+    }
+    return { response: "I'm experiencing technical difficulties connecting to my brain. Please try again shortly." };
   }
 }
 
@@ -38,7 +42,7 @@ const supportFlow = ai.defineFlow(
   async (input) => {
     const response = await ai.generate({
         model: geminiModel,
-        system: "Helpful and friendly AI assistant for Logistics Flow.",
+        system: "Helpful and friendly AI assistant for Logistics Flow. You are an industrial expert.",
         messages: [
             ...(input.history || []),
             { role: 'user', content: [{ text: input.query }] }

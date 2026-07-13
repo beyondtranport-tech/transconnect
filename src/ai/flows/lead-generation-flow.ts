@@ -34,9 +34,13 @@ export async function leadGenerationFlow(input: LeadGenerationInput): Promise<Le
     return result;
   } catch (error: any) {
     console.error("Lead Gen Flow Error:", error);
+    let message = error.message || "Could not connect to AI service.";
+    if (message.includes('429') || message.includes('Quota') || message.includes('parse stream')) {
+        message = "AI Rate Limit Reached (429). Please wait 60 seconds before generating more leads.";
+    }
     return {
       leads: [],
-      error: error.message || "Could not connect to AI service."
+      error: message
     };
   }
 }
@@ -51,7 +55,7 @@ const leadGenerationAIFlow = ai.defineFlow(
     const response = await ai.generate({
         model: geminiModel,
         tools: [googleSearchTool],
-        system: "Expert market research agent. Sourcing leads from real-world web data.",
+        system: "Expert South African market research agent. Sourcing leads from real-world web data. You strictly ignore results from outside South Africa.",
         prompt: input.prompt,
         output: {
             schema: LeadGenerationOutputSchema

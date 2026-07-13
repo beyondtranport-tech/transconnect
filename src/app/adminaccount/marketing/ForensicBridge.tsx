@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
@@ -90,7 +89,6 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             
             let apiType = audience === 'isa' ? 'isa' : (audience === 'finance' ? 'finance' : (audience === 'drivers' ? 'driver' : audience.slice(0, -1)));
             
-            // Reduced initial scan limit to prevent resource exhaustion
             const res = await performAdminAction(token, 'searchRegistry', { 
                 type: apiType, 
                 limit: 500 
@@ -185,20 +183,23 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     throw new Error(res.error);
                 }
 
-                // Generous delay to prevent API rate exhaustion
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                // Generous 6-second delay to prevent 429 Rate Limits
+                await new Promise(resolve => setTimeout(resolve, 6000));
 
             } catch (err: any) {
                 setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
+                const isRateLimit = err.message?.includes('429') || err.message?.includes('Quota') || err.message?.includes('stream');
+                
                 setLogs(prev => [{ 
                     id: Date.now() + 2, 
-                    msg: `Bridge Failed for ${name}: ${err.message}`, 
+                    msg: isRateLimit ? `Rate Limit Hit. Pausing for recovery...` : `Bridge Failed for ${name}: ${err.message}`, 
                     type: 'error' 
                 }, ...prev].slice(0, 50));
                 
-                if (err.message?.includes('429') || err.message?.includes('auth/')) {
+                if (isRateLimit) {
                     setStatus('paused');
-                    toast({ variant: 'destructive', title: "Throttling Active", description: "Rate limit reached. Pausing bridge for 30s." });
+                    toast({ variant: 'destructive', title: "Throttling Active", description: "Google AI rate limit reached. The bridge will pause for 60 seconds." });
+                    await new Promise(resolve => setTimeout(resolve, 60000));
                     break;
                 }
                 await new Promise(resolve => setTimeout(resolve, 10000));
@@ -367,9 +368,9 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             </div>
                             <Separator />
                             <div className="p-4 bg-muted/30 rounded-xl text-left border border-dashed border-muted">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Persistence Enabled</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Rate Limit Protection</p>
                                 <p className="text-[11px] leading-relaxed italic text-foreground text-left">
-                                    Your progress is saved locally. Registry analysis is capped at 500 records per scan to preserve resources.
+                                    A 6-second safety buffer is applied between records to ensure high-fidelity enrichment without triggering AI quota locks.
                                 </p>
                             </div>
                         </CardContent>
