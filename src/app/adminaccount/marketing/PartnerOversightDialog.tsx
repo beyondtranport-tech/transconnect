@@ -106,14 +106,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     events.push({ ...task, type: 'task', date: task.createdAt || task.date });
                 }
             });
-            
-            if (partner.lastOpenedAt) {
-                events.push({ id: 'pixel-open', type: 'tracking', subject: 'Email Opened', notes: 'Recipient triggered tracking pixel.', date: partner.lastOpenedAt });
-            }
-
-            if (partner.lastAccessedAt) {
-                events.push({ id: 'app-access', type: 'access', subject: 'App Link LANDED', notes: 'Lead clicked handshake link and landed on portal.', date: partner.lastAccessedAt });
-            }
         }
         
         return events.sort((a, b) => {
@@ -121,7 +113,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
             const dateB = b.date?.toDate ? b.date.toDate() : new Date(b.date || 0);
             return dateB.getTime() - dateA.getTime();
         });
-    }, [logs, tasks, isOpen, isLoadingLogs, isLoadingTasks, partner.lastOpenedAt, partner.lastAccessedAt]);
+    }, [logs, tasks, isOpen, isLoadingLogs, isLoadingTasks]);
 
     const fetchStaff = useCallback(async () => {
         if (!isOpen) return;
@@ -234,7 +226,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                 <Globe className="h-4 w-4 text-primary"/>
                                 Core Logistics
                             </h3>
-                            <Card className="shadow-none bg-white h-[142px] overflow-hidden text-left">
+                            <Card className="shadow-none bg-white min-h-[142px] overflow-hidden text-left">
                                 <CardContent className="p-4 space-y-4 text-left">
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Official Domain</p>
@@ -243,6 +235,22 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                                 <Globe className="h-3 w-3" /> {partner.website}
                                             </a>
                                         ) : <p className="text-xs text-muted-foreground italic">No website URL recorded.</p>}
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1 text-left">
+                                            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Company Landline</p>
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                                                <Phone className="h-3 w-3" />
+                                                <span>{partner.phone || "N/A"}</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1 text-left">
+                                            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Company Email</p>
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                                                <Mail className="h-3 w-3" />
+                                                <span className="truncate">{partner.email || "N/A"}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Physical Operational Node</p>
@@ -293,20 +301,14 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                     <div key={event.id || idx} className="relative pl-10 text-left">
                                         <div className={cn(
                                             "absolute left-2 top-1.5 h-4 w-4 rounded-full border-2 border-background z-10",
-                                            event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : 
-                                            event.type === 'tracking' ? "bg-blue-600" : 
-                                            event.type === 'access' ? "bg-purple-600" :
-                                            "bg-primary"
+                                            event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : "bg-primary"
                                         )} />
                                         <Card className="shadow-none text-left border-none bg-white text-left">
                                             <CardContent className="p-4 text-left">
                                                 <div className="flex justify-between items-start text-left text-foreground">
                                                     <div className="space-y-1 text-left text-foreground">
                                                         <div className="flex items-center gap-2 text-left">
-                                                            {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : 
-                                                             event.type === 'tracking' ? <Eye className="h-3.5 w-3.5 text-blue-600" /> :
-                                                             event.type === 'access' ? <Smartphone className="h-3.5 w-3.5 text-purple-600" /> :
-                                                             <MessageSquare className="h-3.5 w-3.5 text-primary" />}
+                                                            {event.type === 'task' ? <ClipboardList className="h-3.5 w-3.5 text-amber-600" /> : <MessageSquare className="h-3.5 w-3.5 text-primary" />}
                                                             <span className="font-bold text-sm text-foreground text-left">{event.subject || event.title}</span>
                                                             <Badge variant="outline" className="text-[10px] h-4 uppercase border-muted text-muted-foreground">{event.type}</Badge>
                                                         </div>

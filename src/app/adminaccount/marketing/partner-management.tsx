@@ -126,6 +126,10 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem> )} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
                             <FormField control={form.control} name="status" render={({ field }) => ( 
                                 <FormItem className="text-left">
                                     <FormLabel>Status</FormLabel>
