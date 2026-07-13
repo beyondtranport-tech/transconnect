@@ -103,7 +103,6 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp()
                 });
 
-                // Update the parent for better visual tracking in table
                 await partnerRef.update({
                     status: 'contacted',
                     lastOutreachSubject: subject,
@@ -210,6 +209,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partnerList.length });
             }
 
+            case 'savePartner': {
+                const { partner, collection: colName = 'partners' } = payload;
+                const id = partner.id || db.collection(colName).doc().id;
+                const partnerData = {
+                    ...partner,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+                await db.collection(colName).doc(id).set(partnerData, { merge: true });
+                return NextResponse.json({ success: true, id });
+            }
+
             case 'searchRegistry': {
                 const { type, term, outreachFilter, limit = 100 } = payload;
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
@@ -247,26 +258,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
             }
 
-            case 'finalizeSale': {
-                const { saleId, commissionRate } = payload;
-                const saleRef = db.collection('sales').doc(saleId);
-                const saleSnap = await saleRef.get();
-                if (!saleSnap.exists) throw new Error("Sale not found.");
-                const saleData = saleSnap.data()!;
-                const platformFee = saleData.agreedPrice * (commissionRate / 100);
-                const sellerNet = saleData.agreedPrice - platformFee;
-                await db.runTransaction(async (t) => {
-                    t.update(db.collection('companies').doc(saleData.sellerId), { pendingBalance: FieldValue.increment(-saleData.agreedPrice), availableBalance: FieldValue.increment(sellerNet), updatedAt: FieldValue.serverTimestamp() });
-                    t.update(saleRef, { status: 'concluded', updatedAt: FieldValue.serverTimestamp() });
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(500).get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })).map(serializeTimestamps) });
-            }
-
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
                 const members = await Promise.all(snap.docs.map(async (docSnap: any) => {
@@ -300,12 +291,6 @@ export async function POST(req: NextRequest) {
                     status: 'rejected',
                     updatedAt: FieldValue.serverTimestamp()
                 });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'savePartner': {
-                const { partner, collection: colName = 'partners' } = payload;
-                await db.collection(colName).doc(partner.id).set({ ...partner, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true });
             }
 
