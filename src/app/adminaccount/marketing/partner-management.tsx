@@ -253,9 +253,9 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
 
           if (format === 'SendGrid') {
               return {
-                  email: p.email || p.email_address || '',
-                  first_name: p.firstName || p.contactPerson?.split(' ')[0] || '',
-                  last_name: p.lastName || p.contactPerson?.split(' ').slice(1).join(' ') || '',
+                  email: p.marketingManager?.email || p.email || p.email_address || '',
+                  first_name: p.marketingManager?.name?.split(' ')[0] || p.firstName || p.contactPerson?.split(' ')[0] || '',
+                  last_name: p.marketingManager?.name?.split(' ').slice(1).join(' ') || p.lastName || p.contactPerson?.split(' ').slice(1).join(' ') || '',
                   company_name: p.companyName || p.company_name || '',
                   handshake_url: handshakeUrl,
                   direct_join_url: directJoinUrl
@@ -314,7 +314,15 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
             </div>
           )
       },
-      { accessorKey: 'email', header: 'Email' },
+      { 
+          id: 'email',
+          header: 'Email',
+          cell: ({ row }) => (
+            <div className="text-xs font-mono text-left truncate max-w-[150px]">
+                {row.original.marketingManager?.email || row.original.email || 'N/A'}
+            </div>
+          )
+      },
       { 
           header: 'Outreach Stage',
           id: 'outreach',

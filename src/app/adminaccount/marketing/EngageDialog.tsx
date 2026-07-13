@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, Mail, Zap, ChevronLeft, ChevronRight, Send, ShieldCheck, ShieldAlert, CheckCircle2 } from 'lucide-react';
@@ -75,13 +75,13 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     return partners[currentIndex] || partners[0];
   }, [partners, currentIndex]);
 
+  // HIERARCHICAL CONTACT RESOLUTION: Priority - Marketing Manager -> CEO -> Legacy Email
   const currentEmail = useMemo(() => {
       if (!currentPartner) return '';
       return currentPartner.marketingManager?.email || 
              currentPartner.ceo?.email ||
              currentPartner.email || 
              currentPartner.email_address || 
-             currentPartner.emailAddress || 
              currentPartner.contact_email || 
              '';
   }, [currentPartner]);
@@ -128,7 +128,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const getSubject = () => {
       const company = currentPartner?.companyName || currentPartner?.company_name || 'your business';
       let label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      if (activeTab === 'digital-handshake') label = `Digital Handshake (${handshakeVersion.toUpperCase()})`;
+      if (activeTab === 'digital-handshake') label = `Digital Handshake`;
       return `Logistics Flow: ${label} for ${company}`;
   }
 
@@ -210,12 +210,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   if (!currentPartner) return null;
 
+  // HIERARCHICAL SALUTATION RESOLUTION
   const partnerDisplayName = currentPartner.marketingManager?.name || 
                              currentPartner.ceo?.name ||
                              currentPartner.companyName || 
                              currentPartner.company_name || 
                              currentPartner.contactPerson || 
-                             `${currentPartner.firstName || ''} ${currentPartner.lastName || ''}`.trim() || 
                              'Partner';
 
   return (
@@ -242,7 +242,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 <Button variant="ghost" size="icon" onClick={nextRecord} disabled={currentIndex === partners.length - 1}><ChevronRight className="h-4 w-4" /></Button>
                             </div>
                         )}
-                        <div className="flex gap-2 text-white">
+                        <div className="flex gap-2">
                              <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentEmail}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />} Outlook
                             </Button>
@@ -256,7 +256,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
             <div className="flex-1 flex overflow-hidden">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
-                    <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left text-foreground">
+                    <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left">
                         <ShieldAlert className="h-4 w-4 text-amber-600" />
                         <div className="ml-2 text-left">
                             <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Anti-Spam Shield</AlertTitle>
@@ -264,7 +264,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         </div>
                     </Alert>
 
-                    <div className="space-y-1 text-left text-foreground">
+                    <div className="space-y-1 text-left">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Step 1: Selection</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
@@ -287,35 +287,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
-                    <div className="max-w-[850px] mx-auto space-y-8 text-left text-foreground">
-                        {activeTab === 'digital-handshake' && (
-                            <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between mb-4 shadow-sm text-left">
-                                <div className="flex items-center gap-3 text-left">
-                                    <div className="bg-amber-100 p-2 rounded-lg"><Zap className="h-5 w-5 text-amber-600" /></div>
-                                    <div className="text-left text-foreground text-foreground">
-                                        <p className="text-sm font-bold text-amber-900">Pattern Randomization</p>
-                                        <p className="text-[10px] text-amber-700 leading-none mt-1">Deterministically unique text per partner.</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 text-left text-foreground text-foreground">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
-                                    <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
-                                        <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200"><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="v1">V1: Standard (Low Friction)</SelectItem>
-                                            <SelectItem value="v2">V2: Market Access</SelectItem>
-                                            <SelectItem value="v3">V3: Financial Security</SelectItem>
-                                            <SelectItem value="v4">V4: Technical Power</SelectItem>
-                                            <SelectItem value="v5">V5: Ecosystem Partner (Max)</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        )}
-
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
+                    <div className="max-w-[850px] mx-auto space-y-8 text-left">
                         <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
-                            <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 mx-auto" />}>
+                            <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>}>
                                 {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} version={handshakeVersion} />}
                                 {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
                                 {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}

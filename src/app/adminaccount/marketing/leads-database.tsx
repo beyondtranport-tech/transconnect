@@ -258,9 +258,9 @@ function LeadsDatabaseComponent() {
 
           if (format === 'SendGrid') {
               return {
-                  email: l.email || l.email_address || '',
-                  first_name: l.firstName || l.contactPerson?.split(' ')[0] || '',
-                  last_name: l.lastName || l.contactPerson?.split(' ').slice(1).join(' ') || '',
+                  email: l.marketingManager?.email || l.email || l.email_address || '',
+                  first_name: l.marketingManager?.name?.split(' ')[0] || l.firstName || l.contactPerson?.split(' ')[0] || '',
+                  last_name: l.marketingManager?.name?.split(' ').slice(1).join(' ') || l.lastName || l.contactPerson?.split(' ').slice(1).join(' ') || '',
                   company_name: l.companyName || l.company_name || '',
                   handshake_url: handshakeUrl,
                   direct_join_url: directJoinUrl
