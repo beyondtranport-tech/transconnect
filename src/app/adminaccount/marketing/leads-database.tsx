@@ -291,7 +291,15 @@ function LeadsDatabaseComponent() {
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Lead Entity' },
-    { accessorKey: 'contactPerson', header: 'Contact' },
+    { 
+        id: 'contact',
+        header: 'Contact', 
+        cell: ({ row }) => (
+            <div className="text-sm font-medium text-left">
+                {row.original.marketingManager?.name || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}
+            </div>
+        )
+    },
     { 
         header: 'Referrer Node', 
         cell: ({row}) => (
@@ -372,7 +380,7 @@ function LeadsDatabaseComponent() {
                 <PopoverTrigger asChild>
                     <Button variant="outline" className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground">
+                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                     <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>

@@ -1,10 +1,11 @@
+
 'use client';
 
 import React from "react";
 
 /**
  * Technical Architecture Content
- * Includes forensic tracking pixel.
+ * Implements Contact Hierarchy for salutations.
  */
 export default function TechArchitecture({ partner }: { partner?: any }) {
     const companyName = partner?.companyName || 'your business';

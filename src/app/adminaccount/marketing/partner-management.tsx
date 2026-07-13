@@ -212,7 +212,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
     industrial_category: true,
-    contactPerson: true,
+    accountLead: true,
     email: true,
     outreach: true,
     status: true,
@@ -306,9 +306,13 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           }
       },
       { 
-          accessorKey: 'contactPerson',
+          id: 'accountLead',
           header: 'Account Lead',
-          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
+          cell: ({ row }) => (
+            <div className="text-sm font-medium text-left">
+                {row.original.marketingManager?.name || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}
+            </div>
+          )
       },
       { accessorKey: 'email', header: 'Email' },
       { 
@@ -357,7 +361,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           ) 
       }
     ];
-    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
+    return cols.filter(c => visibleColumns[c.id || c.accessorKey as string]);
   }, [type, fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {

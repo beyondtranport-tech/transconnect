@@ -1,13 +1,20 @@
+
 'use client';
 
 import React from "react";
 
 /**
  * Pitch Deck Content
- * Includes forensic tracking pixel.
+ * Implements Contact Hierarchy for salutations.
  */
 export default function PitchDeck({ partner }: { partner?: any }) {
-    const firstName = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
+    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
+    const firstName = partner?.marketingManager?.name?.split(' ')[0] || 
+                      partner?.ceo?.name?.split(' ')[0] ||
+                      partner?.firstName || 
+                      partner?.contactPerson?.split(' ')[0] || 
+                      'Partner';
+
     const companyName = partner?.companyName || 'your business';
     const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 

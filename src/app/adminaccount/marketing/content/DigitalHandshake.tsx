@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from "react";
@@ -7,8 +8,10 @@ import React from "react";
  * Tailored for four primary audiences: Suppliers, Transporters, Finance Partners, and Digital Partners.
  */
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
-    // Robust name extraction favoring first name from any contact field variant
-    const firstName = partner?.firstName || 
+    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
+    const firstName = partner?.marketingManager?.name?.split(' ')[0] || 
+                      partner?.ceo?.name?.split(' ')[0] ||
+                      partner?.firstName || 
                       partner?.contactPerson?.split(' ')[0] || 
                       partner?.contact_person?.split(' ')[0] || 
                       'Partner';

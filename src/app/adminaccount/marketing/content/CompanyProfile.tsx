@@ -1,19 +1,22 @@
+
 'use client';
 
 import React from "react";
 
 /**
  * STRATEGIC COMPANY PROFILE
- * Reinstated approved DaaS and Flow Pillars narrative.
+ * Implements Contact Hierarchy for salutations.
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
-    // Robust name extraction
-    const firstName = partner?.firstName || 
+    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
+    const firstName = partner?.marketingManager?.name?.split(' ')[0] || 
+                      partner?.ceo?.name?.split(' ')[0] ||
+                      partner?.firstName || 
                       partner?.contactPerson?.split(' ')[0] || 
                       partner?.contact_person?.split(' ')[0] || 
                       'Member';
 
-    const email = partner?.email || '';
+    const email = partner?.marketingManager?.email || partner?.email || '';
     const lastName = partner?.lastName || '';
     const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
     

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -76,7 +77,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const currentEmail = useMemo(() => {
       if (!currentPartner) return '';
-      return currentPartner.email || 
+      return currentPartner.marketingManager?.email || 
+             currentPartner.ceo?.email ||
+             currentPartner.email || 
              currentPartner.email_address || 
              currentPartner.emailAddress || 
              currentPartner.contact_email || 
@@ -207,7 +210,13 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   if (!currentPartner) return null;
 
-  const partnerDisplayName = currentPartner.companyName || currentPartner.company_name || currentPartner.contactPerson || `${currentPartner.firstName || ''} ${currentPartner.lastName || ''}`.trim() || 'Partner';
+  const partnerDisplayName = currentPartner.marketingManager?.name || 
+                             currentPartner.ceo?.name ||
+                             currentPartner.companyName || 
+                             currentPartner.company_name || 
+                             currentPartner.contactPerson || 
+                             `${currentPartner.firstName || ''} ${currentPartner.lastName || ''}`.trim() || 
+                             'Partner';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -289,7 +298,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                         <p className="text-[10px] text-amber-700 leading-none mt-1">Deterministically unique text per partner.</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3 text-left text-foreground">
+                                <div className="flex items-center gap-3 text-left text-foreground text-foreground">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-amber-800">Version</Label>
                                     <Select value={handshakeVersion} onValueChange={setHandshakeVersion}>
                                         <SelectTrigger className="w-[200px] h-9 bg-white border-amber-200"><SelectValue /></SelectTrigger>
@@ -306,13 +315,15 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         )}
 
                         <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
-                            {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} version={handshakeVersion} />}
-                            {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
-                            {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
-                            {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
-                            {activeTab === 'offer' && <Offer partner={currentPartner} />}
-                            {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
-                            {activeTab === 'framework' && <Framework partner={currentPartner} />}
+                            <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 mx-auto" />}>
+                                {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} version={handshakeVersion} />}
+                                {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
+                                {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
+                                {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
+                                {activeTab === 'offer' && <Offer partner={currentPartner} />}
+                                {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
+                                {activeTab === 'framework' && <Framework partner={currentPartner} />}
+                            </Suspense>
                         </div>
                     </div>
                 </div>
@@ -321,4 +332,3 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     </Dialog>
   );
 }
-
