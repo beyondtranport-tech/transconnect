@@ -58,6 +58,34 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
+/**
+ * UTILITY: HIERARCHICAL CONTACT RESOLVER
+ * Filters out "N/A", "null", and empty strings to ensure real routing.
+ */
+function resolveContact(partner: any) {
+    if (!partner) return { name: 'Partner', email: '' };
+
+    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
+
+    // 1. Marketing Manager (Primary)
+    if (isValid(partner.marketingManager?.email)) {
+        return { name: partner.marketingManager.name || 'Partner', email: partner.marketingManager.email };
+    }
+
+    // 2. CEO (Fallback)
+    if (isValid(partner.ceo?.email)) {
+        return { name: partner.ceo.name || 'Partner', email: partner.ceo.email };
+    }
+
+    // 3. Legacy / General
+    const legacyEmail = partner.email || partner.email_address || partner.contact_email;
+    if (isValid(legacyEmail)) {
+        return { name: partner.contactPerson || partner.firstName || 'Partner', email: legacyEmail };
+    }
+
+    return { name: 'Partner', email: '' };
+}
+
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
   const { toast } = useToast();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -75,16 +103,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     return partners[currentIndex] || partners[0];
   }, [partners, currentIndex]);
 
-  // HIERARCHICAL CONTACT RESOLUTION: Priority - Marketing Manager -> CEO -> Legacy Email
-  const currentEmail = useMemo(() => {
-      if (!currentPartner) return '';
-      return currentPartner.marketingManager?.email || 
-             currentPartner.ceo?.email ||
-             currentPartner.email || 
-             currentPartner.email_address || 
-             currentPartner.contact_email || 
-             '';
-  }, [currentPartner]);
+  const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
 
   const normalizedAudience = useMemo(() => {
       let aud = audience.toLowerCase();
@@ -159,9 +178,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         toast({ title: "Content Ready", description: `Interaction logged. Opening ${channel}...` });
 
         if (channel === 'outlook') {
-            window.location.href = `mailto:${currentEmail}?subject=${encodeURIComponent(getSubject())}`;
+            window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(getSubject())}`;
         } else {
-            window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${currentEmail}&su=${encodeURIComponent(getSubject())}`, '_blank');
+            window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${contact.email}&su=${encodeURIComponent(getSubject())}`, '_blank');
         }
         if (onEngageSuccess) onEngageSuccess();
     } catch (e: any) {
@@ -172,7 +191,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   };
 
   const handleAutomatedDispatch = async () => {
-    if (!currentEmail || !currentPartner) return;
+    if (!contact.email || !currentPartner) return;
     setIsDispatching(true);
     try {
         const token = await getClientSideAuthToken();
@@ -184,7 +203,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         await performAdminAction(token, 'dispatchEngagement', {
             partnerId: currentPartner.id,
-            email: currentEmail,
+            email: contact.email,
             subject: getSubject(),
             html: contentElement.innerHTML,
             collection: targetCollection
@@ -210,14 +229,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   if (!currentPartner) return null;
 
-  // HIERARCHICAL SALUTATION RESOLUTION
-  const partnerDisplayName = currentPartner.marketingManager?.name || 
-                             currentPartner.ceo?.name ||
-                             currentPartner.companyName || 
-                             currentPartner.company_name || 
-                             currentPartner.contactPerson || 
-                             'Partner';
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
@@ -226,12 +237,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     <div className="text-left space-y-1">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
-                            Engagement Wizard: {partnerDisplayName}
+                            Engagement Wizard: {contact.name}
                         </DialogTitle>
                         <div className="flex items-center gap-2 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground">•</span>
-                           <span className={cn("font-medium", !currentEmail ? "text-destructive" : "text-muted-foreground")}>{currentEmail || 'No email recorded'}</span>
+                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No valid email recorded'}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-4 text-left">
@@ -243,10 +254,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
                         <div className="flex gap-2">
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !currentEmail}>
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !contact.email}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />} Outlook
                             </Button>
-                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !currentEmail}>
+                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !contact.email}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
                             </Button>
                         </div>

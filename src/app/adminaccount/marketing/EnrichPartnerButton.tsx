@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -43,6 +44,10 @@ STRICT DUAL-IDENTITY PROTOCOL:
 1. MARKETING MANAGER: Discover full name, direct professional email, and direct mobile.
 2. CEO / MD / OWNER: Discover full name, direct professional email, and direct mobile.
 
+SCAVENGER MANDATE:
+1. DO NOT DEFAULT TO "N/A": Aggressively search social snippets, directory lists, and LinkedIn previews. 
+2. MOBILE RECOVERY: Look for phone numbers in snippets even if they aren't on the official contact page.
+
 CONTENT MINING MANDATE:
 1. SITE MAP CONTENT: Extract the FIRST 300 WORDS of verbatim technical copy found across the official website or business snippets. Focus on "About Us", "Services", and "Product Range".
 
@@ -75,7 +80,7 @@ REQUIRED JSON FORMAT:
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Forensic Prompt Ready", description: "Oversight timeline updated with South African Lock." });
+            toast({ title: "Forensic Prompt Ready", description: "Oversight timeline updated. Scavenger mandate active." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -105,19 +110,19 @@ REQUIRED JSON FORMAT:
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-left text-foreground">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Forensic Gap-Analysis (RSA Lock)
+                            Forensic Scavenger Command
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
-                            Command the AI to bridge missing data for <strong>{companyName}</strong> specifically within the South African region.
+                            Command the AI to bridge missing data for <strong>{companyName}</strong>. Throttling "N/A" responses to force deeper scavenging.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold">Regional Lock Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold">Scavenger Mandate Active</AlertTitle>
                             <AlertDescription className="text-xs text-left">
-                                This prompt mandates the AI to ignore all non-RSA entities, preventing international data leaks.
+                                This prompt orders the AI to infer email patterns and hunt for mobile numbers in hidden snippets.
                             </AlertDescription>
                         </Alert>
 
@@ -136,7 +141,7 @@ REQUIRED JSON FORMAT:
                             className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
                         >
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            {isCopied ? 'Prompt Ready!' : 'Copy Prompt (South Africa Lock)'}
+                            {isCopied ? 'Scavenger Prompt Ready!' : 'Copy Scavenger Prompt'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

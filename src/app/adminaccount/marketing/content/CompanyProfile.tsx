@@ -8,20 +8,26 @@ import React from "react";
  * Implements Contact Hierarchy for salutations.
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
-    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
-    const firstName = partner?.marketingManager?.name?.split(' ')[0] || 
-                      partner?.ceo?.name?.split(' ')[0] ||
-                      partner?.firstName || 
-                      partner?.contactPerson?.split(' ')[0] || 
-                      partner?.contact_person?.split(' ')[0] || 
-                      'Member';
+    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
 
-    const email = partner?.marketingManager?.email || partner?.email || '';
-    const lastName = partner?.lastName || '';
+    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
+    const resolvedName = (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) 
+        ? partner.marketingManager.name 
+        : (partner?.ceo?.name && isValid(partner.ceo.name))
+        ? partner.ceo.name
+        : partner?.firstName || partner?.contactPerson || 'Member';
+
+    const firstName = resolvedName.split(' ')[0];
+
+    const email = isValid(partner?.marketingManager?.email) 
+        ? partner.marketingManager.email 
+        : isValid(partner?.ceo?.email)
+        ? partner.ceo.email
+        : partner?.email || '';
+
     const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
-    
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
-    const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}&lastName=${encodeURIComponent(lastName)}`;
+    const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}`;
 
     return (
         <div style={{ 

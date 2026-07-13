@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview High-fidelity Forensic AI Research Agent.
@@ -77,6 +78,11 @@ const enrichPartnerFlow = ai.defineFlow(
             STRICT DUAL-IDENTITY PROTOCOL:
             1. MARKETING MANAGER: You MUST attempt to find the full name, direct email, and mobile for the Marketing Manager or Engagement Lead.
             2. CEO/MD: You MUST attempt to find the full name, direct email, and mobile for the CEO, Managing Director, or Owner.
+
+            SCAVENGER MANDATE:
+            1. NO "N/A" DEFAULTS: Do not return "N/A" unless every snippet is exhausted. 
+            2. PATTERN INFERENCE: If you find one email (e.g. jdoe@company.co.za) and a name (Albertus Smeda), infer the second email (asmeda@company.co.za) if appropriate.
+            3. MOBILE HUNTING: Search snippets for patterns like "+27", "082", "083", etc. associated with names.
 
             CONTENT MINING PROTOCOL:
             1. VERBATIM EXTRACTION: In 'minedServiceWording', you MUST provide approximately the first 300 words of technical content found in snippets or titles regarding their services and products.

@@ -1,20 +1,23 @@
 
 'use client';
 
-import React from "react";
+import React, { useMemo } from "react";
 
 /**
  * Revenue Model Content
  * Implements Contact Hierarchy for salutations.
  */
 export default function RevenueModel({ partner }: { partner?: any }) {
-    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
-    const firstName = partner?.marketingManager?.name?.split(' ')[0] || 
-                      partner?.ceo?.name?.split(' ')[0] ||
-                      partner?.firstName || 
-                      partner?.contactPerson?.split(' ')[0] || 
-                      'Partner';
+    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
 
+    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
+    const resolvedName = useMemo(() => {
+        if (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) return partner.marketingManager.name;
+        if (partner?.ceo?.name && isValid(partner.ceo.name)) return partner.ceo.name;
+        return partner?.firstName || partner?.contactPerson || 'Partner';
+    }, [partner]);
+
+    const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
     const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
