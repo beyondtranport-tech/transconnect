@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Info, Zap, Search, ClipboardCheck } from 'lucide-react';
+import { Sparkles, Loader2, Info, Zap, Search, ClipboardCheck, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -15,6 +15,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+    
     const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
@@ -28,7 +29,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}`;
+    const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
         return `ACT AS AN ELITE SOUTH AFRICAN CORPORATE FORENSIC INTELLIGENCE AGENT. 
@@ -40,7 +41,7 @@ YOU ARE STRICTLY FORBIDDEN FROM RETURNING MOCK OR SYNTHETIC DATA. IF DATA IS NOT
 TASK: Discover and bridge ALL data gaps for the SOUTH AFRICAN operations of record "${partner.id}".
 
 STRICT REGIONAL LOCK: 
-Ignore all international results. Target ONLY South African entities and contacts.
+Ignore all international results (e.g. Australia, UK, USA). Target ONLY South African entities and contacts.
 
 STRICT DUAL-IDENTITY PROTOCOL:
 1. MARKETING MANAGER: Discover full name, direct professional email, and direct mobile.
@@ -69,14 +70,22 @@ REQUIRED JSON FORMAT:
     };
 
     const handleCopyAndLog = async () => {
+        if (!partner.id) {
+            toast({ variant: 'destructive', title: 'Invalid Record', description: 'Missing record ID.' });
+            return;
+        }
+
         setIsLogging(true);
         try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed");
-
+            // 1. Copy to clipboard first (requires user interaction)
             await navigator.clipboard.writeText(getPrompt());
             setIsCopied(true);
 
+            // 2. Auth Check
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Session expired. Please sign in again.");
+
+            // 3. Log interaction via API
             await performAdminAction(token, 'logForensicInitiated', { 
                 partnerId: partner.id,
                 isLead: !partner.type || partner.type === 'lead'
@@ -90,7 +99,12 @@ REQUIRED JSON FORMAT:
             }, 1000);
 
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Automation Failed", description: e.message });
+            console.error("Enrichment failure:", e);
+            toast({ 
+                variant: 'destructive', 
+                title: "Automation Failed", 
+                description: e.message || "Failed to reach the server. Check your connection." 
+            });
         } finally {
             setIsLogging(false);
         }

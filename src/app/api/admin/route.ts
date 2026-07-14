@@ -149,7 +149,11 @@ export async function POST(req: NextRequest) {
             case 'logForensicInitiated': {
                 const { partnerId, isLead } = payload;
                 const colName = isLead ? 'leads' : 'partners';
-                const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
+                const partnerRef = db.collection(colName).doc(partnerId);
+                const pSnap = await partnerRef.get();
+                if (!pSnap.exists) throw new Error(`Record ${partnerId} not found in ${colName}`);
+
+                const logRef = partnerRef.collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
                     subject: 'Forensic Research Initiated',
@@ -157,12 +161,14 @@ export async function POST(req: NextRequest) {
                     notes: 'AI research session launched to bridge data gaps.',
                     timestamp: FieldValue.serverTimestamp()
                 });
-                await db.collection(colName).doc(partnerId).update({ 
+
+                await partnerRef.update({ 
                     status: 'contacted', 
                     lastOutreachSubject: 'Research Initiated',
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp() 
                 });
+
                 return NextResponse.json({ success: true });
             }
 
@@ -171,9 +177,16 @@ export async function POST(req: NextRequest) {
                 const colName = targetType === 'lead' ? 'leads' : 'partners';
                 const batch = db.batch();
                 for (const id of leadIds) {
-                    const logRef = db.collection(colName).doc(id).collection('communications').doc();
-                    batch.set(logRef, { id: logRef.id, subject: 'Forensic Batch Research', type: 'System', notes: 'Included in automated forensic batch.', timestamp: FieldValue.serverTimestamp() });
-                    batch.update(db.collection(colName).doc(id), { 
+                    const docRef = db.collection(colName).doc(id);
+                    const logRef = docRef.collection('communications').doc();
+                    batch.set(logRef, { 
+                        id: logRef.id, 
+                        subject: 'Forensic Batch Research', 
+                        type: 'System', 
+                        notes: 'Included in automated forensic batch.', 
+                        timestamp: FieldValue.serverTimestamp() 
+                    });
+                    batch.update(docRef, { 
                         status: 'contacted', 
                         lastOutreachSubject: 'Batch Research',
                         lastOutreachAt: FieldValue.serverTimestamp(),
