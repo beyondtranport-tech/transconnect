@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { Loader2, Zap, Sparkles, Target, Landmark, Store, DollarSign, ArrowRight, ShieldCheck, Info, BarChart3, TrendingUp, Search, CheckCircle2, History, AlertCircle, Eye, MousePointer2, UserCheck } from 'lucide-react';
+import { Loader2, Zap, Sparkles, Target, Landmark, Store, DollarSign, ArrowRight, ShieldCheck, BarChart3, TrendingUp, Search, CheckCircle2, History, AlertCircle, Eye, MousePointer2, UserCheck, Layers } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { collection, query, orderBy, doc, collectionGroup, where } from 'firebase/firestore';
+import { collection, query, orderBy, doc, where } from 'firebase/firestore';
 import { formatCurrency, formatDateSafe, cn } from '@/lib/utils';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -54,7 +54,7 @@ function YieldDrillDown({ campaignId }: { campaignId: string }) {
                 {isLoading ? (
                     <div className="flex justify-center p-12"><Loader2 className="animate-spin text-primary" /></div>
                 ) : logs && logs.length > 0 ? (
-                    <ScrollArea className="h-[400px] rounded-xl border bg-white shadow-inner">
+                    <ScrollArea className="h-[400px] rounded-xl border bg-white shadow-inner text-left">
                         <Table>
                             <TableHeader className="bg-slate-50 sticky top-0 z-10">
                                 <TableRow>
@@ -108,8 +108,12 @@ export default function PromoteNodeContent() {
     const { data: campaigns, isLoading: isCampaignsLoading, forceRefresh } = useCollection(campaignsQuery);
 
     const availableBalance = user?.companyData?.availableBalance || 0;
-    const totalCost = batches * (adPricing?.pricePerBatch || 100);
-    const totalViews = batches * (adPricing?.instanceBatchSize || 1000);
+    
+    const batchSize = adPricing?.instanceBatchSize || 1000;
+    const pricePerBatch = adPricing?.pricePerBatch || 100;
+    
+    const totalCost = batches * pricePerBatch;
+    const totalViews = batches * batchSize;
 
     const handleLaunch = async () => {
         if (!title || !creativeUrl) {
@@ -129,7 +133,7 @@ export default function PromoteNodeContent() {
             const payload = {
                 companyId: user.companyId,
                 amount: totalCost,
-                description: `Ad Purchase: ${totalViews.toLocaleString()} instances for ${title}`,
+                description: `Visibility Purchase: ${totalViews.toLocaleString()} views (${batches} batch/es)`,
                 planType: 'ad_broadcast',
                 title,
                 targetAudience: target,
@@ -146,7 +150,7 @@ export default function PromoteNodeContent() {
             const result = await response.json();
             if (!response.ok) throw new Error(result.error || "Payment failed.");
 
-            toast({ title: "Campaign Launched!", description: "Visibility boost is now in audit." });
+            toast({ title: "Campaign Launched!", description: "Your visibility boost is now in audit." });
             forceRefresh();
             setTitle('');
             setCreativeUrl('');
@@ -173,7 +177,7 @@ export default function PromoteNodeContent() {
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-black text-primary">{(row.original.metrics?.impressions || 0).toLocaleString()} / {row.original.totalInstances?.toLocaleString()}</span>
-                    <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Views Consumed</p>
+                    <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Views Served</p>
                 </div>
             )
         },
@@ -183,7 +187,7 @@ export default function PromoteNodeContent() {
                 <div className="flex items-center gap-2 text-left">
                     <div className="flex flex-col text-left">
                          <span className="font-black text-blue-600">{row.original.metrics?.clicks || 0}</span>
-                         <p className="text-[8px] font-black uppercase text-blue-600/60 tracking-widest text-left">Total Clicks</p>
+                         <p className="text-[8px] font-black uppercase text-blue-600/60 tracking-widest text-left">Direct Clicks</p>
                     </div>
                 </div>
             ) 
@@ -214,7 +218,7 @@ export default function PromoteNodeContent() {
         }
     ];
 
-    if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" /></div>;
+    if (isUserLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin text-primary mx-auto" /></div>;
 
     return (
         <div className="space-y-12 text-left text-foreground">
@@ -231,7 +235,7 @@ export default function PromoteNodeContent() {
                                 <div className="bg-primary/20 p-3 rounded-xl"><Sparkles className="h-6 w-6 text-primary" /></div>
                                 <div className="text-left">
                                     <CardTitle className="text-xl font-black uppercase tracking-tight">Visibility Purchase Menu</CardTitle>
-                                    <CardDescription className="text-slate-400">Standardized batches of impressions matching your target mall.</CardDescription>
+                                    <CardDescription className="text-slate-400">Standardized bundles of views targeting your chosen audience.</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -263,12 +267,15 @@ export default function PromoteNodeContent() {
                                         <SelectContent>
                                             {[1, 5, 10, 25, 50].map(b => (
                                                 <SelectItem key={b} value={String(b)} className="font-bold">
-                                                    {(b * (adPricing?.instanceBatchSize || 1000)).toLocaleString()} Views (R {b * (adPricing?.pricePerBatch || 100)})
+                                                    {(b * batchSize).toLocaleString()} Views (R {b * pricePerBatch})
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <p className="text-[10px] text-muted-foreground italic pl-1 text-left">Instances are consumed only when your ad is rendered in the registry.</p>
+                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic pl-1 text-left">
+                                        <Info className="h-3 w-3" />
+                                        <span>1 Batch = {batchSize.toLocaleString()} Impressions. Served until consumed.</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -278,21 +285,21 @@ export default function PromoteNodeContent() {
                                     <Input 
                                         value={creativeUrl} 
                                         onChange={e => setCreativeUrl(e.target.value)} 
-                                        placeholder="Paste unbranded link from Studio/Gallery..." 
+                                        placeholder="Paste link from Studio or Asset Gallery..." 
                                         className="h-12 border-2 font-mono text-xs" 
                                     />
                                     <Button variant="outline" className="h-12 border-2 gap-2 font-bold" asChild>
-                                        <Link href="/account?view=asset-gallery"><Search className="h-4 w-4" /> Gallery</Link>
+                                        <Link href="/account?view=marketing-studio"><Search className="h-4 w-4" /> Studio</Link>
                                     </Button>
                                 </div>
                             </div>
                         </CardContent>
                         <CardFooter className="bg-slate-900 border-t p-8 flex justify-between items-center rounded-b-xl text-white text-left">
                             <div className="text-left">
-                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Investment Required</p>
+                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Total Investment</p>
                                 <p className="text-2xl font-black text-primary text-left">{formatCurrency(totalCost)}</p>
                             </div>
-                            <Button size="lg" className="h-16 px-12 font-black uppercase tracking-tight shadow-2xl gap-3 text-lg text-white" onClick={handleLaunch} disabled={isProcessing}>
+                            <Button size="lg" className="h-16 px-12 font-black uppercase tracking-tight shadow-xl gap-3 text-lg text-white" onClick={handleLaunch} disabled={isProcessing}>
                                 {isProcessing ? <Loader2 className="animate-spin h-6 w-6" /> : <Zap className="h-6 w-6 fill-current" />}
                                 Launch Visibility Boost
                             </Button>
@@ -307,7 +314,7 @@ export default function PromoteNodeContent() {
                         <Card className="border-none shadow-xl bg-white text-left text-foreground">
                             <CardContent className="pt-6 text-left text-foreground">
                                 {isCampaignsLoading ? (
-                                    <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>
+                                    <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>
                                 ) : campaigns && campaigns.length > 0 ? (
                                     <DataTable columns={columns} data={campaigns} />
                                 ) : (
@@ -324,12 +331,12 @@ export default function PromoteNodeContent() {
                 <div className="space-y-8 text-left text-foreground">
                     <Card className="bg-slate-900 text-white border-none shadow-2xl p-8 text-left relative overflow-hidden">
                         <CardHeader className="p-0 mb-6 text-left">
-                            <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white">
+                            <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white text-left">
                                 <Search className="text-primary h-8 w-8" />
                                 Redirect Logic
                             </CardTitle>
                             <CardDescription className="text-slate-400 mt-2 text-left leading-relaxed">
-                                Every click is verified and logged. Recipients are instantly redirected to your **Digital Branch** or **Registry Record** to initiate the handshake.
+                                Every click is verified and logged. Recipients are instantly redirected to your **Digital Branch** to initiate the handshake.
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="p-0 text-left">
@@ -340,21 +347,21 @@ export default function PromoteNodeContent() {
                     </Card>
 
                     <div className="space-y-4 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Accounting transparency</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Economics of Scale</Label>
                         <Card className="border-dashed border-2 bg-muted/20 text-left text-foreground">
                             <CardContent className="p-6 space-y-4 text-left">
                                 <div className="flex items-start gap-4 text-left text-foreground">
-                                    <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><DollarSign className="h-4 w-4 text-primary" /></div>
-                                    <div className="text-left text-foreground text-foreground">
-                                        <p className="text-xs font-black uppercase text-foreground text-left">Direct Payout Logic</p>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left">Campaigns are debited from available wallet funds. Invoices generated under code 4500.</p>
+                                    <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><Layers className="h-4 w-4 text-primary" /></div>
+                                    <div className="text-left text-foreground">
+                                        <p className="text-xs font-black uppercase text-foreground text-left">Batch Consumption</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground">Views are only deducted when your boosted profile is actually rendered for a unique viewer.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4 text-left text-foreground">
-                                    <div className="bg-primary/10 p-2 rounded-lg mt-1"><TrendingUp className="h-4 w-4 text-primary" /></div>
+                                    <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><TrendingUp className="h-4 w-4 text-primary" /></div>
                                     <div className="text-left text-foreground">
-                                        <p className="text-xs font-black uppercase text-foreground text-left">Behavioral Verification</p>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left">We log the specific Member ID of every viewer to provide absolute proof of industrial reach.</p>
+                                        <p className="text-xs font-black uppercase text-foreground text-left text-foreground">Conversion Accountability</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground">Access a forensic list of every company that viewed or clicked your content via the Drill-Down tool.</p>
                                     </div>
                                 </div>
                             </CardContent>

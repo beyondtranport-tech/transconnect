@@ -6,7 +6,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 /**
  * PAY WITH WALLET ENDPOINT
- * Handles Membership Tiers, Modular Nodes, and Ad Campaigns.
+ * Robust handling for Membership Tiers, Modular Nodes, and Ad Campaigns.
  */
 async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: string, payload: any, isAdmin: boolean) {
     const { companyId, amount, description, planType, planId, cycle, title, targetAudience, creativeUrl, totalInstances } = payload;
@@ -33,6 +33,9 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
         if (planType === 'ad_broadcast') {
             const pricing = adPricingSnap.exists ? adPricingSnap.data() : { pricePerBatch: 100, isEngineActive: true };
             if (!pricing?.isEngineActive && !isAdmin) throw new Error("Ad engine is currently offline for maintenance.");
+            
+            // Forensic verification of the amount vs provided instances
+            if (!totalInstances || totalInstances <= 0) throw new Error("Invalid instance count for ad broadcast.");
         }
 
         // 2. FUNDS VERIFICATION
@@ -88,8 +91,8 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
                 targetAudience,
                 creativeUrl,
                 budget: amount,
-                totalInstances,
-                remainingInstances: totalInstances,
+                totalInstances: Number(totalInstances),
+                remainingInstances: Number(totalInstances),
                 status: 'pending_approval',
                 metrics: { impressions: 0, clicks: 0 },
                 createdAt: FieldValue.serverTimestamp(),
