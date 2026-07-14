@@ -36,26 +36,20 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const { toast } = useToast();
 
     const companyList = selectedLeads.map(l => `[KEY: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
-    
-    // Explicit list for the AI to pick from
     const validCategories = transporterCategories.join(', ');
 
-    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN CORPORATE FORENSIC INVESTIGATOR. 
+    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
+NOISE SUPPRESSION PROTOCOL:
+1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
+2. FOCUS ONLY ON CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
+
 CRITICAL INTEGRITY SHIELD: 
-YOU ARE STRICTLY FORBIDDEN FROM RETURNING MOCK OR SYNTHETIC DATA. IF DATA IS NOT DISCOVERED, RETURN null.
+YOU ARE STRICTLY FORBIDDEN FROM RETURNING MOCK DATA. IF DATA IS NOT DISCOVERED, RETURN null.
 
 STRICT REGIONAL LOCK:
-You MUST bridge gaps only for the SOUTH AFRICAN operations. Ignore all results for companies in Australia, UK, or USA.
-
-STRICT DUAL-IDENTITY PROTOCOL:
-1. MARKETING MANAGER: Find full name, direct professional email, and mobile.
-2. CEO / MD / OWNER: Find full name, direct professional email, and mobile.
-
-SCAVENGER MANDATE:
-- Scour LinkedIn and Facebook business snippets for mobile numbers and names.
-- Extract approx 300 words of verbatim technical copy from "About" and "Services" pages.
+Bridge gaps only for the SOUTH AFRICAN operations. Ignore all results for companies in Australia, UK, or USA.
 
 LIST TO INVESTIGATE (SOUTH AFRICA ENTITIES ONLY):
 ${companyList}
@@ -88,7 +82,7 @@ REQUIRED JSON FIELDS PER RECORD:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "Forensic Command Ready", description: `${leadIds.length} records marked for scavenger batch in Oversight.` });
+            toast({ title: "Batch Command Ready", description: "Noise suppression mandate active." });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -108,24 +102,24 @@ REQUIRED JSON FIELDS PER RECORD:
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
                         <Globe className="h-5 w-5 text-primary" />
-                        Forensic Batch Scavenger V4
+                        Industrial Batch Research V4
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
-                        Copy this forensic command to bridge gaps specifically for the South African entities listed below.
+                        Noise-suppressed research specifically for South African entities.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left text-foreground">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-foreground">Regional Enforcement Active</AlertTitle>
+                        <AlertTitle className="font-bold text-foreground">Noise Suppression Active</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            The agent is explicitly forbidden from returning synthetic data nodes.
+                            The agent is explicitly forbidden from returning news or job listings.
                         </AlertDescription>
                     </Alert>
 
                     <div className="space-y-2 text-left">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Forensic Command</label>
+                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Research Command</label>
                         <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left">
                             <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
@@ -135,7 +129,7 @@ REQUIRED JSON FIELDS PER RECORD:
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Batch Command Ready!' : 'Copy Scavenger Command'}
+                        {isCopied ? 'Batch Command Ready!' : 'Copy Research Command'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -2,7 +2,7 @@
 /**
  * @fileOverview Automated industrial discovery agent V4.
  * Performs high-fidelity extraction of commercial records with mandatory leadership mapping.
- * Optimized for South African regional accuracy.
+ * Optimized for South African regional accuracy and noise suppression.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -53,17 +53,20 @@ const discoveryFlow = ai.defineFlow(
     try {
         const { category, type, batchSize } = input;
         
-        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL FORENSIC INVESTIGATOR.
-        Your goal is to DISCOVER and EXTRACT verified business records for: "${category}".
+        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
+        Your goal is to DISCOVER and EXTRACT verified business records for: "${category}" in South Africa.
+        
+        NOISE SUPPRESSION PROTOCOL:
+        1. IGNORE all search results related to "Forensic Jobs", "Data Analyst roles", or "News Articles".
+        2. FOCUS ONLY on live South African companies with operational physical footprints.
         
         CRITICAL INTEGRITY SHIELD:
         1. REAL DATA ONLY: Do not return mock, placeholder, or synthetic data.
-        2. REGIONAL LOCK: Only return entities physically located in South Africa.
-        3. DUAL-IDENTITY PROTOCOL: You MUST find the ACTUAL NAME, email, and mobile for the Marketing Manager AND the CEO/Owner.
+        2. DUAL-IDENTITY PROTOCOL: You MUST find the ACTUAL NAME, email, and mobile for the Marketing Manager AND the CEO/Owner.
         
         SCAVENGER MANDATE:
         - Search Facebook, LinkedIn, and local directories (Yellosa, Infoisinfo) to bridge contact gaps.
-        - Scrape the primary headlines from the official website to create a 300-word technical profile.
+        - Scrape primary headlines to create a 300-word technical profile.
         
         ID: Generate a unique ID starting with 'DISC_${type.toUpperCase()}_'.`;
 
@@ -71,7 +74,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Extract ${batchSize} verified professional records for ${category} in South Africa. RETURN RAW JSON ONLY.`,
+            prompt: `Extract ${batchSize} verified professional records for ${category} in South Africa. RETURN RAW JSON ARRAY ONLY.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

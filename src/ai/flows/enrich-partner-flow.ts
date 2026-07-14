@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview High-fidelity Forensic AI Research Agent V4.
- * RE-ENGINEERED FOR AGGRESSIVE SCAVENGING & RSA REGIONAL LOCK.
+ * @fileOverview High-fidelity Industrial Research Agent V4.
+ * RE-ENGINEERED FOR NOISE SUPPRESSION & RSA REGIONAL LOCK.
  * 
  * Target Persona 1: Marketing Manager (Engagement Lead)
  * Target Persona 2: CEO / Managing Director / Owner
@@ -52,40 +52,38 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
         }
 
-        // AGGRESSIVE MULTI-CHANNEL CRAWL WITH RSA LOCK
+        // CLINICAL TARGETED CRAWL: Focusing on corporate nodes, avoiding news/jobs noise
         const [identityResults, webResults, socialResults, directoryResults] = await Promise.all([
-            googleSearchTool({ query: `"${company}" South Africa Marketing Manager CEO Managing Director Owner LinkedIn` }),
-            googleSearchTool({ query: `"${company}" official website contact email address South Africa` }),
-            googleSearchTool({ query: `site:facebook.com "${company}" South Africa contact email mobile` }),
-            googleSearchTool({ query: `"${company}" Yellosa Infoisinfo Braby business profile contact South Africa` })
+            googleSearchTool({ query: `"${company}" South Africa CEO Managing Director LinkedIn -jobs -hiring` }),
+            googleSearchTool({ query: `"${company}" South Africa official website contact email address` }),
+            googleSearchTool({ query: `site:facebook.com "${company}" South Africa "contact us" email mobile` }),
+            googleSearchTool({ query: `"${company}" South Africa (Yellosa OR Infoisinfo OR Braby) business profile` })
         ]);
         
         const allContent = [...(identityResults || []), ...(webResults || []), ...(socialResults || []), ...(directoryResults || [])]
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
-        // HIGH-FIDELITY EXTRACTION WITH SCAVENGER MANDATE
+        // HIGH-FIDELITY EXTRACTION WITH NOISE SUPPRESSION
         const extraction = await ai.generate({
             model: geminiModel,
-            system: `ACT AS AN ELITE SOUTH AFRICAN CORPORATE FORENSIC INTELLIGENCE AGENT.
-            Your mission is to bridge all data gaps for the SOUTH AFRICAN entity of "${company}" using provided search evidence.
+            system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
+            Your mission is to find CORPORATE DATA nodes for "${company}" in South Africa.
             
-            CRITICAL INTEGRITY SHIELD:
-            1. REAL DATA ONLY: You are STRICTLY FORBIDDEN from returning mock, synthetic, or placeholder data. If information is not found in the evidence, return null.
-            2. NO HALLUCINATION: Do not invent names or emails. Accuracy is more valuable than completeness.
-            3. REGIONAL LOCK: You MUST ignore all results for entities in Australia, UK, USA, or other countries.
+            NOISE SUPPRESSION PROTOCOL:
+            1. IGNORE all search results related to "Forensic Jobs", "Data Analyst roles", "AI Policies", or "News Articles".
+            2. FOCUS ONLY on Corporate Landing Pages, LinkedIn People Profiles, and Facebook Business Pages.
+            3. REGIONAL LOCK: You MUST ignore results for entities in Australia, UK, USA, etc.
+
+            INTEGRITY SHIELD:
+            1. REAL DATA ONLY: If information is not found in the evidence, return null. DO NOT hallucinate.
+            2. JSON ONLY: Return ONLY the raw JSON object. Do not provide conversational filler or a list of search results.
 
             SCAVENGER PROTOCOL:
-            1. AGGRESSIVE MAPPING: Look for patterns in snippets. If you find a CEO name and a general email, try to infer the direct email format if enough evidence exists across multiple sources.
-            2. SOCIAL MINING: Facebook snippets often contain mobile numbers and "Call Now" buttons. LinkedIn snippets often name the MD or Marketing Manager. Scavenge these specifically.
-            3. DUAL-IDENTITY LOCK: You MUST attempt to map both the Marketing Manager (Engagement Lead) and the CEO/MD (Principal).
-
-            CONTENT MINING PROTOCOL:
-            1. TECHNICAL PROFILE: In 'minedServiceWording', provide approx 300 words of VERBATIM technical content found in snippets regarding their services.
-            2. LANDLINE RECOVERY: Prioritize verified company landlines for the 'phone' field from directory sites like Yellosa.
-
-            RETURN RAW JSON ONLY.`,
-            prompt: `ANALYZE EVIDENCE FOR "${company}" IN SOUTH AFRICA. BRIDGE ALL GAPS:\n\n${allContent}`,
+            1. AGGRESSIVE MAPPING: Look for mobile numbers in snippets (e.g. 082..., 071...).
+            2. DUAL-IDENTITY LOCK: You MUST attempt to map both the Marketing Manager and the CEO/MD.
+            3. CONTENT MINING: In 'minedServiceWording', provide 300 words of VERBATIM technical content regarding their services.`,
+            prompt: `ANALYZE EVIDENCE FOR "${company}" IN SOUTH AFRICA. RETURN RAW JSON ONLY. BRIDGE ALL GAPS:\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }
@@ -94,7 +92,7 @@ const enrichPartnerFlow = ai.defineFlow(
         return extraction.output || { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
 
     } catch (e: any) {
-        console.error("[FORENSIC_V4] Error:", e);
+        console.error("[RESEARCH_V4] Error:", e);
         return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
     }
   }

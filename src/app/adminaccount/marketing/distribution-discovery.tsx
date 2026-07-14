@@ -22,21 +22,24 @@ export const distributionCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE URBAN LOGISTICS SCOUT AND FORENSIC INVESTIGATOR. 
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+
+NOISE SUPPRESSION PROTOCOL:
+1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
+2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
 
 CRITICAL INTEGRITY SHIELD: 
 DO NOT RETURN MOCK DATA. 
-YOU MUST PERFORM A LIVE SEARCH FOR "${category} companies in South Africa" on Google, LinkedIn, and local business directories.
-VERIFY THE PROVIDER SPECIALIZES IN LOCAL OR REGIONAL DISTRIBUTION.
+YOU MUST PERFORM A LIVE SEARCH FOR "${category} companies in South Africa".
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African distribution partners for: "${category}".
 
-FORENSIC PROTOCOL:
-1. SPOKE VERIFICATION: Identify the primary regional focus (e.g. Gauteng North, Southern Suburbs CPT).
-2. FLEET ANALYSIS: Identify the typical vehicle profile (e.g. 1-ton, 4-ton, motorbikes, tuk-tuks).
-3. HUMAN IDENTITY (CRITICAL): You MUST find the ACTUAL VERIFIED FIRST AND LAST NAME of the Logistics Lead or Managing Director.
-4. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
+PROTOCOL:
+1. SPOKE VERIFICATION: Identify the primary regional focus.
+2. FLEET ANALYSIS: Identify the typical vehicle profile.
+3. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the MD or Logistics Lead.
+4. CONTACT MAPPING: Identify professional email and direct mobile numbers.
 5. RECORD KEY: Generate a unique "record_id" starting with "DISC_DIST_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED JSON FIELDS:
@@ -46,12 +49,12 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "DISTRIBUTION AGENT NAME",
     "industrial_category": "${category}",
-    "contactPerson": "FULL HUMAN NAME (FIRST AND LAST)",
+    "contactPerson": "FULL HUMAN NAME",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL CHANNEL URL",
     "address": "REGIONAL OFFICE ADDRESS",
-    "notes": "Brief summary of urban spoke reach, fleet composition, and turnaround times."
+    "notes": "..."
   }
 ]`;
 }
@@ -67,30 +70,30 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Forensic Prompt Ready", description: "Targeted at urban distribution." });
+        toast({ title: "Research Prompt Ready", description: "Noise suppression active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
-        <div className="grid md:grid-cols-2 gap-6 text-left">
-            <div className="space-y-4 text-left text-foreground">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
+        <div className="grid md:grid-cols-2 gap-6 text-left text-foreground">
+            <div className="space-y-4 text-left">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
                     <Network className="h-6 w-6 text-primary" />
-                    Urban Spoke Scouting: {category}
+                    Urban Spoke Mapping: {category}
                 </h2>
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="font-bold text-left text-foreground">Distribution Hub Mapping</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Noise Suppression Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        Scouting for regional distribution agents who can provide final-mile collection and delivery for our national community.
+                        The agent is commanded to ignore job listings and policy news.
                     </AlertDescription>
                 </Alert>
 
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left text-foreground">
-                        <Label className="text-xs font-bold text-foreground text-left">Start Sequence #</Label>
+                        <Label className="text-xs font-bold text-left text-foreground">Start Sequence #</Label>
                         <Input 
                             type="number" 
                             value={seqOverride}
@@ -101,7 +104,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy Discovery Prompt
+                    Copy Research Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
@@ -118,23 +121,23 @@ export default function DistributionDiscovery() {
     return (
         <Card className="shadow-none border-none text-left text-foreground">
             <Tabs defaultValue="Urban Spoke Network" className="w-full text-left">
-                <CardHeader className="px-0 pt-0 text-left text-foreground text-foreground">
-                    <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left text-foreground">
+                <CardHeader className="px-0 pt-0 text-left text-foreground">
+                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left">
                         <Database className="h-6 w-6 text-primary" />
-                        Distribution Discovery Engine
+                        Distribution Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground text-left text-foreground">Identify verified inner-city delivery fleets and urban spokes.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Identify verified inner-city fleets using noise-suppressed discovery.</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left text-foreground text-foreground">
+                <CardContent className="px-0 text-left text-foreground">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground">
                         {distributionCategories.map(category => (
-                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2 text-foreground">
+                            <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">
                                 {category}
                             </TabsTrigger>
                         ))}
                     </TabsList>
                     {distributionCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0 text-left text-foreground">
+                        <TabsContent key={category} value={category} className="mt-0 text-left">
                             <DiscoveryTab category={category} currentCount={0} />
                         </TabsContent>
                     ))}
