@@ -43,15 +43,19 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN CORPORATE FORENSIC INVESTIGATOR. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
+CRITICAL INTEGRITY SHIELD: 
+YOU ARE STRICTLY FORBIDDEN FROM RETURNING MOCK OR SYNTHETIC DATA. IF DATA IS NOT DISCOVERED, RETURN null.
+
 STRICT REGIONAL LOCK:
-You MUST bridge gaps only for the SOUTH AFRICAN operations of the companies listed. Ignore all results for companies in Australia, UK, or USA.
+You MUST bridge gaps only for the SOUTH AFRICAN operations. Ignore all results for companies in Australia, UK, or USA.
 
 STRICT DUAL-IDENTITY PROTOCOL:
 1. MARKETING MANAGER: Find full name, direct professional email, and mobile.
 2. CEO / MD / OWNER: Find full name, direct professional email, and mobile.
 
-CONTENT MINING MANDATE:
-1. SITE MAP CONTENT: For each record, extract approx 300 words of verbatim technical copy from "About", "Services", and "Product" pages.
+SCAVENGER MANDATE:
+- Scour LinkedIn and Facebook business snippets for mobile numbers and names.
+- Extract approx 300 words of verbatim technical copy from "About" and "Services" pages.
 
 LIST TO INVESTIGATE (SOUTH AFRICA ENTITIES ONLY):
 ${companyList}
@@ -60,7 +64,7 @@ REQUIRED JSON FIELDS PER RECORD:
 - "record_id": (Return exactly the KEY provided)
 - "industrial_category": (Select from [${validCategories}])
 - "website": (OFFICIAL CORPORATE URL)
-- "email": (Primary Professional Email)
+- "email": (General Company Email)
 - "phone": (RSA Landline)
 - "address": (FULL Verified Physical Address in South Africa)
 - "marketingManager": { "name": "...", "email": "...", "mobile": "..." }
@@ -84,7 +88,7 @@ REQUIRED JSON FIELDS PER RECORD:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "Forensic Prompt Ready", description: `${leadIds.length} records marked with South Africa Lock in Oversight.` });
+            toast({ title: "Forensic Command Ready", description: `${leadIds.length} records marked for scavenger batch in Oversight.` });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -102,9 +106,9 @@ REQUIRED JSON FIELDS PER RECORD:
         <Dialog open={open} onOpenChange={(o) => !isLoading && onOpenChange(o)}>
             <DialogContent className="sm:max-w-2xl text-left text-foreground">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-left text-foreground">
+                    <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
                         <Globe className="h-5 w-5 text-primary" />
-                        Forensic Batch Discovery (RSA Lock)
+                        Forensic Batch Scavenger V4
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
                         Copy this forensic command to bridge gaps specifically for the South African entities listed below.
@@ -116,7 +120,7 @@ REQUIRED JSON FIELDS PER RECORD:
                         <ShieldCheck className="h-4 w-4 text-primary" />
                         <AlertTitle className="font-bold text-foreground">Regional Enforcement Active</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            The agent is explicitly forbidden from returning international data nodes.
+                            The agent is explicitly forbidden from returning synthetic data nodes.
                         </AlertDescription>
                     </Alert>
 
@@ -131,7 +135,7 @@ REQUIRED JSON FIELDS PER RECORD:
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Prompt Ready!' : 'Copy Batch Prompt (RSA Lock)'}
+                        {isCopied ? 'Batch Command Ready!' : 'Copy Scavenger Command'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
