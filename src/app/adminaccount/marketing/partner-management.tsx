@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -449,7 +448,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                           <div className="space-y-1 text-left text-foreground">
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
@@ -506,4 +505,3 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     </div>
   );
 }
-

@@ -19,7 +19,6 @@ const ContactInfoSchema = z.object({
 
 const EnrichPartnerInputSchema = z.object({
   companyName: z.string(),
-  contactPerson: z.string().optional(),
 });
 export type EnrichPartnerInput = z.infer<typeof EnrichPartnerInputSchema>;
 
@@ -53,7 +52,7 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
         }
 
-        // AGGRESSIVE MULTI-CHANNEL CRAWL
+        // AGGRESSIVE MULTI-CHANNEL CRAWL WITH RSA LOCK
         const [identityResults, webResults, socialResults, directoryResults] = await Promise.all([
             googleSearchTool({ query: `"${company}" South Africa Marketing Manager CEO Managing Director Owner LinkedIn` }),
             googleSearchTool({ query: `"${company}" official website contact email address South Africa` }),
