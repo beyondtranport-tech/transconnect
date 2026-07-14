@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -5,12 +6,12 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 /**
  * PAY WITH WALLET ENDPOINT
- * Handles Membership Tiers and Modular Intelligence Node activations.
+ * Handles Membership Tiers, Modular Nodes, and Ad Campaigns.
  */
 async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: string, payload: any, isAdmin: boolean) {
-    const { companyId, amount, description, planType, planId, cycle } = payload;
+    const { companyId, amount, description, planType, planId, cycle, title, targetAudience, creativeUrl } = payload;
     
-    if (!companyId || typeof amount !== 'number' || !planType || !planId) {
+    if (!companyId || typeof amount !== 'number' || !planType) {
         throw new Error('Missing activation metadata.');
     }
 
@@ -34,8 +35,10 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        // 2. Resolve Accounting (4000 series for subscription revenue)
-        const chartOfAccountsCode = (planType === 'membership' || planId === 'intelligence') ? '4010' : '4100';
+        // 2. Resolve Accounting (4000 series for subscription revenue, 4500 for ads)
+        let chartOfAccountsCode = '4100';
+        if (planType === 'membership') chartOfAccountsCode = '4010';
+        if (planType === 'ad_broadcast') chartOfAccountsCode = '4500';
 
         // 3. Record Member Transaction
         const companyTransactionRef = companyRef.collection('transactions').doc();
@@ -64,33 +67,48 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
         });
 
         // 5. Apply Activation Logic
-        const nextBilling = new Date();
-        if (cycle === 'annual') nextBilling.setFullYear(nextBilling.getFullYear() + 1);
-        else nextBilling.setMonth(nextBilling.getMonth() + 1);
-
-        if (planType === 'membership' || planId === 'intelligence') {
-            transaction.update(companyRef, {
-                membershipId: planId,
-                billingCycle: cycle || 'monthly',
-                nextBillingDate: nextBilling,
-                status: 'active', 
+        if (planType === 'ad_broadcast') {
+            const adRef = companyRef.collection('adCampaigns').doc();
+            transaction.set(adRef, {
+                id: adRef.id,
+                companyId,
+                title,
+                targetAudience,
+                creativeUrl,
+                budget: amount,
+                status: 'pending_approval',
+                metrics: { impressions: 0, clicks: 0 },
+                createdAt: FieldValue.serverTimestamp(),
+                updatedAt: FieldValue.serverTimestamp()
             });
-        } else if (planType === 'node' || planType === 'connect') {
-            // Map planId to feature flag (e.g. loads_intelligence -> hasLoadsPlan)
-            let flag = '';
-            if (planId === 'loads_intelligence') flag = 'hasLoadsPlan';
-            else if (planId === 'warehouse_intelligence') flag = 'hasWarehousePlan';
-            else if (planId === 'buy_sell_intelligence') flag = 'hasBuySellPlan';
-            else if (planId === 'loyalty') flag = 'hasLoyaltyPlan';
-            else if (planId === 'rewards') flag = 'hasRewardsPlan';
-            else if (planId === 'actions') flag = 'hasActionsPlan';
+        } else {
+            const nextBilling = new Date();
+            if (cycle === 'annual') nextBilling.setFullYear(nextBilling.getFullYear() + 1);
+            else nextBilling.setMonth(nextBilling.getMonth() + 1);
 
-            if (flag) {
+            if (planType === 'membership' || planId === 'intelligence') {
                 transaction.update(companyRef, {
-                    [flag]: true,
-                    [`${planId}NextBillingDate`]: nextBilling,
-                    [`${planId}BillingCycle`]: cycle || 'monthly'
+                    membershipId: planId,
+                    billingCycle: cycle || 'monthly',
+                    nextBillingDate: nextBilling,
+                    status: 'active', 
                 });
+            } else if (planType === 'node' || planType === 'connect') {
+                let flag = '';
+                if (planId === 'loads_intelligence') flag = 'hasLoadsPlan';
+                else if (planId === 'warehouse_intelligence') flag = 'hasWarehousePlan';
+                else if (planId === 'buy_sell_intelligence') flag = 'hasBuySellPlan';
+                else if (planId === 'loyalty') flag = 'hasLoyaltyPlan';
+                else if (planId === 'rewards') flag = 'hasRewardsPlan';
+                else if (planId === 'actions') flag = 'hasActionsPlan';
+
+                if (flag) {
+                    transaction.update(companyRef, {
+                        [flag]: true,
+                        [`${planId}NextBillingDate`]: nextBilling,
+                        [`${planId}BillingCycle`]: cycle || 'monthly'
+                    });
+                }
             }
         }
         

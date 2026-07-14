@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -52,6 +53,7 @@ import {
   Network,
   HelpCircle,
   PackageSearch,
+  Zap,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -94,6 +96,7 @@ import UnifiedDirectory from '@/app/adminaccount/unified-directory';
 import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import AdminGuides from '@/app/adminaccount/guides';
+import AdsOversight from '@/app/adminaccount/ads-oversight';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -179,6 +182,7 @@ function AdminAccountContent() {
       case 'settings-bank': return <PlatformSettingsContent />;
       case 'platform-staff': return <PlatformStaffManagement />;
       case 'associate-oversight': return <AssociateOversight />;
+      case 'ads-oversight': return <AdsOversight />;
       case 'guides': return <AdminGuides />;
       default: return <AdminDashboardContent />;
     }
@@ -243,12 +247,9 @@ function AdminAccountContent() {
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Social" isActive={activeView.startsWith('social-')}><Share2 /><span>Social</span></SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Revenue" isActive={activeView === 'ads-oversight'}><Zap /><span>Revenue Oversight</span></SidebarMenuButton>
                   <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'ads-oversight'} onClick={() => navigate('ads-oversight')}><Sparkles className="h-3.5 w-3.5 mr-2" />Visibility Campaigns</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
 

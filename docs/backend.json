@@ -35,42 +35,53 @@
         "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
         "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance", "distributor"] },
-        "minedServiceWording": { "type": "string", "description": "Full technical profile and about text scraped from the website hero sections." },
+        "minedServiceWording": { "type": "string", "description": "First 300 words of technical content scraped from the sitemap sub-pages." },
         "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
         "address": { "type": "string" },
         "website": { "type": "string" },
+        "marketingManager": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "mobile": { "type": "string" }
+          }
+        },
+        "ceo": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "email": { "type": "string" },
+            "mobile": { "type": "string" }
+          }
+        },
         "assigneeId": { "type": "string", "description": "UID of the allocated platform staff member." },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
       },
       "required": ["firstName", "lastName", "email", "type"]
     },
-    "WarehouseNode": {
-      "title": "Warehouse Node",
+    "AdCampaign": {
+      "title": "Industrial Ad Campaign",
       "type": "object",
+      "description": "A paid promotion increasing visibility in specific malls.",
       "properties": {
         "id": { "type": "string" },
         "companyId": { "type": "string" },
-        "nodeName": { "type": "string" },
-        "providerType": { "type": "string", "enum": ["primary_operator", "excess_capacity"] },
-        "availablePallets": { "type": "number" },
-        "upliftFee": { "type": "number" },
-        "placementFee": { "type": "number" },
-        "monthlyStorageFee": { "type": "number" },
-        "services": { "type": "array", "items": { "type": "string" } },
-        "imageUrls": { "type": "array", "items": { "type": "string" } },
-        "status": { "type": "string", "enum": ["draft", "pending_review", "approved"] }
-      }
-    },
-    "Load": {
-      "title": "Standardized Load",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "originNodeId": { "type": "string", "description": "The Warehouse or Supplier ID where load originates." },
-        "loadType": { "type": "string", "enum": ["local_distribution", "long_haul"] },
-        "status": { "type": "string", "enum": ["active", "assigned", "delivered", "completed"] },
-        "payout": { "type": "number" }
+        "title": { "type": "string" },
+        "targetAudience": { "type": "string", "enum": ["transporters", "suppliers", "finance", "all"] },
+        "creativeUrl": { "type": "string" },
+        "budget": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "pending_approval", "active", "completed", "rejected"] },
+        "metrics": {
+          "type": "object",
+          "properties": {
+            "impressions": { "type": "number" },
+            "clicks": { "type": "number" }
+          }
+        },
+        "createdAt": { "type": "object" },
+        "updatedAt": { "type": "object" }
       }
     }
   },
@@ -88,12 +99,8 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       },
       {
-        "path": "/companies/{companyId}/warehouses/{warehouseId}",
-        "definition": { "entityName": "WarehouseNode", "schema": { "$ref": "#/entities/WarehouseNode" }, "description": "Member-managed storage nodes." }
-      },
-      {
-        "path": "/companies/{companyId}/loads/{loadId}",
-        "definition": { "entityName": "Load", "schema": { "$ref": "#/entities/Load" }, "description": "Member-managed freight loads." }
+        "path": "/companies/{companyId}/adCampaigns/{adId}",
+        "definition": { "entityName": "AdCampaign", "schema": { "$ref": "#/entities/AdCampaign" }, "description": "Member-managed ad campaigns." }
       }
     ]
   }
