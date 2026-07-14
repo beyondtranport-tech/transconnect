@@ -54,27 +54,27 @@ const discoveryFlow = ai.defineFlow(
         const { category, type, batchSize } = input;
         
         const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
-        Your goal is to DISCOVER and EXTRACT verified business records for: "${category}" in South Africa.
+        RETURN ONLY RAW JSON. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
         
         NOISE SUPPRESSION PROTOCOL:
-        1. IGNORE all search results related to "Forensic Jobs", "Data Analyst roles", or "News Articles".
-        2. FOCUS ONLY on live South African companies with operational physical footprints.
+        1. IGNORE ALL "FORENSIC DATA ANALYST" JOBS, POLICY NEWS, OR NEWS ARTICLES.
+        2. FOCUS ONLY ON LIVE SOUTH AFRICAN COMPANIES WITH OPERATIONAL FOOTPRINTS.
         
         CRITICAL INTEGRITY SHIELD:
-        1. REAL DATA ONLY: Do not return mock, placeholder, or synthetic data.
-        2. DUAL-IDENTITY PROTOCOL: You MUST find the ACTUAL NAME, email, and mobile for the Marketing Manager AND the CEO/Owner.
+        1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
+        2. DUAL-IDENTITY PROTOCOL: YOU MUST FIND THE ACTUAL NAME, EMAIL, AND MOBILE FOR THE MARKETING MANAGER AND THE CEO/OWNER.
         
         SCAVENGER MANDATE:
-        - Search Facebook, LinkedIn, and local directories (Yellosa, Infoisinfo) to bridge contact gaps.
-        - Scrape primary headlines to create a 300-word technical profile.
+        - SEARCH FACEBOOK, LINKEDIN, AND LOCAL DIRECTORIES (YELLOSA, INFOISINFO) TO BRIDGE CONTACT GAPS.
+        - SCRAPE PRIMARY HEADLINES TO CREATE A 300-WORD TECHNICAL PROFILE.
         
-        ID: Generate a unique ID starting with 'DISC_${type.toUpperCase()}_'.`;
+        ID: GENERATE A UNIQUE ID STARTING WITH 'DISC_${type.toUpperCase()}_'.`;
 
         const response = await ai.generate({
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `Extract ${batchSize} verified professional records for ${category} in South Africa. RETURN RAW JSON ARRAY ONLY.`,
+            prompt: `EXTRACT ${batchSize} VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. RETURN RAW JSON ARRAY ONLY.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

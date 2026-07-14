@@ -60,7 +60,7 @@ const enrichPartnerFlow = ai.defineFlow(
             googleSearchTool({ query: `"${company}" South Africa (Yellosa OR Infoisinfo OR Braby) business profile` })
         ]);
         
-        const allContent = [...(identityResults || []), ...(webResults || []), ...(socialResults || []), ...(directoryResults || [])]
+        const allContent = [...(identityResults || []), ...(webResults || []), ...(socialResults || []), ...(directoryResults || []).slice(0, 10)]
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
@@ -68,21 +68,21 @@ const enrichPartnerFlow = ai.defineFlow(
         const extraction = await ai.generate({
             model: geminiModel,
             system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
-            Your mission is to find CORPORATE DATA nodes for "${company}" in South Africa.
+            RETURN ONLY RAW JSON. NO PREAMBLE. NO MARKDOWN. NO CODE BLOCKS.
             
             NOISE SUPPRESSION PROTOCOL:
-            1. IGNORE all search results related to "Forensic Jobs", "Data Analyst roles", "AI Policies", or "News Articles".
-            2. FOCUS ONLY on Corporate Landing Pages, LinkedIn People Profiles, and Facebook Business Pages.
-            3. REGIONAL LOCK: You MUST ignore results for entities in Australia, UK, USA, etc.
+            1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
+            2. FOCUS ONLY ON CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
+            3. REGIONAL LOCK: IGNORE RESULTS FOR AUSTRALIA, UK, USA, ETC.
+            4. JSON-OR-DIE: IF DATA IS MISSING, RETURN null IN THE JSON. DO NOT EXPLAIN WHY.
 
             INTEGRITY SHIELD:
-            1. REAL DATA ONLY: If information is not found in the evidence, return null. DO NOT hallucinate.
-            2. JSON ONLY: Return ONLY the raw JSON object. Do not provide conversational filler or a list of search results.
+            1. REAL DATA ONLY: IF NOT FOUND IN THE EVIDENCE, RETURN null. DO NOT HALLUCINATE.
 
             SCAVENGER PROTOCOL:
-            1. AGGRESSIVE MAPPING: Look for mobile numbers in snippets (e.g. 082..., 071...).
-            2. DUAL-IDENTITY LOCK: You MUST attempt to map both the Marketing Manager and the CEO/MD.
-            3. CONTENT MINING: In 'minedServiceWording', provide 300 words of VERBATIM technical content regarding their services.`,
+            1. AGGRESSIVE MAPPING: LOOK FOR MOBILE NUMBERS IN SNIPPETS (E.G. 082..., 071...).
+            2. DUAL-IDENTITY LOCK: ATTEMPT TO MAP BOTH THE MARKETING MANAGER AND THE CEO/MD.
+            3. CONTENT MINING: IN 'minedServiceWording', PROVIDE 300 WORDS OF VERBATIM TECHNICAL CONTENT.`,
             prompt: `ANALYZE EVIDENCE FOR "${company}" IN SOUTH AFRICA. RETURN RAW JSON ONLY. BRIDGE ALL GAPS:\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema

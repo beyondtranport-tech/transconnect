@@ -56,7 +56,7 @@ const leadGenerationAIFlow = ai.defineFlow(
     const response = await ai.generate({
         model: geminiModel,
         tools: [googleSearchTool],
-        system: "Expert South African market research agent. Sourcing leads from real-world web data. You strictly ignore results from outside South Africa.",
+        system: "Expert South African market research agent. Sourcing leads from real-world web data. You strictly ignore results from outside South Africa. RETURN ONLY RAW JSON.",
         prompt: input.prompt,
         output: {
             schema: LeadGenerationOutputSchema
