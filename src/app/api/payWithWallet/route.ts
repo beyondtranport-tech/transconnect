@@ -16,31 +16,44 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
     }
 
     const companyRef = db.doc(`companies/${companyId}`);
+    const adPricingRef = db.doc('configuration/adPricing');
     
     return await db.runTransaction(async (transaction) => {
-        const companySnap = await transaction.get(companyRef);
+        const [companySnap, adPricingSnap] = await Promise.all([
+            transaction.get(companyRef),
+            transaction.get(adPricingRef)
+        ]);
+
         if (!companySnap.exists) throw new Error("Member profile not found.");
         
         const companyData = companySnap.data()!;
         const currentBalance = Number(companyData?.availableBalance || 0);
 
+        // 1. AD-SPECIFIC PRICING VALIDATION
+        if (planType === 'ad_broadcast') {
+            const pricing = adPricingSnap.exists ? adPricingSnap.data() : { minBudget: 500, isEngineActive: true };
+            if (!pricing?.isEngineActive && !isAdmin) throw new Error("Ad engine is currently offline for maintenance.");
+            if (amount < (pricing?.minBudget || 500) && !isAdmin) throw new Error(`Minimum budget requirement not met: ${pricing?.minBudget}`);
+        }
+
+        // 2. FUNDS VERIFICATION
         if (!isAdmin && (isNaN(currentBalance) || currentBalance < amount)) {
             throw new Error(`Insufficient funds: Required ${amount}, Available ${currentBalance}`);
         }
         
-        // 1. Execute Wallet Debit
+        // 3. EXECUTE WALLET DEBIT
         transaction.update(companyRef, {
             walletBalance: FieldValue.increment(-amount),
             availableBalance: FieldValue.increment(-amount),
             updatedAt: FieldValue.serverTimestamp(),
         });
 
-        // 2. Resolve Accounting (4000 series for subscription revenue, 4500 for ads)
+        // 4. RESOLVE ACCOUNTING (4000 series for subscriptions, 4500 for ads)
         let chartOfAccountsCode = '4100';
         if (planType === 'membership') chartOfAccountsCode = '4010';
         if (planType === 'ad_broadcast') chartOfAccountsCode = '4500';
 
-        // 3. Record Member Transaction
+        // 5. RECORD MEMBER TRANSACTION
         const companyTransactionRef = companyRef.collection('transactions').doc();
         transaction.set(companyTransactionRef, {
             transactionId: companyTransactionRef.id,
@@ -53,7 +66,7 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
             postedBy: adminUid,
         });
 
-        // 4. Record Platform Revenue
+        // 6. RECORD PLATFORM REVENUE
         const platformTransactionRef = db.collection('platformTransactions').doc();
         transaction.set(platformTransactionRef, {
             transactionId: platformTransactionRef.id,
@@ -66,7 +79,7 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
             companyId: companyId,
         });
 
-        // 5. Apply Activation Logic
+        // 7. APPLY ACTIVATION LOGIC
         if (planType === 'ad_broadcast') {
             const adRef = companyRef.collection('adCampaigns').doc();
             transaction.set(adRef, {

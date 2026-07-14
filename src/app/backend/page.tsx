@@ -93,6 +93,7 @@ import PermissionsContent from '@/app/backend/permissions-content';
 import PricingManagement from '@/app/backend/revenue/pricing-management';
 import ConnectPlanPricing from '@/app/backend/revenue/connect-plan-pricing';
 import TechPricing from '@/app/backend/revenue/tech-pricing';
+import AdPricingSettings from '@/app/backend/revenue/ad-pricing-settings';
 import MarketplaceFees from '@/app/backend/revenue/marketplace-fees';
 import MallCommissions from '@/app/backend/revenue/mall-commissions';
 import ISAPitchSettings from '@/app/backend/revenue/isa-pitch-settings';
@@ -179,6 +180,7 @@ function BackendContent() {
       case 'pricing-memberships': return <PricingManagement />;
       case 'pricing-connect': return <ConnectPlanPricing />;
       case 'pricing-tech': return <TechPricing />;
+      case 'pricing-ads': return <AdPricingSettings />;
       case 'pricing-marketplace': return < MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'commissions-isa': return <ISAPitchSettings />;
@@ -278,6 +280,7 @@ function BackendContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}>Membership Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-connect'} onClick={() => navigate('pricing-connect')}>Connect Plan Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-tech'} onClick={() => navigate('pricing-tech')}>Tech SaaS Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-ads'} onClick={() => navigate('pricing-ads')}>Ad Engine Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-marketplace'} onClick={() => navigate('pricing-marketplace')}>Marketplace Fees</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commissions-malls'} onClick={() => navigate('commissions-malls')}>Mall Commissions</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'commissions-isa'} onClick={() => navigate('commissions-isa')}>ISA Commissions</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -319,7 +322,7 @@ function BackendContent() {
               </Avatar>
               <div className="flex flex-col truncate text-left">
                   <span className="text-sm font-medium text-sidebar-foreground truncate text-left">
-                  {user.displayName || 'Super Admin'}
+                  {user.displayName || 'Admin'}
                   </span>
                   <span className="text-xs text-sidebar-foreground/70 truncate text-left">
                   {user.email}
