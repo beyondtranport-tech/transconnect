@@ -17,15 +17,15 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Zap, DollarSign, ShieldAlert } from 'lucide-react';
+import { Loader2, Save, Zap, DollarSign, ShieldAlert, Layers } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
 
 const formSchema = z.object({
-  minBudget: z.coerce.number().min(1, 'Minimum budget must be at least R1'),
-  serviceFeePercent: z.coerce.number().min(0).max(50, 'Fee capped at 50%'),
+  instanceBatchSize: z.coerce.number().min(1, 'Batch size must be at least 1'),
+  pricePerBatch: z.coerce.number().min(1, 'Price must be at least R1'),
   isEngineActive: z.boolean().default(true),
 });
 
@@ -42,8 +42,8 @@ export default function AdPricingSettings() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      minBudget: 500,
-      serviceFeePercent: 10,
+      instanceBatchSize: 1000,
+      pricePerBatch: 100,
       isEngineActive: true,
     },
   });
@@ -70,7 +70,7 @@ export default function AdPricingSettings() {
             throw new Error((await response.json()).error || 'Failed to save settings.');
         }
 
-      toast({ title: 'Ad Pricing Updated!', description: 'Global promotion parameters are now live.' });
+      toast({ title: 'Ad Pricing Updated!', description: 'Batch-based visibility pricing is now live.' });
       forceRefresh();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
@@ -80,68 +80,75 @@ export default function AdPricingSettings() {
   };
 
   return (
-    <Card className="w-full max-w-2xl text-left border-primary/20 bg-primary/5">
-        <CardHeader>
+    <Card className="w-full max-w-2xl text-left border-primary/20 bg-primary/5 shadow-xl">
+        <CardHeader className="bg-white rounded-t-lg border-b p-8">
             <div className="flex items-center gap-4">
                 <div className="bg-primary/10 p-3 rounded-xl">
                     <Zap className="h-8 w-8 text-primary"/>
                 </div>
                 <div className="text-left">
-                    <CardTitle>Global Ad Engine Pricing</CardTitle>
+                    <CardTitle className="text-xl font-black uppercase tracking-tight">Ad Inventory Economics</CardTitle>
                     <CardDescription>
-                        Control the economics of the platform's visibility revenue stream.
+                        Set the cost per visibility instance. All ads are sold in standardized batches.
                     </CardDescription>
                 </div>
             </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-8">
             {isConfigLoading ? (
                  <div className="flex justify-center items-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : (
                 <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                        <FormField control={form.control} name="minBudget" render={({ field }) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                        <FormField control={form.control} name="instanceBatchSize" render={({ field }) => (
                             <FormItem className="text-left">
-                                <FormLabel className="flex items-center gap-2"><DollarSign className="h-3 w-3"/> Min. Campaign Budget (R)</FormLabel>
-                                <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
-                                <FormDescription className="text-[10px]">The lowest amount a member can allocate to a visibility boost.</FormDescription>
+                                <FormLabel className="flex items-center gap-2 font-bold"><Layers className="h-4 w-4 text-primary"/> Instance Batch Size</FormLabel>
+                                <FormControl><Input type="number" {...field} className="h-12 border-2 bg-white text-lg font-black" /></FormControl>
+                                <FormDescription className="text-[10px] uppercase font-bold text-muted-foreground">Standardized # of views per batch.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )} />
 
-                        <FormField control={form.control} name="serviceFeePercent" render={({ field }) => (
+                        <FormField control={form.control} name="pricePerBatch" render={({ field }) => (
                             <FormItem className="text-left">
-                                <FormLabel>Platform Yield (%)</FormLabel>
-                                <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
-                                <FormDescription className="text-[10px]">The portion of the budget retained as platform revenue.</FormDescription>
+                                <FormLabel className="flex items-center gap-2 font-bold"><DollarSign className="h-4 w-4 text-primary"/> Price per Batch (R)</FormLabel>
+                                <FormControl><Input type="number" {...field} className="h-12 border-2 bg-white text-lg font-black" /></FormControl>
+                                <FormDescription className="text-[10px] uppercase font-bold text-muted-foreground">Cost to the member per batch purchased.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )} />
                     </div>
 
+                    <div className="p-6 bg-white border-2 border-dashed rounded-2xl space-y-4">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">Calculated Unit Cost:</span>
+                            <span className="font-mono font-black text-primary">R {(form.watch('pricePerBatch') / form.watch('instanceBatchSize')).toFixed(4)} per View</span>
+                        </div>
+                    </div>
+
                     <FormField control={form.control} name="isEngineActive" render={({ field }) => (
-                        <FormItem className="flex items-center justify-between p-4 bg-white border-2 rounded-xl text-left">
-                            <div className="space-y-0.5 text-left">
-                                <FormLabel className="text-sm font-bold flex items-center gap-2">
-                                    <ShieldAlert className="h-4 w-4 text-amber-600" />
-                                    Global Ad Engine Status
+                        <FormItem className="flex items-center justify-between p-6 bg-slate-900 text-white rounded-2xl shadow-lg text-left">
+                            <div className="space-y-1 text-left">
+                                <FormLabel className="text-base font-black flex items-center gap-2 uppercase tracking-tight">
+                                    <ShieldAlert className="h-5 w-5 text-primary" />
+                                    Ad Engine Global Switch
                                 </FormLabel>
-                                <FormDescription className="text-[10px]">Instantly toggle visibility for all active campaigns.</FormDescription>
+                                <FormDescription className="text-xs text-slate-400">Instantly pause all visibility delivery across the platform.</FormDescription>
                             </div>
                             <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                <Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" />
                             </FormControl>
                         </FormItem>
                     )} />
                     
-                    <div className="flex justify-end pt-4 border-t">
-                        <Button type="submit" disabled={isSaving} className="font-bold shadow-lg">
+                    <div className="flex justify-end pt-4">
+                        <Button type="submit" disabled={isSaving} className="h-12 px-10 font-bold shadow-xl text-white">
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Update Ad Economics
+                            Publish Pricing Strategy
                         </Button>
                     </div>
                 </form>

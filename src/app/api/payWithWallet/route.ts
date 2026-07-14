@@ -9,7 +9,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
  * Handles Membership Tiers, Modular Nodes, and Ad Campaigns.
  */
 async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: string, payload: any, isAdmin: boolean) {
-    const { companyId, amount, description, planType, planId, cycle, title, targetAudience, creativeUrl } = payload;
+    const { companyId, amount, description, planType, planId, cycle, title, targetAudience, creativeUrl, totalInstances } = payload;
     
     if (!companyId || typeof amount !== 'number' || !planType) {
         throw new Error('Missing activation metadata.');
@@ -31,9 +31,8 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
 
         // 1. AD-SPECIFIC PRICING VALIDATION
         if (planType === 'ad_broadcast') {
-            const pricing = adPricingSnap.exists ? adPricingSnap.data() : { minBudget: 500, isEngineActive: true };
+            const pricing = adPricingSnap.exists ? adPricingSnap.data() : { pricePerBatch: 100, isEngineActive: true };
             if (!pricing?.isEngineActive && !isAdmin) throw new Error("Ad engine is currently offline for maintenance.");
-            if (amount < (pricing?.minBudget || 500) && !isAdmin) throw new Error(`Minimum budget requirement not met: ${pricing?.minBudget}`);
         }
 
         // 2. FUNDS VERIFICATION
@@ -89,6 +88,8 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
                 targetAudience,
                 creativeUrl,
                 budget: amount,
+                totalInstances,
+                remainingInstances: totalInstances,
                 status: 'pending_approval',
                 metrics: { impressions: 0, clicks: 0 },
                 createdAt: FieldValue.serverTimestamp(),
@@ -147,7 +148,7 @@ export async function POST(req: NextRequest) {
     const payload = await req.json();
 
     const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
-                    decodedToken.email === 'mkoton100@gmail.com' ||
+                    decodedToken.email === 'mkoton100@gmail.com' || 
                     decodedToken.email === 'michael@logisticsflow.co.za';
 
     const userDoc = await db.collection('users').doc(decodedToken.uid).get();
