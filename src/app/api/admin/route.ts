@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -12,14 +13,12 @@ export const dynamic = 'force-dynamic';
 function serializeTimestamps(docData: any): any {
     if (!docData) return docData;
     
-    // Handle Firestore Timestamps
     if (docData instanceof Timestamp) {
         return docData.toDate().toISOString();
     }
     
-    // Handle FieldValue (serverTimestamp)
-    if (docData && typeof docData === 'object' && 'constructor' in docData && docData.constructor.name === 'FieldValue') {
-        return new Date().toISOString(); // Fallback to current time for preview
+    if (docData && typeof docData === 'object' && docData.constructor?.name === 'FieldValue') {
+        return new Date().toISOString(); 
     }
 
     if (Array.isArray(docData)) {
@@ -50,7 +49,6 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(token);
         const db = getFirestore(app);
 
-        // AUTHORIZATION: Strict Admin/Specialized Email Check
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' || 
                         decodedToken.email === 'michael@logisticsflow.co.za' ||
@@ -77,17 +75,38 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                if (!Array.isArray(partners)) throw new Error("Partners array expected.");
+                
+                const colName = (type === 'lead' || !type) ? 'leads' : 'partners';
+                const batch = db.batch();
+                
+                partners.forEach((p: any) => {
+                    const id = p.record_id || p.id || db.collection(colName).doc().id;
+                    const ref = db.collection(colName).doc(id);
+                    batch.set(ref, {
+                        ...p,
+                        id,
+                        status: p.status || 'new',
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+                
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
             case 'autoEnrichRecord': {
                 const { id, type: targetType } = payload;
                 const colName = (targetType === 'lead' || !targetType) ? 'leads' : 'partners';
                 const docRef = db.collection(colName).doc(id);
                 const docSnap = await docRef.get();
-                if (!docSnap.exists) throw new Error("Record not found in the registry.");
+                if (!docSnap.exists) throw new Error("Record not found.");
                 
                 const current = docSnap.data()!;
                 const companyName = current.companyName || current.company_name || '';
 
-                // Dynamic Import for AI Flow to prevent top-level import crashes
                 const { enrichPartner } = await import('@/ai/flows/enrich-partner-flow');
                 
                 try {
@@ -115,14 +134,71 @@ export async function POST(req: NextRequest) {
                     return NextResponse.json({ success: true, data: enrichment });
                 } catch (flowError: any) {
                     const msg = flowError.message || "";
-                    if (msg.includes('SEARCH_QUOTA_EXHAUSTED')) {
-                        return NextResponse.json({ success: false, error: 'SEARCH_QUOTA_EXHAUSTED' }, { status: 429 });
-                    }
-                    if (msg.includes('429') || msg.includes('Quota') || msg.includes('exhausted')) {
-                        return NextResponse.json({ success: false, error: 'AI_RATE_LIMIT_EXHAUSTED' }, { status: 429 });
-                    }
+                    if (msg.includes('SEARCH_QUOTA_EXHAUSTED')) return NextResponse.json({ success: false, error: 'SEARCH_QUOTA_EXHAUSTED' }, { status: 429 });
+                    if (msg.includes('429') || msg.includes('Quota') || msg.includes('exhausted')) return NextResponse.json({ success: false, error: 'AI_RATE_LIMIT_EXHAUSTED' }, { status: 429 });
                     throw flowError;
                 }
+            }
+
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('communications')
+                    .orderBy('timestamp', 'desc')
+                    .limit(200)
+                    .get();
+                
+                const results = await Promise.all(snap.docs.map(async doc => {
+                    const data = doc.data();
+                    const pathSegments = doc.ref.path.split('/');
+                    const partnerId = pathSegments[1];
+                    const parentColl = pathSegments[0];
+                    
+                    const partnerSnap = await db.collection(parentColl).doc(partnerId).get();
+                    if (!partnerSnap.exists) return null;
+                    
+                    const pData = partnerSnap.data()!;
+                    if (type && pData.type !== type && pData.industrial_category !== type) return null;
+
+                    return {
+                        id: doc.id,
+                        ...data,
+                        partnerName: pData.companyName || pData.firstName || 'Partner',
+                        partnerType: pData.type || pData.industrial_category
+                    };
+                }));
+                return NextResponse.json({ success: true, data: results.filter(Boolean).map(serializeTimestamps) });
+            }
+
+            case 'getGlobalAds': {
+                const snap = await db.collectionGroup('adCampaigns').orderBy('createdAt', 'desc').get();
+                const ads = await Promise.all(snap.docs.map(async d => {
+                    const data = d.data();
+                    const companySnap = await db.collection('companies').doc(data.companyId).get();
+                    return { ...data, companyName: companySnap.data()?.companyName || 'Unknown' };
+                }));
+                return NextResponse.json({ success: true, data: ads.map(serializeTimestamps) });
+            }
+
+            case 'updateAdStatus': {
+                const { adId, companyId, status } = payload;
+                await db.doc(`companies/${companyId}/adCampaigns/${adId}`).update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getBrokerAgreements': {
+                const snap = await db.collectionGroup('brokerAgreements').orderBy('createdAt', 'desc').get();
+                const results = await Promise.all(snap.docs.map(async d => {
+                    const data = d.data();
+                    const companySnap = await db.collection('companies').doc(data.brokerId).get();
+                    return { ...data, brokerName: companySnap.data()?.companyName || 'Member', path: d.ref.path };
+                }));
+                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+            }
+
+            case 'updateBrokerAgreementStatus': {
+                const { path, status } = payload;
+                await db.doc(path).update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
             }
 
             case 'searchRegistry': {
@@ -152,27 +228,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
             }
 
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: leads.map(serializeTimestamps) });
-            }
-
-            case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('createdAt', 'desc').limit(1000).get();
-                const members = await Promise.all(snap.docs.map(async (docSnap: any) => {
-                    const data = docSnap.data();
-                    const userSnap = await db.collection('users').doc(data.ownerId || 'system').get();
-                    const uData = userSnap.exists ? userSnap.data() : {};
-                    return { 
-                        id: docSnap.id, 
-                        ...data, 
-                        firstName: uData?.firstName || 'Member', 
-                        lastName: uData?.lastName || '', 
-                        email: uData?.email || 'N/A' 
-                    };
-                }));
-                return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const colName = isLead ? 'leads' : 'partners';
+                const partnerRef = db.collection(colName).doc(partnerId);
+                await partnerRef.collection('communications').add({
+                    subject: 'Forensic Research Initiated',
+                    type: 'System',
+                    notes: 'Clinical gap-analysis started via UI.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                await partnerRef.update({ status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
             }
 
             case 'getPlatformStaff': {
@@ -189,7 +256,7 @@ export async function POST(req: NextRequest) {
                 await logRef.set({
                     id: logRef.id,
                     type: type || 'Note',
-                    subject: subject || 'General Interaction',
+                    subject: subject || 'Interaction',
                     notes: notes || '',
                     timestamp: FieldValue.serverTimestamp()
                 });
@@ -204,10 +271,11 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'deletePartner': {
-                const { partnerId, source } = payload;
-                const colName = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(colName).doc(partnerId).delete();
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -215,10 +283,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
         }
     } catch (error: any) {
-        console.error(`CRITICAL Admin API Failure:`, error);
-        return NextResponse.json({ 
-            success: false, 
-            error: error.message || 'Internal Server Error during processing.' 
-        }, { status: 500 });
+        console.error(`Admin API Error:`, error);
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
