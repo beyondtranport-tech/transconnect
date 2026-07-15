@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Google Custom Search Tool for AI Agents.
- * Handles API interactions and provides detailed error feedback for the new "Sites to search" restrictions.
+ * Handles API interactions and provides detailed error feedback for quota management.
  */
 
 import { ai } from '@/ai/genkit';
@@ -42,7 +42,6 @@ export const googleSearchTool = ai.defineTool(
     if (!cx) throw new Error(`CONFIG_ERROR: CUSTOM_SEARCH_ENGINE_ID missing.`);
     if (!input.query || input.query.trim().length === 0) return [];
     
-    // CORRECT ENDPOINT: https://www.googleapis.com/customsearch/v1
     const url = new URL('https://www.googleapis.com/customsearch/v1');
     url.searchParams.set('key', apiKey);
     url.searchParams.set('cx', cx);
@@ -62,6 +61,10 @@ export const googleSearchTool = ai.defineTool(
             const errorData = await response.json().catch(() => ({}));
             const apiMessage = errorData.error?.message || response.statusText;
             
+            // SPECIFIC QUOTA DETECTION
+            if (response.status === 429 || apiMessage.toLowerCase().includes('quota')) {
+                throw new Error(`SEARCH_QUOTA_EXHAUSTED: You have exceeded the daily Google Search limit (100 requests). Use manual prompts for now.`);
+            }
             if (response.status === 403) {
                 throw new Error(`API_ERROR: Access Denied (403). Ensure the "Custom Search API" is enabled in your Google Cloud Console.`);
             }

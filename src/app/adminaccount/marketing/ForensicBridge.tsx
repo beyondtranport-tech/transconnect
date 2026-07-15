@@ -22,10 +22,21 @@ async function performAdminAction(token: string, action: string, payload: any) {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+    
+    if (!response.ok) {
+        const errorText = await response.text();
+        let message = `Server Error ${response.status}`;
+        try {
+            const errorJson = JSON.parse(errorText);
+            message = errorJson.error || message;
+        } catch (e) {}
+        throw new Error(message);
+    }
+    
     return await response.json();
 }
 
-const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state';
+const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state_v2';
 
 export default function ForensicBridge({ audience }: { audience: string }) {
     const { toast } = useToast();
@@ -90,14 +101,11 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                 limit: 500 
             });
             
-            if (!res.success) throw new Error(res.error);
-            
             const needsEnrichment = (res.data || []).filter((p: any) => 
                 !p.website || 
                 !p.email || 
                 p.email.includes('locked') || 
-                !p.contactPerson || 
-                p.contactPerson === 'Locked' ||
+                !p.marketingManager?.name ||
                 p.status === 'new'
             );
 
@@ -107,11 +115,11 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             setStats({ domains: 0, emails: 0, leadership: 0, errors: 0 });
             
             if (needsEnrichment.length === 0) {
-                toast({ title: "Registry Fully Bridged", description: "No gapped records found in current segment." });
+                toast({ title: "Registry Fully Bridged", description: "No gapped records found." });
                 setStatus('idle');
                 localStorage.removeItem(BRIDGE_STORAGE_KEY);
             } else {
-                toast({ title: "Analysis Complete", description: `Found ${needsEnrichment.length} records requiring enrichment.` });
+                toast({ title: "Analysis Complete", description: `Found ${needsEnrichment.length} records to bridge.` });
                 setStatus('paused');
             }
         } catch (e: any) {
@@ -164,51 +172,34 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     setStats(prev => ({
                         domains: prev.domains + (res.data?.website ? 1 : 0),
                         emails: prev.emails + (res.data?.email ? 1 : 0),
-                        leadership: prev.leadership + (res.data?.contactPerson ? 1 : 0),
+                        leadership: prev.leadership + (res.data?.marketingManager ? 1 : 0),
                         errors: prev.errors
                     }));
 
                     setLogs(prev => [{ 
                         id: Date.now() + 1, 
-                        msg: `Bridge Successful: ${name} verified and promoted.`, 
+                        msg: `Bridge Successful: ${name} verified.`, 
                         type: 'success',
                         data: res.data 
                     }, ...prev].slice(0, 50));
                     
-                    // Standard safety delay between successful records
-                    await new Promise(resolve => setTimeout(resolve, 8000));
-                } else {
-                    throw new Error(res.error);
+                    // SAFE DELAY: 15s between records to respect Search & AI quotas
+                    await new Promise(resolve => setTimeout(resolve, 15000));
                 }
 
             } catch (err: any) {
-                const isRateLimit = err.message?.includes('429') || err.message?.includes('Resource exhausted') || err.message?.includes('Quota') || err.message?.includes('parse stream');
+                const isQuotaError = err.message?.includes('429') || err.message?.includes('QUOTA') || err.message?.includes('exhausted');
                 
-                if (isRateLimit) {
-                    setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
+                if (isQuotaError) {
                     setStatus('cooldown');
-                    setLogs(prev => [{ 
-                        id: Date.now() + 2, 
-                        msg: `AI Rate Limit Hit. Initiating 65s mandatory cooldown...`, 
-                        type: 'error' 
-                    }, ...prev].slice(0, 50));
-                    
-                    toast({ variant: 'destructive', title: "Quota Exhausted", description: "The bridge is pausing for 65 seconds to allow the AI quota to reset." });
-                    
+                    setLogs(prev => [{ id: Date.now() + 2, msg: `Quota Exhausted. Initiating 65s mandatory sleep...`, type: 'error' }, ...prev].slice(0, 50));
+                    toast({ variant: 'destructive', title: "Quota Limit Hit", description: "The bridge is resting for 65 seconds to reset quotas." });
                     await new Promise(resolve => setTimeout(resolve, 65000));
-                    
-                    // After cooldown, try to continue with the same pointer
                     setStatus('running');
                     continue; 
                 } else {
                     setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
-                    setLogs(prev => [{ 
-                        id: Date.now() + 3, 
-                        msg: `Bridge Failed for ${name}: ${err.message}`, 
-                        type: 'error' 
-                    }, ...prev].slice(0, 50));
-                    
-                    // Wait 10s on general errors before next
+                    setLogs(prev => [{ id: Date.now() + 3, msg: `Bridge Failed for ${name}: ${err.message}`, type: 'error' }, ...prev].slice(0, 50));
                     await new Promise(resolve => setTimeout(resolve, 10000));
                 }
             }
@@ -232,15 +223,15 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                         <div className="text-left">
                             <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-left text-white">
                                 <Zap className={cn("h-8 w-8 text-primary", status === 'running' && "animate-pulse")} />
-                                Automated Forensic Bridge
+                                Forensic Bridge V4 (Slow & Steady)
                             </CardTitle>
                             <CardDescription className="text-slate-400 mt-1 text-left">
-                                High-velocity automated discovery pipeline for {audience} registry.
+                                Optimized Discovery for {audience} registry. Quota-aware execution.
                             </CardDescription>
                         </div>
                         <div className="flex gap-2 text-left">
                             <Button variant="outline" size="sm" onClick={handleReset} className="border-white/10 text-white hover:bg-white/10">
-                                <RotateCcw className="h-4 w-4 mr-2" /> Reset Session
+                                <RotateCcw className="h-4 w-4 mr-2" /> Reset
                             </Button>
                         </div>
                     </div>
@@ -253,7 +244,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             </div>
                             <div className="space-y-2 text-center text-foreground text-left">
                                 <h3 className="text-xl font-bold text-white">Registry Analysis Required</h3>
-                                <p className="text-slate-400 max-w-sm mx-auto">Scan the {audience} registry to identify records missing verified domains and leadership data.</p>
+                                <p className="text-slate-400 max-w-sm mx-auto">Scan the {audience} registry to identifying records missing verified domains and leadership data.</p>
                             </div>
                             <Button size="lg" onClick={handleScanGaps} disabled={isScanning} className="h-14 px-12 font-black uppercase text-xs tracking-widest shadow-lg">
                                 {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
@@ -265,33 +256,33 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 text-left">Queue Progress</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 text-left">Queue</p>
                                         <p className="text-3xl font-black">{currentIndex} <span className="text-xs text-slate-500 font-bold">/ {queue.length}</span></p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6 text-left">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Domains Verified</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Domains</p>
                                         <p className="text-3xl font-black text-blue-400">{stats.domains}</p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6 text-left">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Emails Mapped</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Emails</p>
                                         <p className="text-3xl font-black text-green-400">{stats.emails}</p>
                                     </CardContent>
                                 </Card>
                                 <Card className="bg-white/5 border-white/10 text-white shadow-none">
                                     <CardContent className="pt-6 text-left">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">CEOs Identified</p>
-                                        <p className="text-3xl font-black text-purple-400">{stats.leadership}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Errors</p>
+                                        <p className="text-3xl font-black text-destructive">{stats.errors}</p>
                                     </CardContent>
                                 </Card>
                             </div>
 
                             <div className="space-y-3 text-left">
                                 <div className="flex justify-between items-end px-1 text-left">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pipeline Completion</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pipeline Status: {status.toUpperCase()}</Label>
                                     <span className="text-[10px] font-mono text-primary font-bold">{progress.toFixed(1)}%</span>
                                 </div>
                                 <Progress value={progress} className="h-3 bg-white/5" />
@@ -300,17 +291,17 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="flex flex-col items-center gap-4 text-left">
                                 {status === 'cooldown' && (
                                     <div className="flex items-center gap-2 text-amber-500 animate-pulse text-xs font-bold uppercase tracking-widest">
-                                        <Clock className="h-4 w-4" /> Cooling down AI Quota...
+                                        <Clock className="h-4 w-4" /> Resetting API Quotas (65s)...
                                     </div>
                                 )}
                                 <div className="flex justify-center gap-4">
                                     {status !== 'running' && status !== 'cooldown' ? (
                                         <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary hover:bg-primary/90 text-white" onClick={startEnrichment} disabled={status === 'completed'}>
-                                            <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Pipeline' : 'Start Auto-Enrichment'}
+                                            <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume' : 'Start Bridge'}
                                         </Button>
                                     ) : (
                                         <Button size="lg" variant="outline" className="h-14 px-12 font-black uppercase text-xs tracking-widest border-white/20 text-white" onClick={() => setStatus('paused')}>
-                                            <Pause className="mr-2 h-4 w-4" /> Pause Pipeline
+                                            <Pause className="mr-2 h-4 w-4" /> Pause
                                         </Button>
                                     )}
                                 </div>
@@ -321,76 +312,30 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             </Card>
 
             {(queue.length > 0 || logs.length > 0) && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-left">
-                    <Card className="text-left shadow-lg border-none bg-white">
-                        <CardHeader className="text-left border-b bg-muted/20">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
-                                <Activity className="h-4 w-4 text-primary" />
-                                Live Intelligence Feed
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-0 text-left">
-                            <ScrollArea className="h-80 text-left">
-                                <div className="divide-y text-left">
-                                    {logs.map(log => (
-                                        <div key={log.id} className="p-4 flex items-start gap-3 text-left bg-white hover:bg-slate-50 transition-colors">
-                                            {log.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" /> : 
-                                             log.type === 'error' ? <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" /> :
-                                             <Loader2 className="h-4 w-4 text-primary animate-spin mt-0.5 shrink-0" />}
-                                            <div className="text-left">
-                                                <p className={cn("text-[11px] font-bold leading-tight text-left", log.type === 'error' && "text-destructive")}>{log.msg}</p>
-                                                {log.data && (
-                                                    <div className="flex gap-2 mt-2 flex-wrap text-left">
-                                                        {log.data.website && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Domain Secured</Badge>}
-                                                        {log.data.email && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Email Mapped</Badge>}
-                                                        {log.data.contactPerson && <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary uppercase font-bold">Identity Verified</Badge>}
-                                                    </div>
-                                                )}
-                                            </div>
+                <Card className="text-left shadow-lg border-none bg-white">
+                    <CardHeader className="text-left border-b bg-muted/20">
+                        <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
+                            <Activity className="h-4 w-4 text-primary" />
+                            Live Bridge feed
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0 text-left">
+                        <ScrollArea className="h-64 text-left">
+                            <div className="divide-y text-left">
+                                {logs.map(log => (
+                                    <div key={log.id} className="p-4 flex items-start gap-3 text-left bg-white hover:bg-slate-50 transition-colors">
+                                        {log.type === 'success' ? <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" /> : 
+                                         log.type === 'error' ? <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" /> :
+                                         <Loader2 className="h-4 w-4 text-primary animate-spin mt-0.5 shrink-0" />}
+                                        <div className="text-left flex-1">
+                                            <p className={cn("text-[11px] font-bold leading-tight text-left", log.type === 'error' && "text-destructive")}>{log.msg}</p>
                                         </div>
-                                    ))}
-                                    {logs.length === 0 && <div className="p-12 text-center text-xs text-muted-foreground italic">Waiting for pipeline execution...</div>}
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="text-left shadow-lg border-none bg-white">
-                        <CardHeader className="text-left border-b bg-muted/20">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left text-foreground">
-                                <BarChart3 className="h-4 w-4 text-primary" />
-                                Batch Summary
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4 text-left p-6">
-                            <div className="space-y-4 text-left text-foreground">
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="font-bold flex items-center gap-2 text-foreground"><Globe className="h-4 w-4 text-blue-500"/> Domains Secured</span>
-                                    <span className="font-mono font-black">{stats.domains}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="font-bold flex items-center gap-2 text-foreground"><Mail className="h-4 w-4 text-green-500"/> Direct E-mails Mapped</span>
-                                    <span className="font-mono font-black">{stats.emails}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm text-foreground">
-                                    <span className="font-bold flex items-center gap-2 text-foreground"><Users className="h-4 w-4 text-purple-500"/> Leadership Identified</span>
-                                    <span className="font-mono font-black">{stats.leadership}</span>
-                                </div>
-                                <div className="flex justify-between items-center text-sm border-t pt-4 text-foreground">
-                                    <span className="font-bold flex items-center gap-2 text-destructive"><AlertTriangle className="h-4 w-4"/> Processing Errors</span>
-                                    <span className="font-mono font-black text-destructive">{stats.errors}</span>
-                                </div>
+                                    </div>
+                                ))}
                             </div>
-                            <Separator />
-                            <div className="p-4 bg-muted/30 rounded-xl text-left border border-dashed border-muted">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 text-left">Rate Limit Protection</p>
-                                <p className="text-[11px] leading-relaxed italic text-foreground text-left">
-                                    Adaptive backoff is active. If the AI quota is exhausted, the bridge will pause for 65 seconds before automatically resuming.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
             )}
         </div>
     );

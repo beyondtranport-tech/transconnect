@@ -1,10 +1,7 @@
 'use server';
 /**
  * @fileOverview High-fidelity Industrial Research Agent V4.
- * RE-ENGINEERED FOR NOISE SUPPRESSION & RSA REGIONAL LOCK.
- * 
- * Target Persona 1: Marketing Manager (Engagement Lead)
- * Target Persona 2: CEO / Managing Director / Owner
+ * OPTIMIZED FOR QUOTA PRESERVATION.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -52,15 +49,13 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
         }
 
-        // CLINICAL TARGETED CRAWL: Focusing on corporate nodes, avoiding news/jobs noise
-        const [identityResults, webResults, socialResults, directoryResults] = await Promise.all([
-            googleSearchTool({ query: `"${company}" South Africa CEO Managing Director LinkedIn -jobs -hiring` }),
-            googleSearchTool({ query: `"${company}" South Africa official website contact email address` }),
-            googleSearchTool({ query: `site:facebook.com "${company}" South Africa "contact us" email mobile` }),
-            googleSearchTool({ query: `"${company}" South Africa (Yellosa OR Infoisinfo OR Braby) business profile` })
+        // CONSOLIDATED SEARCHES: Reducing from 4 to 2 to stay under burst & daily quotas
+        const [corporateResults, socialResults] = await Promise.all([
+            googleSearchTool({ query: `"${company}" South Africa official website CEO Managing Director contact email -jobs` }),
+            googleSearchTool({ query: `"${company}" South Africa (LinkedIn OR Facebook OR Yellosa) business profile contact mobile` })
         ]);
         
-        const allContent = [...(identityResults || []), ...(webResults || []), ...(socialResults || []), ...(directoryResults || []).slice(0, 10)]
+        const allContent = [...(corporateResults || []), ...(socialResults || [])]
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
             .join('\n---\n');
 
@@ -70,20 +65,10 @@ const enrichPartnerFlow = ai.defineFlow(
             system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
             RETURN ONLY RAW JSON. NO PREAMBLE. NO MARKDOWN. NO CODE BLOCKS.
             
-            NOISE SUPPRESSION PROTOCOL:
-            1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
-            2. FOCUS ONLY ON CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
-            3. REGIONAL LOCK: IGNORE RESULTS FOR AUSTRALIA, UK, USA, ETC.
-            4. JSON-OR-DIE: IF DATA IS MISSING, RETURN null IN THE JSON. DO NOT EXPLAIN WHY.
-
-            INTEGRITY SHIELD:
-            1. REAL DATA ONLY: IF NOT FOUND IN THE EVIDENCE, RETURN null. DO NOT HALLUCINATE.
-
-            SCAVENGER PROTOCOL:
-            1. AGGRESSIVE MAPPING: LOOK FOR MOBILE NUMBERS IN SNIPPETS (E.G. 082..., 071...).
-            2. DUAL-IDENTITY LOCK: ATTEMPT TO MAP BOTH THE MARKETING MANAGER AND THE CEO/MD.
-            3. CONTENT MINING: IN 'minedServiceWording', PROVIDE 300 WORDS OF VERBATIM TECHNICAL CONTENT.`,
-            prompt: `ANALYZE EVIDENCE FOR "${company}" IN SOUTH AFRICA. RETURN RAW JSON ONLY. BRIDGE ALL GAPS:\n\n${allContent}`,
+            NOISE SUPPRESSION: Ignore job listings, news, and international results (Australia/USA).
+            INTEGRITY: If data is missing from evidence, return null. DO NOT HALLUCINATE.
+            MAPPING: Find mobile numbers (082..., 071...) and direct emails for Marketing and CEO.`,
+            prompt: `ANALYZE EVIDENCE FOR "${company}" IN SOUTH AFRICA. RETURN RAW JSON ONLY:\n\n${allContent}`,
             output: {
                 schema: EnrichPartnerOutputSchema
             }
@@ -93,6 +78,10 @@ const enrichPartnerFlow = ai.defineFlow(
 
     } catch (e: any) {
         console.error("[RESEARCH_V4] Error:", e);
+        // Bubble up quota errors specifically
+        if (e.message?.includes('QUOTA') || e.message?.includes('429')) {
+            throw e; 
+        }
         return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
     }
   }
