@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview High-fidelity Industrial Research Agent V4.
- * OPTIMIZED FOR ERROR TRANSPARENCY AND NOISE SUPPRESSION.
+ * REINSTATED: Broadened search queries and removed restrictive guards to prevent null returns.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -48,39 +48,39 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEQUENTIAL SEARCHES: We do NOT catch errors here so they bubble up to the API route.
-    // This ensures the user sees "SEARCH_QUOTA_EXHAUSTED" or "API_ERROR" instead of nulls.
+    // FUZZY SEARCH STRATEGY: Broadening queries to bypass strict string matching
     
     // Search 1: Corporate & Leadership
     const corporateResults = await googleSearchTool({ 
-        query: `"${company}" South Africa official website CEO Managing Director contact email -jobs -hiring -vacancy` 
+        query: `${company} South Africa official website CEO Managing Director email -jobs -hiring` 
     });
     
     // Brief pause to satisfy WAFs
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // Search 2: Social & Directory Pings
+    // Search 2: Directory & Social Nodes
     const socialResults = await googleSearchTool({ 
-        query: `"${company}" South Africa (LinkedIn OR Facebook OR Yellosa OR Infoisinfo) business profile contact mobile -jobs` 
+        query: `${company} South Africa (LinkedIn OR Yellosa OR Infoisinfo) contact details` 
     });
     
     const allContent = [...(corporateResults || []), ...(socialResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
-    if (!allContent || allContent.trim().length < 50) {
-        // If search returned virtually nothing, we return the null object rather than letting the LLM hallucinate.
+    if (!allContent || allContent.trim().length < 5) {
+        // Only return nulls if the search tool literally found nothing
         return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
     }
 
-    // HIGH-FIDELITY EXTRACTION
+    // HIGH-FIDELITY EXTRACTION WITH ABSOLUTE JSON MANDATE
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
+        system: `ACT AS AN ELITE INDUSTRIAL RESEARCH AGENT.
         
-        NOISE SUPPRESSION: Strictly ignore job listings, recruitment news, and policy papers.
-        DATA INTEGRITY: You MUST find the direct contacts for the Marketing Manager and CEO.
-        FORMAT: Return RAW JSON ONLY. No conversation.`,
+        GOAL: Extract specific corporate identity nodes.
+        NOISE SUPPRESSION: Ignore all job boards, news articles, and "search results" commentary.
+        RELIABILITY: If data is missing in evidence, set the field to null. 
+        MANDATE: Output RAW JSON ONLY. No preamble. No conversation.`,
         prompt: `EXTRACT CORPORATE DATA NODES FOR "${company}" IN SOUTH AFRICA FROM THIS EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema

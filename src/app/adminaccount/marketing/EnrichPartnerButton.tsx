@@ -32,37 +32,28 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
-        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
-RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-NOISE SUPPRESSION PROTOCOL:
-1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
-2. FOCUS ONLY ON CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
-
-CRITICAL INTEGRITY SHIELD: 
-YOU ARE STRICTLY FORBIDDEN FROM RETURNING MOCK DATA. IF DATA IS NOT DISCOVERED, RETURN null.
+        return `ACT AS AN ELITE INDUSTRIAL RESEARCH AGENT. 
+YOU MUST RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 TASK: Discover and bridge ALL data gaps for the SOUTH AFRICAN operations of: "${companyName}".
 
-STRICT REGIONAL LOCK: 
-Ignore all international results. Target ONLY South African entities and contacts.
-
-STRICT DUAL-IDENTITY PROTOCOL:
-1. MARKETING MANAGER: Discover full name, direct professional email, and direct mobile.
-2. CEO / MD / OWNER: Discover full name, direct professional email, and direct mobile.
+NOISE SUPPRESSION:
+1. Ignore all job listings, LinkedIn job pings, and news articles.
+2. Focus entirely on corporate landing pages and business directories (e.g. Yellosa, Infoisinfo).
+3. Do not apologize or explain your research.
 
 REQUIRED JSON FORMAT:
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
   "industrial_category": "...",
-  "website": "OFFICIAL URL",
-  "email": "General Company Email",
-  "phone": "Verified RSA Landline",
-  "address": "FULL PHYSICAL ADDRESS IN SOUTH AFRICA",
+  "website": "...",
+  "email": "Primary Email",
+  "phone": "RSA Landline",
+  "address": "Verified Physical Address",
   "marketingManager": { "name": "...", "email": "...", "mobile": "..." },
   "ceo": { "name": "...", "email": "...", "mobile": "..." },
-  "minedServiceWording": "CONCATENATED RAW SITE TEXT (APPROX 300 WORDS)"
+  "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS)"
 }`;
     };
 
@@ -85,7 +76,7 @@ REQUIRED JSON FORMAT:
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Prompt Ready", description: "Noise suppression active. Scavenger mandate launched." });
+            toast({ title: "Prompt Ready", description: "Mandatory JSON mode active. Use tools to bridge gaps." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -123,16 +114,16 @@ REQUIRED JSON FORMAT:
                             Industrial Gap-Analysis V4
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
-                            Clinical noise-suppressed research for <strong>{companyName}</strong>.
+                            Noise-suppressed command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground">Noise Suppression Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground">Extraction Mandate</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                This command forces the AI to ignore news and job listings, focusing entirely on corporate contact nodes.
+                                This prompt forces the AI to output RAW JSON. Paste this into AI Studio to initiate the research cycle.
                             </AlertDescription>
                         </Alert>
 

@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Google Custom Search Tool for AI Agents.
- * Handles API interactions and provides detailed error feedback for quota management.
+ * Handles API interactions and provides robust sanitization for the Search Engine ID.
  */
 
 import { ai } from '@/ai/genkit';
@@ -23,15 +23,17 @@ const GoogleSearchOutputSchema = z.array(GoogleSearchResultSchema);
 export const googleSearchTool = ai.defineTool(
   {
     name: 'googleSearch',
-    description: 'Performs a targeted Google search across top business directories and social platforms to find real-world company information.',
+    description: 'Performs a targeted Google search across business directories and social platforms.',
     inputSchema: GoogleSearchInputSchema,
     outputSchema: GoogleSearchOutputSchema,
   },
   async (input: GoogleSearchInput) => {
     const sanitizeId = (val: string | undefined) => {
         if (!val) return '';
+        // Handles cases where users copy the full query param 'cx=...'
         const match = val.match(/cx=([a-zA-Z0-9:]+)/);
         if (match) return match[1];
+        // General cleanup of hidden characters
         return val.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
     };
 
@@ -61,15 +63,11 @@ export const googleSearchTool = ai.defineTool(
             const errorData = await response.json().catch(() => ({}));
             const apiMessage = errorData.error?.message || response.statusText;
             
-            // SPECIFIC QUOTA DETECTION
             if (response.status === 429 || apiMessage.toLowerCase().includes('quota')) {
-                throw new Error(`SEARCH_QUOTA_EXHAUSTED: You have exceeded the daily Google Search limit (100 requests). Please stop automated tasks and wait until tomorrow.`);
+                throw new Error(`SEARCH_QUOTA_EXHAUSTED: Daily Google Search limit (100) reached.`);
             }
             if (response.status === 403) {
-                throw new Error(`API_ERROR: Access Denied (403). Ensure the "Custom Search API" is enabled in your Google Cloud Console.`);
-            }
-            if (response.status === 404) {
-                throw new Error(`API_ERROR: Not Found (404). Your CUSTOM_SEARCH_ENGINE_ID (${cx}) might be incorrect.`);
+                throw new Error(`API_ERROR: Access Denied. Ensure "Custom Search API" is enabled in GCP.`);
             }
             throw new Error(`API_ERROR: Google Search failed (${response.status}): ${apiMessage}`);
         }
@@ -83,7 +81,7 @@ export const googleSearchTool = ai.defineTool(
 
     } catch (e: any) {
         clearTimeout(timeoutId);
-        if (e.name === 'AbortError') throw new Error("SEARCH_TIMEOUT: Google Search is taking too long.");
+        if (e.name === 'AbortError') throw new Error("SEARCH_TIMEOUT: Connection timed out.");
         throw e;
     }
   }
