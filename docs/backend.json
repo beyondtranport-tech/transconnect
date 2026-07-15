@@ -69,10 +69,12 @@
         "id": { "type": "string" },
         "companyId": { "type": "string" },
         "title": { "type": "string" },
+        "format": { "type": "string", "enum": ["search_boost", "billboard_banner", "popup_flyer"], "description": "Visual style and placement of the ad." },
         "targetAudience": { "type": "string", "enum": ["transporters", "suppliers", "finance", "all"] },
         "creativeUrl": { "type": "string" },
-        "budget": { "type": "number" },
-        "status": { "type": "string", "enum": ["draft", "pending_approval", "active", "completed", "rejected"] },
+        "totalInstances": { "type": "number" },
+        "remainingInstances": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending_approval", "active", "completed", "rejected"] },
         "metrics": {
           "type": "object",
           "properties": {

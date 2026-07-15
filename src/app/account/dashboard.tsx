@@ -1,12 +1,13 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck } from "lucide-react";
-import { doc, collection, query, limit } from 'firebase/firestore';
+import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck, ImageIcon, ExternalLink } from "lucide-react";
+import { doc, collection, query, limit, where } from 'firebase/firestore';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -14,6 +15,51 @@ import { useMemoFirebase, useCollection } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
+import Image from 'next/image';
+
+/**
+ * AD BILLBOARD COMPONENT
+ * Renders high-impact banners targeting the current user's role.
+ */
+function AdBillboard({ audience }: { audience: string }) {
+    const firestore = useFirestore();
+    
+    const billboardQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(
+            collection(firestore, 'adCampaigns'),
+            where('status', '==', 'active'),
+            where('format', '==', 'billboard_banner'),
+            where('targetAudience', 'in', [audience, 'all']),
+            limit(1)
+        );
+    }, [firestore, audience]);
+
+    const { data: ads, isLoading } = useCollection(billboardQuery);
+
+    if (isLoading || !ads || ads.length === 0) return null;
+
+    const ad = ads[0];
+    const trackUrl = `/api/trackEmailOpen/${ad.id}?source=ad_impression&campaignId=${ad.id}&advertiserId=${ad.companyId}`;
+    const clickUrl = `/api/trackEmailOpen/${ad.id}?source=ad_click&campaignId=${ad.id}&advertiserId=${ad.companyId}`;
+
+    return (
+        <a href={clickUrl} target="_blank" rel="noopener noreferrer" className="block group">
+            <Card className="relative overflow-hidden border-none shadow-xl bg-slate-900 h-40 md:h-48 rounded-3xl transition-transform hover:scale-[1.01] active:scale-[0.99] text-left">
+                <Image src={ad.creativeUrl} alt={ad.title} fill className="object-cover opacity-60 group-hover:opacity-70 transition-opacity" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+                <div className="relative z-10 h-full flex flex-col justify-center p-8 md:p-10 space-y-2">
+                    <Badge className="w-fit bg-primary text-white border-none uppercase font-black text-[9px] tracking-widest px-3 mb-2">Partner Promotion</Badge>
+                    <h3 className="text-2xl md:text-3xl font-black text-white leading-tight uppercase tracking-tight">{ad.title}</h3>
+                    <div className="flex items-center gap-2 text-primary font-bold text-xs">
+                        Open Digital Branch <ArrowRight className="h-4 w-4" />
+                    </div>
+                </div>
+                <img src={trackUrl} width="1" height="1" className="hidden" alt="" />
+            </Card>
+        </a>
+    );
+}
 
 export default function AccountDashboard() {
     const { user, isUserLoading } = useUser();
@@ -49,6 +95,7 @@ export default function AccountDashboard() {
     const { data: facilities, isLoading: isFacilitiesLoading } = useCollection(facilitiesQuery);
     
     const isFreeMember = companyData?.membershipId === 'free' || !companyData?.membershipId;
+    const audience = companyData?.shopType || userData?.declaredPosition || 'all';
     
     const loyaltyTier = companyData?.loyaltyTier || 'bronze';
     const tierColors: {[key: string]: string} = {
@@ -92,7 +139,7 @@ export default function AccountDashboard() {
     if (error) {
         return (
             <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
-                <Card className="m-4 w-full max-w-2xl shadow-lg border-destructive/20">
+                <Card className="m-4 w-full max-w-2xl shadow-lg border-destructive/20 text-left">
                     <CardHeader className="border-b bg-destructive/5">
                         <CardTitle className="text-destructive flex items-center gap-2">
                             <ShieldAlert className="h-5 w-5" /> Error Loading Dashboard
@@ -113,16 +160,19 @@ export default function AccountDashboard() {
     if (!user) return null;
 
     return (
-        <div className="w-full space-y-8">
-            <div className="flex items-center gap-4">
+        <div className="w-full space-y-8 text-left">
+            <div className="flex items-center gap-4 text-left text-foreground">
                 <div className="text-left">
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
                     <p className="text-lg text-muted-foreground">Welcome back, {userData?.firstName || 'Member'}!</p>
                 </div>
             </div>
 
+            {/* AD BILLBOARD SLOT */}
+            <AdBillboard audience={audience} />
+
             {isAdmin && (
-                 <Card className="border-primary bg-primary/5">
+                 <Card className="border-primary bg-primary/5 text-left text-foreground">
                     <CardHeader>
                         <div className="flex items-center gap-4">
                             <ShieldCheck className="h-10 w-10 text-primary" />
@@ -132,7 +182,7 @@ export default function AccountDashboard() {
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="text-left">
+                    <CardContent className="text-left text-foreground">
                         <p className="text-lg leading-relaxed">
                            All administrative functions are located in the secure <span className="font-semibold text-primary">Admin Portal</span>.
                         </p>
@@ -203,13 +253,13 @@ export default function AccountDashboard() {
 
             {/* Associate Specific Referral Card */}
             {isAssociate && (
-                <Card className="border-primary bg-primary/5">
+                <Card className="border-primary bg-primary/5 text-left text-foreground">
                     <CardHeader className="text-left">
                         <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" /> My Tracking Node</CardTitle>
                         <CardDescription>Share your unique referral link to grow your network and earn recurring revenue.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex gap-2 items-center bg-white p-3 rounded-lg border shadow-inner">
+                        <div className="flex gap-2 items-center bg-white p-3 rounded-lg border shadow-inner text-left">
                             <Input value={referralLink} readOnly className="font-mono text-xs border-none bg-transparent focus-visible:ring-0" />
                             <Button size="sm" onClick={copyReferral} className="gap-2 font-bold"><Copy className="h-3 w-3" /> Copy Link</Button>
                         </div>
@@ -219,7 +269,7 @@ export default function AccountDashboard() {
 
             {/* Lender Specific Control Card */}
             {isLender && !isAdmin && (
-                <Card className="border-primary bg-primary/5">
+                <Card className="border-primary bg-primary/5 text-left text-foreground text-foreground">
                     <CardHeader className="text-left">
                         <CardTitle className="flex items-center gap-2"><Landmark className="text-primary" /> Lender Control Center</CardTitle>
                         <CardDescription>Manage your lending mandate and review inbound deal flow matching your criteria.</CardDescription>
@@ -236,7 +286,7 @@ export default function AccountDashboard() {
             {!isAssociate && !isLender && (
                 <>
                     {isFreeMember && (
-                        <Card className="bg-primary/5 border-primary/20">
+                        <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
                             <CardHeader>
                                 <div className="flex items-start gap-4 text-left">
                                     <div className="bg-primary/10 p-3 rounded-full shrink-0">
@@ -260,10 +310,10 @@ export default function AccountDashboard() {
                         </Card>
                     )}
 
-                    <div className="space-y-4 text-left">
-                        <h2 className="text-2xl font-black font-headline">Strategic Funding Center</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <Card className="border-primary/20 bg-primary/5 shadow-md flex flex-col">
+                    <div className="space-y-4 text-left text-foreground">
+                        <h2 className="text-2xl font-black font-headline text-left">Strategic Funding Center</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                            <Card className="border-primary/20 bg-primary/5 shadow-md flex flex-col text-left text-foreground">
                                 <CardHeader className="pb-2 text-left">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-primary/20 p-2 rounded-lg"><Landmark className="h-5 w-5 text-primary" /></div>
@@ -272,10 +322,10 @@ export default function AccountDashboard() {
                                     <CardDescription>Apply directly to the Logistics Flow capital division.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-grow text-left">
-                                    <p className="text-sm text-muted-foreground leading-relaxed">Use this path for prioritized, rapid decisions based on your platform activity and verified fleet profile.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Use this path for prioritized, rapid decisions based on your platform activity and verified fleet profile.</p>
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-primary/10">
-                                    <Button asChild className="w-full font-bold h-11 shadow-lg" variant="default">
+                                    <Button asChild className="w-full font-bold h-11 shadow-lg text-white" variant="default">
                                         <Link href="/funding">
                                             Direct Application <ArrowRight className="ml-2 h-4 w-4" />
                                         </Link>
@@ -283,16 +333,16 @@ export default function AccountDashboard() {
                                 </CardFooter>
                             </Card>
 
-                            <Card className="border-blue-200 bg-blue-50/30 shadow-md flex flex-col">
+                            <Card className="border-blue-200 bg-blue-50/30 shadow-md flex flex-col text-left text-foreground">
                                 <CardHeader className="pb-2 text-left">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-blue-100 p-2 rounded-lg"><Globe className="h-5 w-5 text-blue-600" /></div>
-                                        <CardTitle className="text-lg font-bold">Finance Mall Broadcast</CardTitle>
+                                        <CardTitle className="text-lg font-bold text-left">Finance Mall Broadcast</CardTitle>
                                     </div>
-                                    <CardDescription>Distribute your enquiry to our 85+ partner lenders.</CardDescription>
+                                    <CardDescription className="text-left">Distribute your enquiry to our 85+ partner lenders.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-grow text-left">
-                                    <p className="text-sm text-muted-foreground leading-relaxed">Compare the market. Your application is automatically matched with niche lenders based on your criteria.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Compare the market. Your application is automatically matched with niche lenders based on your criteria.</p>
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-blue-100">
                                     <Button asChild className="w-full font-bold h-11" variant="outline">
@@ -305,32 +355,32 @@ export default function AccountDashboard() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                        <Card className="shadow-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                        <Card className="shadow-sm text-left text-foreground">
                             <CardHeader className="bg-slate-50 border-b text-left">
-                                <CardTitle className="flex items-center gap-2">
+                                <CardTitle className="flex items-center gap-2 text-left">
                                     <Landmark className="h-5 w-5 text-primary" />
                                     Issued Funding Facilities
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="text-left">
                                     Active capital offers issued to your business.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="p-6">
+                            <CardContent className="p-6 text-left">
                                 {isFacilitiesLoading ? <Loader2 className="animate-spin h-6 w-6 text-primary mx-auto"/> : (
                                     facilities && facilities.length > 0 ? (
-                                        <div className="space-y-4">
+                                        <div className="space-y-4 text-left">
                                             {facilities.map((f: any) => (
-                                                <div key={f.id} className="flex justify-between items-center p-3 border rounded-lg bg-white shadow-sm">
+                                                <div key={f.id} className="flex justify-between items-center p-3 border rounded-lg bg-white shadow-sm text-left">
                                                     <div className="text-left">
-                                                        <p className="font-bold text-sm capitalize">{f.type?.replace(/_/g, ' ')}</p>
+                                                        <p className="font-bold text-sm capitalize text-left">{f.type?.replace(/_/g, ' ')}</p>
                                                         {isFreeMember && !isAdmin ? (
-                                                            <div className="flex items-center gap-1.5 mt-1">
+                                                            <div className="flex items-center gap-1.5 mt-1 text-left">
                                                                 <Lock className="h-3 w-3 text-amber-600"/>
                                                                 <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest">Terms Restricted</span>
                                                             </div>
                                                         ) : (
-                                                            <p className="text-xs font-mono font-bold text-primary">{formatCurrency(f.limit)}</p>
+                                                            <p className="text-xs font-mono font-bold text-primary text-left">{formatCurrency(f.limit)}</p>
                                                         )}
                                                     </div>
                                                     <Button variant="ghost" size="sm" asChild className="text-[10px] font-black uppercase h-8 px-3">
@@ -341,7 +391,7 @@ export default function AccountDashboard() {
                                         </div>
                                     ) : (
                                         <div className="text-center py-6 border-2 border-dashed rounded-lg opacity-40">
-                                            <p className="text-xs font-bold uppercase tracking-widest">No Facilities Issued</p>
+                                            <p className="text-xs font-bold uppercase tracking-widest text-center">No Facilities Issued</p>
                                         </div>
                                     )
                                 )}
@@ -353,28 +403,28 @@ export default function AccountDashboard() {
                             </CardFooter>
                         </Card>
 
-                        <Card className="shadow-sm">
+                        <Card className="shadow-sm text-left text-foreground">
                             <CardHeader className="bg-slate-50 border-b text-left">
-                                <CardTitle className="flex items-center gap-2">
+                                <CardTitle className="flex items-center gap-2 text-left">
                                     <Award className="h-5 w-5 text-primary" />
                                     My Loyalty Benefits
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="text-left">
                                     You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="p-6">
+                            <CardContent className="p-6 text-left">
                                 {userBenefits.length > 0 ? (
                                     <ul className="space-y-3 text-left">
                                         {userBenefits.map((benefit: any) => (
-                                            <li key={benefit.name} className="flex items-center gap-3">
+                                            <li key={benefit.name} className="flex items-center gap-3 text-left">
                                                 <CheckCircle className="h-5 w-5 text-green-500" />
-                                                <span className="font-medium text-sm">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
+                                                <span className="font-medium text-sm text-left">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
                                             </li>
                                         ))}
                                     </ul>
                                 ) : (
-                                    <p className="text-muted-foreground text-sm italic">No benefits are currently configured for your tier.</p>
+                                    <p className="text-muted-foreground text-sm italic text-center">No benefits are currently configured for your tier.</p>
                                 )}
                             </CardContent>
                             <CardFooter className="border-t pt-4">
@@ -385,12 +435,12 @@ export default function AccountDashboard() {
                         </Card>
                     </div>
 
-                    <Card className="bg-primary/5 border-primary/20">
+                    <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
                         <CardHeader className="text-left">
-                            <CardTitle className="flex items-center gap-2"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
+                            <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake className="text-primary" /> Help the Community & Earn Rewards</CardTitle>
                         </CardHeader>
                         <CardContent className="text-left">
-                            <p className="text-muted-foreground text-sm leading-relaxed">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
+                            <p className="text-muted-foreground text-sm leading-relaxed text-left">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
                         </CardContent>
                         <CardFooter>
                             <Button asChild size="sm">
@@ -399,7 +449,7 @@ export default function AccountDashboard() {
                         </CardFooter>
                     </Card>
                     
-                    <div className="space-y-8">
+                    <div className="space-y-8 text-left text-foreground">
                         <QuotesCard />
                         <EnquiriesCard />
                     </div>
