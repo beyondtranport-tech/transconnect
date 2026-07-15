@@ -25,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Sparkles, Zap, Smartphone, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -37,13 +37,15 @@ import { Label } from '@/components/ui/label';
 import { formatDateSafe, cn, downloadDataAsCSV } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
 import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
-import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
+import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
 import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
+import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {
@@ -57,19 +59,28 @@ async function performAdminAction(token: string, action: string, payload?: any) 
   return result;
 }
 
+const contactSchema = z.object({
+  name: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  mobile: z.string().nullable().optional(),
+});
+
 const leadSchema = z.object({
-  companyName: z.string().min(1, 'Company name is required'),
-  contactPerson: z.string().optional(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  mobile: z.string().optional(),
-  role: z.string().min(1, 'Role is required'),
-  status: z.enum(['new', 'contacted', 'qualified', 'unqualified', 'invited', 'active']).default('new'),
-  notes: z.string().optional(),
-  website: z.string().url().optional().or(z.literal('')),
-  address: z.string().optional(),
+  companyName: z.string().nullable().optional(),
+  contactPerson: z.string().nullable().optional(),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  mobile: z.string().nullable().optional(),
+  role: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  website: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  minedServiceWording: z.string().nullable().optional(),
+  marketingManager: contactSchema.nullable().optional(),
+  ceo: contactSchema.nullable().optional(),
 });
 
 type LeadFormValues = z.infer<typeof leadSchema>;
@@ -98,6 +109,9 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           notes: '',
           website: defaultValues?.website || '',
           address: defaultValues?.address || '',
+          marketingManager: { name: '', email: '', mobile: '' },
+          ceo: { name: '', email: '', mobile: '' },
+          minedServiceWording: ''
         });
       }
     }
@@ -108,7 +122,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
-      await performAdminAction(token, 'savePartner', { partner: { ...values, id: lead?.id, type: 'lead' } });
+      await performAdminAction(token, 'savePartner', { collection: 'leads', partner: { ...values, id: lead?.id, type: 'lead' } });
       toast({ title: 'Record Updated!' });
       onSave();
       onOpenChange(false);
@@ -121,31 +135,75 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl text-left text-foreground">
+      <DialogContent className="sm:max-w-4xl text-left text-foreground">
         <DialogHeader><DialogTitle>{lead ? 'Edit' : 'Add New'} Lead</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2 text-left text-foreground">
-            <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Contact Person</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left text-foreground">
+            <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                    <Building className="h-4 w-4" /> Core Entity Details
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem>)} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                    <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem>)} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                <FormField control={form.control} name="status" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                    <SelectItem value="new">New</SelectItem><SelectItem value="contacted">In Research</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="active">Member</SelectItem>
+                    </SelectContent></Select></FormItem>
+                )} />
+                <FormField control={form.control} name="role" render={({ field }) => (
+                    <FormItem className="text-left text-foreground"><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
+                    {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
+                    </SelectContent></Select></FormItem>
+                )} />
+                </div>
+                <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="status" render={({ field }) => (
-                <FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
-                  <SelectItem value="new">New</SelectItem><SelectItem value="contacted">In Research</SelectItem><SelectItem value="qualified">Qualified</SelectItem><SelectItem value="invited">Invited</SelectItem><SelectItem value="active">Member</SelectItem>
-                </SelectContent></Select></FormItem>
-              )} />
-              <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem><FormLabel>Potential Role</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl><SelectContent>
-                  {roles.map(r => <SelectItem key={r.id} value={r.title}>{r.title}</SelectItem>)}
-                </SelectContent></Select></FormItem>
-              )} />
+
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                        <Users className="h-4 w-4" /> Marketing Manager
+                    </h4>
+                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                </div>
+
+                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left">
+                        <UserCheck className="h-4 w-4" /> CEO / Principal
+                    </h4>
+                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                </div>
             </div>
-            <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Internal Notes</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <DialogFooter className="pt-4 border-t text-left text-foreground">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Lead
+
+            <Separator />
+
+            <div className="space-y-4 text-left text-foreground">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                    <Sparkles className="h-4 w-4" /> Technical Profile (300 Words)
+                </h4>
+                <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
+                    <FormItem className="text-left">
+                        <FormControl><Textarea {...field} value={field.value || ''} className="bg-white min-h-[150px] border-2" /></FormControl>
+                    </FormItem> 
+                )} />
+            </div>
+
+            <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10 text-left">
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>
           </form>
@@ -162,8 +220,7 @@ function LeadsDatabaseComponent() {
   const { user } = useUser();
 
   const [leads, setLeads] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddLeadOpen, setIsAddLeadOpen] = useState(false);
   const [editLead, setEditLead] = useState<any | null>(null);
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
@@ -178,7 +235,6 @@ function LeadsDatabaseComponent() {
       if (!token) return;
       const res = await performAdminAction(token, 'getLeads');
       setLeads(res.data || []);
-      setHasLoaded(true);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Registry Load Failed', description: e.message });
     } finally {
@@ -186,8 +242,11 @@ function LeadsDatabaseComponent() {
     }
   }, [toast]);
 
+  useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
   useEffect(() => {
-    if (searchParams.get('action') === 'add-member') setIsAddLeadOpen(true);
+    const action = searchParams.get('action');
+    if (action === 'add-member') setIsAddLeadOpen(true);
   }, [searchParams]);
 
   const handleExport = (format: 'Standard' | 'SendGrid') => {
@@ -198,10 +257,10 @@ function LeadsDatabaseComponent() {
 
           if (format === 'SendGrid') {
               return {
-                  email: l.email,
-                  first_name: l.firstName || l.contactPerson?.split(' ')[0] || '',
-                  last_name: l.lastName || l.contactPerson?.split(' ').slice(1).join(' ') || '',
-                  company_name: l.companyName,
+                  email: l.marketingManager?.email || l.email || l.email_address || '',
+                  first_name: l.marketingManager?.name?.split(' ')[0] || l.firstName || l.contactPerson?.split(' ')[0] || '',
+                  last_name: l.marketingManager?.name?.split(' ').slice(1).join(' ') || l.lastName || l.contactPerson?.split(' ').slice(1).join(' ') || '',
+                  company_name: l.companyName || l.company_name || '',
                   handshake_url: handshakeUrl,
                   direct_join_url: directJoinUrl
               };
@@ -231,7 +290,15 @@ function LeadsDatabaseComponent() {
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     { accessorKey: 'companyName', header: 'Lead Entity' },
-    { accessorKey: 'contactPerson', header: 'Contact' },
+    { 
+        id: 'contact',
+        header: 'Contact', 
+        cell: ({ row }) => (
+            <div className="text-sm font-medium text-left">
+                {row.original.marketingManager?.name || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}
+            </div>
+        )
+    },
     { 
         header: 'Referrer Node', 
         cell: ({row}) => (
@@ -245,19 +312,33 @@ function LeadsDatabaseComponent() {
         header: 'Outreach Stage',
         cell: ({ row }) => {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
             return (
                 <div className="flex flex-col text-left">
-                    <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] border-primary/20 text-primary text-left">{row.original.lastOutreachSubject}</Badge>
-                    {row.original.lastOpenedAt && (
-                        <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit text-left">
-                            <UserCheck className="h-2.5 w-2.5" /> Read
-                        </div>
-                    )}
+                    <div className="flex items-center gap-1">
+                        <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
+                        {row.original.lastOpenedAt && <TooltipProvider><Tooltip><TooltipTrigger><div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div></TooltipTrigger><TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent></Tooltip></TooltipProvider>}
+                        {row.original.lastAccessedAt && <TooltipProvider><Tooltip><TooltipTrigger><div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div></TooltipTrigger><TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent></Tooltip></TooltipProvider>}
+                    </div>
+                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
                 </div>
             );
         }
     },
-    { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+    { 
+        accessorKey: 'status', 
+        header: 'Status & Intelligence', 
+        cell: ({ row }) => (
+            <div className="flex flex-col gap-1 text-left">
+                <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
+                {row.original.enhancementMethod && (
+                    <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
+                        <Zap className="h-2 w-2 fill-current" /> {row.original.enhancementMethod} {formatDateSafe(row.original.lastEnrichedAt, "dd/MM")}
+                    </Badge>
+                )}
+            </div>
+        )
+    },
     {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
@@ -265,6 +346,7 @@ function LeadsDatabaseComponent() {
         <div className="text-right flex items-center justify-end gap-1 text-foreground text-left">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+          <AddCommunicationLogDialog partnerId={row.original.id} collection="leads" onLogAdded={forceRefresh} />
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
           <PartnerTasksDialog partner={row.original} />
           <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
@@ -277,7 +359,7 @@ function LeadsDatabaseComponent() {
 
   return (
     <>
-      <EngageDialog open={!!engageLead || (selectedIds.length > 0 && dialog?.type === 'engage')} onOpenChange={(o) => { setEngageLead(null); }} partners={engageLead ? [engageLead] : leads.filter(l => selectedIds.includes(l.id))} audience="transporters" onEngageSuccess={forceRefresh} />
+      <EngageDialog open={!!engageLead} onOpenChange={(o) => { setEngageLead(null); }} partners={engageLead ? [engageLead] : leads.filter(l => selectedIds.includes(l.id))} audience="transporters" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="text-left text-foreground text-left">
@@ -290,20 +372,21 @@ function LeadsDatabaseComponent() {
       </AlertDialog>
 
       <div className="space-y-6 text-left text-foreground">
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left">
-          <div className="text-left text-foreground text-left">
-            <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Lead Database</CardTitle>
-            <CardDescription className="text-left text-muted-foreground text-left">Comprehensive registry of prospects and attributed referrals.</CardDescription>
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left">
+          <div className="text-left text-foreground text-left text-foreground">
+            <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Master Lead Database</CardTitle>
+            <CardDescription className="text-left text-muted-foreground text-left text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground">
+             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" disabled={isLoading || !hasLoaded} className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button variant="outline" className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-2 text-left">
+                <PopoverContent className="w-56 p-2 text-left text-foreground">
                     <div className="space-y-1 text-left">
-                        <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
-                        <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Upload</Button>
+                        <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
+                        <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                     </div>
                 </PopoverContent>
             </Popover>
@@ -312,23 +395,11 @@ function LeadsDatabaseComponent() {
           </div>
         </CardHeader>
 
-        {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground text-left">
-                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Registry Offline</h2>
-                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground">Load the lead registry to manage your sales pipeline and attributed referrals.</p>
-                <Button size="lg" onClick={forceRefresh} disabled={isLoading} className="h-12 px-8 font-bold text-left">
-                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                    Load Lead Registry
-                </Button>
-            </Card>
-        ) : (
-            <Card className="text-left text-foreground text-foreground">
-                <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center py-10 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
-                </CardContent>
-            </Card>
-        )}
+        <Card className="text-left text-foreground text-foreground text-foreground">
+            <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
+                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
+            </CardContent>
+        </Card>
       </div>
     </>
   );

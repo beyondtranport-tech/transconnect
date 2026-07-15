@@ -47,18 +47,18 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const partnerSchema = z.object({
-  firstName: z.string().optional().or(z.literal('')),
-  lastName: z.string().optional().or(z.literal('')),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  mobile: z.string().optional(),
-  contactPerson: z.string().optional(),
-  companyName: z.string().optional(),
-  website: z.string().url("Invalid URL").optional().or(z.literal('')),
-  address: z.string().optional(),
-  minedServiceWording: z.string().optional().or(z.literal('')),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
-  type: z.literal('supplier'),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  mobile: z.string().nullable().optional(),
+  contactPerson: z.string().nullable().optional(),
+  companyName: z.string().nullable().optional(),
+  website: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  minedServiceWording: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -101,19 +101,19 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Contact</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="contactPerson" render={({ field }) => (<FormItem><FormLabel>Key Contact</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+              <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} value={field.value || ''} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
             </div>
-            <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={form.control} name="minedServiceWording" render={({ field }) => (<FormItem><FormLabel>Technical Profile</FormLabel><FormControl><Textarea className="min-h-[120px] bg-white" {...field} /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="website" render={({ field }) => (<FormItem><FormLabel>Corporate Website</FormLabel><FormControl><Input placeholder="https://..." {...field} value={field.value || ''} className="bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={form.control} name="minedServiceWording" render={({ field }) => (<FormItem><FormLabel>Technical Profile</FormLabel><FormControl><Textarea className="min-h-[120px] bg-white" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
             <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Pipeline Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value || ''}>
                         <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                         <SelectContent>
                             <SelectItem value="new">New Lead</SelectItem>

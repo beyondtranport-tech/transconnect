@@ -34,10 +34,6 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-/**
- * STRATEGIC PARTNER ACTION WRAPPER
- * Hardened for prototype environment with detailed error feedback.
- */
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
@@ -51,38 +47,38 @@ async function performAdminAction(token: string, action: string, payload: any) {
     try {
         result = JSON.parse(text);
     } catch (e) {
-        throw new Error(`Server returned non-JSON response: ${text.slice(0, 100)}...`);
+        throw new Error(`Server error: ${text.slice(0, 100)}`);
     }
 
     if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
+        throw new Error(result.error || `API Error: ${action}`);
     }
     return result;
 }
 
 const contactSchema = z.object({
-  name: z.string().optional().or(z.literal('')),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  mobile: z.string().optional().or(z.literal('')),
+  name: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  mobile: z.string().nullable().optional(),
 });
 
 const partnerSchema = z.object({
-  firstName: z.string().optional().or(z.literal('')),
-  lastName: z.string().optional().or(z.literal('')),
-  email: z.string().email('Invalid email').optional().or(z.literal('')),
-  phone: z.string().optional(),
-  mobile: z.string().optional(),
-  contactPerson: z.string().optional(),
-  companyName: z.string().optional(),
-  industrial_category: z.string().optional(),
-  status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited', 'registered']),
-  type: z.string(), 
-  website: z.string().optional().or(z.literal('')),
-  notes: z.string().optional(),
-  address: z.string().optional(),
-  minedServiceWording: z.string().optional(),
-  marketingManager: contactSchema.optional(),
-  ceo: contactSchema.optional(),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  mobile: z.string().nullable().optional(),
+  contactPerson: z.string().nullable().optional(),
+  companyName: z.string().nullable().optional(),
+  industrial_category: z.string().nullable().optional(),
+  status: z.string().nullable().optional(),
+  type: z.string().nullable().optional(), 
+  website: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  minedServiceWording: z.string().nullable().optional(),
+  marketingManager: contactSchema.nullable().optional(),
+  ceo: contactSchema.nullable().optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -137,19 +133,19 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                             <Building className="h-4 w-4" /> Core Entity Identity
                         </h4>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="industrial_category" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Industrial Trade</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="e.g. Injectors, Brakes" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="industrial_category" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Industrial Trade</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="e.g. Injectors, Brakes" /></FormControl></FormItem> )} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem> )} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
                             <FormField control={form.control} name="status" render={({ field }) => ( 
                                 <FormItem className="text-left">
                                     <FormLabel>Status</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="new">New Lead</SelectItem>
@@ -161,7 +157,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                                 </FormItem> 
                             )} />
                         </div>
-                        <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Verified Physical Address</FormLabel><FormControl><Textarea {...field} className="bg-white h-20 border-2" /></FormControl></FormItem> )} />
+                        <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Verified Physical Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white h-20 border-2" /></FormControl></FormItem> )} />
                     </div>
 
                     <Separator />
@@ -171,18 +167,18 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                                 <Users className="h-4 w-4" /> Marketing Manager
                             </h4>
-                            <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
 
                         <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
                             <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
                                 <UserCheck className="h-4 w-4" /> CEO / Principal
                             </h4>
-                            <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
                     </div>
 
@@ -194,7 +190,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                         </h4>
                         <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
                             <FormItem className="text-left">
-                                <FormControl><Textarea {...field} className="bg-white min-h-[150px] font-sans text-sm leading-relaxed border-2" placeholder="Verbatim extraction from sitemap pages..." /></FormControl>
+                                <FormControl><Textarea {...field} value={field.value || ''} className="bg-white min-h-[150px] font-sans text-sm leading-relaxed border-2" placeholder="Verbatim extraction from sitemap pages..." /></FormControl>
                             </FormItem> 
                         )} />
                     </div>
@@ -462,7 +458,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground">
                           <div className="space-y-1 text-left text-foreground">
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
@@ -475,9 +471,9 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           </CardHeader>
 
           <Card className="text-left text-foreground">
-              <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
+              <CardContent className="pt-6 text-left text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                      <div className="space-y-1 text-left text-foreground text-foreground">
+                      <div className="space-y-1 text-left text-foreground">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
                               <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
@@ -491,7 +487,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <div className="space-y-1 text-left text-foreground">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                              <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                              <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="all">All Staff</SelectItem>
                                   <SelectItem value="none">Unallocated</SelectItem>
@@ -500,7 +496,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                           </Select>
                       </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                       <div className="space-y-6 text-left text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
