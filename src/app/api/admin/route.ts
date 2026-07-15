@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -138,28 +137,36 @@ export async function POST(req: NextRequest) {
                 const current = docSnap.data()!;
                 const companyName = current.companyName || current.company_name || '';
                 
-                const enrichment = await enrichPartner({ companyName });
-                
-                await docRef.set({ 
-                    ...enrichment, 
-                    status: 'contacted',
-                    lastOutreachSubject: 'Forensic Bridge',
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    enhancementMethod: 'Forensic Bridge',
-                    lastEnrichedAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp() 
-                }, { merge: true });
+                try {
+                    const enrichment = await enrichPartner({ companyName });
+                    
+                    await docRef.set({ 
+                        ...enrichment, 
+                        status: 'contacted',
+                        lastOutreachSubject: 'Forensic Bridge',
+                        lastOutreachAt: FieldValue.serverTimestamp(),
+                        enhancementMethod: 'Forensic Bridge',
+                        lastEnrichedAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
 
-                const logRef = docRef.collection('communications').doc();
-                await logRef.set({
-                    id: logRef.id,
-                    subject: 'Forensic Research (Auto-Bridge)',
-                    type: 'System',
-                    notes: 'Automated gap-analysis completed via Forensic Bridge.',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                
-                return NextResponse.json({ success: true, data: enrichment });
+                    const logRef = docRef.collection('communications').doc();
+                    await logRef.set({
+                        id: logRef.id,
+                        subject: 'Forensic Research (Auto-Bridge)',
+                        type: 'System',
+                        notes: 'Automated gap-analysis completed via Forensic Bridge.',
+                        timestamp: FieldValue.serverTimestamp()
+                    });
+                    
+                    return NextResponse.json({ success: true, data: enrichment });
+                } catch (flowError: any) {
+                    // Bubbling up specific AI/Search quota errors for the Bridge UI to handle
+                    if (flowError.message?.includes('SEARCH_QUOTA_EXHAUSTED')) {
+                        return NextResponse.json({ success: false, error: 'SEARCH_QUOTA_EXHAUSTED: Google Search limit reached.' }, { status: 429 });
+                    }
+                    throw flowError;
+                }
             }
 
             case 'savePartner': {
