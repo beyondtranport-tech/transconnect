@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Loader2, Info, Zap, Search, ClipboardCheck, AlertTriangle } from 'lucide-react';
+import { Sparkles, Loader2, Info, Zap, Search, ClipboardCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -32,51 +32,47 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
-        return `ACT AS AN ELITE INDUSTRIAL RESEARCH AGENT. 
-YOU MUST RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
+        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
+        
+TASK: Discover and bridge ALL data gaps for the business: "${companyName}".
 
-TASK: Discover and bridge ALL data gaps for the SOUTH AFRICAN operations of: "${companyName}".
+REQUIRED PROTOCOL:
+1. SEARCH: Perform a live search for "${companyName}" corporate website and LinkedIn.
+2. IDENTITY: Identify the Marketing Manager and CEO/Owner.
+3. EXTRACTION: Provide a 300-word verbatim profile of their technical services.
 
-NOISE SUPPRESSION:
-1. Ignore all job listings, LinkedIn job pings, and news articles.
-2. Focus entirely on corporate landing pages and business directories (e.g. Yellosa, Infoisinfo).
-3. Do not apologize or explain your research.
-
-REQUIRED JSON FORMAT:
+RETURN ONLY A RAW JSON OBJECT IN THIS FORMAT:
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
   "industrial_category": "...",
-  "website": "...",
+  "website": "OFFICIAL URL",
   "email": "Primary Email",
   "phone": "RSA Landline",
   "address": "Verified Physical Address",
   "marketingManager": { "name": "...", "email": "...", "mobile": "..." },
   "ceo": { "name": "...", "email": "...", "mobile": "..." },
   "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS)"
-}`;
+}
+
+NO MARKDOWN. NO PREAMBLE.`;
     };
 
     const handleCopyAndLog = async () => {
-        if (!partner.id) {
-            toast({ variant: 'destructive', title: 'Invalid Record', description: 'Missing record ID.' });
-            return;
-        }
-
         setIsLogging(true);
         try {
             await navigator.clipboard.writeText(getPrompt());
             setIsCopied(true);
 
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Session expired. Please sign in again.");
+            if (!token) throw new Error("Session expired.");
 
             await performAdminAction(token, 'logForensicInitiated', { 
                 partnerId: partner.id,
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Prompt Ready", description: "Mandatory JSON mode active. Use tools to bridge gaps." });
+            toast({ title: "Prompt Ready", description: "Interaction logged. Paste into AI Studio." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -84,12 +80,7 @@ REQUIRED JSON FORMAT:
             }, 1000);
 
         } catch (e: any) {
-            console.error("Enrichment failure:", e);
-            toast({ 
-                variant: 'destructive', 
-                title: "Automation Failed", 
-                description: e.message || "Failed to reach the server." 
-            });
+            toast({ variant: 'destructive', title: "Automation Error", description: e.message });
         } finally {
             setIsLogging(false);
         }
@@ -109,21 +100,21 @@ REQUIRED JSON FORMAT:
             <Dialog open={isOpen} onOpenChange={(o) => !isLogging && setIsOpen(o)}>
                 <DialogContent className="sm:max-w-xl text-left text-foreground">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
+                        <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black text-left">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Industrial Gap-Analysis V4
+                            Industrial Gap-Analysis V3
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
-                            Noise-suppressed command for <strong>{companyName}</strong>.
+                            Generate a forensic research command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground">Extraction Mandate</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground">Gap Bridging Mode</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                This prompt forces the AI to output RAW JSON. Paste this into AI Studio to initiate the research cycle.
+                                Use this prompt in Google AI Studio to discover direct contact emails and mobile numbers from live web data.
                             </AlertDescription>
                         </Alert>
 

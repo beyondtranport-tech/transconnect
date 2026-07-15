@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -277,6 +276,18 @@ export async function POST(req: NextRequest) {
                 leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
                 await batch.commit();
                 return NextResponse.json({ success: true });
+            }
+
+            case 'getMembers': {
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').get();
+                const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
+                const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: leads.map(serializeTimestamps) });
             }
 
             default: 

@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V4.
- * REINSTATED: Broadened search queries and removed restrictive guards to prevent null returns.
+ * @fileOverview High-fidelity Industrial Research Agent V3.
+ * REINSTATED: Proven search strategy and extraction mandate to resolve null returns.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -48,40 +48,38 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // FUZZY SEARCH STRATEGY: Broadening queries to bypass strict string matching
-    
-    // Search 1: Corporate & Leadership
+    // STABLE SEARCH STRATEGY V3
+    // Search 1: Deep Corporate & MD Identification
     const corporateResults = await googleSearchTool({ 
-        query: `${company} South Africa official website CEO Managing Director email -jobs -hiring` 
+        query: `"${company}" South Africa official website CEO Managing Director email` 
     });
     
-    // Brief pause to satisfy WAFs
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Search 2: Directory & Social Nodes
-    const socialResults = await googleSearchTool({ 
-        query: `${company} South Africa (LinkedIn OR Yellosa OR Infoisinfo) contact details` 
+    // Search 2: Directory & Social Proof
+    const directoryResults = await googleSearchTool({ 
+        query: `"${company}" South Africa (LinkedIn OR Yellosa OR Infoisinfo) contact details` 
     });
     
-    const allContent = [...(corporateResults || []), ...(socialResults || [])]
+    const allContent = [...(corporateResults || []), ...(directoryResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
     if (!allContent || allContent.trim().length < 5) {
-        // Only return nulls if the search tool literally found nothing
         return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
     }
 
-    // HIGH-FIDELITY EXTRACTION WITH ABSOLUTE JSON MANDATE
+    // EXTRACTION MANDATE V3: Prioritizing data capture over safety defensiveness
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN ELITE INDUSTRIAL RESEARCH AGENT.
+        system: `ACT AS AN EXPERT SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
         
-        GOAL: Extract specific corporate identity nodes.
-        NOISE SUPPRESSION: Ignore all job boards, news articles, and "search results" commentary.
-        RELIABILITY: If data is missing in evidence, set the field to null. 
-        MANDATE: Output RAW JSON ONLY. No preamble. No conversation.`,
-        prompt: `EXTRACT CORPORATE DATA NODES FOR "${company}" IN SOUTH AFRICA FROM THIS EVIDENCE:\n\n${allContent}`,
+        GOAL: Extract specific corporate nodes for "${company}".
+        PROTOCOL:
+        1. WEBSITE: Find the primary corporate URL.
+        2. CONTACTS: Identify general and direct (MD/CEO) email and mobile numbers.
+        3. PROFILE: Create a 300-word technical summary based on the services described in the snippets.
+        
+        MANDATE: If data is missing in the evidence, set the field to null. Return RAW JSON only.`,
+        prompt: `EXTRACT THE CORPORATE DATA PACK FOR "${company}" FROM THIS EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }
