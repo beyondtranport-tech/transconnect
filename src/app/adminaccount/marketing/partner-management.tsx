@@ -34,6 +34,10 @@ import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+/**
+ * STRATEGIC PARTNER ACTION WRAPPER
+ * Hardened for prototype environment with detailed error feedback.
+ */
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
@@ -41,8 +45,18 @@ async function performAdminAction(token: string, action: string, payload: any) {
         body: JSON.stringify({ action, payload }),
         cache: 'no-store'
     });
-    const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+    
+    const text = await response.text();
+    let result;
+    try {
+        result = JSON.parse(text);
+    } catch (e) {
+        throw new Error(`Server returned non-JSON response: ${text.slice(0, 100)}...`);
+    }
+
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
     return result;
 }
 
@@ -93,11 +107,13 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         const collection = partner?.source === 'Lead' ? 'leads' : 'partners';
+        
         await performAdminAction(token, 'savePartner', { 
             collection,
             partner: { id: partner?.id, ...values, type: targetType } 
         });
-        toast({ title: 'Record Saved' });
+        
+        toast({ title: 'Forensic Record Saved' });
         onSave();
         onOpenChange(false);
     } catch(e: any) {
@@ -334,26 +350,24 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                   <div className="flex flex-col text-left">
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
-                        {row.original.lastOpenedAt && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
-                              </TooltipTrigger>
-                              <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        {row.original.lastAccessedAt && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
-                              </TooltipTrigger>
-                              <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
+                        <TooltipProvider>
+                            {row.original.lastOpenedAt && (
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
+                                </Tooltip>
+                            )}
+                            {row.original.lastAccessedAt && (
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
+                                </Tooltip>
+                            )}
+                        </TooltipProvider>
                       </div>
                       <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
                   </div>
@@ -448,7 +462,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                           <div className="space-y-1 text-left text-foreground">
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                               <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
