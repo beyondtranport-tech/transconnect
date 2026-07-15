@@ -114,8 +114,12 @@ export async function POST(req: NextRequest) {
                     
                     return NextResponse.json({ success: true, data: enrichment });
                 } catch (flowError: any) {
-                    if (flowError.message?.includes('SEARCH_QUOTA_EXHAUSTED')) {
+                    const msg = flowError.message || "";
+                    if (msg.includes('SEARCH_QUOTA_EXHAUSTED')) {
                         return NextResponse.json({ success: false, error: 'SEARCH_QUOTA_EXHAUSTED' }, { status: 429 });
+                    }
+                    if (msg.includes('429') || msg.includes('Quota') || msg.includes('exhausted')) {
+                        return NextResponse.json({ success: false, error: 'AI_RATE_LIMIT_EXHAUSTED' }, { status: 429 });
                     }
                     throw flowError;
                 }

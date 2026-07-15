@@ -8,13 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { 
     Loader2, Zap, Play, Pause, RotateCcw, ShieldCheck, Search, Database, 
-    AlertTriangle, CheckCircle2, Globe, Mail, Smartphone, Activity, BarChart3, Users, Clock, SearchCode
+    AlertTriangle, CheckCircle2, Activity, Clock, SearchCode
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -24,13 +23,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
     });
     
     const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
+    if (!response.ok) {
+        // Bubble up specific status code or error text
+        throw new Error(result.error || `API Error ${response.status}`);
     }
     return result;
 }
 
-const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state_v3';
+const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state_v4';
 
 export default function ForensicBridge({ audience }: { audience: string }) {
     const { toast } = useToast();
@@ -92,7 +92,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
             
             const res = await performAdminAction(token, 'searchRegistry', { 
                 type: apiType, 
-                limit: 1000 // Scan deeper for gaps
+                limit: 1000 
             });
             
             const needsEnrichment = (res.data || []).filter((p: any) => 
@@ -140,13 +140,10 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
-            let currentStatus: string = 'running';
-            setStatus(s => {
-                currentStatus = s;
-                return s;
-            });
-            
-            if (currentStatus !== 'running') break;
+            // Check if user paused mid-loop
+            let localStatus: string = 'running';
+            setStatus(s => { localStatus = s; return s; });
+            if (localStatus !== 'running') break;
 
             const record = queue[pointer];
             const name = record.companyName || record.firstName || 'Unknown';
@@ -173,39 +170,45 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                     setLogs(prev => [{ 
                         id: Date.now() + 1, 
                         msg: `Bridge Successful: ${name} verified.`, 
-                        type: 'success',
-                        data: res.data 
+                        type: 'success'
                     }, ...prev].slice(0, 50));
                     
-                    // SAFE DELAY: 15s between records to respect Search & AI quotas
-                    await new Promise(resolve => setTimeout(resolve, 15000));
+                    // ON SUCCESS: Increment pointer and update shared state
+                    pointer++;
+                    setCurrentIndex(pointer);
+
+                    // SAFE DELAY: 20s between records to respect Search & AI daily/burst quotas
+                    await new Promise(resolve => setTimeout(resolve, 20000));
                 }
 
             } catch (err: any) {
                 const msg = err.message || "";
-                const isSearchExhausted = msg.includes('SEARCH_QUOTA_EXHAUSTED');
-                const isAiQuotaError = msg.includes('429') || msg.includes('Quota') || msg.includes('exhausted');
                 
-                if (isSearchExhausted) {
+                if (msg.includes('SEARCH_QUOTA_EXHAUSTED')) {
                     setStatus('quota_exhausted');
-                    setLogs(prev => [{ id: Date.now() + 2, msg: `CRITICAL: Google Search Daily Quota Exhausted. Pipeline halted.`, type: 'error' }, ...prev].slice(0, 50));
-                    toast({ variant: 'destructive', title: "Search Limit Reached", description: "Google has blocked further automated searches for today." });
-                    break; // Hard stop for the day
-                } else if (isAiQuotaError) {
+                    setLogs(prev => [{ id: Date.now() + 2, msg: `CRITICAL: Google Search Daily Quota Exhausted. Registry bridging halted.`, type: 'error' }, ...prev].slice(0, 50));
+                    toast({ variant: 'destructive', title: "Search Limit Reached", description: "Wait until tomorrow for quota reset." });
+                    break; 
+                } 
+                
+                if (msg.includes('AI_RATE_LIMIT_EXHAUSTED') || msg.includes('429') || msg.includes('exhausted')) {
                     setStatus('cooldown');
-                    setLogs(prev => [{ id: Date.now() + 3, msg: `AI Rate Limit. Initiating 65s mandatory sleep...`, type: 'error' }, ...prev].slice(0, 50));
+                    setLogs(prev => [{ id: Date.now() + 3, msg: `AI Rate Limit Hit. Sleeping for 65s before retrying current record...`, type: 'error' }, ...prev].slice(0, 50));
                     await new Promise(resolve => setTimeout(resolve, 65000));
+                    
+                    // RECOVERY: Put status back to running, but DO NOT increment pointer. 
+                    // The loop will try the SAME record again.
                     setStatus('running');
                     continue; 
-                } else {
-                    setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
-                    setLogs(prev => [{ id: Date.now() + 4, msg: `Bridge Failed for ${name}: ${err.message}`, type: 'error' }, ...prev].slice(0, 50));
-                    await new Promise(resolve => setTimeout(resolve, 10000));
                 }
-            }
 
-            pointer++;
-            setCurrentIndex(pointer);
+                // If it's a non-quota error, log it and move to next record
+                setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
+                setLogs(prev => [{ id: Date.now() + 4, msg: `Record Failure (${name}): ${msg}`, type: 'error' }, ...prev].slice(0, 50));
+                pointer++;
+                setCurrentIndex(pointer);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
 
             if (pointer === queue.length) {
                 setStatus('completed');
@@ -226,11 +229,11 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                                 Forensic Bridge V4
                             </CardTitle>
                             <CardDescription className="text-slate-400 mt-1">
-                                High-fidelity registry enrichment with automated quota recovery.
+                                High-fidelity registry enrichment with automated record-level retry logic.
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={handleReset} className="border-white/10 text-white hover:bg-white/10" disabled={status === 'running'}>
+                            <Button variant="outline" size="sm" onClick={handleReset} className="border-white/10 text-white hover:bg-white/10" disabled={status === 'running' || status === 'cooldown'}>
                                 <RotateCcw className="h-4 w-4 mr-2" /> Reset
                             </Button>
                         </div>
@@ -244,7 +247,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             </div>
                             <div className="space-y-2 text-center">
                                 <h3 className="text-xl font-bold text-white">Analysis Standby</h3>
-                                <p className="text-slate-400 max-w-sm mx-auto">Scan the {audience} registry to identifying records missing verified domains and leadership data.</p>
+                                <p className="text-slate-400 max-w-sm mx-auto">Scan the {audience} registry to bridge gaps in domains, emails, and leadership data.</p>
                             </div>
                             <Button size="lg" onClick={handleScanGaps} disabled={isScanning} className="h-14 px-12 font-black uppercase text-xs tracking-widest shadow-lg">
                                 {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
@@ -282,7 +285,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
 
                             <div className="space-y-3 text-left">
                                 <div className="flex justify-between items-end px-1 text-left">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pipeline Status: {status.toUpperCase().replace('_', ' ')}</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pipeline: {status.toUpperCase().replace('_', ' ')}</Label>
                                     <span className="text-[10px] font-mono text-primary font-bold">{progress.toFixed(1)}%</span>
                                 </div>
                                 <Progress value={progress} className="h-3 bg-white/5" />
@@ -291,12 +294,12 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             <div className="flex flex-col items-center gap-4 text-left">
                                 {status === 'cooldown' && (
                                     <div className="flex items-center gap-2 text-amber-500 animate-pulse text-xs font-bold uppercase tracking-widest">
-                                        <Clock className="h-4 w-4" /> Resetting API Quotas (65s)...
+                                        <Clock className="h-4 w-4" /> AI Throttled: Retrying current record in 65s...
                                     </div>
                                 )}
                                 {status === 'quota_exhausted' && (
                                     <div className="flex items-center gap-2 text-destructive animate-pulse text-xs font-bold uppercase tracking-widest">
-                                        <SearchCode className="h-4 w-4" /> Google Search Limit Reached (Retry Tomorrow)
+                                        <SearchCode className="h-4 w-4" /> Search Quota Exhausted: Retry Tomorrow
                                     </div>
                                 )}
                                 <div className="flex justify-center gap-4 text-left">
@@ -304,7 +307,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                                         <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary hover:bg-primary/90 text-white" onClick={startEnrichment} disabled={status === 'completed'}>
                                             <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Bridge' : 'Start Bridge'}
                                         </Button>
-                                    ) : status !== 'quota_exhausted' ? (
+                                    ) : (status === 'running' || status === 'cooldown') ? (
                                         <Button size="lg" variant="outline" className="h-14 px-12 font-black uppercase text-xs tracking-widest border-white/20 text-white" onClick={() => setStatus('paused')}>
                                             <Pause className="mr-2 h-4 w-4" /> Pause Pipeline
                                         </Button>

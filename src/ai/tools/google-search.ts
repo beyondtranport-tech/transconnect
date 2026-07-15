@@ -63,7 +63,7 @@ export const googleSearchTool = ai.defineTool(
             
             // SPECIFIC QUOTA DETECTION
             if (response.status === 429 || apiMessage.toLowerCase().includes('quota')) {
-                throw new Error(`SEARCH_QUOTA_EXHAUSTED: You have exceeded the daily Google Search limit (100 requests). Use manual prompts for now.`);
+                throw new Error(`SEARCH_QUOTA_EXHAUSTED: You have exceeded the daily Google Search limit (100 requests). Please stop automated tasks and wait until tomorrow.`);
             }
             if (response.status === 403) {
                 throw new Error(`API_ERROR: Access Denied (403). Ensure the "Custom Search API" is enabled in your Google Cloud Console.`);

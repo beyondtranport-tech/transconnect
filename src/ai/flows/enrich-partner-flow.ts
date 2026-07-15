@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview High-fidelity Industrial Research Agent V4.
- * OPTIMIZED FOR QUOTA PRESERVATION.
+ * OPTIMIZED FOR QUOTA PRESERVATION AND BURST SUPPRESSION.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -49,11 +49,17 @@ const enrichPartnerFlow = ai.defineFlow(
             return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
         }
 
-        // CONSOLIDATED SEARCHES: Reducing from 4 to 2 to stay under burst & daily quotas
-        const [corporateResults, socialResults] = await Promise.all([
-            googleSearchTool({ query: `"${company}" South Africa official website CEO Managing Director contact email -jobs` }),
-            googleSearchTool({ query: `"${company}" South Africa (LinkedIn OR Facebook OR Yellosa) business profile contact mobile` })
-        ]);
+        // SEQUENTIAL SEARCHES: Bypassing burst limits (429) by avoiding Promise.all
+        const corporateResults = await googleSearchTool({ 
+            query: `"${company}" South Africa official website CEO Managing Director contact email -jobs` 
+        });
+        
+        // Brief pause between search calls within the same flow to satisfy WAFs
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const socialResults = await googleSearchTool({ 
+            query: `"${company}" South Africa (LinkedIn OR Facebook OR Yellosa) business profile contact mobile` 
+        });
         
         const allContent = [...(corporateResults || []), ...(socialResults || [])]
             .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
@@ -79,7 +85,7 @@ const enrichPartnerFlow = ai.defineFlow(
     } catch (e: any) {
         console.error("[RESEARCH_V4] Error:", e);
         // Bubble up quota errors specifically
-        if (e.message?.includes('QUOTA') || e.message?.includes('429')) {
+        if (e.message?.includes('QUOTA') || e.message?.includes('429') || e.message?.includes('exhausted')) {
             throw e; 
         }
         return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
