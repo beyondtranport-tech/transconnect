@@ -54,7 +54,7 @@ import AudienceOversightTable from '@/app/adminaccount/marketing/AudienceOversig
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, type: 'partner' },
     isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, type: 'isa' },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Discovery: DiscoveryEngine, type: 'supplier', Management: PartnerManagement },
+    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Discovery: DiscoveryEngine, type: 'supplier' },
     transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Discovery: TransporterDiscovery, type: 'transporter' },
     investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, type: 'investor' },
     developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, type: 'developer' },
@@ -62,7 +62,7 @@ const audienceConfig: Record<string, any> = {
     drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DriverDiscovery, type: 'driver' },
     finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Discovery: FinanceDiscovery, type: 'finance' },
     warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: WarehouseDiscovery, type: 'warehouse' },
-    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DistributionDiscovery, type: 'distributor', Management: PartnerManagement },
+    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DistributionDiscovery, type: 'distributor' },
     loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: LoadsDiscovery, type: 'loads' },
     'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: BuySellDiscovery, type: 'buy-sell' },
 };
@@ -78,7 +78,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   
   if (!config) return <div className="p-12 text-center italic">Audience configuration for "{audience}" not found.</div>;
 
-  const { Offer, Emails, Discovery, type, Management } = config;
+  const { Offer, Emails, Discovery, type } = config;
 
   return (
     <div className="space-y-6 text-left text-foreground">
