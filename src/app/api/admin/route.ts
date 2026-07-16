@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
                     batch.set(ref, {
                         ...p,
                         id,
+                        type: type || p.type || 'lead',
                         status: p.status || 'new',
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
