@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -52,7 +51,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
     }
 
     if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error: ${action}`);
+        throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
 }
@@ -321,12 +320,12 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           }
       },
       {
-        accessorKey: 'industrial_tags',
+        id: 'industrial_tags',
         header: 'Specialized Tags',
         cell: ({row}) => (
-            <div className="flex flex-wrap gap-1 max-w-[200px]">
+            <div className="flex flex-wrap gap-1 max-w-[200px] text-left">
                 {(row.original.industrial_tags || []).map((tag: string) => (
-                    <Badge key={tag} variant="outline" className="text-[8px] h-3.5 px-1 font-black bg-muted/50 text-foreground border-none uppercase">{tag}</Badge>
+                    <Badge key={tag} variant="outline" className="text-[8px] h-3.5 px-1 font-black bg-primary/10 text-primary border-none uppercase">{tag}</Badge>
                 ))}
             </div>
         )
@@ -529,3 +528,4 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     </div>
   );
 }
+
