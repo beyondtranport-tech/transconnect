@@ -78,7 +78,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   
   if (!config) return <div className="p-12 text-center italic">Audience configuration for "{audience}" not found.</div>;
 
-  const { Offer, Emails, Discovery, type } = config;
+  const { type } = config;
 
   return (
     <div className="space-y-6 text-left text-foreground">
@@ -90,7 +90,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         <Tabs value={activeTab} className="w-full text-left" onValueChange={setActiveTab}>
             <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
                 <TabsTrigger value="management" className="gap-2"><Database className="h-3.5 w-3.5" /> Registry (CRM)</TabsTrigger>
-                {Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5" /> Discovery (AI)</TabsTrigger>}
+                {config.Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5" /> Discovery (AI)</TabsTrigger>}
                 <TabsTrigger value="bridge" className="gap-2 text-primary"><Zap className="h-3.5 w-3.5" /> Forensic Bridge</TabsTrigger>
                 <TabsTrigger value="oversight" className="gap-2"><Search className="h-3.5 w-3.5" /> Oversight</TabsTrigger>
                 <Separator orientation="vertical" className="mx-2 h-6" />
@@ -110,16 +110,16 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     </div>
                 </TabsContent>
 
-                {Discovery && (
+                {config.Discovery && (
                     <TabsContent value="discovery">
                         <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
-                            <Discovery />
+                            <config.Discovery />
                         </div>
                     </TabsContent>
                 )}
 
                 <TabsContent value="bridge">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground text-foreground">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
                         <ForensicBridge audience={audience} />
                     </div>
                 </TabsContent>
@@ -133,10 +133,10 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
                 <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><TechArchitecture /></CardContent></Card></TabsContent>
                 <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><RevenueModel /></CardContent></Card></TabsContent>
-                <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><Offer /></CardContent></Card></TabsContent>
+                <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><config.Offer /></CardContent></Card></TabsContent>
                 <TabsContent value="pitch"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><PitchDeck /></CardContent></Card></TabsContent>
                 <TabsContent value="framework"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><Framework /></CardContent></Card></TabsContent>
-                <TabsContent value="emails"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><Emails /></CardContent></Card></TabsContent>
+                <TabsContent value="emails"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><config.Emails /></CardContent></Card></TabsContent>
             </div>
         </Tabs>
     </div>

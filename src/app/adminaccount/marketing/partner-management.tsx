@@ -322,6 +322,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       },
       {
         id: 'industrial_tags',
+        accessorKey: 'industrial_tags', // Enabled for global search filtering
         header: 'Specialized Tags',
         cell: ({row}) => {
             const tags = row.original.industrial_tags || row.original.tags || [];
@@ -484,7 +485,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       </PopoverContent>
                   </Popover>
                   <BulkImportDialog type={type} onComplete={() => fetchData()}><Button variant="outline" className="text-foreground text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                  <Button onClick={() => setDialog({ type: 'add' })} className="text-white font-bold"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                  <Button onClick={() => setDialog({ type: 'add' })} className="text-white font-bold text-left"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
               </div>
           </CardHeader>
 
@@ -518,7 +519,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
-                               <div className="flex justify-center pt-4 text-foreground">
+                               <div className="flex justify-center pt-4 text-foreground text-left text-foreground">
                                   <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground">
                                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                       Load Next 100 Records
