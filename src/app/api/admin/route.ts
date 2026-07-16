@@ -8,17 +8,17 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Resilient Serialization Utility
- * Sanitizes Firestore objects to ensure clean JSON transmission.
+ * Recursively sanitizes Firestore objects to ensure clean JSON transmission.
+ * Prevents "Failed to fetch" errors caused by non-serializable circular references or custom objects.
  */
 function serializeTimestamps(docData: any): any {
     if (docData === null || docData === undefined) return docData;
     
-    // Handle single Timestamps
     if (docData instanceof Timestamp) {
         return docData.toDate().toISOString();
     }
     
-    // Handle hidden FieldValue objects
+    // Handle hidden FieldValue objects (e.g. serverTimestamp)
     if (docData && typeof docData === 'object' && docData.constructor?.name === 'FieldValue') {
         return new Date().toISOString(); 
     }
@@ -41,10 +41,10 @@ function serializeTimestamps(docData: any): any {
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
-        if (initError || !app) throw new Error(`Admin SDK failed to initialize: ${initError}`);
+        if (initError || !app) throw new Error(`Admin SDK failed: ${initError}`);
 
         const authHeader = req.headers.get('authorization');
-        if (!authHeader?.startsWith('Bearer ')) throw new Error('Unauthorized: Missing or invalid token.');
+        if (!authHeader?.startsWith('Bearer ')) throw new Error('Unauthorized: Missing token.');
         const token = authHeader.split('Bearer ')[1];
         
         const adminAuth = getAuth(app);
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'savePartner': {
                 const { partner, collection: colName = 'partners' } = payload;
-                if (!partner) throw new Error("Payload error: Partner data is required.");
+                if (!partner) throw new Error("Payload error: Partner data required.");
 
                 const id = partner.id || db.collection(colName).doc().id;
                 const partnerData = {
@@ -105,8 +105,11 @@ export async function POST(req: NextRequest) {
                 let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
                 let q: any = db.collection(collectionName);
                 
-                if (collectionName === 'partners' && type !== 'all') {
+                if (collectionName === 'partners' && type !== 'all' && type !== 'supplier') {
                     q = q.where('type', '==', type);
+                } else if (collectionName === 'partners' && type === 'supplier') {
+                    // For suppliers, fetch all unless a specific sub-category is passed
+                    q = q.where('type', '==', 'supplier');
                 }
 
                 const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limit, 20000)).get();
@@ -152,6 +155,20 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const colName = isLead ? 'leads' : 'partners';
+                const partnerRef = db.collection(colName).doc(partnerId);
+
+                await partnerRef.update({
+                    status: 'contacted',
+                    lastEnrichmentStatus: 'initiated',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                return NextResponse.json({ success: true });
+            }
+
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').get();
                 const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -167,6 +184,13 @@ export async function POST(req: NextRequest) {
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+            }
+
+            case 'deletePartner': {
+                const { partnerId, source } = payload;
+                const colName = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(colName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
             }
 
             default: 

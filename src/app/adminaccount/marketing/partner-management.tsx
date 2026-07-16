@@ -322,7 +322,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       },
       {
         id: 'industrial_tags',
-        accessorKey: 'industrial_tags', // Enabled for global search filtering
+        accessorKey: 'industrial_tags', 
         header: 'Specialized Tags',
         cell: ({row}) => {
             const tags = row.original.industrial_tags || row.original.tags || [];
@@ -515,7 +515,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                           </Select>
                       </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                       <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (

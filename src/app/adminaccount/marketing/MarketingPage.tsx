@@ -130,13 +130,13 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
-                <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><TechArchitecture /></CardContent></Card></TabsContent>
-                <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><RevenueModel /></CardContent></Card></TabsContent>
-                <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><config.Offer /></CardContent></Card></TabsContent>
-                <TabsContent value="pitch"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><PitchDeck /></CardContent></Card></TabsContent>
-                <TabsContent value="framework"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><Framework /></CardContent></Card></TabsContent>
-                <TabsContent value="emails"><Card className="border-none shadow-xl"><CardContent className="p-8 text-left text-foreground"><config.Emails /></CardContent></Card></TabsContent>
+                <TabsContent value="company-profile"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
+                <TabsContent value="tech-architecture"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><TechArchitecture /></CardContent></Card></TabsContent>
+                <TabsContent value="revenue-model"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><RevenueModel /></CardContent></Card></TabsContent>
+                <TabsContent value="offer"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><config.Offer /></CardContent></Card></TabsContent>
+                <TabsContent value="pitch"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><PitchDeck /></CardContent></Card></TabsContent>
+                <TabsContent value="framework"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><Framework /></CardContent></Card></TabsContent>
+                <TabsContent value="emails"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><config.Emails /></CardContent></Card></TabsContent>
             </div>
         </Tabs>
     </div>
