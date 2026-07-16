@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -528,4 +529,3 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
     </div>
   );
 }
-

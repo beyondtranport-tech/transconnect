@@ -54,7 +54,7 @@ import AudienceOversightTable from '@/app/adminaccount/marketing/AudienceOversig
 const audienceConfig: Record<string, any> = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, type: 'partner' },
     isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, type: 'isa' },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Discovery: DiscoveryEngine, type: 'supplier' },
+    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Discovery: DiscoveryEngine, type: 'supplier', Management: PartnerManagement },
     transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Discovery: TransporterDiscovery, type: 'transporter' },
     investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, type: 'investor' },
     developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, type: 'developer' },
