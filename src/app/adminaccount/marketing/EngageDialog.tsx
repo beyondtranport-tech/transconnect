@@ -59,43 +59,42 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * UTILITY: HIERARCHICAL CONTACT RESOLVER (Email & Mobile)
+ * UTILITY: HIERARCHICAL CONTACT RESOLVER (Email, Mobile, WhatsApp)
  */
 function resolveContact(partner: any) {
-    if (!partner) return { name: 'Partner', email: '', mobile: '' };
+    if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
     const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None' && val.length > 5;
 
+    let resolved = { 
+        name: 'Partner', 
+        email: '', 
+        mobile: '', 
+        whatsapp: partner.whatsapp || '' 
+    };
+
     // 1. Marketing Manager (Primary)
     if (isValid(partner.marketingManager?.email)) {
-        return { 
-            name: partner.marketingManager.name || 'Partner', 
-            email: partner.marketingManager.email,
-            mobile: partner.marketingManager.mobile || partner.mobile || partner.phone || ''
-        };
+        resolved.name = partner.marketingManager.name || 'Partner';
+        resolved.email = partner.marketingManager.email;
+        resolved.mobile = partner.marketingManager.mobile || partner.mobile || partner.phone || '';
     }
-
     // 2. CEO (Fallback)
-    if (isValid(partner.ceo?.email)) {
-        return { 
-            name: partner.ceo.name || 'Partner', 
-            email: partner.ceo.email,
-            mobile: partner.ceo.mobile || partner.mobile || partner.phone || ''
-        };
+    else if (isValid(partner.ceo?.email)) {
+        resolved.name = partner.ceo.name || 'Partner';
+        resolved.email = partner.ceo.email;
+        resolved.mobile = partner.ceo.mobile || partner.mobile || partner.phone || '';
     }
-
     // 3. Legacy / General
-    const legacyEmail = partner.email || partner.email_address || partner.contact_email;
-    const legacyMobile = partner.mobile || partner.phone || partner.telephone_number || '';
-    if (isValid(legacyEmail)) {
-        return { 
-            name: partner.contactPerson || partner.firstName || 'Partner', 
-            email: legacyEmail,
-            mobile: legacyMobile
-        };
+    else {
+        const legacyEmail = partner.email || partner.email_address || partner.contact_email;
+        const legacyMobile = partner.mobile || partner.phone || partner.telephone_number || '';
+        resolved.name = partner.contactPerson || partner.firstName || 'Partner';
+        resolved.email = isValid(legacyEmail) ? legacyEmail : '';
+        resolved.mobile = legacyMobile;
     }
 
-    return { name: 'Partner', email: '', mobile: legacyMobile };
+    return resolved;
 }
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
@@ -189,7 +188,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         if (channel === 'whatsapp') {
             const rawText = contentElement.innerText || contentElement.textContent || '';
-            const cleanNumber = contact.mobile.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
+            // PRIORITY: Use dedicated whatsapp number if available
+            const targetNumber = contact.whatsapp || contact.mobile;
+            const cleanNumber = targetNumber.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
             const encodedText = encodeURIComponent(rawText);
             const waUrl = `https://wa.me/${cleanNumber}?text=${encodedText}`;
             
@@ -270,6 +271,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                            <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No email'}</span>
                            <span className="text-muted-foreground mx-1">|</span>
                            <span className={cn("font-medium", !contact.mobile ? "text-destructive" : "text-muted-foreground")}>{contact.mobile || 'No mobile'}</span>
+                           {contact.whatsapp && contact.whatsapp !== contact.mobile && (
+                               <>
+                                   <span className="text-muted-foreground mx-1">|</span>
+                                   <span className="font-bold text-green-600 flex items-center gap-1"><Smartphone className="h-3 w-3"/>WhatsApp: {contact.whatsapp}</span>
+                               </>
+                           )}
                         </div>
                     </div>
                     <div className="flex items-center gap-4 text-left">
@@ -281,7 +288,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             </div>
                         )}
                         <div className="flex gap-2">
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-green-200 hover:bg-green-50 text-green-600" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || isDispatching || !contact.mobile}>
+                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-green-200 hover:bg-green-50 text-green-600" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || isDispatching || (!contact.mobile && !contact.whatsapp)}>
                                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4 text-green-600" />} WhatsApp
                             </Button>
                              <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !contact.email}>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -73,6 +74,7 @@ const leadSchema = z.object({
   email: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   mobile: z.string().nullable().optional(),
+  whatsapp: z.string().nullable().optional(),
   role: z.string().nullable().optional(),
   status: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
@@ -104,6 +106,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           email: defaultValues?.email || '',
           phone: defaultValues?.phone || '',
           mobile: defaultValues?.mobile || '',
+          whatsapp: defaultValues?.whatsapp || '',
           role: defaultValues?.role || '',
           status: 'new',
           notes: '',
@@ -150,6 +153,10 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                     <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem>)} />
                     <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem>)} />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                    <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile (Principal)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="whatsapp" render={({ field }) => (<FormItem className="text-left"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                 <FormField control={form.control} name="status" render={({ field }) => (
@@ -384,7 +391,7 @@ function LeadsDatabaseComponent() {
                     <Button variant="outline" className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-56 p-2 text-left text-foreground">
-                    <div className="space-y-1 text-left">
+                    <div className="space-y-1 text-left text-foreground">
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                     </div>

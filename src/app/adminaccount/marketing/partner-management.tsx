@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail, MapPin, Info, Building, Zap
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Phone, Tag, ShieldAlert, Smartphone, Mail, MapPin, Info, Building, Zap, MessageCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -69,6 +69,7 @@ const partnerSchema = z.object({
   email: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   mobile: z.string().nullable().optional(),
+  whatsapp: z.string().nullable().optional(),
   contactPerson: z.string().nullable().optional(),
   companyName: z.string().nullable().optional(),
   industrial_category: z.string().nullable().optional(),
@@ -95,7 +96,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: targetType, website: '', notes: '', address: '', minedServiceWording: '', marketingManager: { name: '', email: '', mobile: '' }, ceo: { name: '', email: '', mobile: '' } });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', whatsapp: '', contactPerson: '', companyName: '', status: 'new', type: targetType, website: '', notes: '', address: '', minedServiceWording: '', marketingManager: { name: '', email: '', mobile: '' }, ceo: { name: '', email: '', mobile: '' } });
     }
   }, [open, partner, form, targetType]);
 
@@ -141,6 +142,10 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                             <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
                             <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem> )} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
+                            <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="whatsapp" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input placeholder="+27..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
