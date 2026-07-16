@@ -9,7 +9,6 @@ export const dynamic = 'force-dynamic';
 /**
  * Resilient Serialization Utility
  * Recursively sanitizes Firestore objects to ensure clean JSON transmission.
- * Prevents "Failed to fetch" errors caused by non-serializable circular references or custom objects.
  */
 function serializeTimestamps(docData: any): any {
     if (docData === null || docData === undefined) return docData;
@@ -18,7 +17,6 @@ function serializeTimestamps(docData: any): any {
         return docData.toDate().toISOString();
     }
     
-    // Handle hidden FieldValue objects (e.g. serverTimestamp)
     if (docData && typeof docData === 'object' && docData.constructor?.name === 'FieldValue') {
         return new Date().toISOString(); 
     }
@@ -101,15 +99,12 @@ export async function POST(req: NextRequest) {
             }
 
             case 'searchRegistry': {
-                const { type, term, outreachFilter, limit = 100 } = payload;
-                let collectionName = (type === 'all' || type === 'lead') ? 'leads' : 'partners';
+                const { type: queryType, term, limit = 100 } = payload;
+                const collectionName = (queryType === 'all' || queryType === 'lead') ? 'leads' : 'partners';
                 let q: any = db.collection(collectionName);
                 
-                if (collectionName === 'partners' && type !== 'all' && type !== 'supplier') {
-                    q = q.where('type', '==', type);
-                } else if (collectionName === 'partners' && type === 'supplier') {
-                    // For suppliers, fetch all unless a specific sub-category is passed
-                    q = q.where('type', '==', 'supplier');
+                if (collectionName === 'partners' && queryType !== 'all') {
+                    q = q.where('type', '==', queryType);
                 }
 
                 const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limit, 20000)).get();
@@ -118,55 +113,13 @@ export async function POST(req: NextRequest) {
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     results = results.filter((r: any) => 
-                        (r.companyName || r.company_name || '').toLowerCase().includes(lowTerm) || 
+                        (r.companyName || '').toLowerCase().includes(lowTerm) || 
                         (r.email || '').toLowerCase().includes(lowTerm) ||
                         (r.industrial_tags || []).some((t: string) => t.toLowerCase().includes(lowTerm))
                     );
                 }
 
-                if (outreachFilter === 'none') {
-                    results = results.filter((r: any) => !r.lastOutreachAt);
-                }
-
                 return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, collection: colOverride, type, subject, notes } = payload;
-                const colName = colOverride || 'partners';
-                const partnerRef = db.collection(colName).doc(partnerId);
-
-                const logRef = partnerRef.collection('communications').doc();
-                await logRef.set({
-                    id: logRef.id,
-                    type: type || 'Note',
-                    subject: subject || 'Interaction',
-                    notes: notes || '',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-
-                await partnerRef.update({
-                    status: 'contacted',
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const colName = isLead ? 'leads' : 'partners';
-                const partnerRef = db.collection(colName).doc(partnerId);
-
-                await partnerRef.update({
-                    status: 'contacted',
-                    lastEnrichmentStatus: 'initiated',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                return NextResponse.json({ success: true });
             }
 
             case 'getMembers': {
@@ -190,6 +143,30 @@ export async function POST(req: NextRequest) {
                 const { partnerId, source } = payload;
                 const colName = source === 'Lead' ? 'leads' : 'partners';
                 await db.collection(colName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, collection: colOverride, type, subject, notes } = payload;
+                const colName = colOverride || 'partners';
+                const partnerRef = db.collection(colName).doc(partnerId);
+
+                const logRef = partnerRef.collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type: type || 'Note',
+                    subject: subject || 'Interaction',
+                    notes: notes || '',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+
+                await partnerRef.update({
+                    status: 'contacted',
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
                 return NextResponse.json({ success: true });
             }
 
