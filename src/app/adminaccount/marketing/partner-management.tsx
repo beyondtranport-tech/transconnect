@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -71,6 +72,7 @@ const partnerSchema = z.object({
   contactPerson: z.string().nullable().optional(),
   companyName: z.string().nullable().optional(),
   industrial_category: z.string().nullable().optional(),
+  industrial_tags: z.array(z.string()).optional().default([]),
   status: z.string().nullable().optional(),
   type: z.string().nullable().optional(), 
   website: z.string().nullable().optional(),
@@ -224,6 +226,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
     industrial_category: true,
+    industrial_tags: true,
     accountLead: true,
     email: true,
     outreach: true,
@@ -306,7 +309,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       },
       { 
           id: 'industrial_category',
-          header: 'Industrial Category', 
+          header: 'Trade', 
           cell: ({row}) => {
               const cat = row.original.industrial_category || row.original.category;
               const label = (cat && cat.trim().toLowerCase() !== type.toLowerCase()) ? cat : 'General';
@@ -317,11 +320,22 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               );
           }
       },
+      {
+        accessorKey: 'industrial_tags',
+        header: 'Specialized Tags',
+        cell: ({row}) => (
+            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                {(row.original.industrial_tags || []).map((tag: string) => (
+                    <Badge key={tag} variant="outline" className="text-[8px] h-3.5 px-1 font-black bg-muted/50 text-foreground border-none uppercase">{tag}</Badge>
+                ))}
+            </div>
+        )
+      },
       { 
           id: 'accountLead',
           header: 'Account Lead',
           cell: ({ row }) => (
-            <div className="text-sm font-medium text-left">
+            <div className="text-sm font-medium text-left text-foreground">
                 {row.original.marketingManager?.name || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}
             </div>
           )
@@ -343,7 +357,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
-                  <div className="flex flex-col text-left">
+                  <div className="flex flex-col text-left text-foreground">
                       <div className="flex items-center gap-1">
                         <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
                         <TooltipProvider>
@@ -374,7 +388,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
         accessorKey: 'status', 
         header: 'Status & Intelligence', 
         cell: ({ row }) => (
-            <div className="flex flex-col gap-1 text-left">
+            <div className="flex flex-col gap-1 text-left text-foreground">
                 <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
                 {row.original.enhancementMethod && (
                     <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
@@ -388,7 +402,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           id: 'actions', 
           header: <div className="text-right">Actions</div>, 
           cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1">
+            <div className="flex justify-end items-center gap-1 text-foreground">
               <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
               <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
               <AddCommunicationLogDialog partnerId={row.original.id} collection={row.original.source === 'Lead' ? 'leads' : 'partners'} onLogAdded={() => fetchData()} />
@@ -436,15 +450,15 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
 
       <div className="space-y-6 text-left text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><Database /> {audienceLabel} Registry</CardTitle><CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left text-foreground">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
                   <Popover>
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground">
-                          <div className="space-y-1 text-left text-foreground">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground">
+                          <div className="space-y-1 text-left text-foreground text-foreground">
                               {Object.keys(visibleColumns).map(col => (
                                   <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                       <span>{col.replace(/([A-Z])/g, ' $1')}</span>
@@ -497,7 +511,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       </div>
                   </div>
                   {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                      <div className="space-y-6 text-left text-foreground">
+                      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
                                <div className="flex justify-center pt-4">

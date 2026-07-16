@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,6 +11,7 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { downloadDataAsCSV, cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 // Content components
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -60,7 +62,7 @@ const audienceConfig: Record<string, any> = {
     drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DriverDiscovery, type: 'driver' },
     finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Discovery: FinanceDiscovery, type: 'finance' },
     warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: WarehouseDiscovery, type: 'warehouse' },
-    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DistributionDiscovery, type: 'distributor' },
+    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DistributionDiscovery, type: 'distributor', Management: PartnerManagement },
     loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: LoadsDiscovery, type: 'loads' },
     'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: BuySellDiscovery, type: 'buy-sell' },
 };
@@ -76,7 +78,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   
   if (!config) return <div className="p-12 text-center italic">Audience configuration for "{audience}" not found.</div>;
 
-  const { Offer, Emails, Discovery, type } = config;
+  const { Offer, Emails, Discovery, type, Management } = config;
 
   return (
     <div className="space-y-6 text-left text-foreground">
