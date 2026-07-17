@@ -38,6 +38,8 @@ function serializeTimestamps(docData: any): any {
     return docData;
 }
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -103,10 +105,14 @@ export async function POST(req: NextRequest) {
 
             case 'dispatchEngagement': {
                 const { partnerId, email, subject, html, collection: colOverride } = payload;
-                if (!email || !subject || !html) throw new Error("Missing mandatory email data.");
+                
+                if (!email || !emailRegex.test(email)) {
+                    throw new Error("Dispatch Aborted: Recipient address is missing or invalid.");
+                }
+                if (!subject || !html) throw new Error("Missing mandatory content.");
 
                 const apiKey = process.env.SENDGRID_API_KEY;
-                if (!apiKey) throw new Error("Transactional Email API not configured on server (SENDGRID_API_KEY missing).");
+                if (!apiKey) throw new Error("Transactional Email API not configured (SENDGRID_API_KEY missing).");
 
                 sgMail.setApiKey(apiKey);
                 const msg = {
@@ -130,7 +136,6 @@ export async function POST(req: NextRequest) {
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
 
-                // Log the communication
                 const logRef = partnerRef.collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
@@ -140,7 +145,6 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp()
                 });
 
-                // Update outreach status
                 await partnerRef.update({
                     status: 'contacted',
                     lastOutreachSubject: subject,

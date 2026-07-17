@@ -58,6 +58,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /**
  * UTILITY: HIERARCHICAL CONTACT RESOLVER (Email, Mobile, WhatsApp)
  * Normalizes production domain for all public-facing links.
@@ -65,7 +67,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
-    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None' && val.length > 5;
+    const isValid = (val: any) => !!val && typeof val === 'string' && val !== 'N/A' && val !== 'null' && val !== 'None' && val.length > 5;
 
     let resolved = { 
         name: 'Partner', 
@@ -93,6 +95,11 @@ function resolveContact(partner: any) {
         resolved.name = partner.contactPerson || partner.firstName || 'Partner';
         resolved.email = isValid(legacyEmail) ? legacyEmail : '';
         resolved.mobile = legacyMobile;
+    }
+
+    // Secondary Check: If email is still just a placeholder or invalid format, null it out
+    if (!emailRegex.test(resolved.email)) {
+        resolved.email = '';
     }
 
     return resolved;
@@ -262,7 +269,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50">
-                <div className="flex justify-between items-center text-left">
+                <div className="flex justify-between items-center text-left text-foreground">
                     <div className="text-left space-y-1">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
