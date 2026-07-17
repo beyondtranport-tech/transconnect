@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 /**
  * Resilient Serialization Utility
  * Recursively sanitizes Firestore objects to ensure clean JSON transmission.
+ * Hardened to prevent "Failed to parse stream" errors on the client.
  */
 function serializeTimestamps(docData: any): any {
     if (docData === null || docData === undefined) return docData;

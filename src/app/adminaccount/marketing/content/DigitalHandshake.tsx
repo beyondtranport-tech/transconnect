@@ -8,7 +8,7 @@ import React, { useMemo } from "react";
  * Hardened to use professional production domain for links.
  */
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
-    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
+    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None' && val.length > 5;
 
     // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
     const resolvedName = useMemo(() => {
@@ -20,7 +20,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
     const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
     
-    // Hardened Base URL to bypass development workstation redirects
+    // Normalized Base URL for production reliability
     const baseUrl = 'https://logisticsflow.co.za';
     const optInLink = `${baseUrl}/opt-in/${partner?.id || 'PROSPECT'}`;
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
@@ -54,7 +54,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
                 <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
                     <li style={{ marginBottom: '7pt' }}><strong>Automated Deal-Flow:</strong> Receive high-intent enquiries pre-filtered to match your lending mandate.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Forensic Verification:</strong> Every application includes verified RC1 fleet data and human identity confirmation.</li>
-                    <li style={{ marginBottom: '7pt' }}><strong>Digital Documentation:</strong> All required documents (RC1, KYC, FICA) are uploaded seamlessly by the borrower and are available for instant download.</li>
+                    <li style={{ marginBottom: '7pt' }}><strong>Digital Documentation:</strong> All required documents (RC1, KYC, FICA) are available for instant download.</li>
                     <li style={{ marginBottom: '7pt' }}><strong>Digital Credit Scoring:</strong> Utilize platform-native performance data to de-risk your deployment.</li>
                 </ul>
 

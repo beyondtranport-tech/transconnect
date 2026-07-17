@@ -5,7 +5,7 @@ import React from "react";
 
 /**
  * STRATEGIC COMPANY PROFILE
- * Updated Base URL to professional domain.
+ * Normalized to professional production domain.
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
     const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
@@ -27,7 +27,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
 
     const baseUrl = 'https://logisticsflow.co.za';
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
-    const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}`;
+    const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}&ref=${partner?.id || 'SYSTEM'}`;
 
     return (
         <div style={{ 
