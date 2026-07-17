@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, Zap, ChevronLeft, ChevronRight, Send, ShieldCheck, ShieldAlert, CheckCircle2, MessageCircle, Smartphone, Info } from 'lucide-react';
+import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -47,8 +47,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V6
- * Scans ALL potential fields to find contact data, preventing greyed-out buttons.
+ * EXHAUSTIVE CONTACT RESOLVER V7
+ * Scans ALL potential fields to find contact data.
+ * Fixes the "greyed out" button issue by finding emails at the top level or sub-objects.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -62,19 +63,21 @@ function resolveContact(partner: any) {
     // 1. Resolve Best Name
     const name = clean(partner.marketingManager?.name || partner.ceo?.name || partner.contactPerson || partner.firstName || 'Partner');
 
-    // 2. Exhaustive Email Resolution
-    const email = clean(partner.marketingManager?.email) || 
+    // 2. Exhaustive Email Resolution (Check top-level registry field first)
+    const email = clean(partner.email) || 
+                  clean(partner.email_address) ||
+                  clean(partner.marketingManager?.email) || 
                   clean(partner.ceo?.email) || 
-                  clean(partner.email) || 
-                  clean(partner.email_address) || '';
+                  '';
 
     // 3. Exhaustive Mobile Resolution
-    const mobile = clean(partner.marketingManager?.mobile) || 
+    const mobile = clean(partner.mobile) || 
+                   clean(partner.phone) || 
+                   clean(partner.marketingManager?.mobile) || 
                    clean(partner.ceo?.mobile) || 
-                   clean(partner.mobile) || 
-                   clean(partner.phone) || '';
+                   '';
 
-    // 4. WhatsApp Priority
+    // 4. WhatsApp Priority Protocol
     const whatsapp = clean(partner.whatsapp) || mobile;
 
     return { name, email, mobile, whatsapp };
@@ -202,7 +205,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <div className="flex items-center gap-2 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
                            <span className="text-muted-foreground">•</span>
-                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No Email Mapped'}</span>
+                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No Email Found'}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
