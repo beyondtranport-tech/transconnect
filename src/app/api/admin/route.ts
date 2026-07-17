@@ -59,7 +59,8 @@ export async function POST(req: NextRequest) {
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         const body = await req.json();
-        const { action, payload } = body;
+        const action = (body.action || '').trim();
+        const payload = body.payload || {};
 
         switch (action) {
             case 'savePartner': {
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
                 if (!email || !subject || !html) throw new Error("Missing mandatory email data.");
 
                 const apiKey = process.env.SENDGRID_API_KEY;
-                if (!apiKey) throw new Error("Transactional Email API not configured on server.");
+                if (!apiKey) throw new Error("Transactional Email API not configured on server (SENDGRID_API_KEY missing).");
 
                 sgMail.setApiKey(apiKey);
                 const msg = {
@@ -119,7 +120,12 @@ export async function POST(req: NextRequest) {
                     }
                 };
 
-                await sgMail.send(msg);
+                try {
+                    await sgMail.send(msg);
+                } catch (sgError: any) {
+                    const detailedError = sgError.response?.body?.errors?.[0]?.message || sgError.message;
+                    throw new Error(`SendGrid Error: ${detailedError}`);
+                }
 
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
@@ -243,6 +249,7 @@ export async function POST(req: NextRequest) {
         }
     } catch (error: any) {
         console.error(`Admin API Error:`, error);
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+        const errorMessage = error.response?.body?.errors?.[0]?.message || error.message || "An unknown server error occurred.";
+        return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
     }
 }

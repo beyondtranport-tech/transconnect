@@ -76,67 +76,77 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const [activeTab, setActiveTab] = useState('management');
   const { toast } = useToast();
   
-  if (!config) return <div className="p-12 text-center italic">Audience configuration for "{audience}" not found.</div>;
+  if (!config) return <div className="p-12 text-center italic text-muted-foreground">Audience configuration for "{audience}" not found.</div>;
 
   const { type } = config;
 
   return (
     <div className="space-y-6 text-left text-foreground">
-        <div className="text-left text-foreground">
-            <h1 className="text-3xl font-black font-headline text-left text-foreground">{config.title} Command Hub</h1>
-            <p className="text-muted-foreground text-left text-foreground">Manage your dataset, bridge gaps with AI, and oversee industrial engagement.</p>
+        <div className="text-left">
+            <h1 className="text-3xl font-black font-headline text-foreground">{config.title} Command Hub</h1>
+            <p className="text-muted-foreground">Manage your dataset, bridge gaps with AI, and oversee industrial engagement.</p>
         </div>
 
         <Tabs value={activeTab} className="w-full text-left" onValueChange={setActiveTab}>
-            <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-left text-foreground">
-                <TabsTrigger value="management" className="gap-2"><Database className="h-3.5 w-3.5" /> Registry (CRM)</TabsTrigger>
-                {config.Discovery && <TabsTrigger value="discovery" className="gap-2"><Sparkles className="h-3.5 w-3.5" /> Discovery (AI)</TabsTrigger>}
-                <TabsTrigger value="bridge" className="gap-2 text-primary"><Zap className="h-3.5 w-3.5" /> Forensic Bridge</TabsTrigger>
-                <TabsTrigger value="oversight" className="gap-2"><Search className="h-3.5 w-3.5" /> Oversight</TabsTrigger>
+            <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-foreground">
+                <TabsTrigger value="management" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px]">
+                    <Database className="h-3.5 w-3.5" /> Registry (CRM)
+                </TabsTrigger>
+                {config.Discovery && (
+                    <TabsTrigger value="discovery" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px]">
+                        <Sparkles className="h-3.5 w-3.5" /> Discovery (AI)
+                    </TabsTrigger>
+                )}
+                <TabsTrigger value="bridge" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px] text-primary">
+                    <Zap className="h-3.5 w-3.5" /> Forensic Bridge
+                </TabsTrigger>
+                <TabsTrigger value="oversight" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px]">
+                    <Search className="h-3.5 w-3.5" /> Oversight
+                </TabsTrigger>
                 <Separator orientation="vertical" className="mx-2 h-6" />
-                <TabsTrigger value="company-profile">Profile</TabsTrigger>
-                <TabsTrigger value="tech-architecture">Tech</TabsTrigger>
-                <TabsTrigger value="revenue-model">Revenue</TabsTrigger>
-                <TabsTrigger value="offer">Offer</TabsTrigger>
-                <TabsTrigger value="pitch">Pitch</TabsTrigger>
-                <TabsTrigger value="framework">Framework</TabsTrigger>
-                <TabsTrigger value="emails">Emails</TabsTrigger>
+                <TabsTrigger value="company-profile" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Profile</TabsTrigger>
+                <TabsTrigger value="tech-architecture" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Tech</TabsTrigger>
+                <TabsTrigger value="revenue-model" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Revenue</TabsTrigger>
+                <TabsTrigger value="offer" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Offer</TabsTrigger>
+                <TabsTrigger value="pitch" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Pitch</TabsTrigger>
+                <TabsTrigger value="framework" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Framework</TabsTrigger>
+                <TabsTrigger value="emails" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Emails</TabsTrigger>
             </TabsList>
 
-            <div className="mt-6 text-left text-foreground">
+            <div className="mt-6 text-left">
                 <TabsContent value="management">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
                         <PartnerManagement type={type} />
                     </div>
                 </TabsContent>
 
                 {config.Discovery && (
                     <TabsContent value="discovery">
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
                             <config.Discovery />
                         </div>
                     </TabsContent>
                 )}
 
                 <TabsContent value="bridge">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
                         <ForensicBridge audience={audience} />
                     </div>
                 </TabsContent>
 
                 <TabsContent value="oversight">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
+                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
                         <AudienceOversightTable audience={audience} />
                     </div>
                 </TabsContent>
 
-                <TabsContent value="company-profile"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
-                <TabsContent value="tech-architecture"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><TechArchitecture /></CardContent></Card></TabsContent>
-                <TabsContent value="revenue-model"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><RevenueModel /></CardContent></Card></TabsContent>
-                <TabsContent value="offer"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><config.Offer /></CardContent></Card></TabsContent>
-                <TabsContent value="pitch"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><PitchDeck /></CardContent></Card></TabsContent>
-                <TabsContent value="framework"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><Framework /></CardContent></Card></TabsContent>
-                <TabsContent value="emails"><Card className="border-none shadow-xl text-left"><CardContent className="p-8 text-left text-foreground"><config.Emails /></CardContent></Card></TabsContent>
+                <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
+                <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8"><TechArchitecture /></CardContent></Card></TabsContent>
+                <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8"><RevenueModel /></CardContent></Card></TabsContent>
+                <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8"><config.Offer /></CardContent></Card></TabsContent>
+                <TabsContent value="pitch"><Card className="border-none shadow-xl"><CardContent className="p-8"><PitchDeck /></CardContent></Card></TabsContent>
+                <TabsContent value="framework"><Card className="border-none shadow-xl"><CardContent className="p-8"><Framework /></CardContent></Card></TabsContent>
+                <TabsContent value="emails"><Card className="border-none shadow-xl"><CardContent className="p-8"><config.Emails /></CardContent></Card></TabsContent>
             </div>
         </Tabs>
     </div>

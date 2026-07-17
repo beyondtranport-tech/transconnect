@@ -43,14 +43,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         cache: 'no-store'
     });
     
-    const text = await response.text();
-    let result;
-    try {
-        result = JSON.parse(text);
-    } catch (e) {
-        throw new Error(`Server error: ${text.slice(0, 100)}`);
-    }
-
+    const result = await response.json();
     if (!response.ok || !result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
