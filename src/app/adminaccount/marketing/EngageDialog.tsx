@@ -47,9 +47,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V10
+ * EXHAUSTIVE CONTACT RESOLVER V11
  * Performs an ultra-resilient deep-scan of the record to find valid contact nodes.
- * Prioritizes dedicated WhatsApp lines and handles diverse field naming conventions.
+ * Specifically handles varied field naming from imports and enrichment.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -58,16 +58,16 @@ function resolveContact(partner: any) {
         if (!val) return '';
         const v = String(val).trim();
         const low = v.toLowerCase();
-        // Strict suppression of placeholders and masked strings
+        // Strict suppression of placeholders
         if (!v || low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined' || low === '[locked]' || low.includes('locked@')) return '';
         return v;
     };
 
-    // 1. Resolve Identity Narrative
+    // 1. Resolve Identity
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
-                       partner.contact_person || 
                        partner.contactPerson || 
+                       partner.contact_person || 
                        partner.firstName || 
                        'Partner');
 
@@ -75,13 +75,17 @@ function resolveContact(partner: any) {
     const email = clean(partner.email || 
                         partner.email_address || 
                         partner.emailAddress || 
+                        partner.contactEmail || 
                         partner.contact_email || 
+                        partner.workEmail || 
+                        partner.work_email || 
                         partner.marketingManager?.email || 
                         partner.ceo?.email || 
                         '');
 
     // 3. EXHAUSTIVE PHONE SCAN
     const mobile = clean(partner.mobile || 
+                         partner.whatsapp || 
                          partner.phone || 
                          partner.telephone || 
                          partner.contact_number || 

@@ -291,7 +291,7 @@ function LeadsDatabaseComponent() {
       toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
     } finally {
       setIsDeleteAlertOpen(false);
-      deleteLead(null);
+      setDeleteLead(null);
     }
   }
 
@@ -370,7 +370,7 @@ function LeadsDatabaseComponent() {
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
         <AlertDialogContent className="text-left text-foreground text-left text-foreground text-foreground text-foreground">
-          <AlertDialogHeader className="text-left text-foreground text-left text-foreground text-foreground"><AlertDialogTitle className="text-left">Delete Lead?</AlertDialogTitle><AlertDialogDescription className="text-left">This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader className="text-left text-foreground text-left text-foreground text-foreground text-foreground"><AlertDialogTitle className="text-left text-foreground text-left text-foreground text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -381,11 +381,11 @@ function LeadsDatabaseComponent() {
       <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
           <div className="text-left text-foreground text-left text-foreground text-foreground text-foreground">
-            <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>
             <CardDescription className="text-left text-muted-foreground text-left text-foreground text-foreground text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
           <div className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground">
-             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
+             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button variant="outline" className="text-left text-foreground text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
@@ -397,14 +397,14 @@ function LeadsDatabaseComponent() {
                     </div>
                 </PopoverContent>
             </Popover>
-            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
 
         <Card className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
             <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>
