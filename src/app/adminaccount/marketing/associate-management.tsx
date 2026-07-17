@@ -120,7 +120,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                     </div>
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
-                            <FormLabel>Pipeline Status</Label>
+                            <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
@@ -133,7 +133,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                             <FormMessage />
                         </FormItem> 
                     )} />
-                     <DialogFooter className="pt-4 border-t text-left text-foreground text-foreground">
+                     <DialogFooter className="pt-4 border-t text-left text-foreground">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
@@ -212,7 +212,7 @@ export default function AssociateManagement() {
           cell: ({row}) => (
               <div className="flex flex-col text-left">
                   <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left text-foreground text-foreground">
+                  <div className="flex items-center gap-2 mt-1 text-left text-foreground text-foreground text-foreground">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source}</Badge>
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Creator Node</Badge>
@@ -296,7 +296,7 @@ export default function AssociateManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+  }, [fetchData, handleEngage, visibleColumns, type]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -344,10 +344,10 @@ export default function AssociateManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1 text-left text-foreground">
+                        <div className="space-y-1 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="new">New Lead</SelectItem>
@@ -373,8 +373,8 @@ export default function AssociateManagement() {
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-foreground">Name, Agency or ID</Label>
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
                         </div>
-                        <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground text-foreground">
-                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground">
+                        <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground text-foreground text-foreground">
+                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-foreground text-foreground">
                                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin text-foreground"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
                             </Button>
                         </div>
@@ -411,12 +411,12 @@ export default function AssociateManagement() {
                     </div>
                 </CardHeader>
                 <Card className="text-left text-foreground text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New</SelectItem>
@@ -438,18 +438,18 @@ export default function AssociateManagement() {
                             <div className="space-y-1 text-left text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
+                            <div className="flex items-end text-left text-foreground text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
                                      <div className="flex justify-center pt-4">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground">
+                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records
                                         </Button>
@@ -464,4 +464,3 @@ export default function AssociateManagement() {
     </div>
   );
 }
-

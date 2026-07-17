@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
@@ -322,7 +323,7 @@ export default function AccountDashboard() {
                                     <CardDescription className="text-left">Apply directly to the Logistics Flow capital division.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-grow text-left text-foreground">
-                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Use this path for prioritized, rapid decisions based on your platform activity and verified fleet profile.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Use this path for prioritized, BFIs rapid decisions based on your platform activity and verified fleet profile.</p>
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-primary/10 text-left">
                                     <Button asChild className="w-full font-bold h-11 shadow-lg text-white" variant="default">

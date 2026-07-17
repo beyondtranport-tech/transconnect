@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -47,7 +48,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V7
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V8
  * High-fidelity scanner designed to handle every possible nomenclature.
  */
 function resolveContact(partner: any) {
@@ -79,7 +80,7 @@ function resolveContact(partner: any) {
         return '';
     };
 
-    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'workEmail', 'main_email'];
+    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'workEmail', 'main_email', 'EMAIL'];
     const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone'];
 
     const name = clean(partner.marketingManager?.name || 
@@ -269,7 +270,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Button
                             key={tab.id}
                             variant={activeTab === tab.id ? "secondary" : "ghost"}
-                            className={cn("w-full justify-start text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
+                            className={cn("w-full justify-start text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm")}
                             onClick={() => setActiveTab(tab.id)}
                         >
                             {tab.label}
