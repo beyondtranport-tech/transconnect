@@ -937,183 +937,6 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     );
 }
 
-function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }) {
-    const firestore = useFirestore();
-    const [isAdding, setIsAdding] = useState(false);
-    const collectionPath = mode === 'fleet' ? `companies/${shop.companyId}/assets` : `companies/${shop.companyId}/vehicleListings`;
-    const assetsQuery = useMemoFirebase(() => {
-        if (!firestore || !shop?.companyId) return null;
-        return query(collection(firestore, collectionPath), orderBy('createdAt', 'desc'));
-    }, [firestore, shop.companyId, collectionPath]);
-    const { data: assets, forceRefresh } = useCollection(assetsQuery);
-
-    return (
-        <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4">
-                <div className="text-left">
-                    <h3 className="text-xl font-black font-headline">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
-                    <p className="text-xs text-muted-foreground">Manage your RC1-vetted assets for this node.</p>
-                </div>
-                <Dialog open={isAdding} onOpenChange={setIsAdding}>
-                    <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Asset</Button></DialogTrigger>
-                    <AssetDialogContent shop={shop} mode={mode} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
-                </Dialog>
-            </div>
-            <div className="min-h-[300px]">
-                {assets && assets.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {assets.map(asset => (
-                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white">
-                                <div className="relative aspect-video bg-muted">
-                                    {asset.photoUrls?.[0] && <Image src={asset.photoUrls[0]} alt={asset.make} fill className="object-cover" />}
-                                    <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
-                                </div>
-                                <CardContent className="p-4 text-left">
-                                    <p className="font-bold text-sm">{asset.year} {asset.make} {asset.model}</p>
-                                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1">{asset.vClass || asset.location}</p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
-                        <Truck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No records found.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'fleet' | 'sale', onComplete: () => void }) {
-    const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
-    const form = useForm({ 
-        defaultValues: { photoUrls: [] as string[], rc1Url: '', licenseUrl: '', status: 'active', make: '', model: '', year: '', vClass: '', price: 0 } 
-    });
-
-    const onSubmit = async (values: any) => {
-        setLoading(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-            const collectionPath = mode === 'fleet' 
-                ? `companies/${shop.companyId}/assets` 
-                : `companies/${shop.companyId}/vehicleListings`;
-            
-            const res = await fetch('/api/addUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    collectionPath,
-                    data: { ...values, status: 'active', type: 'vehicle', createdAt: { _methodName: 'serverTimestamp' } }
-                })
-            });
-            if (!res.ok) throw new Error("Failed to register asset.");
-            toast({ title: mode === 'fleet' ? "Asset Registered" : "Listing Published" });
-            onComplete();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Error', description: e.message });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleMultiUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || !shop) return;
-        const urls: string[] = [...(form.getValues('photoUrls') || [])];
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-            const reader = new FileReader();
-            const dataUri = await new Promise<string>(res => {
-                reader.onload = () => res(reader.result as string);
-                reader.readAsDataURL(file);
-            });
-            const response = await fetch('/api/uploadImageAsset', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileDataUri: dataUri, folder: `fleet-photos/${shop.companyId}`, fileName: `photo_${Date.now()}_${file.name}` })
-            });
-            const result = await response.json();
-            if (response.ok) urls.push(result.url);
-        }
-        form.setValue('photoUrls', urls);
-    };
-
-    return (
-        <DialogContent className="sm:max-w-2xl text-left text-foreground">
-            <DialogHeader>
-                <DialogTitle>{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
-                <DialogDescription>Attach verified documents and technical specifics.</DialogDescription>
-            </DialogHeader>
-            <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem> )} />
-                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem> )} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                         <FormField control={form.control} name="year" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem> )} />
-                         {mode === 'fleet' ? (
-                             <FormField control={form.control} name="vClass" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel>Asset Class</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
-                                        <SelectContent>
-                                            <SelectItem value="Heavy Truck (Horse)">Heavy Truck (Horse)</SelectItem>
-                                            <SelectItem value="Trailer">Trailer</SelectItem>
-                                            <SelectItem value="Rigid Truck (8t-14t)">Rigid Truck (8t-14t)</SelectItem>
-                                            <SelectItem value="Light Commercial (Bakkie)">Light Commercial (Bakkie)</SelectItem>
-                                            <SelectItem value="Bus">Bus</SelectItem>
-                                            <SelectItem value="Passenger Vehicle">Passenger Vehicle</SelectItem>
-                                            <SelectItem value="Other">Other</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </FormItem>
-                             ) } />
-                         ) : (
-                            <FormField control={form.control} name="price" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem> )} />
-                         )}
-                    </div>
-
-                    <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Vehicle Gallery</Label>
-                        <div className="grid grid-cols-3 gap-2">
-                             {(form.watch('photoUrls') || []).map((url: string, i: number) => (
-                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
-                                     <Image src={url} alt="pic" fill className="object-cover" />
-                                 </div>
-                             ))}
-                             <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('multi-up')?.click()}>
-                                 <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center">Add Photo</span>
-                             </Button>
-                             <input type="file" id="multi-up" multiple className="hidden" onChange={handleMultiUpload} />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FileUploadField name="rc1Url" label="RC1 Doc" folder="fleet-docs" />
-                        <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
-                    </div>
-
-                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
-                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
-                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                            Commit to Node
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </FormProvider>
-        </DialogContent>
-    );
-}
-
 function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
@@ -1219,17 +1042,15 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         if (nodeType === 'transport') {
             return [
                 { id: 'identity', name: '1. Fleet Identity', component: <StepIdentity nodeType="transport" />, fields: ['shopName', 'category'] },
-                { id: 'roster', name: '2. Asset Roster', component: <StepAssetRegistry shop={shop} mode="fleet" />, fields: [] },
-                { id: 'rates', name: '3. Rate Sheet', component: <StepRateSheet />, fields: ['rateType', 'kmRate', 'routeRates'] },
-                { id: 'agreements', name: '4. Load Agreement', component: <StepLoadAgreement />, fields: ['contractType', 'monthlyLoadTarget'] },
-                { id: 'publish', name: '5. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+                { id: 'rates', name: '2. Rate Sheet', component: <StepRateSheet />, fields: ['rateType', 'kmRate', 'routeRates'] },
+                { id: 'agreements', name: '3. Load Agreement', component: <StepLoadAgreement />, fields: ['contractType', 'monthlyLoadTarget'] },
+                { id: 'publish', name: '4. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
         if (nodeType === 'buy-sell') {
             return [
                 { id: 'identity', name: '1. Dealer Identity', component: <StepIdentity nodeType="buy-sell" />, fields: ['shopName', 'category'] },
-                { id: 'inventory', name: '2. Vehicle Inventory', component: <StepAssetRegistry shop={shop} mode="sale" />, fields: [] },
-                { id: 'publish', name: '3. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
+                { id: 'publish', name: '2. Activate Hub', component: <StepPublish shop={shop} onSave={onUpdate} />, fields: [] },
             ];
         }
         if (nodeType === 'supplier' || nodeType === 'default') {
