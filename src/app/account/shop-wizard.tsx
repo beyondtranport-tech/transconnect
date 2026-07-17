@@ -140,7 +140,7 @@ function FileUploadField({
     };
 
     return (
-        <div className="space-y-2 text-left">
+        <div className="space-y-2 text-left text-foreground">
             {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1"> {label}</Label>}
             <Button type="button" variant="outline" className={cn("w-full min-h-[3rem] h-auto border-2 border-dashed py-2 whitespace-normal leading-tight", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
                 {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
@@ -156,7 +156,7 @@ function FileUploadField({
 function StepLegal() {
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <Gavel className="h-6 w-6 text-primary" />
                 Legal Authorization
             </h3>
@@ -212,7 +212,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                     </FormItem> 
                 )} />
                 <FormField control={control} name="category" render={({ field }) => ( 
-                    <FormItem className="text-left text-foreground">
+                    <FormItem className="text-left text-foreground text-foreground">
                         <FormLabel>Primary Node Classification</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl>
@@ -317,7 +317,7 @@ function StepWarehouseCapabilities() {
                     <Wrench className="h-6 w-6 text-primary" />
                     Capabilities & Equipment
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1 text-left">Detail the tools and services that define your operational value.</p>
+                <p className="text-sm text-muted-foreground mt-1 text-left text-foreground">Detail the tools and services that define your operational value.</p>
             </div>
 
             {renderCheckboxes('services', serviceOptions, "Available Services", ClipboardList)}
@@ -350,7 +350,7 @@ function StepWarehouseSecurity() {
                     <Shield className="h-6 w-6 text-primary" />
                     Security & Access Protocol
                 </h3>
-                <p className="text-sm text-muted-foreground mt-1 text-left">Provide forensic clarity on how cargo is protected within your node.</p>
+                <p className="text-sm text-muted-foreground mt-1 text-left text-foreground">Provide forensic clarity on how cargo is protected within your node.</p>
             </div>
 
             <div className="space-y-4 text-left text-foreground">
@@ -399,7 +399,7 @@ function StepWarehouseSecurity() {
                 <FormItem className="text-left text-foreground">
                     <FormLabel className="flex items-center gap-2 text-foreground"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
                     <FormControl><Input placeholder="e.g. Mon-Fri: 08:00 - 16:30, Sat: 08:00 - 12:00" {...field} className="h-10 border-2 bg-white" /></FormControl>
-                    <FormDescription className="text-[10px] text-left">Critical for haulier planning and matching.</FormDescription>
+                    <FormDescription className="text-[10px] text-left text-foreground">Critical for haulier planning and matching.</FormDescription>
                 </FormItem>
             )} />
         </div>
@@ -532,8 +532,8 @@ function StepBrokerageCommercials() {
                         </FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2 text-left">
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left text-foreground">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2 text-left text-foreground">
                         Platform Success Fee
                         <ShieldCheck className="h-3 w-3 text-primary" />
                     </p>
@@ -546,24 +546,24 @@ function StepBrokerageCommercials() {
 
             <Card className="border-none bg-slate-50 shadow-inner text-left">
                 <CardContent className="p-6 text-left text-foreground">
-                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
+                    <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left text-foreground">
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
-                    <div className="space-y-2 text-sm text-left">
+                    <div className="space-y-2 text-sm text-left text-foreground">
                         <div className="flex justify-between border-b pb-2 text-left text-foreground">
                             <span className="text-muted-foreground text-left">Total Load Value (Example)</span>
                             <span className="font-bold text-left">R 10,000.00</span>
                         </div>
                         <div className="flex justify-between border-b pb-2 text-left text-foreground">
                             <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
-                            <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
+                            <span className="font-bold text-green-600 text-left text-foreground">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2 text-left text-foreground">
                             <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
-                            <span className="font-bold text-slate-600 text-left">- R 250.00</span>
+                            <span className="font-bold text-slate-600 text-left text-foreground">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-left">
+                        <div className="flex justify-between pt-2 text-left text-foreground">
                             <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
                             <span className="font-black text-primary text-left">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
@@ -609,25 +609,25 @@ function StepRateSheet() {
 
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
                         <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
+                        <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white text-left" /></FormControl>
                     </FormItem>
                 )} />
             )}
 
             {rateType === 'route' && (
                 <div className="space-y-4 animate-in slide-in-from-top-2 text-left">
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center text-left">
                         <Label className="font-bold text-foreground">Common Route Rates</Label>
                         <Button type="button" size="sm" variant="outline" onClick={() => append({ origin: '', destination: '', price: 0 })}>
                             <PlusCircle className="h-4 w-4 mr-2" /> Add Route
                         </Button>
                     </div>
                     {fields.map((item, index) => (
-                        <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm">
+                        <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
@@ -644,11 +644,11 @@ function StepRateSheet() {
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-left text-foreground">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
                                     <FormItem className="flex-1 text-left">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
-                                        <FormControl><Input type="number" {...field} className="h-9 bg-white" /></FormControl>
+                                        <FormControl><Input type="number" {...field} className="h-9 bg-white text-left" /></FormControl>
                                     </FormItem>
                                 )} />
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="mb-0.5 text-destructive"><Trash2 className="h-4 w-4"/></Button>
@@ -673,15 +673,15 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground">Fixed volume per month.</span></div>
+                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left text-foreground">Fixed volume per month.</span></div>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground">Spot market bookings.</span></div>
+                                <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left text-foreground">Spot market bookings.</span></div>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -692,8 +692,8 @@ function StepLoadAgreement() {
                 <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
                     <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
                         <FormLabel>Committed Loads per Month</FormLabel>
-                        <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
-                        <FormDescription className="text-[10px] text-left">Your node will be prioritized for long-term contract matching.</FormDescription>
+                        <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white text-left" /></FormControl>
+                        <FormDescription className="text-[10px] text-left text-foreground">Your node will be prioritized for long-term contract matching.</FormDescription>
                     </FormItem>
                 )} />
             )}
@@ -742,17 +742,17 @@ function StepCommercials({ shop }: { shop: any }) {
                 Mall Commercials
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Standard Platform Rate</p>
-                    <p className="text-3xl font-black">2.5%</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Standard Platform Rate</p>
+                    <p className="text-3xl font-black text-left">2.5%</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
                 </div>
                 
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
-                    <p className="text-[10px] font-black uppercase text-primary tracking-widest">Your Proposal (%)</p>
-                    <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white" />
-                    <Button className="w-full h-10 font-bold text-white" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                    <p className="text-[10px] font-black uppercase text-primary tracking-widest text-left">Your Proposal (%)</p>
+                    <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white text-left" />
+                    <Button className="w-full h-10 font-bold text-white text-left" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
                         {isSubmitting ? <Loader2 className="animate-spin h-4 w-4"/> : <Zap className="mr-2 h-4 w-4" />}
                         {pendingAgreement ? 'Awaiting Evaluation' : 'Propose Rate'}
                     </Button>
@@ -760,15 +760,15 @@ function StepCommercials({ shop }: { shop: any }) {
             </div>
 
             {agreements && agreements.length > 0 && (
-                <div className="space-y-4">
-                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <div className="space-y-4 text-left">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
                     <DataTable 
                         data={agreements}
                         columns={[
-                            { accessorKey: 'percentage', header: 'Rate (%)', cell: ({row}) => <strong>{row.original.percentage}%</strong> },
+                            { accessorKey: 'percentage', header: 'Rate (%)', cell: ({row}) => <strong className="text-left text-foreground">{row.original.percentage}%</strong> },
                             { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'} className="capitalize">{row.original.status}</Badge> },
                             { header: 'Date', cell: ({row}) => formatDateSafe(row.original.createdAt) }
                         ]}
@@ -792,10 +792,10 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4">
-                <div className="text-left">
-                    <h3 className="text-xl font-black font-headline">Product Catalogue</h3>
-                    <p className="text-xs text-muted-foreground">List the items or services you sell directly in the Mall.</p>
+            <div className="flex justify-between items-center border-b pb-4 text-left">
+                <div className="text-left text-foreground">
+                    <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
+                    <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
                 <Dialog open={!!editingProduct} onOpenChange={(o) => { if (!o) setEditingProduct(null); }}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Product</Button></DialogTrigger>
@@ -803,12 +803,12 @@ function StepCatalog({ shop }: { shop: any }) {
                 </Dialog>
             </div>
             
-            <div className="min-h-[300px]">
+            <div className="min-h-[300px] text-left">
                 {products && products.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                         {products.map(p => (
-                            <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group">
-                                <div className="relative aspect-square bg-muted">
+                            <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left">
+                                <div className="relative aspect-square bg-muted text-left">
                                     {p.imageUrls?.[0] ? <Image src={p.imageUrls[0]} alt={p.name} fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="h-10 w-10 opacity-10" /></div>}
                                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                         <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setEditingProduct(p)}><Edit className="h-4 w-4"/></Button>
@@ -823,17 +823,17 @@ function StepCatalog({ shop }: { shop: any }) {
                                         }}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
-                                <CardContent className="p-4 text-left">
-                                    <p className="font-bold text-sm">{p.name}</p>
-                                    <p className="text-xs text-primary font-black mt-1">{formatCurrency(p.price)}</p>
+                                <CardContent className="p-4 text-left text-foreground">
+                                    <p className="font-bold text-sm text-left">{p.name}</p>
+                                    <p className="text-xs text-primary font-black mt-1 text-left">{formatCurrency(p.price)}</p>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
-                        <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">Catalog Empty</p>
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-left">
+                        <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-20 text-center" />
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">Catalog Empty</p>
                     </div>
                 )}
             </div>
@@ -897,36 +897,36 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
             <DialogHeader>
-                <DialogTitle>Product Management</DialogTitle>
-                <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
+                <DialogTitle className="text-left text-foreground">Product Management</DialogTitle>
+                <DialogDescription className="text-left text-foreground">Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
-                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-2 gap-4">
-                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left text-foreground">
+                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white text-left" /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white text-left" /></FormControl></FormItem>)} />
+                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white text-left" /></FormControl></FormItem>)} />
                     </div>
-                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white text-left" /></FormControl></FormItem>)} />
                     
-                    <div className="space-y-4">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
-                        <div className="grid grid-cols-4 gap-2">
+                    <div className="space-y-4 text-left text-foreground">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Product Images</Label>
+                        <div className="grid grid-cols-4 gap-2 text-left">
                              {(form.watch('imageUrls') || []).map((url: string, i: number) => (
                                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                                      <Image src={url} alt="pic" fill className="object-cover" />
                                  </div>
                              ))}
-                             <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('prod-img-up')?.click()}>
-                                 <Camera className="h-6 w-6 opacity-40" />
+                             <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed text-left" onClick={() => document.getElementById('prod-img-up')?.click()}>
+                                 <Camera className="h-6 w-6 opacity-40 text-center mx-auto" />
                                  <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center">Add Photo</span>
                              </Button>
                              <input type="file" id="prod-img-up" className="hidden" onChange={handleUpload} />
                         </div>
                     </div>
 
-                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
-                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
+                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left">
+                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white text-left">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit Product
                         </Button>
@@ -957,12 +957,12 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
     };
     return (
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left">
-            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
+            <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm text-center"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center">
-                <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-sm mx-auto leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+                <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
+                <p className="text-muted-foreground max-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
-            <div className="flex justify-center">
+            <div className="flex justify-center text-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
                   {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-4 w-4"/>}
                   Activate Commercial Hub
@@ -979,7 +979,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     const [currentStep, setCurrentStep] = useState(0);
     const [isSaving, setIsSaving] = useState(false);
 
-    // RESET STEP ON NODE TYPE SWITCH
     useEffect(() => {
         setCurrentStep(0);
     }, [nodeType]);
@@ -1084,10 +1083,10 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     const currentStepConfig = wizardSteps[currentStep];
 
-    if (wizardSteps.length === 0) return <div className="flex flex-col items-center justify-center p-20 text-center text-foreground gap-4"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto"/><p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Initializing Terminal Module...</p></div>;
+    if (wizardSteps.length === 0) return <div className="flex flex-col items-center justify-center p-20 text-center text-foreground gap-4"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto text-center"/><p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Initializing Terminal Module...</p></div>;
 
     return (
-        <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+        <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground text-foreground">
             <CardHeader className="bg-slate-50 border-b p-6 text-left">
                 <div className="text-left text-foreground">
                     <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
@@ -1112,14 +1111,14 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px] text-left">
+                        <div className="p-10 min-h-[500px] text-left text-foreground">
                             {currentStepConfig ? (
-                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
                                     {currentStepConfig.component}
                                 </div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-                                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto text-center" />
                                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Initializing Module...</p>
                                 </div>
                             )}
@@ -1146,11 +1145,11 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                             onUpdate();
                         } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
                         finally { setIsSaving(false); }
-                    })} disabled={isSaving} className="font-bold text-foreground">
+                    })} disabled={isSaving} className="font-bold text-foreground text-left">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
-                        <Button type="button" onClick={handleNext} className="font-bold px-8 text-white">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                        <Button type="button" onClick={handleNext} className="font-bold px-8 text-white text-left">Continue <ArrowRight className="ml-2 h-4 w-4"/></Button>
                     )}
                 </div>
             </CardFooter>

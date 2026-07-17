@@ -48,14 +48,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 /**
  * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER
- * Scans all possible data nodes for email and phone numbers.
+ * Scans all possible data nodes for email and phone numbers, ensuring compatibility with all import formats.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
     const clean = (val: any) => {
-        if (!val || typeof val !== 'string') return '';
-        const v = val.trim();
+        if (!val) return '';
+        const v = String(val).trim();
         const low = v.toLowerCase();
         const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email'];
         if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return '';
@@ -69,7 +69,7 @@ function resolveContact(partner: any) {
                 const c = clean(obj[k]);
                 if (c) return c;
             }
-            // Case-insensitive fallback
+            // Case-insensitive fallback for keys
             for (const actualKey in obj) {
                 if (actualKey.toLowerCase() === k.toLowerCase()) {
                     const c = clean(obj[actualKey]);
@@ -80,8 +80,8 @@ function resolveContact(partner: any) {
         return '';
     };
 
-    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'EMAIL', 'workEmail', 'main_email', 'work_email'];
-    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'tel', 'cell_number'];
+    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'EMAIL', 'workEmail', 'main_email', 'work_email', 'E-mail', 'Business Email'];
+    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'tel', 'cell_number', 'Work Phone'];
 
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
@@ -220,26 +220,26 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
-            <DialogHeader className="p-6 border-b bg-muted/50">
+            <DialogHeader className="p-6 border-b bg-muted/50 text-left">
                 <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1 text-foreground">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
-                        <div className="flex items-center gap-3 text-sm">
+                        <div className="flex items-center gap-3 text-sm text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
-                           <div className="flex items-center gap-2 text-muted-foreground">
+                           <div className="flex items-center gap-2 text-muted-foreground text-left">
                                <Mail className={cn("h-3.5 w-3.5", hasEmail && "text-blue-600")} />
                                <span className={cn("font-medium", !hasEmail && "text-destructive italic")}>{contact.email || 'Address Missing'}</span>
                            </div>
-                           <div className="flex items-center gap-2 text-muted-foreground border-l pl-3">
+                           <div className="flex items-center gap-2 text-muted-foreground border-l pl-3 text-left">
                                <Smartphone className={cn("h-3.5 w-3.5", hasPhone && "text-green-600")} />
                                <span className={cn("font-bold", hasPhone && "text-green-600")}>{contact.whatsapp || 'Number Missing'}</span>
                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-left">
                         <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
@@ -267,7 +267,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Button
                             key={tab.id}
                             variant={activeTab === tab.id ? "secondary" : "ghost"}
-                            className={cn("w-full justify-start text-xs h-10 px-3 text-foreground", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
+                            className={cn("w-full justify-start text-xs h-10 px-3 text-foreground text-left", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
                             onClick={() => setActiveTab(tab.id)}
                         >
                             {tab.label}
@@ -275,7 +275,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     ))}
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
                     <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border text-left min-h-full">
                         <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
