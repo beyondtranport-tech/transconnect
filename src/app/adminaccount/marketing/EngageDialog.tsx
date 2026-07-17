@@ -60,6 +60,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
 /**
  * UTILITY: HIERARCHICAL CONTACT RESOLVER (Email, Mobile, WhatsApp)
+ * Prioritizes dedicated WhatsApp over personal mobile.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -190,6 +191,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             const rawText = contentElement.innerText || contentElement.textContent || '';
             // PRIORITY: Use dedicated whatsapp number if available
             const targetNumber = contact.whatsapp || contact.mobile;
+            if (!targetNumber) throw new Error("No contact number found.");
+            
             const cleanNumber = targetNumber.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
             const encodedText = encodeURIComponent(rawText);
             const waUrl = `https://wa.me/${cleanNumber}?text=${encodedText}`;
