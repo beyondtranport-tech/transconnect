@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { Loader2, Zap, Sparkles, Target, Landmark, Store, DollarSign, ArrowRight, ShieldCheck, BarChart3, TrendingUp, Search, CheckCircle2, History, AlertCircle, Eye, MousePointer2, UserCheck, Layers, ImageIcon, Smartphone } from 'lucide-react';
+import { Loader2, Zap, Sparkles, Target, Landmark, Store, DollarSign, ArrowRight, ShieldCheck, BarChart3, TrendingUp, Search, CheckCircle2, History, AlertCircle, Eye, MousePointer2, UserCheck, Layers, ImageIcon, Smartphone, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { collection, query, orderBy, doc, where } from 'firebase/firestore';
@@ -292,7 +291,7 @@ export default function PromoteNodeContent() {
                                 </div>
                                 <div className="space-y-4 text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">4. Purchase Volume</Label>
-                                    <Select value={String(batches)} onValueChange={v => setBatches(Number(v))}>
+                                    <Select value={String(batches)} onValueChange={setBatches(Number)}>
                                         <SelectTrigger className="h-12 border-2 font-bold"><SelectValue/></SelectTrigger>
                                         <SelectContent>
                                             {[1, 5, 10, 25, 50].map(b => (
@@ -304,7 +303,7 @@ export default function PromoteNodeContent() {
                                     </Select>
                                     <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic pl-1 text-left">
                                         <Info className="h-3 w-3" />
-                                        <span>1 Batch = {batchSize.toLocaleString()} Impressions.</span>
+                                        <span>1 Batch = {batchSize.toLocaleString()} Impressions. Served until consumed.</span>
                                     </div>
                                 </div>
                             </div>

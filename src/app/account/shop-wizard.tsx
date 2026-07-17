@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -204,7 +203,7 @@ function StepIdentity({ nodeType }: { nodeType: string }) {
                 <UserCheck className="h-6 w-6 text-primary" /> 
                 Node Identity & Labeling
             </h3>
-            <div className="space-y-4 text-left text-foreground text-left">
+            <div className="space-y-4 text-left text-foreground">
                 <FormField control={control} name="shopName" render={({ field }) => ( 
                     <FormItem className="text-left">
                         <FormLabel>Public Identity Label</FormLabel>
@@ -345,7 +344,7 @@ function StepWarehouseSecurity() {
     ];
 
     return (
-        <div className="space-y-8 text-left text-foreground text-left">
+        <div className="space-y-8 text-left text-foreground">
             <div className="text-left">
                 <h3 className="text-xl font-black font-headline flex items-center gap-2">
                     <Shield className="h-6 w-6 text-primary" />
@@ -486,7 +485,7 @@ function StepWarehouseFees() {
                 Storage Yield Settings
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
                         <FormItem className="text-left"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
@@ -494,7 +493,7 @@ function StepWarehouseFees() {
                         <FormItem className="text-left"><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                 </div>
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <FormField control={control} name="upliftFee" render={({ field }) => (
                         <FormItem className="text-left"><FormLabel>Inbound Handling (Uplift)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
@@ -556,12 +555,12 @@ function StepBrokerageCommercials() {
                             <span className="text-muted-foreground text-left">Total Load Value (Example)</span>
                             <span className="font-bold text-left">R 10,000.00</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2">
-                            <span className="text-muted-foreground">Your Clearing Margin ({margin}%)</span>
-                            <span className="font-bold text-green-600">+ R {(10000 * (margin/100)).toFixed(2)}</span>
+                        <div className="flex justify-between border-b pb-2 text-left">
+                            <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
+                            <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between border-b pb-2 text-left">
-                            <span className="text-muted-foreground">Platform Success Fee (2.5%)</span>
+                            <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600 text-left">- R 250.00</span>
                         </div>
                         <div className="flex justify-between pt-2 text-left">
@@ -605,7 +604,7 @@ function StepRateSheet() {
                                 <RadioGroupItem value="route" id="r-route" /><Label htmlFor="r-route" className="cursor-pointer">Route-Based</Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'per_km' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="per_km" id="r-km" /><Label htmlFor="r-km" className="cursor-pointer text-left">Rate per KM</Label>
+                                <RadioGroupItem value="per_km" id="r-km" /><Label htmlFor="r-km" className="cursor-pointer">Rate per KM</Label>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -632,19 +631,19 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left">
                                     <FormLabel className="text-[10px] uppercase font-black text-muted-foreground">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locationOptionsList.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left">
                                     <FormLabel className="text-[10px] uppercase font-black text-muted-foreground">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locationOptionsList.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
@@ -656,7 +655,7 @@ function StepRateSheet() {
                                         <FormControl><Input type="number" {...field} className="h-9 bg-white" /></FormControl>
                                     </FormItem>
                                 )} />
-                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="mb-0.5 text-destructive"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="mb-0.5 text-destructive"><Trash2 className="h-4 w-4" /></Button>
                             </div>
                         </div>
                     ))}
@@ -799,8 +798,8 @@ function StepCatalog({ shop }: { shop: any }) {
         <div className="space-y-6 text-left text-foreground">
             <div className="flex justify-between items-center border-b pb-4 text-left">
                 <div className="text-left">
-                    <h3 className="text-xl font-black font-headline text-left text-foreground">Product Catalogue</h3>
-                    <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
+                    <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
+                    <p className="text-xs text-muted-foreground text-left text-foreground">List the items or services you sell directly in the Mall.</p>
                 </div>
                 <Dialog open={!!editingProduct} onOpenChange={(o) => { if (!o) setEditingProduct(null); }}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Product</Button></DialogTrigger>
@@ -828,7 +827,7 @@ function StepCatalog({ shop }: { shop: any }) {
                                         }}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
-                                <CardContent className="p-4 text-left">
+                                <CardContent className="p-4 text-left text-foreground">
                                     <p className="font-bold text-sm text-left">{p.name}</p>
                                     <p className="text-xs text-primary font-black mt-1 text-left">{formatCurrency(p.price)}</p>
                                 </CardContent>
@@ -907,7 +906,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     };
 
     return (
-        <DialogContent className="sm:max-w-xl text-left text-foreground text-left">
+        <DialogContent className="sm:max-w-xl text-left text-foreground">
             <DialogHeader className="text-left">
                 <DialogTitle className="text-left">Product Management</DialogTitle>
                 <DialogDescription className="text-left">Define the technical and commercial details of this item.</DialogDescription>
@@ -946,7 +945,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                     </div>
 
                     <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left">
-                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white text-left">
+                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit Product
                         </Button>
@@ -1162,3 +1161,4 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         </Card>
     );
 }
+
