@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -18,10 +17,10 @@ service cloud.firestore {
       );
     }
 
-    // --- PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
+    // --- PUBLIC HANDSHAKE RULES (CRITICAL: AUTHORIZING HANDSHAKE RESOLVE) ---
 
     match /partners/{partnerId} {
-      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
+      // Allow single doc retrieval for recipients of handshake links
       allow get: if true; 
       allow list: if isSignedIn();
       allow write: if isAdmin();
@@ -29,7 +28,7 @@ service cloud.firestore {
     }
 
     match /leads/{leadId} {
-      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
+      // Allow single doc retrieval for recipients of handshake links
       allow get: if true; 
       allow list: if isSignedIn();
       allow write: if isAdmin();

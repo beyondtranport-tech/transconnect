@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -347,21 +346,21 @@ export default function PromoteNodeContent() {
                     </Card>
 
                     <div className="space-y-4 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Economics of Scale</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-foreground">Economics of Scale</Label>
                         <Card className="border-dashed border-2 bg-muted/20 text-left text-foreground">
                             <CardContent className="p-6 space-y-4 text-left text-foreground">
                                 <div className="flex items-start gap-4 text-left text-foreground">
                                     <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><Layers className="h-4 w-4 text-primary" /></div>
                                     <div className="text-left text-foreground">
                                         <p className="text-xs font-black uppercase text-foreground text-left">Batch Consumption</p>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground">Views are only deducted when your boosted profile is actually rendered for a unique viewer.</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground text-foreground">Views are only deducted when your boosted profile is actually rendered for a unique viewer.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4 text-left text-foreground">
                                     <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><TrendingUp className="h-4 w-4 text-primary" /></div>
                                     <div className="text-left text-foreground">
                                         <p className="text-xs font-black uppercase text-foreground text-left text-foreground">Conversion Accountability</p>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground">Access a forensic list of every company that viewed or clicked your content via the Drill-Down tool.</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground text-foreground">Access a forensic list of every company that viewed or clicked your content via the Drill-Down tool.</p>
                                     </div>
                                 </div>
                             </CardContent>

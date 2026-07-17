@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -48,8 +47,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V6
- * High-fidelity scanner designed to handle every possible nomenclature from discovery engines and manual imports.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V7
+ * High-fidelity scanner designed to handle every possible nomenclature.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -58,7 +57,6 @@ function resolveContact(partner: any) {
         if (!val) return '';
         const v = String(val).trim();
         const low = v.toLowerCase();
-        // Skip placeholders
         const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending'];
         if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return '';
         return v;
@@ -71,7 +69,6 @@ function resolveContact(partner: any) {
                 const c = clean(obj[k]);
                 if (c) return c;
             }
-            // Case-insensitive check
             for (const actualKey in obj) {
                 if (actualKey.toLowerCase() === k.toLowerCase()) {
                     const c = clean(obj[actualKey]);
@@ -82,24 +79,16 @@ function resolveContact(partner: any) {
         return '';
     };
 
-    const emailKeys = [
-        'email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 
-        'EMAIL', 'workEmail', 'main_email', 'work_email', 'E-mail', 'Business Email', 'User Email'
-    ];
-    const phoneKeys = [
-        'mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 
-        'telephone', 'tel', 'cell_number', 'Work Phone', 'Mobile Number', 'Contact No'
-    ];
+    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'workEmail', 'main_email'];
+    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone'];
 
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contactPerson || 
                        partner.firstName || 
                        partner.companyName ||
-                       partner.trading_name ||
                        'Partner');
 
-    // EXHAUSTIVE SCAN ACROSS ALL NODES
     const email = searchObj(partner.marketingManager, emailKeys) || 
                   searchObj(partner.ceo, emailKeys) || 
                   searchObj(partner, emailKeys) ||
@@ -134,7 +123,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
 
-  // PERMISSIVE LOGIC: Activate buttons if any string exists
   const hasEmail = !!contact.email;
   const hasPhone = !!contact.whatsapp;
 
@@ -200,6 +188,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     setIsDispatching(true);
     try {
         const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Session expired.");
+        
         const contentId = `engage-content-wrapper-${activeTab}`;
         const contentElement = document.getElementById(contentId);
         if (!contentElement) throw new Error("Content not found.");
@@ -232,26 +222,26 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
-            <DialogHeader className="p-6 border-b bg-muted/50 text-left">
-                <div className="flex justify-between items-center text-left text-foreground">
-                    <div className="text-left space-y-1 text-foreground">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
+            <DialogHeader className="p-6 border-b bg-muted/50">
+                <div className="flex justify-between items-center text-foreground">
+                    <div className="text-left space-y-1">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
-                        <div className="flex items-center gap-3 text-sm text-left">
+                        <div className="flex items-center gap-3 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
-                           <div className="flex items-center gap-2 text-muted-foreground text-left">
+                           <div className="flex items-center gap-2 text-muted-foreground">
                                <Mail className={cn("h-3.5 w-3.5", hasEmail && "text-blue-600")} />
                                <span className={cn("font-medium", !hasEmail && "text-destructive italic")}>{contact.email || 'Address Missing'}</span>
                            </div>
-                           <div className="flex items-center gap-2 text-muted-foreground border-l pl-3 text-left">
+                           <div className="flex items-center gap-2 text-muted-foreground border-l pl-3">
                                <Smartphone className={cn("h-3.5 w-3.5", hasPhone && "text-green-600")} />
                                <span className={cn("font-bold", hasPhone && "text-green-600")}>{contact.whatsapp || 'Number Missing'}</span>
                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 text-left">
+                    <div className="flex items-center gap-2">
                         <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
@@ -265,8 +255,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden text-left">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto text-left text-foreground">
+            <div className="flex-1 flex overflow-hidden">
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto">
                     {[
                         { id: 'digital-handshake', label: '0. Digital Handshake' },
                         { id: 'company-profile', label: '1. Company Profile' },
@@ -279,7 +269,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Button
                             key={tab.id}
                             variant={activeTab === tab.id ? "secondary" : "ghost"}
-                            className={cn("w-full justify-start text-xs h-10 px-3 text-foreground text-left", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
+                            className={cn("w-full justify-start text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
                             onClick={() => setActiveTab(tab.id)}
                         >
                             {tab.label}
@@ -287,8 +277,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     ))}
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border text-left min-h-full text-foreground">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border min-h-full">
                         <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
