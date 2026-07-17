@@ -48,9 +48,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V15
- * Performed a deep-scan across every potential email and phone field to ensure button activation.
- * Specifically handles varied naming conventions from AI Discovery and Bulk Imports.
+ * EXHAUSTIVE CONTACT RESOLVER V4 (Production)
+ * Performed a deep-scan across every potential email and phone field.
+ * Explicitly ignores system placeholders and locked data.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -64,7 +64,7 @@ function resolveContact(partner: any) {
         return v;
     };
 
-    // 1. IDENTITY RESOLUTION (Prioritizing Managers)
+    // 1. IDENTITY RESOLUTION
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contactPerson || 
@@ -72,8 +72,7 @@ function resolveContact(partner: any) {
                        partner.firstName || 
                        'Partner');
 
-    // 2. EXHAUSTIVE EMAIL SCAN (Aggressive deep-search)
-    // Searches top-level fields AND sub-objects independently.
+    // 2. EXHAUSTIVE EMAIL SCAN
     const email = clean(
         partner.email || 
         partner.email_address || 
@@ -100,7 +99,7 @@ function resolveContact(partner: any) {
         ''
     );
 
-    // 4. WHATSAPP PRIORITY
+    // 4. WHATSAPP PRIORITY (Dedicated Business Line fallback to personal)
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
     return { name, email, mobile, whatsapp };

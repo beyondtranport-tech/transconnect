@@ -31,10 +31,10 @@ git push
 
 ---
 
-## Recent Updates: Forensic V4 & Deployment Stabilization
-- **Resolved "Critical System Error"**: Updated Firestore security rules to authorize public access for handshake recipients, preventing site crashes for unauthenticated users.
-- **Exhaustive Contact resolution**: Overhauled the engagement wizard to deep-scan every data node for emails and phone numbers, definitively reactivating the Outlook and Dispatch buttons.
-- **Production URL Normalization**: Standardized all outreach links to the verified live origin to bypass connection refusal errors and corporate firewall blocks.
+## Recent Updates: Forensic V4 (Production Ready)
+- **Authorized Public Handshake**: Updated Firestore security rules to allow `get` access for unauthenticated recipients, resolving the "Critical System Error" on landing pages.
+- **Exhaustive Contact Resolver**: Re-engineered the engagement wizard to deep-scan every possible data node for emails and phone numbers, definitively reactivating the Outlook and Dispatch buttons.
+- **Production URL Normalization**: Standardized all outreach links to the verified live origin (`https://studio--ecosystem-hub.us-central1.hosted.app`) to bypass connection refusal errors and corporate firewalls.
 - **WhatsApp Business Protocol**: Implemented dedicated WhatsApp Business number prioritization with seamless personal fallback across all registries.
 - **Registry Hardening**: Integrated "Specialized Tags" (BPW) as an active search index in the Supplier CRM for instant batch management.
 
@@ -42,4 +42,3 @@ git push
 - **Deep-Mined Profiles**: Implemented a 300-word verbatim extraction protocol to capture technical service wording directly from company sitemaps.
 - **Dual-Tier Leadership**: CRM now structures contact details for both the Marketing Manager and CEO/Principal.
 - **Automatic Registry Sync**: Removed interim landing pages; both Strategic Partner and Lead databases now synchronize automatically on landing.
-
