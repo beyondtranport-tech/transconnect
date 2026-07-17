@@ -54,26 +54,25 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 /**
- * UTILITY: HIERARCHICAL CONTACT RESOLVER (WhatsApp > Mobile > Phone)
- * Implements strict priority for business vs personal lines.
+ * RESILIENT CONTACT RESOLVER
+ * Maps various data shapes (Discovery, Registry, Import) into a unified contact object.
+ * Implements WhatsApp Business priority.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
     const clean = (val: any) => {
-        if (!val || typeof val !== 'string') return '';
-        const v = val.trim();
-        return (v === 'N/A' || v === 'null' || v === 'None' || v.length < 3) ? '' : v;
+        if (val === null || val === undefined) return '';
+        const v = String(val).trim();
+        return (v.toLowerCase() === 'n/a' || v.toLowerCase() === 'null' || v.toLowerCase() === 'none' || v.length < 3) ? '' : v;
     };
 
     let resolved = { 
         name: 'Partner', 
         email: '', 
         mobile: '', 
-        whatsapp: clean(partner.whatsapp) 
+        whatsapp: '' 
     };
 
     // 1. Resolve Identity
@@ -86,13 +85,16 @@ function resolveContact(partner: any) {
         resolved.email = clean(partner.ceo.email);
         resolved.mobile = clean(partner.ceo.mobile);
     } else {
-        resolved.name = partner.contactPerson || partner.firstName || 'Partner';
+        resolved.name = partner.contactPerson || partner.firstName || partner.contact_person || 'Partner';
         resolved.email = clean(partner.email || partner.email_address);
-        resolved.mobile = clean(partner.mobile || partner.phone);
+        resolved.mobile = clean(partner.mobile || partner.phone || partner.telephone_number);
     }
 
-    // 2. WHATSAPP PRIORITY: If dedicated whatsapp is missing, fallback to personal mobile
-    if (!resolved.whatsapp) {
+    // 2. WHATSAPP PRIORITY logic
+    const dedicatedWa = clean(partner.whatsapp || partner.whatsapp_number);
+    if (dedicatedWa) {
+        resolved.whatsapp = dedicatedWa;
+    } else {
         resolved.whatsapp = resolved.mobile;
     }
 
@@ -266,9 +268,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground">•</span>
                            <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No email'}</span>
-                           {currentPartner.whatsapp && (
+                           {contact.whatsapp && (
                                <span className="font-bold text-green-600 flex items-center gap-1 ml-2">
-                                   <Smartphone className="h-3 w-3"/> WhatsApp: {currentPartner.whatsapp}
+                                   <Smartphone className="h-3 w-3"/> WhatsApp: {contact.whatsapp}
                                </span>
                            )}
                         </div>

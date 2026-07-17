@@ -216,6 +216,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
             }
 
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
+                const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
+            }
+
             case 'deletePartner': {
                 const { partnerId, source } = payload;
                 const colName = source === 'Lead' ? 'leads' : 'partners';

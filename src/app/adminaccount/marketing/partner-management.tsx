@@ -162,7 +162,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                     <Separator />
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                        <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner">
+                        <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left">
                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                                 <Users className="h-4 w-4" /> Marketing Manager
                             </h4>
@@ -171,19 +171,19 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                             <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
 
-                        <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
-                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                        <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left">
                                 <UserCheck className="h-4 w-4" /> CEO / Principal
                             </h4>
-                            <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                            <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
                     </div>
 
                     <Separator />
 
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                             <Sparkles className="h-4 w-4" /> Technical Profile (300 Words)
                         </h4>
@@ -194,7 +194,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
                         )} />
                     </div>
 
-                    <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10">
+                    <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10 text-left">
                         <Button type="submit" disabled={isLoading} size="lg" className="w-full h-12 font-bold shadow-lg">
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="mr-2 h-4 w-4" />} 
                             Update Forensic Record
@@ -404,7 +404,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
           id: 'actions', 
           header: <div className="text-right">Actions</div>, 
           cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1">
+            <div className="flex justify-end items-center gap-1 text-left">
               <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
               <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
               <AddCommunicationLogDialog partnerId={row.original.id} collection={row.original.source === 'Lead' ? 'leads' : 'partners'} onLogAdded={() => fetchData()} />
@@ -437,11 +437,11 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
   const audienceLabel = type.charAt(0).toUpperCase() + type.slice(1);
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience={type as any} onEngageSuccess={() => fetchData()} />
       <PartnerDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType={type} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent>
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -451,8 +451,8 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       </AlertDialog>
 
       <div className="space-y-6 text-left">
-          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div><CardTitle className="flex items-center gap-2 font-black font-headline"><Database /> {audienceLabel} Registry</CardTitle><CardDescription>Full database view ({allRecords.length} records).</CardDescription></div>
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+              <div><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Database /> {audienceLabel} Registry</CardTitle><CardDescription>Full database view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
                   <Popover>
@@ -462,7 +462,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <PopoverContent className="w-56 p-2">
                           <div className="space-y-1">
                               {Object.keys(visibleColumns).map(col => (
-                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                       <span>{col.replace(/([A-Z])/g, ' $1')}</span>
                                       {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                   </div>
@@ -481,14 +481,14 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                           </div>
                       </PopoverContent>
                   </Popover>
-                  <BulkImportDialog type={type} onComplete={() => fetchData()}><Button variant="outline"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                  <BulkImportDialog type={type} onComplete={() => fetchData()}><Button variant="outline" className="text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                   <Button onClick={() => setDialog({ type: 'add' })} className="font-bold"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
               </div>
           </CardHeader>
 
-          <Card>
-              <CardContent className="pt-6">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg">
+          <Card className="text-left">
+              <CardContent className="pt-6 text-left">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                       <div className="space-y-1">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -500,7 +500,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                               </SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 text-left">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                               <SelectTrigger className="bg-white"><SelectValue placeholder="All Staff" /></SelectTrigger>
@@ -513,7 +513,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       </div>
                   </div>
                   {isLoading ? <div className="flex justify-center items-center py-10"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                      <div className="space-y-6">
+                      <div className="space-y-6 text-left">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
                                <div className="flex justify-center pt-4">

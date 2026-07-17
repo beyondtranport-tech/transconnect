@@ -4,7 +4,7 @@ import React from "react";
 
 /**
  * STRATEGIC COMPANY PROFILE
- * Normalized to public hosted origin for deliverability.
+ * Normalised to verified hosted origin to prevent security blocks and developer redirects.
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
     const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
@@ -23,6 +23,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
         ? partner.ceo.email
         : partner?.email || '';
 
+    // VERIFIED HOSTED ORIGIN
     const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
     const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}&ref=${partner?.id || 'SYSTEM'}`;

@@ -4,10 +4,10 @@ import React, { useMemo } from "react";
 
 /**
  * AUTHORITATIVE DIGITAL HANDSHAKE
- * Normalized to use public hosted domain to bypass dev-environment firewalls.
+ * Normalised to verified hosted origin to prevent firewall blocks.
  */
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
-    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None' && val.length > 5;
+    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
 
     // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
     const resolvedName = useMemo(() => {
@@ -19,7 +19,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
     const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
     
-    // Normalized Base URL for high-fidelity deliverability
+    // VERIFIED HOSTED ORIGIN: Prevents authentication redirects and security blocks.
     const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const optInLink = `${baseUrl}/opt-in/${partner?.id || 'PROSPECT'}`;
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
@@ -34,7 +34,7 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
             <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.2' }}>
                 <p>Good day {firstName},</p>
                 <p>Inefficient origination is a silent cost for funding institutions. Logistics Flow is a unified digital ecosystem built to bridge the data gap between the South African transport industry and institutional capital.</p>
-                <p><strong>"We have cataloged the national transport grid into a forensic registry of over 22,000 records. Within our Finance Mall, we provide specialized lenders with an automated matching tool—exposing your institution only to verified applications that meet your exact credit and asset criteria."</strong></p>
+                <p><strong>"We have catalogued the national transport grid into a forensic registry of over 22,000 records. Within our Finance Mall, we provide specialized lenders with an automated matching tool—exposing your institution only to verified applications that meet your exact credit and asset criteria."</strong></p>
                 <p>Establish the handshake to secure your standing in the industrial funding pipeline:</p>
                 <p><a href={optInLink} target="_blank" style={{ color: '#0000FF', textDecoration: 'underline', fontWeight: 'bold' }}>{optInLink}</a></p>
                 <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
