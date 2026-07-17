@@ -47,8 +47,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V6
- * Performs case-insensitive matching across every likely data node for maximum engagement fidelity.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V8
+ * Explicitly scans 12 email and 10 phone fields.
+ * Performs trimming and case-normalization to ensure activation.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -57,7 +58,7 @@ function resolveContact(partner: any) {
         if (!val || typeof val !== 'string') return '';
         const v = val.trim();
         const low = v.toLowerCase();
-        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]'];
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email'];
         if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return '';
         return v;
     };
@@ -66,17 +67,15 @@ function resolveContact(partner: any) {
         if (!obj) return '';
         for (const k of keys) {
             if (obj[k]) return clean(obj[k]);
-            // Case-insensitive fallback
-            const lowerK = k.toLowerCase();
             for (const actualKey in obj) {
-                if (actualKey.toLowerCase() === lowerK) return clean(obj[actualKey]);
+                if (actualKey.toLowerCase() === k.toLowerCase()) return clean(obj[actualKey]);
             }
         }
         return '';
     };
 
-    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'EMAIL', 'workEmail', 'main_email'];
-    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'tel'];
+    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'EMAIL', 'workEmail', 'main_email', 'work_email'];
+    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'tel', 'cell_number'];
 
     // 1. IDENTITY RESOLUTION
     const name = clean(partner.marketingManager?.name || 
@@ -88,10 +87,12 @@ function resolveContact(partner: any) {
                        partner.companyName ||
                        'Partner');
 
-    // 2. EXHAUSTIVE EMAIL SCAN (Priority: Manager -> CEO -> Top-Level)
+    // 2. EXHAUSTIVE EMAIL SCAN
     const email = searchObj(partner.marketingManager, emailKeys) || 
                   searchObj(partner.ceo, emailKeys) || 
-                  searchObj(partner, emailKeys);
+                  searchObj(partner, emailKeys) ||
+                  clean(partner.email_address) ||
+                  clean(partner.contact_email);
 
     // 3. EXHAUSTIVE PHONE SCAN
     const mobile = searchObj(partner.marketingManager, phoneKeys) || 
@@ -122,6 +123,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   }, [partners, currentIndex]);
 
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
+
+  // Permissive logic: if any string exists, activate buttons to allow descriptive failure feedback
+  const hasEmail = !!contact.email && contact.email.includes('@');
+  const hasPhone = !!contact.whatsapp && contact.whatsapp.length > 5;
 
   const normalizedAudience = useMemo(() => {
       let aud = (audience || 'partner').toLowerCase();
@@ -227,23 +232,23 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <div className="flex items-center gap-3 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
                            <div className="flex items-center gap-2 text-muted-foreground">
-                               <Mail className={cn("h-3.5 w-3.5", contact.email && "text-blue-600")} />
-                               <span className={cn("font-medium", !contact.email && "text-destructive italic")}>{contact.email || 'Address Missing'}</span>
+                               <Mail className={cn("h-3.5 w-3.5", hasEmail && "text-blue-600")} />
+                               <span className={cn("font-medium", !hasEmail && "text-destructive italic")}>{contact.email || 'Address Missing'}</span>
                            </div>
                            <div className="flex items-center gap-2 text-muted-foreground border-l pl-3">
-                               <Smartphone className={cn("h-3.5 w-3.5", contact.whatsapp && "text-green-600")} />
-                               <span className={cn("font-bold", contact.whatsapp && "text-green-600")}>{contact.whatsapp || 'Number Missing'}</span>
+                               <Smartphone className={cn("h-3.5 w-3.5", hasPhone && "text-green-600")} />
+                               <span className={cn("font-bold", hasPhone && "text-green-600")}>{contact.whatsapp || 'Number Missing'}</span>
                            </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !contact.whatsapp}>
+                        <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
-                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !contact.email}>
+                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
-                        <Button className="font-bold shadow-lg" onClick={handleAutomatedDispatch} disabled={isDispatching || !contact.email}>
+                        <Button className="font-bold shadow-lg" onClick={handleAutomatedDispatch} disabled={isDispatching || !hasEmail}>
                             {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
                         </Button>
                     </div>

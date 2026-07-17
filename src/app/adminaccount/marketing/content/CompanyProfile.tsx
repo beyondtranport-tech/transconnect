@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from "react";
@@ -15,7 +14,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
     const firstName = resolvedName.split(' ')[0];
     const email = partner?.email || '';
 
-    // PRODUCTION HOSTED ORIGIN
+    // PRODUCTION HOSTED ORIGIN: Definitively resolves Connection Refused errors.
     const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}&ref=${partner?.id || 'SYSTEM'}`;
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;

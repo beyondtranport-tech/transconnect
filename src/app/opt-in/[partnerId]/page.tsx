@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -12,6 +11,11 @@ import { doc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 
+/**
+ * OPT-IN LANDING PAGE (PUBLIC)
+ * Authorized via 'allow get: if true' in firestore.rules.
+ * Performs dual-registry lookup to resolve partners or leads.
+ */
 export default function OptInPage() {
     const params = useParams();
     const partnerId = params.partnerId as string;
@@ -25,7 +29,7 @@ export default function OptInPage() {
     const [popiConsent, setPopiConsent] = useState(false);
     const [termsConsent, setTermsConsent] = useState(false);
 
-    // DUAL REGISTRY RESOLVER: Checking both partners and leads to ensure high reliability.
+    // DUAL REGISTRY RESOLVER: Ensures high reliability for handshake resolve.
     const partnerRef = useMemoFirebase(() => {
         if (!firestore || !partnerId) return null;
         return doc(firestore, 'partners', partnerId);
@@ -78,7 +82,14 @@ export default function OptInPage() {
     if (!activeRecord && !isLoading) {
         return (
             <div className="flex justify-center items-center min-h-screen p-4">
-                <Card className="max-w-md w-full text-center"><CardHeader><AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" /><CardTitle>Invalid Link</CardTitle><CardDescription>This consent link is no longer active.</CardDescription></CardHeader><CardFooter><Button className="w-full" asChild><a href="/">Visit Home</a></Button></CardFooter></Card>
+                <Card className="max-w-md w-full text-center border-destructive/20 shadow-xl bg-white">
+                    <CardHeader>
+                        <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                        <CardTitle className="text-2xl font-black">Registry Record Not Found</CardTitle>
+                        <CardDescription>This specific handshake link is not active in our registry.</CardDescription>
+                    </CardHeader>
+                    <CardFooter><Button className="w-full font-bold" asChild><a href="/">Visit Homepage</a></Button></CardFooter>
+                </Card>
             </div>
         );
     }
@@ -110,22 +121,22 @@ export default function OptInPage() {
             <Card className="max-w-xl w-full shadow-2xl overflow-hidden text-left">
                 <CardHeader className="bg-slate-900 text-white p-8">
                     <ShieldCheck className="h-8 w-8 text-primary mx-auto mb-4" />
-                    <CardTitle className="text-center font-black uppercase tracking-tight text-left">Industrial Handshake</CardTitle>
+                    <CardTitle className="text-center font-black uppercase tracking-tight text-left text-white">Industrial Handshake</CardTitle>
                     <CardDescription className="text-center text-slate-400">Establish compliance for <strong>{activeRecord?.companyName || activeRecord?.trading_name}</strong>.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8 space-y-6 bg-white text-left">
                     <div className="space-y-4 text-left">
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors text-left">
                             <input type="checkbox" id="m-check" className="mt-1 h-5 w-5 rounded border-gray-300" checked={marketingConsent} onChange={e => setMarketingConsent(e.target.checked)} />
-                            <Label htmlFor="m-check" className="text-sm cursor-pointer"><span className="font-bold block">Communication Opt-In</span>Receive matches and group savings alerts.</Label>
+                            <Label htmlFor="m-check" className="text-sm cursor-pointer text-left"><span className="font-bold block">Communication Opt-In</span>Receive matches and group savings alerts.</Label>
                         </div>
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors text-left">
                             <input type="checkbox" id="p-check" className="mt-1 h-5 w-5 rounded border-gray-300" checked={popiConsent} onChange={e => setPopiConsent(e.target.checked)} />
-                            <Label htmlFor="p-check" className="text-sm cursor-pointer"><span className="font-bold block">POPI Compliance</span>Authorize secure data processing for matching.</Label>
+                            <Label htmlFor="p-check" className="text-sm cursor-pointer text-left"><span className="font-bold block">POPI Compliance</span>Authorize secure data processing for matching.</Label>
                         </div>
                         <div className="flex items-start gap-4 p-4 border rounded-lg hover:bg-slate-50 transition-colors text-left">
                             <input type="checkbox" id="t-check" className="mt-1 h-5 w-5 rounded border-gray-300" checked={termsConsent} onChange={e => setTermsConsent(e.target.checked)} />
-                            <Label htmlFor="t-check" className="text-sm cursor-pointer"><span className="font-bold block">Master Terms</span>Accept the platform terms of engagement.</Label>
+                            <Label htmlFor="t-check" className="text-sm cursor-pointer text-left"><span className="font-bold block">Master Terms</span>Accept the platform terms of engagement.</Label>
                         </div>
                     </div>
                 </CardContent>

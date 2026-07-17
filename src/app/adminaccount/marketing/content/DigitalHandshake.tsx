@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from "react";
@@ -15,7 +14,7 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
     const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
     
-    // PRODUCTION HOSTED ORIGIN
+    // PRODUCTION HOSTED ORIGIN: Bypasses custom domain refusal and workstation auth wall.
     const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
     const optInLink = `${baseUrl}/opt-in/${partner?.id || 'PROSPECT'}`;
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;

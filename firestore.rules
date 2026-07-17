@@ -25,10 +25,8 @@ service cloud.firestore {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          // Check 1: User document explicitly links to this company
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
-          // Check 2: Direct ownership check on the company document
           (exists(/databases/$(database)/documents/companies/$(cid)) && 
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
