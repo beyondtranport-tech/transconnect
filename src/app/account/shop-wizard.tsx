@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -37,8 +38,6 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-// ====== SCHEMAS ======
 
 const routeRateSchema = z.object({
     origin: z.string().min(1, "Origin required"),
@@ -85,8 +84,6 @@ const nodeFormSchema = z.object({
 });
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
-
-// ====== SHARED UI COMPONENTS ======
 
 function FileUploadField({ 
     name, 
@@ -150,8 +147,6 @@ function FileUploadField({
         </div>
     );
 }
-
-// ====== STEP COMPONENTS ======
 
 function StepLegal() {
     return (
@@ -512,13 +507,13 @@ function StepBrokerageCommercials() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <DollarSign className="h-6 w-6 text-primary" />
                 Commercial Configuration
             </h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
                     <FormField control={control} name="brokerageMargin" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
@@ -526,7 +521,7 @@ function StepBrokerageCommercials() {
                                 <HelpCircle className="h-3 w-3 opacity-50 text-left" />
                             </FormLabel>
                             <FormControl><Input type="number" {...field} className="h-12 text-2xl font-black bg-white" /></FormControl>
-                            <FormDescription className="text-[10px] leading-tight mt-2 font-bold text-primary text-left">
+                            <FormDescription className="text-[10px] leading-tight mt-2 font-bold text-primary text-left text-foreground">
                                 The profit you, as the Primary Contractor (Broker), retain from the total load value.
                             </FormDescription>
                         </FormItem>
@@ -551,19 +546,19 @@ function StepBrokerageCommercials() {
                         Commercial Transparency Breakdown
                     </h4>
                     <div className="space-y-2 text-sm text-left">
-                        <div className="flex justify-between border-b pb-2 text-left">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground">
                             <span className="text-muted-foreground text-left">Total Load Value (Example)</span>
                             <span className="font-bold text-left">R 10,000.00</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground">
                             <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
                             <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground text-foreground">
                             <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600 text-left">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-left">
+                        <div className="flex justify-between pt-2 text-left text-foreground text-foreground text-foreground">
                             <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
                             <span className="font-black text-primary text-left">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
@@ -597,13 +592,13 @@ function StepRateSheet() {
                     <FormLabel className="font-bold text-foreground">Select Rate Structure</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'none' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'none' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="none" id="r-none" /><Label htmlFor="r-none" className="cursor-pointer">No Sheet</Label>
                             </div>
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'route' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'route' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="route" id="r-route" /><Label htmlFor="r-route" className="cursor-pointer">Route-Based</Label>
                             </div>
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'per_km' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'per_km' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="per_km" id="r-km" /><Label htmlFor="r-km" className="cursor-pointer">Rate per KM</Label>
                             </div>
                         </RadioGroup>
@@ -631,8 +626,8 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-[10px] uppercase font-black text-muted-foreground">Origin</FormLabel>
+                                <FormItem className="text-left text-foreground">
+                                    <FormLabel className="text-[10px] uppercase font-black text-muted-foreground text-left">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locationOptionsList.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
@@ -640,7 +635,7 @@ function StepRateSheet() {
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black text-muted-foreground">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
@@ -681,10 +676,10 @@ function StepLoadAgreement() {
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground text-left">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></div>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
+                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground text-left text-foreground text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></div>
                             </div>
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground text-foreground", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold text-foreground text-left">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></div>
                             </div>
                         </RadioGroup>
@@ -694,7 +689,7 @@ function StepLoadAgreement() {
 
             {contractType === 'master' && (
                 <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
                         <FormLabel>Committed Loads per Month</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                         <FormDescription className="text-[10px] text-left">Your node will be prioritized for long-term matching.</FormDescription>
@@ -928,7 +923,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                       <FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>
                     )} />
                     
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
                         <div className="grid grid-cols-4 gap-2 text-left">
                              {(form.watch('imageUrls') || []).map((url: string, i: number) => (
@@ -937,7 +932,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                                  </div>
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('prod-img-up')?.click()}>
-                                 <Camera className="h-6 w-6 opacity-40 mx-auto" />
+                                 <Camera className="h-6 w-6 opacity-40 mx-auto text-foreground" />
                                  <span className="text-[8px] font-black uppercase tracking-widest leading-tight">Add Photo</span>
                              </Button>
                              <input type="file" id="prod-img-up" className="hidden" onChange={handleUpload} />
@@ -1099,9 +1094,9 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
-            <CardHeader className="bg-slate-50 border-b p-6 text-left">
+            <CardHeader className="bg-slate-50 border-b p-6 text-left text-foreground">
                 <div className="text-left text-foreground">
-                    <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
+                    <CardTitle className="text-2xl font-black font-headline text-left text-foreground">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
                     <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
                 </div>
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2 mt-4" />
@@ -1150,7 +1145,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                             onUpdate();
                         } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
                         finally { setIsSaving(false); }
-                    })} disabled={isSaving} className="font-bold text-foreground text-left">
+                    })} disabled={isSaving} className="font-bold text-foreground text-left text-foreground text-foreground">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (
@@ -1161,4 +1156,3 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         </Card>
     );
 }
-

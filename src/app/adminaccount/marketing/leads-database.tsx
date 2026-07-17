@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -24,7 +25,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Sparkles, Zap, Smartphone, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -44,7 +45,7 @@ import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerB
 import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
 import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
-import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
 import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
 
@@ -178,7 +179,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
                     <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -187,7 +188,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </div>
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
                         <UserCheck className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -379,7 +380,7 @@ function LeadsDatabaseComponent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
+      <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-left">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
           <div className="text-left text-foreground text-left text-foreground text-foreground text-foreground">
             <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>
