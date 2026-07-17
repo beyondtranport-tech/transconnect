@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -47,23 +48,23 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V11
- * Performs an ultra-resilient deep-scan of the record to find valid contact nodes.
- * Specifically handles varied field naming from imports and enrichment.
+ * CLINICAL CONTACT RESOLVER V14
+ * Performs an exhaustive, deep-scan of the partner record across all potential data nodes.
+ * Explicitly designed to handle varied naming conventions from AI Discovery and Bulk Imports.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
     const clean = (val: any) => {
-        if (!val) return '';
-        const v = String(val).trim();
+        if (!val || typeof val !== 'string') return '';
+        const v = val.trim();
         const low = v.toLowerCase();
-        // Strict suppression of placeholders
+        // Strict suppression of system placeholders
         if (!v || low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined' || low === '[locked]' || low.includes('locked@')) return '';
         return v;
     };
 
-    // 1. Resolve Identity
+    // 1. IDENTITY RESOLUTION (Prioritizing Managers)
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contactPerson || 
@@ -71,30 +72,33 @@ function resolveContact(partner: any) {
                        partner.firstName || 
                        'Partner');
 
-    // 2. EXHAUSTIVE EMAIL SCAN
-    const email = clean(partner.email || 
-                        partner.email_address || 
-                        partner.emailAddress || 
-                        partner.contactEmail || 
-                        partner.contact_email || 
-                        partner.workEmail || 
-                        partner.work_email || 
-                        partner.marketingManager?.email || 
-                        partner.ceo?.email || 
-                        '');
+    // 2. EXHAUSTIVE EMAIL SCAN (Aggressive deep-search)
+    const rawEmail = partner.email || 
+                     partner.email_address || 
+                     partner.emailAddress || 
+                     partner.contactEmail || 
+                     partner.contact_email || 
+                     partner.workEmail || 
+                     partner.work_email || 
+                     partner.marketingManager?.email || 
+                     partner.ceo?.email || 
+                     partner.main_email ||
+                     '';
+    const email = clean(rawEmail);
 
     // 3. EXHAUSTIVE PHONE SCAN
-    const mobile = clean(partner.mobile || 
-                         partner.whatsapp || 
-                         partner.phone || 
-                         partner.telephone || 
-                         partner.contact_number || 
-                         partner.cell ||
-                         partner.marketingManager?.mobile || 
-                         partner.ceo?.mobile || 
-                         '');
+    const rawMobile = partner.mobile || 
+                      partner.whatsapp || 
+                      partner.phone || 
+                      partner.telephone || 
+                      partner.contact_number || 
+                      partner.cell ||
+                      partner.marketingManager?.mobile || 
+                      partner.ceo?.mobile || 
+                      '';
+    const mobile = clean(rawMobile);
 
-    // 4. WHATSAPP PRIORITY PROTOCOL
+    // 4. WHATSAPP PRIORITY
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
     return { name, email, mobile, whatsapp };
@@ -216,7 +220,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
@@ -236,6 +240,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !contact.whatsapp}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
+                        {/* BUTTONS REACTIVATED: Removed the rigid regex requirement from disabled logic. Allowing backend to provide feedback. */}
                         <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !contact.email}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
@@ -246,7 +251,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
             </DialogHeader>
 
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex overflow-hidden text-left">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto text-left">
                     {[
                         { id: 'digital-handshake', label: '0. Digital Handshake' },
