@@ -1,16 +1,10 @@
-
 'use client';
 
 import React, { useMemo } from "react";
 
-/**
- * Pitch Deck Content
- * Implements Contact Hierarchy for salutations.
- */
 export default function PitchDeck({ partner }: { partner?: any }) {
     const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
 
-    // RESOLVE SALUTATION NAME VIA CONTACT HIERARCHY
     const resolvedName = useMemo(() => {
         if (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) return partner.marketingManager.name;
         if (partner?.ceo?.name && isValid(partner.ceo.name)) return partner.ceo.name;
@@ -19,44 +13,23 @@ export default function PitchDeck({ partner }: { partner?: any }) {
 
     const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
-    const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
+    const pixelUrl = `https://studio--ecosystem-hub.us-central1.hosted.app/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
     return (
-        <div style={{ 
-            fontFamily: 'Calibri, Candara, Segoe, "Segoe UI", Optima, Arial, sans-serif', 
-            fontSize: '12pt', 
-            color: '#000000', 
-            lineHeight: '1.2',
-            backgroundColor: '#ffffff',
-            padding: '0'
-        }}>
-            <p style={{ margin: '0 0 14pt 0', fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
-                Strategic Proposal for {companyName.toUpperCase()}
+        <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
+            <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
+                STRATEGIC PROPOSAL FOR {companyName.toUpperCase()}
             </p>
-
-            <p style={{ margin: '0 0 14pt 0' }}>
-                We have identified {companyName} as a potential foundational stakeholder in the Logistics Flow ecosystem. This proposal outlines the personalized roadmap for {firstName} to achieve exponential growth through collaboration.
-            </p>
-
-            <p style={{ margin: '0 0 7pt 0', fontWeight: 'bold' }}>Executive Summary:</p>
-            <ul style={{ listStyleType: 'disc', marginLeft: '20pt', margin: '0 0 14pt 20pt' }}>
-                <li style={{ marginBottom: '7pt' }}><strong>The Foundation:</strong> Granting {companyName} a Free Lifetime Premium Membership to ensure full, unrestricted access to all platform tools.</li>
-                <li style={{ marginBottom: '7pt' }}><strong>The Strategy:</strong> Digitalizing your existing haulier and supplier contacts to create a high-velocity commercial network.</li>
-                <li style={{ marginBottom: '7pt' }}><strong>The Upside:</strong> Unlocking multiple recurring and transactional revenue streams that scale with your network&apos;s activity.</li>
+            <p>We have identified <strong>{companyName}</strong> as a foundational stakeholder in the Logistics Flow ecosystem. This proposal outlines the personalized roadmap for your business to achieve exponential growth through digital collaboration.</p>
+            <p style={{ margin: '15pt 0', fontWeight: 'bold' }}>Executive Summary:</p>
+            <ul style={{ paddingLeft: '20pt' }}>
+                <li style={{ marginBottom: '8pt' }}><strong>The Foundation:</strong> Granting your business a Free Lifetime Premium Membership to ensure full access to all platform tools.</li>
+                <li style={{ marginBottom: '8pt' }}><strong>The Strategy:</strong> Digitalizing your existing haulier and supplier contacts to create a high-velocity commercial network.</li>
+                <li style={{ marginBottom: '8pt' }}><strong>The Upside:</strong> Unlocking multiple recurring and transactional revenue streams that scale with your network activity.</li>
             </ul>
-
-            <p style={{ margin: '0 0 14pt 0' }}>
-                We believe that {companyName} is uniquely positioned to benefit from this transition, turning your current operational footprint into a powerful digital asset.
-            </p>
-
-            <p style={{ margin: '0 0 14pt 0' }}>
-                Regards,
-            </p>
-            <p style={{ margin: '0 0 14pt 0' }}>
-                The Logistics Flow Growth Strategy Team
-            </p>
-
-            {/* Forensic Tracking Pixel */}
+            <p>We believe {companyName} is uniquely positioned to turn its current operational footprint into a powerful digital asset.</p>
+            <p style={{ marginTop: '20pt' }}>Regards,</p>
+            <p><strong>The Logistics Flow Growth Strategy Team</strong></p>
             <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>
     );

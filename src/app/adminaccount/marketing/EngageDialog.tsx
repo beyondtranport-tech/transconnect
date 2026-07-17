@@ -25,14 +25,6 @@ import SupplierOffer from './offers/SupplierOffer';
 import TransporterOffer from './offers/TransporterOffer';
 import AssociateOffer from './offers/AssociateOffer';
 
-// Emails
-import PartnerEmails from './emails/PartnerEmails';
-import SupplierEmails from './emails/SupplierEmails';
-import TransporterEmails from './emails/TransporterEmails';
-import InvestorEmails from './emails/InvestorEmails';
-import DeveloperEmails from './emails/DeveloperEmails';
-import AssociateEmails from './emails/AssociateEmails';
-
 interface EngageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -55,60 +47,37 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V5
- * Scans all possible fields to find an email/mobile, preventing greyed-out buttons
- * when partial data is present in manager/ceo sub-objects.
+ * EXHAUSTIVE CONTACT RESOLVER V6
+ * Scans ALL potential fields to find contact data, preventing greyed-out buttons.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
     const clean = (val: any) => {
-        if (val === null || val === undefined) return '';
+        if (!val) return '';
         const v = String(val).trim();
         return (v.toLowerCase() === 'n/a' || v.toLowerCase() === 'null' || v.toLowerCase() === 'none') ? '' : v;
     };
 
-    let resolved = { 
-        name: 'Partner', 
-        email: '', 
-        mobile: '', 
-        whatsapp: '' 
-    };
+    // 1. Resolve Best Name
+    const name = clean(partner.marketingManager?.name || partner.ceo?.name || partner.contactPerson || partner.firstName || 'Partner');
 
-    // 1. Exhaustive Email Search
-    resolved.email = clean(
-        partner.marketingManager?.email || 
-        partner.ceo?.email || 
-        partner.email || 
-        partner.email_address || 
-        ''
-    );
+    // 2. Exhaustive Email Resolution
+    const email = clean(partner.marketingManager?.email) || 
+                  clean(partner.ceo?.email) || 
+                  clean(partner.email) || 
+                  clean(partner.email_address) || '';
 
-    // 2. Exhaustive Mobile Search
-    resolved.mobile = clean(
-        partner.marketingManager?.mobile || 
-        partner.ceo?.mobile || 
-        partner.mobile || 
-        partner.phone || 
-        partner.telephone_number || 
-        ''
-    );
+    // 3. Exhaustive Mobile Resolution
+    const mobile = clean(partner.marketingManager?.mobile) || 
+                   clean(partner.ceo?.mobile) || 
+                   clean(partner.mobile) || 
+                   clean(partner.phone) || '';
 
-    // 3. Identity Resolution
-    resolved.name = clean(
-        partner.marketingManager?.name || 
-        partner.ceo?.name || 
-        partner.contactPerson || 
-        partner.firstName || 
-        partner.contact_person || 
-        'Partner'
-    );
+    // 4. WhatsApp Priority
+    const whatsapp = clean(partner.whatsapp) || mobile;
 
-    // 4. Dedicated WhatsApp Priority
-    const dedicatedWa = clean(partner.whatsapp || partner.whatsapp_number);
-    resolved.whatsapp = dedicatedWa || resolved.mobile;
-
-    return resolved;
+    return { name, email, mobile, whatsapp };
 }
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
@@ -117,7 +86,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
-  const [handshakeVersion, setHandshakeVersion] = useState('v1');
 
   useEffect(() => {
     if (open) setCurrentIndex(initialIndex);
@@ -141,39 +109,13 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
       return (currentPartner.source === 'Lead' || !currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners';
   }, [currentPartner]);
 
-  const audienceLabel = useMemo(() => {
-    if (normalizedAudience === 'isa') return 'ISA Agent';
-    if (normalizedAudience === 'supplier') return 'Supplier';
-    if (normalizedAudience === 'transporter') return currentPartner?.industrial_category || 'Transporter';
-    return audience.charAt(0).toUpperCase() + audience.slice(1);
-  }, [normalizedAudience, currentPartner, audience]);
-
-  const Offer = useMemo(() => {
-    if (normalizedAudience === 'investor' || normalizedAudience === 'finance') return InvestorOffer;
-    if (normalizedAudience === 'developer') return DeveloperOffer;
-    if (normalizedAudience === 'supplier') return SupplierOffer;
-    if (normalizedAudience === 'transporter') return TransporterOffer;
-    if (normalizedAudience === 'associate') return AssociateOffer;
-    return PartnerOffer;
-  }, [normalizedAudience]);
-
-  const Emails = useMemo(() => {
-    if (normalizedAudience === 'investor' || normalizedAudience === 'finance') return InvestorEmails;
-    if (normalizedAudience === 'developer') return DeveloperEmails;
-    if (normalizedAudience === 'supplier') return SupplierEmails;
-    if (normalizedAudience === 'transporter') return TransporterEmails;
-    if (normalizedAudience === 'associate') return AssociateEmails;
-    return PartnerEmails;
-  }, [normalizedAudience]);
-
   const getSubject = () => {
       const company = currentPartner?.companyName || 'your business';
       let label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-      if (activeTab === 'digital-handshake') label = `Digital Handshake`;
       return `Logistics Flow: ${label} for ${company}`;
   }
 
-  const handleLogCopyAndLaunch = async (channel: 'outlook' | 'gmail' | 'whatsapp') => {
+  const handleLogCopyAndLaunch = async (channel: 'outlook' | 'whatsapp') => {
     if (!currentPartner) return;
     const contentId = `engage-content-wrapper-${activeTab}`;
     const contentElement = document.getElementById(contentId);
@@ -184,42 +126,30 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Auth failed.");
         
-        let subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        if (activeTab === 'digital-handshake') subjectLabel = `Handshake ${handshakeVersion.toUpperCase()}`;
-
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
             type: channel === 'whatsapp' ? 'WhatsApp' : 'Email',
-            subject: subjectLabel,
+            subject: activeTab.split('-').join(' ').toUpperCase(),
             notes: `Manual engagement launched via ${channel}.`,
             collection: targetCollection
         });
 
         if (channel === 'whatsapp') {
             const rawText = contentElement.innerText || contentElement.textContent || '';
-            const targetNumber = contact.whatsapp || contact.mobile;
+            const targetNumber = contact.whatsapp;
             if (!targetNumber) throw new Error("No contact number found.");
             
             const cleanNumber = targetNumber.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
-            const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(rawText)}`;
-            
-            toast({ title: "WhatsApp Prepared" });
-            window.open(waUrl, '_blank');
+            window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(rawText)}`, '_blank');
         } else {
-            const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000;">${contentElement.innerHTML}</div>`;
+            const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt;">${contentElement.innerHTML}</div>`;
             await copyHtmlToClipboard(wrappedHtml);
-            toast({ title: "Content Copied" });
-
-            if (channel === 'outlook') {
-                window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(getSubject())}`;
-            } else {
-                window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${contact.email}&su=${encodeURIComponent(getSubject())}`, '_blank');
-            }
+            window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(getSubject())}`;
         }
         
         if (onEngageSuccess) onEngageSuccess();
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Engagement Failed', description: e.message });
+        toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
     } finally {
         setIsProcessing(false);
     }
@@ -230,8 +160,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     setIsDispatching(true);
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Auth failed.");
-
         const contentId = `engage-content-wrapper-${activeTab}`;
         const contentElement = document.getElementById(contentId);
         if (!contentElement) throw new Error("Content not found.");
@@ -248,7 +176,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         if (onEngageSuccess) onEngageSuccess();
         
         if (partners.length > 1 && currentIndex < partners.length - 1) {
-            setTimeout(nextRecord, 800);
+            setTimeout(() => setCurrentIndex(prev => prev + 1), 800);
         } else {
             setTimeout(() => onOpenChange(false), 1500);
         }
@@ -258,9 +186,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         setIsDispatching(false);
     }
   };
-
-  const nextRecord = () => currentIndex < partners.length - 1 && setCurrentIndex(prev => prev + 1);
-  const prevRecord = () => currentIndex > 0 && setCurrentIndex(prev => prev - 1);
 
   if (!currentPartner) return null;
 
@@ -272,80 +197,65 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     <div className="text-left space-y-1">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
-                            Engagement Wizard: {contact.name}
+                            Engagement: {contact.name}
                         </DialogTitle>
                         <div className="flex items-center gap-2 text-sm">
-                           <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
+                           <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
                            <span className="text-muted-foreground">•</span>
-                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No email'}</span>
-                           {contact.whatsapp && (
-                               <span className="font-bold text-green-600 flex items-center gap-1 ml-2">
-                                   <Smartphone className="h-3 w-3"/> WhatsApp: {contact.whatsapp}
-                               </span>
-                           )}
+                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No Email Mapped'}</span>
                         </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        {partners.length > 1 && (
-                            <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm">
-                                <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}><ChevronLeft className="h-4 w-4" /></Button>
-                                <div className="px-3 text-xs font-black uppercase tracking-tighter tabular-nums">{currentIndex + 1} / {partners.length}</div>
-                                <Button variant="ghost" size="icon" onClick={nextRecord} disabled={currentIndex === partners.length - 1}><ChevronRight className="h-4 w-4" /></Button>
-                            </div>
-                        )}
-                        <div className="flex gap-2">
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-green-200 hover:bg-green-50 text-green-600" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || isDispatching || !contact.whatsapp}>
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4" />} WhatsApp
-                            </Button>
-                             <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !contact.email}>
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4" />} Outlook
-                            </Button>
-                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !contact.email}>
-                                {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
-                            </Button>
-                        </div>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" className="font-bold border-green-200 text-green-600" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !contact.whatsapp}>
+                            <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
+                        </Button>
+                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !contact.email}>
+                            <Mail className="mr-2 h-4 w-4" /> Outlook
+                        </Button>
+                        <Button className="font-bold shadow-lg" onClick={handleAutomatedDispatch} disabled={isDispatching || !contact.email}>
+                            {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
+                        </Button>
                     </div>
                 </div>
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
-                    <div className="space-y-1">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Engagement Content</label>
-                        {[
-                            { id: 'digital-handshake', label: '0. Digital Handshake' },
-                            { id: 'company-profile', label: '1. Company Profile' },
-                            { id: 'tech-architecture', label: '2. Tech Architecture' },
-                            { id: 'revenue-model', label: '3. Revenue Model' },
-                            { id: 'offer', label: '4. The Offer' },
-                            { id: 'pitch', label: '5. The Pitch' },
-                            { id: 'framework', label: '6. The Framework' },
-                        ].map((tab) => (
-                            <Button
-                                key={tab.id}
-                                variant={activeTab === tab.id ? "secondary" : "ghost"}
-                                className={cn("w-full justify-start font-medium text-left text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
-                                onClick={() => setActiveTab(tab.id)}
-                            >
-                                {tab.label}
-                            </Button>
-                        ))}
-                    </div>
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto text-left">
+                    {[
+                        { id: 'digital-handshake', label: '0. Digital Handshake' },
+                        { id: 'company-profile', label: '1. Company Profile' },
+                        { id: 'tech-architecture', label: '2. Tech Architecture' },
+                        { id: 'revenue-model', label: '3. Revenue Model' },
+                        { id: 'offer', label: '4. The Offer' },
+                        { id: 'pitch', label: '5. The Pitch' },
+                        { id: 'framework', label: '6. The Framework' },
+                    ].map((tab) => (
+                        <Button
+                            key={tab.id}
+                            variant={activeTab === tab.id ? "secondary" : "ghost"}
+                            className={cn("w-full justify-start text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
+                            onClick={() => setActiveTab(tab.id)}
+                        >
+                            {tab.label}
+                        </Button>
+                    ))}
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
-                    <div className="max-w-[850px] mx-auto space-y-8">
-                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full">
-                            <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
-                                {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} version={handshakeVersion} />}
-                                {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
-                                {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
-                                {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
-                                {activeTab === 'offer' && <Offer partner={currentPartner} />}
-                                {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
-                                {activeTab === 'framework' && <Framework partner={currentPartner} />}
-                            </Suspense>
-                        </div>
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-10 text-left">
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full">
+                        <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />}>
+                            {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
+                            {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
+                            {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
+                            {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
+                            {activeTab === 'offer' && (
+                                normalizedAudience === 'supplier' ? <SupplierOffer /> :
+                                normalizedAudience === 'transporter' ? <TransporterOffer /> :
+                                <PartnerOffer />
+                            )}
+                            {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
+                            {activeTab === 'framework' && <Framework partner={currentPartner} />}
+                        </Suspense>
                     </div>
                 </div>
             </div>
