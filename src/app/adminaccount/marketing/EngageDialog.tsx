@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -9,9 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
@@ -61,8 +57,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * UTILITY: HIERARCHICAL CONTACT RESOLVER (Email, Mobile, WhatsApp)
- * Normalizes values and implements priority protocol.
+ * UTILITY: HIERARCHICAL CONTACT RESOLVER (WhatsApp > Mobile > Phone)
+ * Implements strict priority for business vs personal lines.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -80,29 +76,25 @@ function resolveContact(partner: any) {
         whatsapp: clean(partner.whatsapp) 
     };
 
-    // 1. Marketing Manager (Primary)
-    if (clean(partner.marketingManager?.email)) {
-        resolved.name = partner.marketingManager.name || 'Partner';
+    // 1. Resolve Identity
+    if (clean(partner.marketingManager?.name)) {
+        resolved.name = partner.marketingManager.name;
         resolved.email = clean(partner.marketingManager.email);
-        resolved.mobile = clean(partner.marketingManager.mobile || partner.mobile || partner.phone);
-    }
-    // 2. CEO (Fallback)
-    else if (clean(partner.ceo?.email)) {
-        resolved.name = partner.ceo.name || 'Partner';
+        resolved.mobile = clean(partner.marketingManager.mobile);
+    } else if (clean(partner.ceo?.name)) {
+        resolved.name = partner.ceo.name;
         resolved.email = clean(partner.ceo.email);
-        resolved.mobile = clean(partner.ceo.mobile || partner.mobile || partner.phone);
-    }
-    // 3. Legacy / General
-    else {
-        const legacyEmail = clean(partner.email || partner.email_address || partner.contact_email);
-        const legacyMobile = clean(partner.mobile || partner.phone || partner.telephone_number);
+        resolved.mobile = clean(partner.ceo.mobile);
+    } else {
         resolved.name = partner.contactPerson || partner.firstName || 'Partner';
-        resolved.email = emailRegex.test(legacyEmail) ? legacyEmail : '';
-        resolved.mobile = legacyMobile;
+        resolved.email = clean(partner.email || partner.email_address);
+        resolved.mobile = clean(partner.mobile || partner.phone);
     }
 
-    // WHATSAPP PRIORITY: If a dedicated whatsapp field is empty, fallback to mobile
-    if (!resolved.whatsapp) resolved.whatsapp = resolved.mobile;
+    // 2. WHATSAPP PRIORITY: If dedicated whatsapp is missing, fallback to personal mobile
+    if (!resolved.whatsapp) {
+        resolved.whatsapp = resolved.mobile;
+    }
 
     return resolved;
 }
@@ -141,9 +133,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     if (normalizedAudience === 'isa') return 'ISA Agent';
     if (normalizedAudience === 'supplier') return 'Supplier';
     if (normalizedAudience === 'transporter') return currentPartner?.industrial_category || 'Transporter';
-    if (normalizedAudience === 'driver') return 'Professional Driver';
-    if (normalizedAudience === 'finance') return 'Finance Partner';
-    if (normalizedAudience === 'associate') return 'Associate';
     return audience.charAt(0).toUpperCase() + audience.slice(1);
   }, [normalizedAudience, currentPartner, audience]);
 
@@ -166,7 +155,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   }, [normalizedAudience]);
 
   const getSubject = () => {
-      const company = currentPartner?.companyName || currentPartner?.company_name || 'your business';
+      const company = currentPartner?.companyName || 'your business';
       let label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       if (activeTab === 'digital-handshake') label = `Digital Handshake`;
       return `Logistics Flow: ${label} for ${company}`;
@@ -186,13 +175,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         let subjectLabel = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
         if (activeTab === 'digital-handshake') subjectLabel = `Handshake ${handshakeVersion.toUpperCase()}`;
 
-        let typeLabel = channel.charAt(0).toUpperCase() + channel.slice(1);
-
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
-            type: typeLabel,
+            type: channel === 'whatsapp' ? 'WhatsApp' : 'Email',
             subject: subjectLabel,
-            notes: `Manual engagement launched via ${typeLabel}.`,
+            notes: `Manual engagement launched via ${channel}.`,
             collection: targetCollection
         });
 
@@ -202,15 +189,14 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             if (!targetNumber) throw new Error("No contact number found.");
             
             const cleanNumber = targetNumber.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
-            const encodedText = encodeURIComponent(rawText);
-            const waUrl = `https://wa.me/${cleanNumber}?text=${encodedText}`;
+            const waUrl = `https://wa.me/${cleanNumber}?text=${encodeURIComponent(rawText)}`;
             
-            toast({ title: "WhatsApp Prepared", description: "Interaction logged. Launching chat..." });
+            toast({ title: "WhatsApp Prepared" });
             window.open(waUrl, '_blank');
         } else {
-            const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000; line-height: 1.2; text-align: left;">${contentElement.innerHTML}</div>`;
+            const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt; color: #000000;">${contentElement.innerHTML}</div>`;
             await copyHtmlToClipboard(wrappedHtml);
-            toast({ title: "Content Ready", description: `Interaction logged. Opening ${typeLabel}...` });
+            toast({ title: "Content Copied" });
 
             if (channel === 'outlook') {
                 window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(getSubject())}`;
@@ -246,7 +232,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             collection: targetCollection
         });
 
-        toast({ title: "Dispatch Successful", description: "Record updated with outreach tag." });
+        toast({ title: "Dispatch Successful" });
         if (onEngageSuccess) onEngageSuccess();
         
         if (partners.length > 1 && currentIndex < partners.length - 1) {
@@ -270,24 +256,24 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50">
-                <div className="flex justify-between items-center text-left text-foreground">
+                <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Wizard: {contact.name}
                         </DialogTitle>
-                        <div className="flex items-center gap-2 text-sm text-left">
+                        <div className="flex items-center gap-2 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{audienceLabel}</Badge>
                            <span className="text-muted-foreground">•</span>
                            <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No email'}</span>
-                           <span className="text-muted-foreground mx-1">|</span>
-                           {contact.whatsapp && (
-                               <span className="font-bold text-green-600 flex items-center gap-1"><Smartphone className="h-3 w-3"/>WhatsApp: {contact.whatsapp}</span>
+                           {currentPartner.whatsapp && (
+                               <span className="font-bold text-green-600 flex items-center gap-1 ml-2">
+                                   <Smartphone className="h-3 w-3"/> WhatsApp: {currentPartner.whatsapp}
+                               </span>
                            )}
-                           {!contact.whatsapp && <span className="text-destructive font-medium">No mobile/whatsapp</span>}
                         </div>
                     </div>
-                    <div className="flex items-center gap-4 text-left">
+                    <div className="flex items-center gap-4">
                         {partners.length > 1 && (
                             <div className="flex items-center bg-background border rounded-lg p-1 mr-4 shadow-sm">
                                 <Button variant="ghost" size="icon" onClick={prevRecord} disabled={currentIndex === 0}><ChevronLeft className="h-4 w-4" /></Button>
@@ -297,12 +283,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         )}
                         <div className="flex gap-2">
                              <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-green-200 hover:bg-green-50 text-green-600" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || isDispatching || !contact.whatsapp}>
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4 text-green-600" />} WhatsApp
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4" />} WhatsApp
                             </Button>
                              <Button variant="outline" size="lg" className="h-12 px-4 font-bold gap-2 shadow-sm border-blue-200 hover:bg-blue-50 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || isDispatching || !contact.email}>
-                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4 text-blue-600" />} Outlook
+                                {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Mail className="mr-2 h-4 w-4" />} Outlook
                             </Button>
-                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg bg-primary hover:bg-primary/90 text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !contact.email}>
+                            <Button size="lg" className="h-12 px-8 font-bold gap-2 shadow-lg" onClick={handleAutomatedDispatch} disabled={isDispatching || isProcessing || !contact.email}>
                                 {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
                             </Button>
                         </div>
@@ -312,15 +298,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
             <div className="flex-1 flex overflow-hidden">
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
-                    <Alert className="bg-amber-50 py-3 border-amber-200 shadow-sm text-left">
-                        <ShieldAlert className="h-4 w-4 text-amber-600" />
-                        <div className="ml-2 text-left">
-                            <AlertTitle className="text-[10px] font-black uppercase tracking-widest text-amber-800">Dispatch Shield</AlertTitle>
-                            <AlertDescription className="text-[9px] text-amber-700 leading-tight mt-1">Use **WhatsApp** for instant decision-maker access or **Automated Dispatch** to bypass spam filters.</AlertDescription>
-                        </div>
-                    </Alert>
-
-                    <div className="space-y-1 text-left">
+                    <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Engagement Content</label>
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
@@ -344,9 +322,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
-                    <div className="max-w-[850px] mx-auto space-y-8 text-left">
-                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full text-foreground">
-                            <Suspense fallback={<div className="flex justify-center py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+                    <div className="max-w-[850px] mx-auto space-y-8">
+                        <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full">
+                            <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                                 {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} version={handshakeVersion} />}
                                 {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
                                 {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
