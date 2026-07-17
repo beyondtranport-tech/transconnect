@@ -47,8 +47,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER
- * Scans all possible data nodes for email and phone numbers, ensuring compatibility with all import formats.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V5
+ * High-fidelity scanner designed to handle every possible nomenclature from discovery engines and manual imports.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -57,19 +57,20 @@ function resolveContact(partner: any) {
         if (!val) return '';
         const v = String(val).trim();
         const low = v.toLowerCase();
-        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email'];
+        // Skip placeholders
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending'];
         if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return '';
         return v;
     };
 
     const searchObj = (obj: any, keys: string[]): string => {
-        if (!obj) return '';
+        if (!obj || typeof obj !== 'object') return '';
         for (const k of keys) {
             if (obj[k]) {
                 const c = clean(obj[k]);
                 if (c) return c;
             }
-            // Case-insensitive fallback for keys
+            // Case-insensitive check
             for (const actualKey in obj) {
                 if (actualKey.toLowerCase() === k.toLowerCase()) {
                     const c = clean(obj[actualKey]);
@@ -80,23 +81,33 @@ function resolveContact(partner: any) {
         return '';
     };
 
-    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'EMAIL', 'workEmail', 'main_email', 'work_email', 'E-mail', 'Business Email'];
-    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'tel', 'cell_number', 'Work Phone'];
+    const emailKeys = [
+        'email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 
+        'EMAIL', 'workEmail', 'main_email', 'work_email', 'E-mail', 'Business Email', 'User Email'
+    ];
+    const phoneKeys = [
+        'mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 
+        'telephone', 'tel', 'cell_number', 'Work Phone', 'Mobile Number', 'Contact No'
+    ];
 
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contactPerson || 
                        partner.firstName || 
                        partner.companyName ||
+                       partner.trading_name ||
                        'Partner');
 
+    // EXHAUSTIVE SCAN ACROSS ALL NODES
     const email = searchObj(partner.marketingManager, emailKeys) || 
                   searchObj(partner.ceo, emailKeys) || 
-                  searchObj(partner, emailKeys);
+                  searchObj(partner, emailKeys) ||
+                  clean(partner.email_address || partner.contact_email);
 
     const mobile = searchObj(partner.marketingManager, phoneKeys) || 
                    searchObj(partner.ceo, phoneKeys) || 
-                   searchObj(partner, phoneKeys);
+                   searchObj(partner, phoneKeys) ||
+                   clean(partner.mobile_number || partner.contact_no);
 
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
@@ -122,7 +133,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
 
-  // Permissive logic: if any string exists, activate buttons to allow descriptive failure feedback
+  // PERMISSIVE LOGIC: Activate buttons if any string exists
   const hasEmail = !!contact.email;
   const hasPhone = !!contact.whatsapp;
 
@@ -221,9 +232,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50 text-left">
-                <div className="flex justify-between items-center text-left">
+                <div className="flex justify-between items-center text-left text-foreground">
                     <div className="text-left space-y-1 text-foreground">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
@@ -254,7 +265,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden text-left">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto text-left">
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto text-left text-foreground">
                     {[
                         { id: 'digital-handshake', label: '0. Digital Handshake' },
                         { id: 'company-profile', label: '1. Company Profile' },
@@ -276,7 +287,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border text-left min-h-full">
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border text-left min-h-full text-foreground">
                         <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}

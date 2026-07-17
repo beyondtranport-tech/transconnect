@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase, useDoc } from '@/firebase';
-import { Loader2, Zap, Sparkles, Target, Landmark, Store, DollarSign, ArrowRight, ShieldCheck, BarChart3, TrendingUp, Search, CheckCircle2, History, AlertCircle, Eye, MousePointer2, UserCheck, Layers, Info } from 'lucide-react';
+import { Loader2, Zap, Sparkles, Target, Landmark, Store, DollarSign, ArrowRight, ShieldCheck, BarChart3, TrendingUp, Search, CheckCircle2, History, AlertCircle, Eye, MousePointer2, UserCheck, Layers, Info, Smartphone, ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { collection, query, orderBy, doc, where } from 'firebase/firestore';
@@ -346,7 +346,7 @@ export default function PromoteNodeContent() {
                     </Card>
 
                     <div className="space-y-4 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Economics of Scale</Label>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground">Economics of Scale</Label>
                         <Card className="border-dashed border-2 bg-muted/20 text-left text-foreground">
                             <CardContent className="p-6 space-y-4 text-left text-foreground">
                                 <div className="flex items-start gap-4 text-left text-foreground">

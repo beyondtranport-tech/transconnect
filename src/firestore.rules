@@ -32,16 +32,6 @@ service cloud.firestore {
       );
     }
 
-    function isSaleParticipant(sale) {
-        return isSignedIn() && (
-            isAdmin() || 
-            (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-                sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
-                sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
-            ))
-        );
-    }
-
     // --- PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
 
     match /partners/{partnerId} {
@@ -126,18 +116,6 @@ service cloud.firestore {
       
       match /loadBoard/{allBoard=**} {
         allow read, write: if isMember(companyId);
-      }
-    }
-
-    match /sales/{saleId} {
-      allow read: if isSignedIn() && (isAdmin() || isSaleParticipant(resource.data));
-      allow write: if isAdmin() || (isSignedIn() && (
-        (!exists(/databases/$(database)/documents/sales/$(saleId)) && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
-        isSaleParticipant(resource.data)
-      ));
-      
-      match /messages/{id} {
-        allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
       }
     }
 
