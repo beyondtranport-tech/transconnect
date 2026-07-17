@@ -128,13 +128,17 @@ service cloud.firestore {
     }
 
     match /partners/{partnerId} {
-      allow read: if isSignedIn();
+      // PUBLIC HANDSHAKE AUTHORIZATION: Allow single document retrieval for opt-in flow.
+      allow get: if true;
+      allow list: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
-      allow read: if isSignedIn();
+      // PUBLIC HANDSHAKE AUTHORIZATION: Allow single document retrieval for opt-in flow.
+      allow get: if true;
+      allow list: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }

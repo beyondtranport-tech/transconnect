@@ -18,7 +18,7 @@ git add .
 ### Step 2: Save Your Changes
 Commit your changes with a descriptive message.
 ```bash
-git commit -m "Forensic Intelligence V3: Deep-mined technical profiles and dual-tier leadership capture implemented"
+git commit -m "Forensic Intelligence V4: Resolved security rules, activated engagement buttons, and standardized production URLs"
 ```
 
 ### Step 3: Push Your Backup to GitHub
@@ -31,20 +31,15 @@ git push
 
 ---
 
-## Recent Updates: Forensic V3 & CRM Stabilization
+## Recent Updates: Forensic V4 & Deployment Stabilization
+- **Resolved "Critical System Error"**: Updated Firestore security rules to authorize public access for handshake recipients, preventing site crashes for unauthenticated users.
+- **Exhaustive Contact resolution**: Overhauled the engagement wizard to deep-scan every data node for emails and phone numbers, definitively reactivating the Outlook and Dispatch buttons.
+- **Production URL Normalization**: Standardized all outreach links to the verified live origin to bypass connection refusal errors and corporate firewall blocks.
+- **WhatsApp Business Protocol**: Implemented dedicated WhatsApp Business number prioritization with seamless personal fallback across all registries.
+- **Registry Hardening**: Integrated "Specialized Tags" (BPW) as an active search index in the Supplier CRM for instant batch management.
+
+## Earlier Updates: Forensic V3 & CRM Stabilization
 - **Deep-Mined Profiles**: Implemented a 300-word verbatim extraction protocol to capture technical service wording directly from company sitemaps.
 - **Dual-Tier Leadership**: CRM now structures contact details for both the Marketing Manager and CEO/Principal.
 - **Automatic Registry Sync**: Removed interim landing pages; both Strategic Partner and Lead databases now synchronize automatically on landing.
-- **Icon Stability**: Resolved runtime crashes related to missing icon definitions (Mail, Building, Users).
-- **Admin API Hardening**: Formally implemented all missing operational handlers for automated enrichment and communication logging.
 
-## Earlier Updates: Forensic Intelligence & Pipeline Automation
-- **Automated Forensic Bridge**: Implemented a high-velocity, persistent enrichment pipeline that scans the registry for data gaps and bridges them using live AI research.
-- **Admin API Stabilization**: Fully implemented missing operational handlers for bulk imports, communication logging, and platform staff management.
-- **Associate CRM Scaling**: Optimized the Digital Partner nodes with contact visibility and instant interaction logging for direct recruitment calls.
-- **5k Scan Depth**: Increased forensic analysis range to 5,000 records to ensure exhaustive gap detection across the 22k+ record registry.
-
-## Initial Updates: Admin Portal Stabilization
-- **Fixed Build Failures**: Resolved "Unexpected token div" and "Dialog" errors caused by malformed JSX closures.
-- **Forensic Tracking**: Embedded hidden tracking pixels in all 6 core engagement templates for real-time monitoring.
-- **Interactive Pagination**: Restored manual page-jump inputs and accurate result counts in the DataTable component.

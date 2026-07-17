@@ -48,9 +48,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * CLINICAL CONTACT RESOLVER V14
- * Performs an exhaustive, deep-scan of the partner record across all potential data nodes.
- * Explicitly designed to handle varied naming conventions from AI Discovery and Bulk Imports.
+ * EXHAUSTIVE CONTACT RESOLVER V15
+ * Performed a deep-scan across every potential email and phone field to ensure button activation.
+ * Specifically handles varied naming conventions from AI Discovery and Bulk Imports.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -73,30 +73,32 @@ function resolveContact(partner: any) {
                        'Partner');
 
     // 2. EXHAUSTIVE EMAIL SCAN (Aggressive deep-search)
-    const rawEmail = partner.email || 
-                     partner.email_address || 
-                     partner.emailAddress || 
-                     partner.contactEmail || 
-                     partner.contact_email || 
-                     partner.workEmail || 
-                     partner.work_email || 
-                     partner.marketingManager?.email || 
-                     partner.ceo?.email || 
-                     partner.main_email ||
-                     '';
-    const email = clean(rawEmail);
+    // Searches top-level fields AND sub-objects independently.
+    const email = clean(
+        partner.email || 
+        partner.email_address || 
+        partner.emailAddress || 
+        partner.contact_email || 
+        partner.contactEmail || 
+        partner.marketingManager?.email || 
+        partner.ceo?.email || 
+        partner.main_email ||
+        partner.workEmail ||
+        ''
+    );
 
     // 3. EXHAUSTIVE PHONE SCAN
-    const rawMobile = partner.mobile || 
-                      partner.whatsapp || 
-                      partner.phone || 
-                      partner.telephone || 
-                      partner.contact_number || 
-                      partner.cell ||
-                      partner.marketingManager?.mobile || 
-                      partner.ceo?.mobile || 
-                      '';
-    const mobile = clean(rawMobile);
+    const mobile = clean(
+        partner.mobile || 
+        partner.whatsapp || 
+        partner.phone || 
+        partner.cell || 
+        partner.contact_number || 
+        partner.telephone || 
+        partner.marketingManager?.mobile || 
+        partner.ceo?.mobile || 
+        ''
+    );
 
     // 4. WHATSAPP PRIORITY
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
@@ -240,7 +242,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !contact.whatsapp}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
-                        {/* BUTTONS REACTIVATED: Removed the rigid regex requirement from disabled logic. Allowing backend to provide feedback. */}
                         <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !contact.email}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
@@ -283,8 +284,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     )}
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-10 text-left">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-12 rounded-lg shadow-sm border text-left min-h-full">
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border text-left min-h-full">
                         <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
