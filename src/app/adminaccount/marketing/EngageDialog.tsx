@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Loader2, Mail, Zap, ChevronLeft, ChevronRight, Send, ShieldCheck, ShieldAlert, CheckCircle2, MessageCircle, Smartphone, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

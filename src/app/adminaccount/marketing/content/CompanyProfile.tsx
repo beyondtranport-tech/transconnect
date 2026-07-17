@@ -5,7 +5,7 @@ import React from "react";
 
 /**
  * STRATEGIC COMPANY PROFILE
- * Implements Contact Hierarchy for salutations.
+ * Updated Base URL to professional domain.
  */
 export default function CompanyProfile({ audience, partner }: { audience: string; partner?: any }) {
     const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
@@ -25,8 +25,8 @@ export default function CompanyProfile({ audience, partner }: { audience: string
         ? partner.ceo.email
         : partner?.email || '';
 
-    const pixelUrl = `/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    const baseUrl = 'https://logisticsflow.co.za';
+    const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
     const signupLink = `${baseUrl}/join?email=${encodeURIComponent(email)}&firstName=${encodeURIComponent(firstName)}`;
 
     return (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
@@ -13,13 +14,14 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
         const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
         const company = partner?.companyName || '[Your Company]';
         
+        const baseUrl = 'https://logisticsflow.co.za';
         text = text.replace(/\[Partner Name\]/g, name);
         text = text.replace(/\[Name\]/g, name);
         text = text.replace(/\[Lead Name\]/g, name);
         text = text.replace(/\[Your Company\]/g, company);
         text = text.replace(/\[Referral Link\]/g, referralLink);
         text = text.replace(/\[Sign-up Link\]/g, referralLink);
-        text = text.replace(/\[Opt-in Link\]/g, `${window.location.origin}/opt-in/${partner?.id || 'TEST'}`);
+        text = text.replace(/\[Opt-in Link\]/g, `${baseUrl}/opt-in/${partner?.id || 'TEST'}`);
 
         return text;
     }, [content, partner, referralLink]);
@@ -73,7 +75,7 @@ Establish the connection in 30 seconds here:
 
 Why establish this foundation?
 - Intelligence Access: Unlock direct contacts for 22,000+ industry decision-makers.
-- Synergy Matching: Proactive alerts for load matches and group discounts.
+- Synergy Matching: Proactive alerts for load matches and group savings alerts.
 - Verified Standing: Start building a digital track record for future capital access.
 
 Best regards,
@@ -112,7 +114,7 @@ const tabs = [
 
 export default function PartnerEmails({ partner }: { partner?: any }) {
     const { user } = useUser();
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    const baseUrl = 'https://logisticsflow.co.za';
     
     const referralLink = React.useMemo(() => {
         if (!partner) return `${baseUrl}/join`;

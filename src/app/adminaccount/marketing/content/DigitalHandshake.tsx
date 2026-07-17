@@ -5,7 +5,7 @@ import React, { useMemo } from "react";
 
 /**
  * AUTHORITATIVE DIGITAL HANDSHAKE
- * Tailored for four primary audiences: Suppliers, Transporters, Finance Partners, and Digital Partners.
+ * Hardened to use professional production domain for links.
  */
 export default function DigitalHandshake({ partner, audience, version = 'v1' }: { partner?: any, audience?: string, version?: string }) {
     const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
@@ -19,7 +19,9 @@ export default function DigitalHandshake({ partner, audience, version = 'v1' }: 
 
     const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    
+    // Hardened Base URL to bypass development workstation redirects
+    const baseUrl = 'https://logisticsflow.co.za';
     const optInLink = `${baseUrl}/opt-in/${partner?.id || 'PROSPECT'}`;
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
