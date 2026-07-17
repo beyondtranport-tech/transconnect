@@ -106,8 +106,8 @@ export async function POST(req: NextRequest) {
             case 'dispatchEngagement': {
                 const { partnerId, email, subject, html, collection: colOverride } = payload;
                 
-                if (!email || !emailRegex.test(email)) {
-                    throw new Error("Dispatch Aborted: Recipient address is missing or invalid.");
+                if (!email || !emailRegex.test(email.trim())) {
+                    throw new Error(`Dispatch Aborted: "${email}" is missing or invalid.`);
                 }
                 if (!subject || !html) throw new Error("Missing mandatory content.");
 
@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
 
                 sgMail.setApiKey(apiKey);
                 const msg = {
-                    to: email,
+                    to: email.trim(),
                     from: 'Logistics Flow <noreply@logisticsflow.co.za>',
                     subject: subject,
                     html: html,
