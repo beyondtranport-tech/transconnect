@@ -22,7 +22,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
         text = text.replace(/\[Your Company\]/g, company);
         text = text.replace(/\[Referral Link\]/g, referralLink);
         text = text.replace(/\[Sign-up Link\]/g, referralLink);
-        text = text.replace(/\[Opt-in Link\]/g, `${window.location.origin}/opt-in/${partner?.id || 'TEST'}`);
+        text = text.replace(/\[Opt-in Link\]/g, `https://studio--ecosystem-hub.us-central1.hosted.app/opt-in/${partner?.id || 'TEST'}`);
 
         return text;
     }, [content, partner, referralLink]);
@@ -108,7 +108,7 @@ export default function TransporterEmails({ partner }: { partner?: any }) {
     const searchParams = useSearchParams();
     const transporterType = searchParams.get('type') || 'Logistics';
     const templates = getTemplates(transporterType);
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
 
     const referralLink = React.useMemo(() => {
         if (!partner) return `${baseUrl}/join`;

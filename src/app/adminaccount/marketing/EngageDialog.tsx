@@ -55,9 +55,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * RESILIENT CONTACT RESOLVER
- * Maps various data shapes (Discovery, Registry, Import) into a unified contact object.
- * Implements WhatsApp Business priority.
+ * EXHAUSTIVE CONTACT RESOLVER V5
+ * Scans all possible fields to find an email/mobile, preventing greyed-out buttons
+ * when partial data is present in manager/ceo sub-objects.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -65,7 +65,7 @@ function resolveContact(partner: any) {
     const clean = (val: any) => {
         if (val === null || val === undefined) return '';
         const v = String(val).trim();
-        return (v.toLowerCase() === 'n/a' || v.toLowerCase() === 'null' || v.toLowerCase() === 'none' || v.length < 3) ? '' : v;
+        return (v.toLowerCase() === 'n/a' || v.toLowerCase() === 'null' || v.toLowerCase() === 'none') ? '' : v;
     };
 
     let resolved = { 
@@ -75,28 +75,38 @@ function resolveContact(partner: any) {
         whatsapp: '' 
     };
 
-    // 1. Resolve Identity
-    if (clean(partner.marketingManager?.name)) {
-        resolved.name = partner.marketingManager.name;
-        resolved.email = clean(partner.marketingManager.email);
-        resolved.mobile = clean(partner.marketingManager.mobile);
-    } else if (clean(partner.ceo?.name)) {
-        resolved.name = partner.ceo.name;
-        resolved.email = clean(partner.ceo.email);
-        resolved.mobile = clean(partner.ceo.mobile);
-    } else {
-        resolved.name = partner.contactPerson || partner.firstName || partner.contact_person || 'Partner';
-        resolved.email = clean(partner.email || partner.email_address);
-        resolved.mobile = clean(partner.mobile || partner.phone || partner.telephone_number);
-    }
+    // 1. Exhaustive Email Search
+    resolved.email = clean(
+        partner.marketingManager?.email || 
+        partner.ceo?.email || 
+        partner.email || 
+        partner.email_address || 
+        ''
+    );
 
-    // 2. WHATSAPP PRIORITY logic
+    // 2. Exhaustive Mobile Search
+    resolved.mobile = clean(
+        partner.marketingManager?.mobile || 
+        partner.ceo?.mobile || 
+        partner.mobile || 
+        partner.phone || 
+        partner.telephone_number || 
+        ''
+    );
+
+    // 3. Identity Resolution
+    resolved.name = clean(
+        partner.marketingManager?.name || 
+        partner.ceo?.name || 
+        partner.contactPerson || 
+        partner.firstName || 
+        partner.contact_person || 
+        'Partner'
+    );
+
+    // 4. Dedicated WhatsApp Priority
     const dedicatedWa = clean(partner.whatsapp || partner.whatsapp_number);
-    if (dedicatedWa) {
-        resolved.whatsapp = dedicatedWa;
-    } else {
-        resolved.whatsapp = resolved.mobile;
-    }
+    resolved.whatsapp = dedicatedWa || resolved.mobile;
 
     return resolved;
 }

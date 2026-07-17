@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
@@ -14,7 +13,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
         const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
         const company = partner?.companyName || '[Your Company]';
         
-        const baseUrl = 'https://logisticsflow.co.za';
+        const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
         text = text.replace(/\[Partner Name\]/g, name);
         text = text.replace(/\[Name\]/g, name);
         text = text.replace(/\[Lead Name\]/g, name);
@@ -114,7 +113,7 @@ const tabs = [
 
 export default function PartnerEmails({ partner }: { partner?: any }) {
     const { user } = useUser();
-    const baseUrl = 'https://logisticsflow.co.za';
+    const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
     
     const referralLink = React.useMemo(() => {
         if (!partner) return `${baseUrl}/join`;

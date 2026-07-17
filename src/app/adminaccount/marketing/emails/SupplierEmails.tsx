@@ -14,13 +14,14 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
         const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Supplier');
         const company = partner?.companyName || '[Your Company]';
         
+        const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
         text = text.replace(/\[Supplier Name\]/g, name);
         text = text.replace(/\[Name\]/g, name);
         text = text.replace(/\[Lead Name\]/g, name);
         text = text.replace(/\[Your Company\]/g, company);
         text = text.replace(/\[Referral Link\]/g, referralLink);
         text = text.replace(/\[Sign-up Link\]/g, referralLink);
-        text = text.replace(/\[Opt-in Link\]/g, `${window.location.origin}/opt-in/${partner?.id || 'TEST'}`);
+        text = text.replace(/\[Opt-in Link\]/g, `${baseUrl}/opt-in/${partner?.id || 'TEST'}`);
 
         return text;
     }, [content, partner, referralLink]);
@@ -110,7 +111,7 @@ export default function SupplierEmails({ partner }: { partner?: any }) {
     const searchParams = useSearchParams();
     const supplierType = searchParams.get('type') || 'Industrial';
     const templates = getTemplates(supplierType);
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+    const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
 
     const referralLink = React.useMemo(() => {
         if (!partner) return `${baseUrl}/join`;
