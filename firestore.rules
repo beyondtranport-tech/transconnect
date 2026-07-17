@@ -33,10 +33,10 @@ service cloud.firestore {
       );
     }
 
-    // --- PUBLIC HANDSHAKE RULES (CRITICAL: AUTHORIZING HANDSHAKE RESOLVE) ---
+    // --- PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
 
     match /partners/{partnerId} {
-      // Authorized Public Handshake: Allow single doc retrieval for recipients of handshake links
+      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
       allow get: if true; 
       allow list: if isSignedIn();
       allow write: if isAdmin();
@@ -44,7 +44,7 @@ service cloud.firestore {
     }
 
     match /leads/{leadId} {
-      // Authorized Public Handshake: Allow single doc retrieval for recipients of handshake links
+      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
       allow get: if true; 
       allow list: if isSignedIn();
       allow write: if isAdmin();

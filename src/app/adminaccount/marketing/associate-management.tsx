@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Share2, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Clock, Phone, Smartphone
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone 
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -158,6 +158,8 @@ export default function AssociateManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [outreachFilter, setOutreachFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+
+  const type = 'associate';
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
@@ -332,7 +334,7 @@ export default function AssociateManagement() {
                 <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-left">Digital Partner Pipeline Scan</h2>
                 <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground text-left text-foreground text-foreground text-foreground">Scan your influencer and marketer database. Use filters to prioritize recruitment.</p>
                 
-                <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground text-foreground">
+                <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground text-foreground text-foreground">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                         <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-foreground">Outreach Status</Label>
@@ -383,7 +385,7 @@ export default function AssociateManagement() {
             </Card>
       ) : (
             <div className="space-y-6 text-left">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-left">
+                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-left text-foreground text-foreground">
                     <div className="text-left text-foreground text-left text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Share2 /> Digital Partners</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2 text-left text-foreground text-foreground">
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> New Search</Button>
@@ -393,7 +395,7 @@ export default function AssociateManagement() {
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className="gap-2 text-foreground text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground">
+                            <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                                 <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                                     {Object.keys(visibleColumns).map(col => (
                                         <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
@@ -410,11 +412,11 @@ export default function AssociateManagement() {
                         <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>
                 </CardHeader>
-                <Card className="text-left text-foreground text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
+                <Card className="text-left text-foreground text-foreground text-foreground text-foreground">
+                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
                             <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
@@ -424,8 +426,8 @@ export default function AssociateManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                                     <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
@@ -435,20 +437,20 @@ export default function AssociateManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                            <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
                                 <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4">
+                                     <div className="flex justify-center pt-4 text-foreground text-foreground text-foreground">
                                         <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records

@@ -122,7 +122,7 @@ function FileUploadField({
             const response = await fetch('/api/uploadImageAsset', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName: `${name}_${Date.now()}_${file.name}` })
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName: `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}` })
             });
             const result = await response.json();
             if (!response.ok) throw new Error(result.error);
@@ -656,7 +656,7 @@ function StepRateSheet() {
                                         <FormControl><Input type="number" {...field} className="h-9 bg-white" /></FormControl>
                                     </FormItem>
                                 )} />
-                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="mb-0.5 text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="mb-0.5 text-destructive"><Trash2 className="h-4 w-4 text-destructive"/></Button>
                             </div>
                         </div>
                     ))}
@@ -914,12 +914,20 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
-                    <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="name" render={({ field }) => (
+                      <FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>
+                    )} />
                     <div className="grid grid-cols-2 gap-4 text-left">
-                         <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                         <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                         <FormField control={form.control} name="price" render={({ field }) => (
+                           <FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>
+                         )} />
+                         <FormField control={form.control} name="stock" render={({ field }) => (
+                           <FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>
+                         )} />
                     </div>
-                    <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="description" render={({ field }) => (
+                      <FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>
+                    )} />
                     
                     <div className="space-y-4 text-left">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>

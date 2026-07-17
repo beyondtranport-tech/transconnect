@@ -185,7 +185,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   };
 
   const handleAutomatedDispatch = async () => {
-    if (!contact.email || !currentPartner) return;
+    if (!currentPartner) return;
     setIsDispatching(true);
     try {
         const token = await getClientSideAuthToken();
@@ -195,9 +195,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const contentElement = document.getElementById(contentId);
         if (!contentElement) throw new Error("Content not found.");
 
+        const emailToUse = contact.email;
+        if (!emailToUse) throw new Error("Recipient email not found.");
+
         await performAdminAction(token, 'dispatchEngagement', {
             partnerId: currentPartner.id,
-            email: contact.email,
+            email: emailToUse,
             subject: getSubject(),
             html: contentElement.innerHTML,
             collection: targetCollection

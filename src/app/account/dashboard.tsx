@@ -288,7 +288,7 @@ export default function AccountDashboard() {
                 <>
                     {isFreeMember && (
                         <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
-                            <CardHeader className="text-left text-foreground">
+                            <CardHeader className="text-left text-foreground text-left">
                                 <div className="flex items-start gap-4 text-left text-foreground">
                                     <div className="bg-primary/10 p-3 rounded-full shrink-0">
                                     <Sparkles className="h-6 w-6 text-primary" />
@@ -384,7 +384,7 @@ export default function AccountDashboard() {
                                                             <p className="text-xs font-mono font-bold text-primary text-left">{formatCurrency(f.limit)}</p>
                                                         )}
                                                     </div>
-                                                    <Button variant="ghost" size="sm" asChild className="text-[10px] font-black uppercase h-8 px-3 text-left">
+                                                    <Button variant="ghost" size="icon" asChild className="text-[10px] font-black uppercase h-8 px-3 text-left">
                                                         <Link href="/account?view=my-facilities">Manage <ArrowRight className="ml-1 h-3 w-3" /></Link>
                                                     </Button>
                                                 </div>
