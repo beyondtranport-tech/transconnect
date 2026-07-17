@@ -10,8 +10,9 @@ export const dynamic = 'force-dynamic';
 /**
  * Resilient Serialization Utility
  * Recursively sanitizes Firestore objects to ensure clean JSON transmission.
+ * Prevents "Failed to parse stream" errors on the client.
  */
-function serializeTimestamps(docData: any): any {
+function serializeData(docData: any): any {
     if (docData === null || docData === undefined) return docData;
     
     if (docData instanceof Timestamp) {
@@ -23,13 +24,13 @@ function serializeTimestamps(docData: any): any {
     }
 
     if (Array.isArray(docData)) {
-        return docData.map(serializeTimestamps);
+        return docData.map(serializeData);
     }
     
     if (typeof docData === 'object') {
         const serialized: { [key: string]: any } = {};
         for (const key in docData) {
-            serialized[key] = serializeTimestamps(docData[key]);
+            serialized[key] = serializeData(docData[key]);
         }
         return serialized;
     }
@@ -196,19 +197,19 @@ export async function POST(req: NextRequest) {
                     );
                 }
 
-                return NextResponse.json({ success: true, data: results.map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: serializeData(results) });
             }
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').get();
                 const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: members.map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: serializeData(members) });
             }
 
             case 'getLeads': {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
                 const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: leads.map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: serializeData(leads) });
             }
 
             case 'getPlatformStaff': {
@@ -220,7 +221,7 @@ export async function POST(req: NextRequest) {
                 const { type } = payload;
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
                 const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: logs.map(serializeTimestamps) });
+                return NextResponse.json({ success: true, data: serializeData(logs) });
             }
 
             case 'deletePartner': {

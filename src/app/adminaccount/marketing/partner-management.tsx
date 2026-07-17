@@ -408,7 +408,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
               <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
               <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
               <AddCommunicationLogDialog partnerId={row.original.id} collection={row.original.source === 'Lead' ? 'leads' : 'partners'} onLogAdded={() => fetchData()} />
-              <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+              <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
               <PartnerTasksDialog partner={row.original} />
               <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
               <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
@@ -450,7 +450,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground">
+      <div className="space-y-6 text-left text-foreground text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
               <div className="text-left text-foreground">
                   <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Database /> {audienceLabel} Registry</CardTitle>

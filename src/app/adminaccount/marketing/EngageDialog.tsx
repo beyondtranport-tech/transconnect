@@ -47,9 +47,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V7
- * Scans ALL potential fields to find contact data.
- * Fixes the "greyed out" button issue by finding emails at the top level or sub-objects.
+ * EXHAUSTIVE CONTACT RESOLVER V8
+ * Clinical scan of all potential data nodes to ensure buttons activate.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -57,34 +56,46 @@ function resolveContact(partner: any) {
     const clean = (val: any) => {
         if (!val) return '';
         const v = String(val).trim();
-        return (v.toLowerCase() === 'n/a' || v.toLowerCase() === 'null' || v.toLowerCase() === 'none') ? '' : v;
+        const low = v.toLowerCase();
+        if (low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined') return '';
+        return v;
     };
 
     // 1. Resolve Best Name
-    const name = clean(partner.marketingManager?.name || partner.ceo?.name || partner.contactPerson || partner.firstName || 'Partner');
+    const name = clean(partner.marketingManager?.name || 
+                       partner.ceo?.name || 
+                       partner.contact_person || 
+                       partner.contactPerson || 
+                       partner.firstName || 
+                       'Partner');
 
-    // 2. Exhaustive Email Resolution (Check top-level registry field first)
-    const email = clean(partner.email) || 
-                  clean(partner.email_address) ||
-                  clean(partner.marketingManager?.email) || 
-                  clean(partner.ceo?.email) || 
-                  '';
+    // 2. Exhaustive Email Resolution
+    const email = clean(partner.email || 
+                        partner.email_address || 
+                        partner.emailAddress || 
+                        partner.contact_email || 
+                        partner.marketingManager?.email || 
+                        partner.ceo?.email || 
+                        '');
 
-    // 3. Exhaustive Mobile Resolution
-    const mobile = clean(partner.mobile) || 
-                   clean(partner.phone) || 
-                   clean(partner.marketingManager?.mobile) || 
-                   clean(partner.ceo?.mobile) || 
-                   '';
+    // 3. Exhaustive Mobile/Phone Resolution
+    const mobile = clean(partner.mobile || 
+                         partner.phone || 
+                         partner.telephone || 
+                         partner.contact_number || 
+                         partner.marketingManager?.mobile || 
+                         partner.ceo?.mobile || 
+                         '');
 
     // 4. WhatsApp Priority Protocol
-    const whatsapp = clean(partner.whatsapp) || mobile;
+    const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
     return { name, email, mobile, whatsapp };
 }
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
   const { toast } = useToast();
+  const { user } = useUser();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -102,7 +113,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
 
   const normalizedAudience = useMemo(() => {
-      let aud = audience.toLowerCase();
+      let aud = (audience || 'partner').toLowerCase();
       if (aud.endsWith('s')) aud = aud.slice(0, -1);
       return aud;
   }, [audience]);
@@ -202,17 +213,23 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             <Send className="h-6 w-6 text-primary" />
                             Engagement: {contact.name}
                         </DialogTitle>
-                        <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-3 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
-                           <span className="text-muted-foreground">•</span>
-                           <span className={cn("font-medium", !contact.email ? "text-destructive" : "text-muted-foreground")}>{contact.email || 'No Email Found'}</span>
+                           <div className="flex items-center gap-2 text-muted-foreground">
+                               <Mail className="h-3 w-3" />
+                               <span className={cn("font-medium", !contact.email && "text-destructive italic")}>{contact.email || 'No email record'}</span>
+                           </div>
+                           <div className="flex items-center gap-2 text-muted-foreground border-l pl-3">
+                               <Smartphone className={cn("h-3 w-3", contact.whatsapp && "text-green-600")} />
+                               <span className={cn("font-bold", contact.whatsapp && "text-green-600")}>{contact.whatsapp || 'No number record'}</span>
+                           </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" className="font-bold border-green-200 text-green-600" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !contact.whatsapp}>
+                        <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !contact.whatsapp}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
-                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !contact.email}>
+                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !contact.email}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
                         <Button className="font-bold shadow-lg" onClick={handleAutomatedDispatch} disabled={isDispatching || !contact.email}>
@@ -242,6 +259,16 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             {tab.label}
                         </Button>
                     ))}
+                    
+                    {partners.length > 1 && (
+                        <div className="mt-auto pt-4 border-t space-y-4">
+                            <p className="text-[10px] font-black uppercase text-muted-foreground px-2">Batch Queue ({currentIndex + 1}/{partners.length})</p>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="icon" className="h-8 w-8 flex-1" onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0}><ChevronLeft className="h-4 w-4"/></Button>
+                                <Button variant="outline" size="icon" className="h-8 w-8 flex-1" onClick={() => setCurrentIndex(prev => Math.min(partners.length - 1, prev + 1))} disabled={currentIndex === partners.length - 1}><ChevronRight className="h-4 w-4"/></Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-10 text-left">
