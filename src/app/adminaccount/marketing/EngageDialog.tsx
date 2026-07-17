@@ -47,9 +47,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V9
- * Clinically scans every potential data node to ensure buttons activate.
- * Handles variations in field naming from diverse import sources.
+ * EXHAUSTIVE CONTACT RESOLVER V10
+ * Performs an ultra-resilient deep-scan of the record to find valid contact nodes.
+ * Prioritizes dedicated WhatsApp lines and handles diverse field naming conventions.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -58,12 +58,12 @@ function resolveContact(partner: any) {
         if (!val) return '';
         const v = String(val).trim();
         const low = v.toLowerCase();
-        // Ignore placeholders
-        if (low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined' || low === '[locked]') return '';
+        // Strict suppression of placeholders and masked strings
+        if (!v || low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined' || low === '[locked]' || low.includes('locked@')) return '';
         return v;
     };
 
-    // 1. Resolve Identity
+    // 1. Resolve Identity Narrative
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contact_person || 
@@ -71,7 +71,7 @@ function resolveContact(partner: any) {
                        partner.firstName || 
                        'Partner');
 
-    // 2. Exhaustive Email Resolution
+    // 2. EXHAUSTIVE EMAIL SCAN
     const email = clean(partner.email || 
                         partner.email_address || 
                         partner.emailAddress || 
@@ -80,7 +80,7 @@ function resolveContact(partner: any) {
                         partner.ceo?.email || 
                         '');
 
-    // 3. Exhaustive Mobile/Phone Resolution
+    // 3. EXHAUSTIVE PHONE SCAN
     const mobile = clean(partner.mobile || 
                          partner.phone || 
                          partner.telephone || 
@@ -90,7 +90,7 @@ function resolveContact(partner: any) {
                          partner.ceo?.mobile || 
                          '');
 
-    // 4. WhatsApp Priority Protocol
+    // 4. WHATSAPP PRIORITY PROTOCOL
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
     return { name, email, mobile, whatsapp };
@@ -141,7 +141,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     setIsProcessing(true);
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Auth failed.");
+        if (!token) throw new Error("Authentication failed.");
         
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
@@ -214,17 +214,17 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     <div className="text-left space-y-1">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
-                            Engagement: {contact.name}
+                            Engagement Hub: {contact.name}
                         </DialogTitle>
                         <div className="flex items-center gap-3 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
                            <div className="flex items-center gap-2 text-muted-foreground">
-                               <Mail className="h-3 w-3" />
-                               <span className={cn("font-medium", !contact.email && "text-destructive italic")}>{contact.email || 'No email record'}</span>
+                               <Mail className={cn("h-3.5 w-3.5", contact.email && "text-blue-600")} />
+                               <span className={cn("font-medium", !contact.email && "text-destructive italic")}>{contact.email || 'Address Missing'}</span>
                            </div>
                            <div className="flex items-center gap-2 text-muted-foreground border-l pl-3">
-                               <Smartphone className={cn("h-3 w-3", contact.whatsapp && "text-green-600")} />
-                               <span className={cn("font-bold", contact.whatsapp && "text-green-600")}>{contact.whatsapp || 'No number record'}</span>
+                               <Smartphone className={cn("h-3.5 w-3.5", contact.whatsapp && "text-green-600")} />
+                               <span className={cn("font-bold", contact.whatsapp && "text-green-600")}>{contact.whatsapp || 'Number Missing'}</span>
                            </div>
                         </div>
                     </div>

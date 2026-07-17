@@ -514,6 +514,13 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                               </SelectContent>
                           </Select>
                       </div>
+                      <div className="md:col-span-2 flex items-end gap-2 text-left">
+                          <div className="flex-1 space-y-1 text-left">
+                              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Criteria</Label>
+                              <Input placeholder="Filter registry by name or tag..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
+                          </div>
+                          <Button size="sm" className="h-9 font-bold px-4" onClick={() => fetchData()}>Search</Button>
+                      </div>
                   </div>
                   {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                       <div className="space-y-6 text-left text-foreground">
