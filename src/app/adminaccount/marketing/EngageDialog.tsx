@@ -42,13 +42,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
         cache: 'no-store'
     });
     const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
     return result;
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V8
- * Clinical scan of all potential data nodes to ensure buttons activate.
+ * EXHAUSTIVE CONTACT RESOLVER V9
+ * Clinically scans every potential data node to ensure buttons activate.
+ * Handles variations in field naming from diverse import sources.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -57,11 +58,12 @@ function resolveContact(partner: any) {
         if (!val) return '';
         const v = String(val).trim();
         const low = v.toLowerCase();
-        if (low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined') return '';
+        // Ignore placeholders
+        if (low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined' || low === '[locked]') return '';
         return v;
     };
 
-    // 1. Resolve Best Name
+    // 1. Resolve Identity
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contact_person || 
@@ -83,6 +85,7 @@ function resolveContact(partner: any) {
                          partner.phone || 
                          partner.telephone || 
                          partner.contact_number || 
+                         partner.cell ||
                          partner.marketingManager?.mobile || 
                          partner.ceo?.mobile || 
                          '');

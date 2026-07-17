@@ -161,8 +161,8 @@ function PartnerDialog({ open, onOpenChange, partner, onSave, targetType }: { op
 
                     <Separator />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                        <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-left">
+                        <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                                 <Users className="h-4 w-4" /> Marketing Manager
                             </h4>
@@ -366,7 +366,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             {row.original.lastOpenedAt && (
                                 <Tooltip>
                                     <TooltipTrigger>
-                                        <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                        <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                                     </TooltipTrigger>
                                     <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
                                 </Tooltip>
@@ -374,7 +374,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                             {row.original.lastAccessedAt && (
                                 <Tooltip>
                                     <TooltipTrigger>
-                                        <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                        <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                                     </TooltipTrigger>
                                     <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
                                 </Tooltip>
@@ -393,7 +393,7 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
             <div className="flex flex-col gap-1 text-left">
                 <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
                 {row.original.enhancementMethod && (
-                    <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
+                    <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit text-left">
                         <Zap className="h-2 w-2 fill-current" /> {row.original.enhancementMethod} {formatDateSafe(row.original.lastEnrichedAt, "dd/MM")}
                     </Badge>
                 )}
@@ -402,9 +402,9 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
       },
       { 
           id: 'actions', 
-          header: <div className="text-right">Actions</div>, 
+          header: <div className="text-right text-left">Actions</div>, 
           cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground text-foreground">
+            <div className="flex justify-end items-center gap-1 text-left">
               <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
               <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
               <AddCommunicationLogDialog partnerId={row.original.id} collection={row.original.source === 'Lead' ? 'leads' : 'partners'} onLogAdded={() => fetchData()} />
@@ -437,12 +437,12 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
   const audienceLabel = type.charAt(0).toUpperCase() + type.slice(1);
 
   return (
-    <div className="space-y-6 text-left text-foreground text-foreground">
+    <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience={type as any} onEngageSuccess={() => fetchData()} />
       <PartnerDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType={type} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent className="text-left text-foreground text-left">
+          <AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -450,22 +450,22 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground text-foreground">
-          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-              <div className="text-left text-foreground">
-                  <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Database /> {audienceLabel} Registry</CardTitle>
+      <div className="space-y-6 text-left text-foreground">
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+              <div className="text-left">
+                  <CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Database /> {audienceLabel} Registry</CardTitle>
                   <CardDescription className="text-left text-muted-foreground">Full database view ({allRecords.length} records).</CardDescription>
               </div>
-              <div className="flex gap-2 text-left text-foreground text-foreground">
+              <div className="flex gap-2 text-left">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
                   <Popover>
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground">
-                          <div className="space-y-1 text-left text-foreground text-foreground">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground">
+                          <div className="space-y-1 text-left text-foreground">
                               {Object.keys(visibleColumns).map(col => (
-                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                       <span>{col.replace(/([A-Z])/g, ' $1')}</span>
                                       {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                   </div>
@@ -477,23 +477,23 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground">
-                          <div className="space-y-1 text-left text-foreground text-foreground">
-                              <Button variant="ghost" className="w-full justify-start text-xs font-bold" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
-                              <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
+                      <PopoverContent className="w-56 p-2 text-left text-foreground text-left">
+                          <div className="space-y-1 text-left text-foreground text-left">
+                              <Button variant="ghost" className="w-full justify-start text-xs font-bold text-left" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
+                              <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary text-left" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                           </div>
                       </PopoverContent>
                   </Popover>
                   <BulkImportDialog type={type} onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                  <Button onClick={() => setDialog({ type: 'add' })} className="font-bold text-left text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                  <Button onClick={() => setDialog({ type: 'add' })} className="font-bold text-left text-foreground text-foreground text-left"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
               </div>
           </CardHeader>
 
-          <Card className="text-left text-foreground">
-              <CardContent className="pt-6 text-left">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
+          <Card className="text-left text-foreground text-left">
+              <CardContent className="pt-6 text-left text-foreground">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                       <div className="space-y-1 text-left text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Filter className="h-3 w-3"/> Status Filter</Label>
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
                               <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                               <SelectContent>
@@ -503,8 +503,8 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                               </SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-1 text-left text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5"><Users className="h-3 w-3"/> Assignee</Label>
+                      <div className="space-y-1 text-left text-foreground">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                               <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
@@ -515,12 +515,12 @@ export default function PartnerManagement({ type = 'partner' }: { type?: string 
                           </Select>
                       </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                      <div className="space-y-6 text-left text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
-                               <div className="flex justify-center pt-4">
-                                  <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground">
+                               <div className="flex justify-center pt-4 text-left">
+                                  <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-left">
                                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                       Load Next 100 Records
                                   </Button>
