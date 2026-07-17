@@ -47,9 +47,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V8
- * Explicitly scans 12 email and 10 phone fields.
- * Performs trimming and case-normalization to ensure activation.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -77,29 +75,21 @@ function resolveContact(partner: any) {
     const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'EMAIL', 'workEmail', 'main_email', 'work_email'];
     const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'tel', 'cell_number'];
 
-    // 1. IDENTITY RESOLUTION
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contactPerson || 
-                       partner.contact_person || 
                        partner.firstName || 
-                       partner.trading_name ||
                        partner.companyName ||
                        'Partner');
 
-    // 2. EXHAUSTIVE EMAIL SCAN
     const email = searchObj(partner.marketingManager, emailKeys) || 
                   searchObj(partner.ceo, emailKeys) || 
-                  searchObj(partner, emailKeys) ||
-                  clean(partner.email_address) ||
-                  clean(partner.contact_email);
+                  searchObj(partner, emailKeys);
 
-    // 3. EXHAUSTIVE PHONE SCAN
     const mobile = searchObj(partner.marketingManager, phoneKeys) || 
                    searchObj(partner.ceo, phoneKeys) || 
                    searchObj(partner, phoneKeys);
 
-    // 4. WHATSAPP BUSINESS PRIORITY
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
     return { name, email, mobile, whatsapp };
@@ -125,8 +115,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
 
   // Permissive logic: if any string exists, activate buttons to allow descriptive failure feedback
-  const hasEmail = !!contact.email && contact.email.includes('@');
-  const hasPhone = !!contact.whatsapp && contact.whatsapp.length > 5;
+  const hasEmail = !!contact.email;
+  const hasPhone = !!contact.whatsapp;
 
   const normalizedAudience = useMemo(() => {
       let aud = (audience || 'partner').toLowerCase();
@@ -225,7 +215,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground text-foreground">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
@@ -248,7 +238,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
-                        <Button className="font-bold shadow-lg" onClick={handleAutomatedDispatch} disabled={isDispatching || !hasEmail}>
+                        <Button className="font-bold shadow-lg text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || !hasEmail}>
                             {isDispatching ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />} Automated Dispatch
                         </Button>
                     </div>
@@ -275,16 +265,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             {tab.label}
                         </Button>
                     ))}
-                    
-                    {partners.length > 1 && (
-                        <div className="mt-auto pt-4 border-t space-y-4">
-                            <p className="text-[10px] font-black uppercase text-muted-foreground px-2">Batch Queue ({currentIndex + 1}/{partners.length})</p>
-                            <div className="flex gap-2">
-                                <Button variant="outline" size="icon" className="h-8 w-8 flex-1" onClick={() => setCurrentIndex(prev => Math.max(0, prev - 1))} disabled={currentIndex === 0}><ChevronLeft className="h-4 w-4"/></Button>
-                                <Button variant="outline" size="icon" className="h-8 w-8 flex-1" onClick={() => setCurrentIndex(prev => Math.min(partners.length - 1, prev + 1))} disabled={currentIndex === partners.length - 1}><ChevronRight className="h-4 w-4"/></Button>
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">

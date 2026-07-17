@@ -19,7 +19,6 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * Simplified and optimized for high-speed verification.
      */
     function isMember(cid) {
       return isAdmin() || (

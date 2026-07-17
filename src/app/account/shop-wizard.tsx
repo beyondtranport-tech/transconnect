@@ -609,7 +609,7 @@ function StepRateSheet() {
 
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
                         <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                     </FormItem>
@@ -617,36 +617,36 @@ function StepRateSheet() {
             )}
 
             {rateType === 'route' && (
-                <div className="space-y-4 animate-in slide-in-from-top-2 text-left text-foreground">
-                    <div className="flex justify-between items-center text-left text-foreground">
+                <div className="space-y-4 animate-in slide-in-from-top-2 text-left">
+                    <div className="flex justify-between items-center">
                         <Label className="font-bold text-foreground">Common Route Rates</Label>
                         <Button type="button" size="sm" variant="outline" onClick={() => append({ origin: '', destination: '', price: 0 })}>
                             <PlusCircle className="h-4 w-4 mr-2" /> Add Route
                         </Button>
                     </div>
                     {fields.map((item, index) => (
-                        <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
+                        <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2 text-left text-foreground">
+                            <div className="flex items-center gap-2">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
-                                    <FormItem className="flex-1 text-left text-foreground">
+                                    <FormItem className="flex-1 text-left">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
                                         <FormControl><Input type="number" {...field} className="h-9 bg-white" /></FormControl>
                                     </FormItem>
@@ -673,15 +673,15 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground text-foreground">
+                <FormItem className="space-y-4 text-left">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></div>
+                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground">Fixed volume per month.</span></div>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></div>
+                                <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold text-foreground">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground">Spot market bookings.</span></div>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -742,15 +742,15 @@ function StepCommercials({ shop }: { shop: any }) {
                 Mall Commercials
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left">
-                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Standard Platform Rate</p>
-                    <p className="text-3xl font-black text-left">2.5%</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed text-left">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="p-6 border rounded-3xl bg-muted/30 space-y-4">
+                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Standard Platform Rate</p>
+                    <p className="text-3xl font-black">2.5%</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
                 </div>
                 
-                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left text-foreground">
-                    <p className="text-[10px] font-black uppercase text-primary tracking-widest text-left">Your Proposal (%)</p>
+                <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4">
+                    <p className="text-[10px] font-black uppercase text-primary tracking-widest">Your Proposal (%)</p>
                     <Input type="number" value={proposedRate} onChange={e => setProposedRate(Number(e.target.value))} className="h-12 text-2xl font-black bg-white" />
                     <Button className="w-full h-10 font-bold text-white" onClick={handlePropose} disabled={isSubmitting || !!pendingAgreement}>
                         {isSubmitting ? <Loader2 className="animate-spin h-4 w-4"/> : <Zap className="mr-2 h-4 w-4" />}
@@ -760,8 +760,8 @@ function StepCommercials({ shop }: { shop: any }) {
             </div>
 
             {agreements && agreements.length > 0 && (
-                <div className="space-y-4 text-left text-foreground text-foreground">
-                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left">
+                <div className="space-y-4">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -792,10 +792,10 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4">
                 <div className="text-left">
-                    <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
-                    <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
+                    <h3 className="text-xl font-black font-headline">Product Catalogue</h3>
+                    <p className="text-xs text-muted-foreground">List the items or services you sell directly in the Mall.</p>
                 </div>
                 <Dialog open={!!editingProduct} onOpenChange={(o) => { if (!o) setEditingProduct(null); }}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Product</Button></DialogTrigger>
@@ -803,14 +803,14 @@ function StepCatalog({ shop }: { shop: any }) {
                 </Dialog>
             </div>
             
-            <div className="min-h-[300px] text-left">
+            <div className="min-h-[300px]">
                 {products && products.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left text-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {products.map(p => (
-                            <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left">
+                            <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group">
                                 <div className="relative aspect-square bg-muted">
                                     {p.imageUrls?.[0] ? <Image src={p.imageUrls[0]} alt={p.name} fill className="object-cover" /> : <div className="flex items-center justify-center h-full"><ImageIcon className="h-10 w-10 opacity-10" /></div>}
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1 text-left">
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                         <Button variant="secondary" size="icon" className="h-8 w-8" onClick={() => setEditingProduct(p)}><Edit className="h-4 w-4"/></Button>
                                         <Button variant="destructive" size="icon" className="h-8 w-8" onClick={async () => {
                                             const token = await getClientSideAuthToken();
@@ -824,16 +824,16 @@ function StepCatalog({ shop }: { shop: any }) {
                                     </div>
                                 </div>
                                 <CardContent className="p-4 text-left">
-                                    <p className="font-bold text-sm text-left">{p.name}</p>
-                                    <p className="text-xs text-primary font-black mt-1 text-left">{formatCurrency(p.price)}</p>
+                                    <p className="font-bold text-sm">{p.name}</p>
+                                    <p className="text-xs text-primary font-black mt-1">{formatCurrency(p.price)}</p>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-left">
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
                         <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">Catalog Empty</p>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">Catalog Empty</p>
                     </div>
                 )}
             </div>
@@ -897,23 +897,23 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
             <DialogHeader>
-                <DialogTitle className="text-left text-foreground">Product Management</DialogTitle>
-                <DialogDescription className="text-left">Define the technical and commercial details of this item.</DialogDescription>
+                <DialogTitle>Product Management</DialogTitle>
+                <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
                     <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                    <div className="grid grid-cols-2 gap-4">
                          <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
                     <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>)} />
                     
-                    <div className="space-y-4 text-left text-foreground">
+                    <div className="space-y-4">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
-                        <div className="grid grid-cols-4 gap-2 text-left">
+                        <div className="grid grid-cols-4 gap-2">
                              {(form.watch('imageUrls') || []).map((url: string, i: number) => (
-                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border text-left">
+                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                                      <Image src={url} alt="pic" fill className="object-cover" />
                                  </div>
                              ))}
@@ -925,7 +925,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                         </div>
                     </div>
 
-                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left text-foreground">
+                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
                         <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit Product
@@ -949,36 +949,36 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4">
                 <div className="text-left">
-                    <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
-                    <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
+                    <h3 className="text-xl font-black font-headline">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
+                    <p className="text-xs text-muted-foreground">Manage your RC1-vetted assets for this node.</p>
                 </div>
                 <Dialog open={isAdding} onOpenChange={setIsAdding}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Asset</Button></DialogTrigger>
                     <AssetDialogContent shop={shop} mode={mode} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
-            <div className="min-h-[300px] text-left text-foreground">
+            <div className="min-h-[300px]">
                 {assets && assets.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {assets.map(asset => (
-                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white text-left">
+                            <Card key={asset.id} className="overflow-hidden border-none shadow-md bg-white">
                                 <div className="relative aspect-video bg-muted">
                                     {asset.photoUrls?.[0] && <Image src={asset.photoUrls[0]} alt={asset.make} fill className="object-cover" />}
                                     <div className="absolute top-2 right-2"><Badge className="bg-green-600 text-white font-bold text-[9px] uppercase">Verified</Badge></div>
                                 </div>
                                 <CardContent className="p-4 text-left">
-                                    <p className="font-bold text-sm text-left">{asset.year} {asset.make} {asset.model}</p>
-                                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1 text-left">{asset.vClass || asset.location}</p>
+                                    <p className="font-bold text-sm">{asset.year} {asset.make} {asset.model}</p>
+                                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mt-1">{asset.vClass || asset.location}</p>
                                 </CardContent>
                             </Card>
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-left text-foreground">
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50">
                         <Truck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No records found.</p>
+                        <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4">No records found.</p>
                     </div>
                 )}
             </div>
@@ -1047,23 +1047,23 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     return (
         <DialogContent className="sm:max-w-2xl text-left text-foreground">
             <DialogHeader>
-                <DialogTitle className="text-left text-foreground">{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
-                <DialogDescription className="text-left">Attach verified documents and technical specifics.</DialogDescription>
+                <DialogTitle>{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
+                <DialogDescription>Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left text-foreground">
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
+                    <div className="grid grid-cols-2 gap-4">
                         <FormField control={form.control} name="make" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem> )} />
                         <FormField control={form.control} name="model" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem> )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                    <div className="grid grid-cols-2 gap-4">
                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="Heavy Truck (Horse)">Heavy Truck (Horse)</SelectItem>
                                             <SelectItem value="Trailer">Trailer</SelectItem>
@@ -1077,13 +1077,13 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                                 </FormItem>
                              ) } />
                          ) : (
-                            <FormField control={form.control} name="price" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="price" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          )}
                     </div>
 
-                    <div className="space-y-4 text-left text-foreground">
+                    <div className="space-y-4">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Vehicle Gallery</Label>
-                        <div className="grid grid-cols-3 gap-2 text-left">
+                        <div className="grid grid-cols-3 gap-2">
                              {(form.watch('photoUrls') || []).map((url: string, i: number) => (
                                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                                      <Image src={url} alt="pic" fill className="object-cover" />
@@ -1091,18 +1091,18 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('multi-up')?.click()}>
                                  <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center text-foreground">Add Photo</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center">Add Photo</span>
                              </Button>
                              <input type="file" id="multi-up" multiple className="hidden" onChange={handleMultiUpload} />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FileUploadField name="rc1Url" label="RC1 Doc" folder="fleet-docs" />
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
                     </div>
 
-                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left">
+                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
                         <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit to Node
@@ -1133,14 +1133,14 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
         finally { setLoading(false); }
     };
     return (
-        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500">
+        <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500 text-left">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
-            <div className="space-y-2 text-center text-foreground">
-                <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
-                <p className="text-muted-foreground max-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
+            <div className="space-y-2 text-center">
+                <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
+                <p className="text-muted-foreground max-sm mx-auto leading-relaxed">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
-            <div className="flex justify-center text-center">
-              <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white text-center">
+            <div className="flex justify-center">
+              <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white">
                   {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-4 w-4"/>}
                   Activate Commercial Hub
               </Button>
@@ -1274,16 +1274,16 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                 </div>
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2 mt-4" />
             </CardHeader>
-            <CardContent className="p-0 text-left text-foreground">
+            <CardContent className="p-0 text-left">
                 <FormProvider {...methods}>
-                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
-                        <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
+                        <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
                                     key={step.id} 
                                     type="button" 
                                     variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left text-foreground", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                    className={cn("w-full justify-start gap-3 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                     onClick={() => setCurrentStep(index)}
                                 >
                                     <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
@@ -1291,22 +1291,22 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px] text-left text-foreground">
+                        <div className="p-10 min-h-[500px] text-left">
                             {currentStepConfig ? (
-                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left text-foreground">
+                                <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
                                     {currentStepConfig.component}
                                 </div>
                             ) : (
-                                <div className="flex flex-col items-center justify-center h-full text-foreground gap-3 text-center">
+                                <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
                                     <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Initializing Terminal Module...</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center">Initializing Module...</p>
                                 </div>
                             )}
                         </div>
                     </div>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
@@ -1333,6 +1333,6 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     )}
                 </div>
             </CardFooter>
-        </form>
+        </Card>
     );
 }
