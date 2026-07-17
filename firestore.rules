@@ -48,16 +48,16 @@ service cloud.firestore {
     // --- PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
 
     match /partners/{partnerId} {
-      // Allow unauthenticated visitors to get their own record for the handshake UI.
-      allow read: if true; 
+      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
+      allow get: if true; 
       allow list: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     match /leads/{leadId} {
-      // Allow unauthenticated visitors to get their own record for the handshake UI.
-      allow read: if true; 
+      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
+      allow get: if true; 
       allow list: if isSignedIn();
       allow write: if isAdmin();
       match /{allSub=**} { allow read, write: if isAdmin(); }

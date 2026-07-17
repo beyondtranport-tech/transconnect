@@ -161,7 +161,7 @@ function StepLegal() {
                 Legal Authorization
             </h3>
             <div className="space-y-6 text-left">
-                <Alert className="bg-primary/5 border-primary/20 text-left">
+                <Alert className="bg-primary/5 border-primary/20 text-left text-foreground">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="font-bold text-left text-foreground">Operational Compliance Audit</AlertTitle>
                     <AlertDescription className="text-xs leading-relaxed text-left text-foreground">
@@ -280,7 +280,7 @@ function StepWarehouseCapabilities() {
     const { control } = useFormContext<NodeFormValues>();
     
     const serviceOptions = ["Packaging", "Shrink Wrapping", "Palletization", "Labeling", "Cross-Docking", "Inventory Management", "Quality Inspection"];
-    const equipmentOptions = ["Hyster / Forklift", "Reach Truck", "Electric Pallet Jack", "Hand Pallet Jack", "Dock Levelers", "Weighing Scales"];
+    const equipOpts = ["Hyster / Forklift", "Reach Truck", "Electric Pallet Jack", "Hand Pallet Jack", "Dock Levelers", "Weighing Scales"];
     const rackingOptions = ["Selective Racking", "Drive-In Racking", "Push-Back Racking", "Cantilever Racking", "Floor Storage", "Mezzanine"];
 
     const renderCheckboxes = (name: any, options: string[], title: string, icon: any) => (
@@ -322,7 +322,7 @@ function StepWarehouseCapabilities() {
 
             {renderCheckboxes('services', serviceOptions, "Available Services", ClipboardList)}
             <Separator />
-            {renderCheckboxes('equipment', equipmentOptions, "On-Site Equipment", Truck)}
+            {renderCheckboxes('equipment', equipOpts, "On-Site Equipment", Truck)}
             <Separator />
             {renderCheckboxes('racking', rackingOptions, "Racking & Storage Configuration", Warehouse)}
         </div>
@@ -609,17 +609,17 @@ function StepRateSheet() {
 
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
-                        <FormLabel>Standard Rate per Kilometer (ZAR)</Label>
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
+                        <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                     </FormItem>
                 )} />
             )}
 
             {rateType === 'route' && (
-                <div className="space-y-4 animate-in slide-in-from-top-2 text-left">
-                    <div className="flex justify-between items-center text-left">
-                        <Label className="font-bold">Common Route Rates</Label>
+                <div className="space-y-4 animate-in slide-in-from-top-2 text-left text-foreground">
+                    <div className="flex justify-between items-center text-left text-foreground">
+                        <Label className="font-bold text-foreground">Common Route Rates</Label>
                         <Button type="button" size="sm" variant="outline" onClick={() => append({ origin: '', destination: '', price: 0 })}>
                             <PlusCircle className="h-4 w-4 mr-2" /> Add Route
                         </Button>
@@ -630,7 +630,7 @@ function StepRateSheet() {
                                 <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
@@ -639,12 +639,12 @@ function StepRateSheet() {
                                 <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
                                         <SelectContent>{locations.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
-                            <div className="flex items-center gap-2 text-left">
+                            <div className="flex items-center gap-2 text-left text-foreground">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
                                     <FormItem className="flex-1 text-left text-foreground">
                                         <FormLabel className="text-[10px] uppercase font-black">Total Price</FormLabel>
@@ -673,7 +673,7 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left text-foreground">
+                <FormItem className="space-y-4 text-left text-foreground text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -760,8 +760,8 @@ function StepCommercials({ shop }: { shop: any }) {
             </div>
 
             {agreements && agreements.length > 0 && (
-                <div className="space-y-4 text-left">
-                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left text-foreground">
+                <div className="space-y-4 text-left text-foreground text-foreground">
+                    <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left">
                         <History className="h-4 w-4" />
                         Agreement History
                     </h4>
@@ -792,8 +792,8 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+                <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
                     <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
@@ -805,7 +805,7 @@ function StepCatalog({ shop }: { shop: any }) {
             
             <div className="min-h-[300px] text-left">
                 {products && products.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left text-foreground">
                         {products.map(p => (
                             <Card key={p.id} className="overflow-hidden border-none shadow-md bg-white group text-left">
                                 <div className="relative aspect-square bg-muted">
@@ -831,7 +831,7 @@ function StepCatalog({ shop }: { shop: any }) {
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-foreground text-left">
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-left">
                         <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">Catalog Empty</p>
                     </div>
@@ -897,23 +897,23 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
             <DialogHeader>
-                <DialogTitle className="text-left">Product Management</DialogTitle>
+                <DialogTitle className="text-left text-foreground">Product Management</DialogTitle>
                 <DialogDescription className="text-left">Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 text-left">
                     <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Product Name</FormLabel><FormControl><Input placeholder="e.g. Heavy Duty Differential" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                          <FormField control={form.control} name="price" render={({ field }) => (<FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                          <FormField control={form.control} name="stock" render={({ field }) => (<FormItem className="text-left"><FormLabel>Current Stock</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
                     </div>
                     <FormField control={form.control} name="description" render={({ field }) => (<FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>)} />
                     
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
                         <div className="grid grid-cols-4 gap-2 text-left">
                              {(form.watch('imageUrls') || []).map((url: string, i: number) => (
-                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
+                                 <div key={i} className="relative aspect-square rounded-lg overflow-hidden border text-left">
                                      <Image src={url} alt="pic" fill className="object-cover" />
                                  </div>
                              ))}
@@ -925,7 +925,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                         </div>
                     </div>
 
-                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left">
+                    <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg text-left text-foreground">
                         <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit Product
@@ -949,8 +949,8 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left">
-                <div className="text-left text-foreground">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
+                <div className="text-left">
                     <h3 className="text-xl font-black font-headline text-left">{mode === 'fleet' ? 'Verified Fleet Roster' : 'Active Sales Inventory'}</h3>
                     <p className="text-xs text-muted-foreground text-left">Manage your RC1-vetted assets for this node.</p>
                 </div>
@@ -959,7 +959,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                     <AssetDialogContent shop={shop} mode={mode} onComplete={() => { forceRefresh(); setIsAdding(false); }} />
                 </Dialog>
             </div>
-            <div className="min-h-[300px] text-left">
+            <div className="min-h-[300px] text-left text-foreground">
                 {assets && assets.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
                         {assets.map(asset => (
@@ -976,7 +976,7 @@ function StepAssetRegistry({ shop, mode }: { shop: any, mode: 'fleet' | 'sale' }
                         ))}
                     </div>
                 ) : (
-                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-foreground text-left">
+                    <div className="py-20 text-center border-2 border-dashed rounded-xl bg-slate-50/50 text-left text-foreground">
                         <Truck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
                         <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mt-4 text-center">No records found.</p>
                     </div>
@@ -1047,23 +1047,23 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
     return (
         <DialogContent className="sm:max-w-2xl text-left text-foreground">
             <DialogHeader>
-                <DialogTitle className="text-left">{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
+                <DialogTitle className="text-left text-foreground">{mode === 'fleet' ? 'Register Fleet Asset (RC1)' : 'List Vehicle for Sale'}</DialogTitle>
                 <DialogDescription className="text-left">Attach verified documents and technical specifics.</DialogDescription>
             </DialogHeader>
             <FormProvider {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 text-left text-foreground">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                         <FormField control={form.control} name="make" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g. Scania" {...field} className="bg-white" /></FormControl></FormItem> )} />
                         <FormField control={form.control} name="model" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g. R560" {...field} className="bg-white" /></FormControl></FormItem> )} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="20XX" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          {mode === 'fleet' ? (
                              <FormField control={form.control} name="vClass" render={({ field }) => (
                                 <FormItem className="text-left text-foreground">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl><SelectTrigger className="bg-white text-left"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="Heavy Truck (Horse)">Heavy Truck (Horse)</SelectItem>
                                             <SelectItem value="Trailer">Trailer</SelectItem>
@@ -1077,11 +1077,11 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                                 </FormItem>
                              ) } />
                          ) : (
-                            <FormField control={form.control} name="price" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="price" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Sales Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem> )} />
                          )}
                     </div>
 
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Vehicle Gallery</Label>
                         <div className="grid grid-cols-3 gap-2 text-left">
                              {(form.watch('photoUrls') || []).map((url: string, i: number) => (
@@ -1091,13 +1091,13 @@ function AssetDialogContent({ shop, mode, onComplete }: { shop: any, mode: 'flee
                              ))}
                              <Button type="button" variant="outline" className="aspect-square flex-col gap-1 border-dashed" onClick={() => document.getElementById('multi-up')?.click()}>
                                  <Camera className="h-6 w-6 opacity-40" />
-                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center">Add Photo</span>
+                                 <span className="text-[8px] font-black uppercase tracking-widest leading-tight text-center text-foreground">Add Photo</span>
                              </Button>
                              <input type="file" id="multi-up" multiple className="hidden" onChange={handleMultiUpload} />
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                         <FileUploadField name="rc1Url" label="RC1 Doc" folder="fleet-docs" />
                         <FileUploadField name="licenseUrl" label="License Disk" folder="fleet-docs" />
                     </div>
@@ -1136,10 +1136,10 @@ function StepPublish({ shop, onSave }: { shop: any, onSave: () => void }) {
         <div className="text-center py-16 space-y-8 animate-in fade-in zoom-in duration-500">
             <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto shadow-sm"><CheckCircle className="h-16 w-16 text-primary" /></div>
             <div className="space-y-2 text-center text-foreground">
-                <h3 className="text-3xl font-black font-headline">Node Handshake Ready</h3>
+                <h3 className="text-3xl font-black font-headline text-center">Node Handshake Ready</h3>
                 <p className="text-muted-foreground max-sm mx-auto leading-relaxed text-center">Your industrial parameters are ready for auditing. Once activated, your node will be visible across the specified malls.</p>
             </div>
-            <div className="flex justify-center">
+            <div className="flex justify-center text-center">
               <Button onClick={handlePublish} disabled={loading} size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white text-center">
                   {loading ? <Loader2 className="mr-2 h-6 w-6 animate-spin"/> : <Smartphone className="mr-2 h-4 w-4"/>}
                   Activate Commercial Hub
@@ -1263,7 +1263,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     const currentStepConfig = wizardSteps[currentStep];
 
-    if (wizardSteps.length === 0) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto"/><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Initializing Terminal Module...</p></div>;
+    if (wizardSteps.length === 0) return <div className="flex flex-col items-center justify-center p-20 text-center text-foreground gap-4"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto"/><p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Initializing Terminal Module...</p></div>;
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
@@ -1276,7 +1276,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
             </CardHeader>
             <CardContent className="p-0 text-left text-foreground">
                 <FormProvider {...methods}>
-                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left text-foreground">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left text-foreground">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -1306,7 +1306,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     </div>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left text-foreground">
                 <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>

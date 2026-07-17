@@ -47,8 +47,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V5
- * Scans every possible key variant and sub-object for contact fidelity.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V6
+ * Performs case-insensitive matching across every likely data node for maximum engagement fidelity.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -57,33 +57,46 @@ function resolveContact(partner: any) {
         if (!val || typeof val !== 'string') return '';
         const v = val.trim();
         const low = v.toLowerCase();
-        if (!v || low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined' || low === '[locked]' || low.includes('locked@')) return '';
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]'];
+        if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return '';
         return v;
     };
 
-    const getEmail = (obj: any): string => {
+    const searchObj = (obj: any, keys: string[]): string => {
         if (!obj) return '';
-        return clean(obj.email || obj.email_address || obj.emailAddress || obj.contact_email || obj.contactEmail || obj.EMAIL || obj.workEmail || obj.main_email || '');
+        for (const k of keys) {
+            if (obj[k]) return clean(obj[k]);
+            // Case-insensitive fallback
+            const lowerK = k.toLowerCase();
+            for (const actualKey in obj) {
+                if (actualKey.toLowerCase() === lowerK) return clean(obj[actualKey]);
+            }
+        }
+        return '';
     };
 
-    const getPhone = (obj: any): string => {
-        if (!obj) return '';
-        return clean(obj.mobile || obj.whatsapp || obj.whatsapp_number || obj.phone || obj.cell || obj.contact_number || obj.telephone || obj.tel || '');
-    };
+    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'EMAIL', 'workEmail', 'main_email'];
+    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'tel'];
 
-    // 1. IDENTITY
+    // 1. IDENTITY RESOLUTION
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contactPerson || 
                        partner.contact_person || 
                        partner.firstName || 
+                       partner.trading_name ||
+                       partner.companyName ||
                        'Partner');
 
-    // 2. EXHAUSTIVE EMAIL SCAN (Priority: Manager -> Registry -> CEO)
-    const email = getEmail(partner.marketingManager) || getEmail(partner) || getEmail(partner.ceo);
+    // 2. EXHAUSTIVE EMAIL SCAN (Priority: Manager -> CEO -> Top-Level)
+    const email = searchObj(partner.marketingManager, emailKeys) || 
+                  searchObj(partner.ceo, emailKeys) || 
+                  searchObj(partner, emailKeys);
 
     // 3. EXHAUSTIVE PHONE SCAN
-    const mobile = getPhone(partner.marketingManager) || getPhone(partner) || getPhone(partner.ceo);
+    const mobile = searchObj(partner.marketingManager, phoneKeys) || 
+                   searchObj(partner.ceo, phoneKeys) || 
+                   searchObj(partner, phoneKeys);
 
     // 4. WHATSAPP BUSINESS PRIORITY
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
