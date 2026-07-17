@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -47,7 +48,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V5
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V6
  * High-fidelity scanner designed to handle every possible nomenclature from discovery engines and manual imports.
  */
 function resolveContact(partner: any) {

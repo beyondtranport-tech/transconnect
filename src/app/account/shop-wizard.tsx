@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -114,8 +115,8 @@ function FileUploadField({
         try {
             const token = await getClientSideAuthToken();
             const reader = new FileReader();
-            const dataUri = await new Promise<string>(res => {
-                reader.onload = () => res(reader.result as string);
+            const dataUri = await new Promise<string>((resolve) => {
+                reader.onload = () => resolve(reader.result as string);
                 reader.readAsDataURL(file);
             });
             const response = await fetch('/api/uploadImageAsset', {
@@ -424,8 +425,8 @@ function StepGallery() {
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const reader = new FileReader();
-                const dataUri = await new Promise<string>(res => {
-                    reader.onload = () => res(reader.result as string);
+                const dataUri = await new Promise<string>((resolve) => {
+                    reader.onload = () => resolve(reader.result as string);
                     reader.readAsDataURL(file);
                 });
                 const response = await fetch('/api/uploadImageAsset', {
@@ -579,7 +580,11 @@ function StepRateSheet() {
     const rateType = watch('rateType');
     const { fields, append, remove } = useFieldArray({ control, name: 'routeRates' });
 
-    const locationList = provinces.flatMap(p => p.cities.map(c => `${c.name}, ${p.name}`));
+    const locationOptionsList = useMemo(() => {
+        return provinces.flatMap(p => 
+            p.cities.map(c => `${c.name}, ${p.name}`)
+        );
+    }, []);
 
     return (
         <div className="space-y-8 text-left text-foreground text-foreground text-foreground">
@@ -631,7 +636,7 @@ function StepRateSheet() {
                                     <FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
-                                        <SelectContent>{locationList.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{locationOptionsList.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -640,7 +645,7 @@ function StepRateSheet() {
                                     <FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl>
-                                        <SelectContent>{locationList.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{locationOptionsList.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -746,7 +751,7 @@ function StepCommercials({ shop }: { shop: any }) {
                 <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left text-foreground">
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Standard Platform Rate</p>
                     <p className="text-3xl font-black text-left">2.5%</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground text-foreground">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground text-foreground text-foreground">The facilitating commission earned by Logistics Flow on each successful transaction.</p>
                 </div>
                 
                 <div className="p-6 border-2 border-primary bg-primary/5 rounded-3xl space-y-4 text-left">
@@ -875,11 +880,30 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !shop) return;
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Auth failed.");
-        const reader = new FileReader();
-        reader.onload = () => res(reader.result as string);
-        reader.readAsDataURL(file);
+        
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+            
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>((resolve) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+            
+            const response = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `prod-images/${shop.companyId}`, fileName: `prod_${Date.now()}.png` })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                const current = form.getValues('imageUrls') || [];
+                form.setValue('imageUrls', [...current, result.url]);
+            }
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Upload Failed" });
+        }
     };
 
     return (
@@ -1068,7 +1092,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
-            <CardHeader className="bg-slate-50 border-b p-6 text-left text-foreground">
+            <CardHeader className="bg-slate-50 border-b p-6 text-left">
                 <div className="text-left text-foreground">
                     <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
                     <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>
