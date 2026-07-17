@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -48,9 +47,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE CONTACT RESOLVER V4 (Production)
- * Performed a deep-scan across every potential email and phone field.
- * Explicitly ignores system placeholders and locked data.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V5
+ * Scans every possible key variant and sub-object for contact fidelity.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -59,12 +57,21 @@ function resolveContact(partner: any) {
         if (!val || typeof val !== 'string') return '';
         const v = val.trim();
         const low = v.toLowerCase();
-        // Strict suppression of system placeholders
         if (!v || low === 'n/a' || low === 'null' || low === 'none' || low === 'locked' || low === 'undefined' || low === '[locked]' || low.includes('locked@')) return '';
         return v;
     };
 
-    // 1. IDENTITY RESOLUTION
+    const getEmail = (obj: any): string => {
+        if (!obj) return '';
+        return clean(obj.email || obj.email_address || obj.emailAddress || obj.contact_email || obj.contactEmail || obj.EMAIL || obj.workEmail || obj.main_email || '');
+    };
+
+    const getPhone = (obj: any): string => {
+        if (!obj) return '';
+        return clean(obj.mobile || obj.whatsapp || obj.whatsapp_number || obj.phone || obj.cell || obj.contact_number || obj.telephone || obj.tel || '');
+    };
+
+    // 1. IDENTITY
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
                        partner.contactPerson || 
@@ -72,34 +79,13 @@ function resolveContact(partner: any) {
                        partner.firstName || 
                        'Partner');
 
-    // 2. EXHAUSTIVE EMAIL SCAN
-    const email = clean(
-        partner.email || 
-        partner.email_address || 
-        partner.emailAddress || 
-        partner.contact_email || 
-        partner.contactEmail || 
-        partner.marketingManager?.email || 
-        partner.ceo?.email || 
-        partner.main_email ||
-        partner.workEmail ||
-        ''
-    );
+    // 2. EXHAUSTIVE EMAIL SCAN (Priority: Manager -> Registry -> CEO)
+    const email = getEmail(partner.marketingManager) || getEmail(partner) || getEmail(partner.ceo);
 
     // 3. EXHAUSTIVE PHONE SCAN
-    const mobile = clean(
-        partner.mobile || 
-        partner.whatsapp || 
-        partner.phone || 
-        partner.cell || 
-        partner.contact_number || 
-        partner.telephone || 
-        partner.marketingManager?.mobile || 
-        partner.ceo?.mobile || 
-        ''
-    );
+    const mobile = getPhone(partner.marketingManager) || getPhone(partner) || getPhone(partner.ceo);
 
-    // 4. WHATSAPP PRIORITY (Dedicated Business Line fallback to personal)
+    // 4. WHATSAPP BUSINESS PRIORITY
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
     return { name, email, mobile, whatsapp };
@@ -221,7 +207,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-center text-left">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left text-foreground">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
@@ -252,7 +238,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden text-left">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto text-left">
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto text-left text-foreground">
                     {[
                         { id: 'digital-handshake', label: '0. Digital Handshake' },
                         { id: 'company-profile', label: '1. Company Profile' },
@@ -284,7 +270,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border text-left min-h-full">
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border text-left min-h-full text-foreground">
                         <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}

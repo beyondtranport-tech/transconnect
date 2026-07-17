@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -44,6 +43,24 @@ service cloud.firestore {
                 sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
             ))
         );
+    }
+
+    // --- PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
+
+    match /partners/{partnerId} {
+      // Allow unauthenticated visitors to get their own record for the handshake UI.
+      allow read: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    match /leads/{leadId} {
+      // Allow unauthenticated visitors to get their own record for the handshake UI.
+      allow read: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     // --- PUBLIC / CONFIGURATION RULES ---
@@ -125,22 +142,6 @@ service cloud.firestore {
       match /messages/{id} {
         allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
       }
-    }
-
-    match /partners/{partnerId} {
-      // PUBLIC HANDSHAKE AUTHORIZATION: Allow single document retrieval for opt-in flow.
-      allow get: if true;
-      allow list: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-
-    match /leads/{leadId} {
-      // PUBLIC HANDSHAKE AUTHORIZATION: Allow single document retrieval for opt-in flow.
-      allow get: if true;
-      allow list: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
     // --- COLLECTION GROUP RULES ---
