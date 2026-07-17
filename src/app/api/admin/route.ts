@@ -3,13 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
+import sgMail from '@sendgrid/mail';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Resilient Serialization Utility
  * Recursively sanitizes Firestore objects to ensure clean JSON transmission.
- * Hardened to prevent "Failed to parse stream" errors on the client.
  */
 function serializeTimestamps(docData: any): any {
     if (docData === null || docData === undefined) return docData;
@@ -97,6 +98,72 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'dispatchEngagement': {
+                const { partnerId, email, subject, html, collection: colOverride } = payload;
+                if (!email || !subject || !html) throw new Error("Missing mandatory email data.");
+
+                const apiKey = process.env.SENDGRID_API_KEY;
+                if (!apiKey) throw new Error("Transactional Email API not configured on server.");
+
+                sgMail.setApiKey(apiKey);
+                const msg = {
+                    to: email,
+                    from: 'Logistics Flow <noreply@logisticsflow.co.za>',
+                    subject: subject,
+                    html: html,
+                    trackingSettings: {
+                        clickTracking: { enable: true },
+                        openTracking: { enable: true }
+                    }
+                };
+
+                await sgMail.send(msg);
+
+                const colName = colOverride || 'partners';
+                const partnerRef = db.collection(colName).doc(partnerId);
+
+                // Log the communication
+                const logRef = partnerRef.collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type: 'Email',
+                    subject: subject,
+                    notes: 'Sent via Automated Transactional Dispatch.',
+                    timestamp: FieldValue.serverTimestamp()
+                });
+
+                // Update outreach status
+                await partnerRef.update({
+                    status: 'contacted',
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                return NextResponse.json({ success: true });
+            }
+
+            case 'autoEnrichRecord': {
+                const { id, type: recType } = payload;
+                const colName = recType === 'lead' ? 'leads' : 'partners';
+                const ref = db.collection(colName).doc(id);
+                const snap = await ref.get();
+                if (!snap.exists) throw new Error("Record not found.");
+                
+                const data = snap.data()!;
+                const enrichment = await enrichPartner({ companyName: data.companyName || data.firstName });
+                
+                await ref.update({
+                    ...enrichment,
+                    lastEnrichedAt: FieldValue.serverTimestamp(),
+                    enhancementMethod: 'Forensic V4',
+                    status: 'qualified',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                
+                return NextResponse.json({ success: true, data: enrichment });
             }
 
             case 'searchRegistry': {
