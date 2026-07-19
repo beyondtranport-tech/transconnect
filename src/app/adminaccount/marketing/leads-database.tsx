@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -41,13 +40,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 
-import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
-import { PartnerTasksDialog } from '@/app/adminaccount/marketing/PartnerTasksDialog';
-import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
-import { EngageDialog } from '@/app/adminaccount/marketing/EngageDialog';
+import { EnrichPartnerButton } from './EnrichPartnerButton';
+import { PartnerTasksDialog } from './PartnerTasksDialog';
+import { CommunicationLogDialog } from './CommunicationLogDialog';
+import { EngageDialog } from './EngageDialog';
 import { PartnerOversightDialog } from './PartnerOversightDialog';
-import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
-import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
+import { BulkImportDialog } from './BulkImportDialog';
+import { AddCommunicationLogDialog } from './AddCommunicationLogDialog';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
   const response = await fetch('/api/admin', {

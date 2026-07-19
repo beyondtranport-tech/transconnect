@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -231,7 +230,7 @@ export default function AssociateManagement() {
           accessorKey: 'mobile', 
           header: 'Mobile / Phone',
           cell: ({row}) => (
-              <div className="flex items-center gap-2 text-xs font-mono">
+              <div className="flex items-center gap-2 text-xs font-mono text-foreground text-left">
                   <Phone className="h-3 w-3 text-muted-foreground" />
                   {row.original.mobile || row.original.phone || 'N/A'}
               </div>
@@ -320,7 +319,7 @@ export default function AssociateManagement() {
       <AssociateDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -357,7 +356,7 @@ export default function AssociateManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1 text-left text-foreground">
+                        <div className="space-y-1 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
                             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                                 <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>

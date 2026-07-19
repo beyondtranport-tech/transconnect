@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -236,7 +235,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
-                        <div className="flex items-center gap-3 text-sm">
+                        <div className="flex items-center gap-3 text-sm text-foreground text-left">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
                            <div className="flex items-center gap-2 text-muted-foreground">
                                <Mail className={cn("h-3.5 w-3.5", hasEmail && "text-blue-600")} />

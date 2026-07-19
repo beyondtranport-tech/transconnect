@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -139,7 +138,7 @@ function FileUploadField({
     return (
         <div className="space-y-2 text-left text-foreground">
             {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1"> {label}</Label>}
-            <Button type="button" variant="outline" className={cn("w-full min-h-[3rem] h-auto border-2 border-dashed py-2 whitespace-normal leading-tight", currentUrl && "border-solid border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
+            <Button type="button" variant="outline" className={cn("w-full min-h-[3rem] h-auto border-2 border-dashed py-2 whitespace-normal leading-tight", currentUrl && "border-solid border-green-50 border-green-500 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
                 {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
                 {currentUrl ? "File Attached" : `Select ${label}`}
             </Button>
@@ -292,9 +291,9 @@ function StepWarehouseCapabilities() {
                                 checked={field.value?.includes(opt)} 
                                 onCheckedChange={(checked) => {
                                     const current = field.value || [];
-                                    return checked 
-                                        ? field.onChange([...current, opt]) 
-                                        : field.onChange(current.filter((v: string) => v !== opt));
+                                    field.onChange(checked 
+                                        ? [...current, opt] 
+                                        : current.filter((v: string) => v !== opt));
                                 }} 
                             />
                             <span className="text-[11px] font-medium">{opt}</span>
@@ -356,17 +355,17 @@ function StepWarehouseSecurity() {
                 <div className="grid grid-cols-2 gap-2 text-left">
                     {securityOptions.map(opt => (
                         <FormField key={opt} control={control} name="securityFeatures" render={({ field }) => (
-                            <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors text-left">
                                 <Checkbox 
                                     checked={field.value?.includes(opt)} 
                                     onCheckedChange={(checked) => {
                                         const current = field.value || [];
-                                        return checked 
-                                            ? field.onChange([...current, opt]) 
-                                            : field.onChange(current.filter((v: string) => v !== opt));
+                                        field.onChange(checked 
+                                            ? [...current, opt] 
+                                            : current.filter((v: string) => v !== opt));
                                     }} 
                                 />
-                                <span className="text-[11px] font-medium">{opt}</span>
+                                <span className="text-[11px] font-medium text-left">{opt}</span>
                             </div>
                         )} />
                     ))}
@@ -414,7 +413,7 @@ function StepGallery() {
         setUploading(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) return;
+            if (!token) throw new Error("Auth required");
             const newUrls: string[] = [...imageUrls];
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
@@ -433,8 +432,8 @@ function StepGallery() {
             }
             setValue('imageUrls', newUrls, { shouldValidate: true });
             toast({ title: "Gallery Updated" });
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Upload Error" });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Upload Error", description: e.message });
         } finally {
             setUploading(false);
         }
@@ -475,7 +474,7 @@ function StepWarehouseFees() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
                 <Banknote className="h-6 w-6 text-primary" />
                 Storage Yield Settings
             </h3>
@@ -528,7 +527,7 @@ function StepBrokerageCommercials() {
                     )} />
                 </div>
                 <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2 text-left">
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2 text-left text-white">
                         Platform Success Fee
                         <ShieldCheck className="h-3 w-3 text-primary" />
                     </p>
@@ -539,7 +538,7 @@ function StepBrokerageCommercials() {
                 </div>
             </div>
 
-            <Card className="border-none bg-slate-50 shadow-inner">
+            <Card className="border-none bg-slate-50 shadow-inner text-left">
                 <CardContent className="p-6 text-left">
                     <h4 className="font-bold text-sm mb-3 flex items-center gap-2 text-left">
                         <Info className="h-4 w-4 text-primary" />
@@ -554,11 +553,11 @@ function StepBrokerageCommercials() {
                             <span className="text-muted-foreground text-left">Your Clearing Margin ({margin}%)</span>
                             <span className="font-bold text-green-600 text-left">+ R {(10000 * (margin/100)).toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between border-b pb-2 text-left text-foreground text-foreground">
+                        <div className="flex justify-between border-b pb-2 text-left text-foreground">
                             <span className="text-muted-foreground text-left">Platform Success Fee (2.5%)</span>
                             <span className="font-bold text-slate-600 text-left">- R 250.00</span>
                         </div>
-                        <div className="flex justify-between pt-2 text-left text-foreground text-foreground text-foreground">
+                        <div className="flex justify-between pt-2 text-left text-foreground">
                             <span className="font-black uppercase text-xs text-left">Available Haulier Payout</span>
                             <span className="font-black text-primary text-left">R {(10000 - (10000 * (margin/100)) - 250).toFixed(2)}</span>
                         </div>
@@ -592,13 +591,13 @@ function StepRateSheet() {
                     <FormLabel className="font-bold text-foreground">Select Rate Structure</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'none' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'none' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="none" id="r-none" /><Label htmlFor="r-none" className="cursor-pointer">No Sheet</Label>
                             </div>
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'route' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'route' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="route" id="r-route" /><Label htmlFor="r-route" className="cursor-pointer">Route-Based</Label>
                             </div>
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'per_km' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'per_km' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="per_km" id="r-km" /><Label htmlFor="r-km" className="cursor-pointer">Rate per KM</Label>
                             </div>
                         </RadioGroup>
@@ -672,14 +671,14 @@ function StepLoadAgreement() {
             </h3>
 
             <FormField control={control} name="contractType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left">
+                <FormItem className="space-y-4 text-left text-foreground">
                     <FormLabel className="font-bold">Default Agreement Preference</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
-                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground text-left text-foreground text-foreground">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></div>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'master' ? "bg-primary/5 border-primary" : "bg-white")}>
+                                <RadioGroupItem value="master" id="c-master" /><div className="cursor-pointer font-bold text-foreground text-left">Master Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Fixed volume per month.</span></div>
                             </div>
-                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left text-foreground text-foreground", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
+                            <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer text-left", field.value === 'one_off' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="one_off" id="c-spot" /><div className="cursor-pointer font-bold text-foreground text-left">One-Off Agreement <span className="block text-[10px] font-normal text-muted-foreground text-left">Spot market bookings.</span></div>
                             </div>
                         </RadioGroup>
@@ -689,7 +688,7 @@ function StepLoadAgreement() {
 
             {contractType === 'master' && (
                 <FormField control={control} name="monthlyLoadTarget" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left text-foreground">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
                         <FormLabel>Committed Loads per Month</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 20" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                         <FormDescription className="text-[10px] text-left">Your node will be prioritized for long-term matching.</FormDescription>
@@ -759,7 +758,7 @@ function StepCommercials({ shop }: { shop: any }) {
             </div>
 
             {agreements && agreements.length > 0 && (
-                <div className="space-y-4 text-left">
+                <div className="space-y-4 text-left text-foreground">
                     <h4 className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2 text-left">
                         <History className="h-4 w-4" />
                         Agreement History
@@ -791,10 +790,10 @@ function StepCatalog({ shop }: { shop: any }) {
 
     return (
         <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center border-b pb-4 text-left">
+            <div className="flex justify-between items-center border-b pb-4 text-left text-foreground">
                 <div className="text-left">
-                    <h3 className="text-xl font-black font-headline text-left">Product Catalogue</h3>
-                    <p className="text-xs text-muted-foreground text-left text-foreground">List the items or services you sell directly in the Mall.</p>
+                    <h3 className="text-xl font-black font-headline text-left text-foreground">Product Catalogue</h3>
+                    <p className="text-xs text-muted-foreground text-left">List the items or services you sell directly in the Mall.</p>
                 </div>
                 <Dialog open={!!editingProduct} onOpenChange={(o) => { if (!o) setEditingProduct(null); }}>
                     <DialogTrigger asChild><Button className="gap-2 font-bold text-white"><PlusCircle className="h-4 w-4" /> Add Product</Button></DialogTrigger>
@@ -852,6 +851,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
         setLoading(true);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed");
             const collectionPath = `companies/${shop.companyId}/shops/${shop.id}/products`;
             const res = await fetch(product ? '/api/updateUserDoc' : '/api/addUserDoc', {
                 method: 'POST',
@@ -902,7 +902,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
 
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
-            <DialogHeader className="text-left">
+            <DialogHeader className="text-left text-foreground">
                 <DialogTitle className="text-left">Product Management</DialogTitle>
                 <DialogDescription className="text-left">Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
@@ -925,7 +925,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                     
                     <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Product Images</Label>
-                        <div className="grid grid-cols-4 gap-2 text-left">
+                        <div className="grid grid-cols-4 gap-2 text-left text-foreground">
                              {(form.watch('imageUrls') || []).map((url: string, i: number) => (
                                  <div key={i} className="relative aspect-square rounded-lg overflow-hidden border">
                                      <Image src={url} alt="pic" fill className="object-cover" />

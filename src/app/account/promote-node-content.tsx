@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -239,7 +238,7 @@ export default function PromoteNodeContent() {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-8 space-y-8 text-left">
+                        <CardContent className="p-8 space-y-8 text-left text-foreground">
                             <div className="space-y-4 text-left">
                                 <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">1. Campaign Label</Label>
                                 <Input 
@@ -254,7 +253,7 @@ export default function PromoteNodeContent() {
                                 <div className="space-y-4 text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">2. Target Audience</Label>
                                     <Select value={target} onValueChange={setTarget}>
-                                        <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue/></SelectTrigger>
+                                        <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue placeholder="Select Audience" /></SelectTrigger>
                                         <SelectContent>
                                             {audiences.map(a => <SelectItem key={a.id} value={a.id} className="font-bold">{a.label}</SelectItem>)}
                                         </SelectContent>
@@ -262,8 +261,8 @@ export default function PromoteNodeContent() {
                                 </div>
                                 <div className="space-y-4 text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">3. Purchase Volume</Label>
-                                    <Select value={String(batches)} onValueChange={v => setBatches(Number(v))}>
-                                        <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue/></SelectTrigger>
+                                    <Select value={String(batches)} onValueChange={(v) => setBatches(Number(v))}>
+                                        <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue placeholder="Select Volume" /></SelectTrigger>
                                         <SelectContent>
                                             {[1, 5, 10, 25, 50].map(b => (
                                                 <SelectItem key={b} value={String(b)} className="font-bold">
