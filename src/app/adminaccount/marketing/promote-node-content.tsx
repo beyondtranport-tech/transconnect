@@ -252,8 +252,8 @@ export default function PromoteNodeContent() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                                 <div className="space-y-4 text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">2. Target Audience</Label>
-                                    <Select value={target} onValueChange={setTarget}>
-                                        <SelectTrigger className="h-12 border-2 font-bold"><SelectValue placeholder="Select Audience" /></SelectTrigger>
+                                    <Select value={target} onValueChange={(val) => setTarget(val)}>
+                                        <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue placeholder="Select Audience" /></SelectTrigger>
                                         <SelectContent>
                                             {audiences.map(a => <SelectItem key={a.id} value={a.id} className="font-bold">{a.label}</SelectItem>)}
                                         </SelectContent>
@@ -262,7 +262,7 @@ export default function PromoteNodeContent() {
                                 <div className="space-y-4 text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">3. Purchase Volume</Label>
                                     <Select value={String(batches)} onValueChange={(v) => setBatches(Number(v))}>
-                                        <SelectTrigger className="h-12 border-2 font-bold"><SelectValue placeholder="Select Volume" /></SelectTrigger>
+                                        <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue placeholder="Select Volume" /></SelectTrigger>
                                         <SelectContent>
                                             {[1, 5, 10, 25, 50].map(b => (
                                                 <SelectItem key={b} value={String(b)} className="font-bold">
@@ -278,7 +278,7 @@ export default function PromoteNodeContent() {
                                 </div>
                             </div>
 
-                            <div className="space-y-4 text-left">
+                            <div className="space-y-4 text-left text-foreground">
                                 <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">4. Creative Asset URL</Label>
                                 <div className="flex gap-2 text-left">
                                     <Input 

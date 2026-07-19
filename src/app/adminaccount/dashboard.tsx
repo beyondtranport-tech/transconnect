@@ -82,28 +82,28 @@ export default function AdminDashboardContent() {
         ];
     }, [leads, companies]);
 
-    if (isLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /><p className="mt-4 font-bold uppercase text-[10px] tracking-widest text-muted-foreground text-center text-foreground">Mapping Stats...</p></div>;
+    if (isLoading) return <div className="flex justify-center p-20 text-center text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /><p className="mt-4 font-bold uppercase text-[10px] tracking-widest text-muted-foreground text-center">Mapping Stats...</p></div>;
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="flex justify-between items-end text-left text-foreground">
-                <div className="text-left text-foreground">
+            <div className="flex justify-between items-end text-left">
+                <div className="text-left">
                     <h1 className="text-2xl font-bold font-headline text-left">Platform Intelligence</h1>
                     <p className="text-muted-foreground text-left">Flow analysis from Discovery to Paying Membership.</p>
                 </div>
-                <Button variant="outline" onClick={loadData} size="sm" className="text-foreground"><Clock className="mr-2 h-4 w-4"/> Refresh</Button>
+                <Button variant="outline" onClick={loadData} size="sm"><Clock className="mr-2 h-4 w-4"/> Refresh</Button>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 text-left text-foreground">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 text-left">
                 {funnelData.map((stage, idx) => (
-                    <Card key={stage.stage} className="relative overflow-hidden text-left">
-                        <CardHeader className="pb-2 text-left">
+                    <Card key={stage.stage} className="relative overflow-hidden text-left bg-white">
+                        <CardHeader className="pb-2 text-left text-foreground">
                             <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-left">{stage.stage}</CardTitle>
                         </CardHeader>
-                        <CardContent className="text-left text-foreground">
+                        <CardContent className="text-left">
                             <div className="text-3xl font-black text-left">{stage.count}</div>
                             {idx > 0 && funnelData[idx-1].count > 0 && (
-                                <p className="text-[10px] font-bold text-green-600 mt-1 uppercase text-left text-foreground">
+                                <p className="text-[10px] font-bold text-green-600 mt-1 uppercase text-left">
                                     {((stage.count / funnelData[idx-1].count) * 100).toFixed(1)}% Yield
                                 </p>
                             )}

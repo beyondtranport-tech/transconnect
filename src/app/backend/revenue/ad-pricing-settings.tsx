@@ -85,18 +85,14 @@ export default function AdPricingSettings() {
     }
   };
 
-  const currentBatchSize = form.watch('instanceBatchSize');
-  const currentBatchPrice = form.watch('pricePerBatch');
-  const unitPrice = currentBatchSize > 0 ? (currentBatchPrice / currentBatchSize).toFixed(4) : '0';
-
   return (
     <Card className="w-full max-w-3xl text-left border-primary/20 bg-primary/5 shadow-xl">
-        <CardHeader className="bg-white rounded-t-lg border-b p-8 text-left text-foreground">
+        <CardHeader className="bg-white rounded-t-lg border-b p-8 text-left text-foreground text-foreground">
             <div className="flex items-center gap-4 text-left">
                 <div className="bg-primary/10 p-3 rounded-xl">
                     <Zap className="h-8 w-8 text-primary"/>
                 </div>
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <CardTitle className="text-xl font-black uppercase tracking-tight text-left">Visibility Economics</CardTitle>
                     <CardDescription className="text-left">
                         Define pricing for Intelligence Boosts and Visual Broadcasts.
@@ -104,7 +100,7 @@ export default function AdPricingSettings() {
                 </div>
             </div>
         </CardHeader>
-        <CardContent className="p-8 space-y-8 text-left text-foreground">
+        <CardContent className="p-8 space-y-8 text-left text-foreground text-foreground">
             {isConfigLoading ? (
                  <div className="flex justify-center items-center py-10">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -113,9 +109,9 @@ export default function AdPricingSettings() {
                 <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 text-left text-foreground">
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
                         <FormField control={form.control} name="instanceBatchSize" render={({ field }) => (
-                            <FormItem className="text-left">
+                            <FormItem className="text-left text-foreground">
                                 <FormLabel className="flex items-center gap-2 font-bold"><Layers className="h-4 w-4 text-primary"/> Base Batch Size</FormLabel>
                                 <FormControl><Input type="number" {...field} className="h-12 border-2 bg-white text-lg font-black" /></FormControl>
                                 <FormDescription className="text-[10px] uppercase font-bold text-muted-foreground text-left">Impressions per standard batch.</FormDescription>
@@ -124,7 +120,7 @@ export default function AdPricingSettings() {
                         )} />
 
                         <FormField control={form.control} name="pricePerBatch" render={({ field }) => (
-                            <FormItem className="text-left">
+                            <FormItem className="text-left text-foreground">
                                 <FormLabel className="flex items-center gap-2 font-bold"><DollarSign className="h-4 w-4 text-primary"/> Price per Batch (R)</FormLabel>
                                 <FormControl><Input type="number" {...field} className="h-12 border-2 bg-white text-lg font-black" /></FormControl>
                                 <FormDescription className="text-[10px] uppercase font-bold text-muted-foreground text-left">Standard debit amount per batch.</FormDescription>
@@ -135,19 +131,19 @@ export default function AdPricingSettings() {
 
                     <Separator />
 
-                    <div className="space-y-4 text-left">
+                    <div className="space-y-4 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 text-left text-foreground">Visual Format Multipliers</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                             <FormField control={form.control} name="billboardMultiplier" render={({ field }) => (
                                 <FormItem className="p-4 bg-white border-2 rounded-xl text-left text-foreground">
-                                    <FormLabel className="flex items-center gap-2 font-bold"><ImageIcon className="h-4 w-4 text-muted-foreground" /> Billboard Multiplier</FormLabel>
+                                    <FormLabel className="flex items-center gap-2 font-bold text-foreground"><ImageIcon className="h-4 w-4 text-muted-foreground" /> Billboard Multiplier</FormLabel>
                                     <FormControl><Input type="number" step="0.1" {...field} className="h-10 border-none bg-slate-50 text-xl font-black" /></FormControl>
                                     <FormDescription className="text-[9px] italic">Premium markup for dashboard/mall banners.</FormDescription>
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="flyerMultiplier" render={({ field }) => (
                                 <FormItem className="p-4 bg-white border-2 rounded-xl text-left text-foreground">
-                                    <FormLabel className="flex items-center gap-2 font-bold"><Smartphone className="h-4 w-4 text-muted-foreground" /> Flyer Multiplier</FormLabel>
+                                    <FormLabel className="flex items-center gap-2 font-bold text-foreground"><Smartphone className="h-4 w-4 text-muted-foreground" /> Flyer Multiplier</FormLabel>
                                     <FormControl><Input type="number" step="0.1" {...field} className="h-10 border-none bg-slate-50 text-xl font-black" /></FormControl>
                                     <FormDescription className="text-[9px] italic">Premium markup for login pop-ups.</FormDescription>
                                 </FormItem>
@@ -158,7 +154,7 @@ export default function AdPricingSettings() {
                     <FormField control={form.control} name="isEngineActive" render={({ field }) => (
                         <FormItem className="flex items-center justify-between p-6 bg-white border-2 border-dashed rounded-2xl text-left text-foreground">
                             <div className="space-y-1 text-left">
-                                <FormLabel className="text-sm font-black flex items-center gap-2 uppercase tracking-tight">
+                                <FormLabel className="text-sm font-black flex items-center gap-2 uppercase tracking-tight text-foreground">
                                     <ShieldAlert className="h-5 w-5 text-primary" />
                                     Global Inventory Switch
                                 </FormLabel>
