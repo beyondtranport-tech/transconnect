@@ -234,7 +234,7 @@ export default function PromoteNodeContent() {
                                 <div className="bg-primary/20 p-3 rounded-xl"><Sparkles className="h-6 w-6 text-primary" /></div>
                                 <div className="text-left">
                                     <CardTitle className="text-xl font-black uppercase tracking-tight text-left">Visibility Purchase Menu</CardTitle>
-                                    <CardDescription className="text-slate-400 text-left text-foreground text-left">Standardized bundles of views targeting your chosen audience.</CardDescription>
+                                    <CardDescription className="text-slate-400 text-left">Standardized bundles of views targeting your chosen audience.</CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
@@ -279,7 +279,7 @@ export default function PromoteNodeContent() {
                             </div>
 
                             <div className="space-y-4 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left text-foreground">4. Creative Asset URL</Label>
+                                <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">4. Creative Asset URL</Label>
                                 <div className="flex gap-2 text-left">
                                     <Input 
                                         value={creativeUrl} 
@@ -287,14 +287,14 @@ export default function PromoteNodeContent() {
                                         placeholder="Paste link from Studio or Asset Gallery..." 
                                         className="h-12 border-2 font-mono text-xs text-left" 
                                     />
-                                    <Button variant="outline" className="h-12 border-2 gap-2 font-bold text-left" asChild>
+                                    <Button variant="outline" className="h-12 border-2 gap-2 font-bold text-left text-foreground" asChild>
                                         <Link href="/account?view=marketing-studio"><Search className="h-4 w-4" /> Studio</Link>
                                     </Button>
                                 </div>
                             </div>
                         </CardContent>
                         <CardFooter className="bg-slate-900 border-t p-8 flex justify-between items-center rounded-b-xl text-white text-left">
-                            <div className="text-left">
+                            <div className="text-left text-white">
                                 <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Total Investment</p>
                                 <p className="text-2xl font-black text-primary text-left">{formatCurrency(totalCost)}</p>
                             </div>
@@ -313,7 +313,7 @@ export default function PromoteNodeContent() {
                         <Card className="border-none shadow-xl bg-white text-left text-foreground">
                             <CardContent className="pt-6 text-left text-foreground">
                                 {isCampaignsLoading ? (
-                                    <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto text-left" /></div>
+                                    <div className="flex justify-center p-20 text-foreground text-left"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>
                                 ) : campaigns && campaigns.length > 0 ? (
                                     <DataTable columns={columns} data={campaigns} />
                                 ) : (
@@ -327,7 +327,7 @@ export default function PromoteNodeContent() {
                     </div>
                 </div>
 
-                <div className="space-y-8 text-left text-foreground text-foreground">
+                <div className="space-y-8 text-left text-foreground">
                     <Card className="bg-slate-900 text-white border-none shadow-2xl p-8 text-left relative overflow-hidden">
                         <CardHeader className="p-0 mb-6 text-left">
                             <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white text-left">
@@ -339,28 +339,28 @@ export default function PromoteNodeContent() {
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="p-0 text-left">
-                             <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-full text-left">
+                             <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-full text-left text-primary">
                                 <ShieldCheck className="h-3 w-3 fill-current text-left"/> Secure Handshake Integrity
                              </div>
                         </CardFooter>
                     </Card>
 
-                    <div className="space-y-4 text-left text-foreground text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left text-foreground text-foreground text-foreground">Economics of Scale</Label>
+                    <div className="space-y-4 text-left text-foreground">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Economics of Scale</Label>
                         <Card className="border-dashed border-2 bg-muted/20 text-left text-foreground">
                             <CardContent className="p-6 space-y-4 text-left text-foreground">
                                 <div className="flex items-start gap-4 text-left text-foreground">
                                     <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><Layers className="h-4 w-4 text-primary" /></div>
-                                    <div className="text-left text-foreground text-foreground text-foreground">
+                                    <div className="text-left text-foreground">
                                         <p className="text-xs font-black uppercase text-foreground text-left">Batch Consumption</p>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground text-foreground text-foreground">Views are only deducted when your boosted profile is actually rendered for a unique viewer.</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground">Views are only deducted when your boosted profile is actually rendered for a unique viewer.</p>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4 text-left text-foreground">
                                     <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><TrendingUp className="h-4 w-4 text-primary" /></div>
                                     <div className="text-left text-foreground">
-                                        <p className="text-xs font-black uppercase text-foreground text-left text-foreground">Conversion Accountability</p>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground text-foreground text-foreground">Access a forensic list of every company that viewed or clicked your content via the Drill-Down tool.</p>
+                                        <p className="text-xs font-black uppercase text-foreground text-left">Conversion Accountability</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left">Access a forensic list of every company that viewed or clicked your content via the Drill-Down tool.</p>
                                     </div>
                                 </div>
                             </CardContent>

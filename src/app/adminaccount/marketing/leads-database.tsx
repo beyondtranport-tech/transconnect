@@ -187,7 +187,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </div>
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
                         <UserCheck className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -210,7 +210,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             </div>
 
             <DialogFooter className="pt-6 border-t sticky bottom-0 bg-white z-10 text-left">
-              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg">
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg text-white">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>
@@ -322,7 +322,7 @@ function LeadsDatabaseComponent() {
             if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
             const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
             return (
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-left text-foreground">
                     <div className="flex items-center gap-1 text-left">
                         <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[120px] text-left">{cleanSubject}</Badge>
                         {row.original.lastOpenedAt && <TooltipProvider><Tooltip><TooltipTrigger><div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div></TooltipTrigger><TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent></Tooltip></TooltipProvider>}
@@ -351,7 +351,7 @@ function LeadsDatabaseComponent() {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right flex items-center justify-end gap-1 text-foreground text-left text-foreground text-foreground text-foreground">
+        <div className="text-right flex items-center justify-end gap-1 text-left">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog partnerId={row.original.id} collection="leads" onLogAdded={forceRefresh} />
@@ -370,8 +370,8 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => { setEngageLead(null); }} partners={engageLead ? [engageLead] : leads.filter(l => selectedIds.includes(l.id))} audience="transporters" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="text-left text-foreground text-left text-foreground text-foreground text-foreground">
-          <AlertDialogHeader className="text-left text-foreground text-left text-foreground text-foreground text-foreground"><AlertDialogTitle className="text-left text-foreground text-left text-foreground text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent className="text-left text-foreground">
+          <AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -379,33 +379,33 @@ function LeadsDatabaseComponent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
-        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
-          <div className="text-left text-foreground text-left text-foreground text-foreground text-foreground">
-            <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>
-            <CardDescription className="text-left text-muted-foreground text-left text-foreground text-foreground text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
+      <div className="space-y-6 text-left text-foreground">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground">
+          <div className="text-left text-foreground">
+            <CardTitle className="flex items-center gap-2 text-left text-foreground"><Users /> Master Lead Database</CardTitle>
+            <CardDescription className="text-left text-muted-foreground text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
-          <div className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground">
-             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
+          <div className="flex items-center gap-2 text-left text-foreground">
+             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" className="text-left text-foreground text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button variant="outline" className="text-left text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground">
-                    <div className="space-y-1 text-left text-foreground text-foreground">
+                <PopoverContent className="w-56 p-2 text-left text-foreground">
+                    <div className="space-y-1 text-left text-foreground">
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground text-left" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary text-left" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                     </div>
                 </PopoverContent>
             </Popover>
-            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
 
-        <Card className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-            <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
+        <Card className="text-left text-foreground">
+            <CardContent className="pt-6 text-left text-foreground">
+                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>

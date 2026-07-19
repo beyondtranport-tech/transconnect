@@ -109,13 +109,13 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
-                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Handle / Business Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Handle / Business Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                    <div className="grid grid-cols-2 gap-4 text-left">
+                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
@@ -132,7 +132,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                             <FormMessage />
                         </FormItem> 
                     )} />
-                     <DialogFooter className="pt-4 border-t text-left text-foreground">
+                     <DialogFooter className="pt-4 border-t text-left">
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
@@ -212,11 +212,11 @@ export default function AssociateManagement() {
           header: 'Partner Identity', 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
-                  <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left text-foreground">
+                  <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                  <div className="flex items-center gap-2 mt-1 text-left">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source}</Badge>
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">Creator Node</Badge>
+                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">Creator Node</Badge>
                   </div>
               </div>
           )
@@ -230,7 +230,7 @@ export default function AssociateManagement() {
           accessorKey: 'mobile', 
           header: 'Mobile / Phone',
           cell: ({row}) => (
-              <div className="flex items-center gap-2 text-xs font-mono text-foreground text-left">
+              <div className="flex items-center gap-2 text-xs font-mono text-left">
                   <Phone className="h-3 w-3 text-muted-foreground" />
                   {row.original.mobile || row.original.phone || 'N/A'}
               </div>
@@ -245,14 +245,14 @@ export default function AssociateManagement() {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
-                  <div className="flex flex-col text-left text-foreground">
-                      <div className="flex items-center gap-1">
+                  <div className="flex flex-col text-left">
+                      <div className="flex items-center gap-1 text-left">
                         <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
                         {row.original.lastOpenedAt && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -262,7 +262,7 @@ export default function AssociateManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -280,7 +280,7 @@ export default function AssociateManagement() {
           cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
       },
       { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end items-center gap-1 text-left text-foreground">
+        <div className="flex justify-end items-center gap-1 text-left">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog 
@@ -297,7 +297,7 @@ export default function AssociateManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns, type]);
+  }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -318,8 +318,8 @@ export default function AssociateManagement() {
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="associates" onEngageSuccess={() => fetchData()} />
       <AssociateDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle><AlertDialogDescription>Delete record?</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent className="text-left">
+          <AlertDialogHeader><AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -328,12 +328,12 @@ export default function AssociateManagement() {
       </AlertDialog>
 
       {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
+            <Card className="bg-primary/5 border-primary/20 p-12 text-center">
                 <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground">Digital Partner Pipeline Scan</h2>
-                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center text-foreground">Scan your influencer and marketer database. Use filters to prioritize recruitment.</p>
+                <h2 className="text-2xl font-black font-headline mb-2 text-center">Digital Partner Pipeline Scan</h2>
+                <p className="text-muted-foreground max-sm mx-auto mb-8 text-center">Scan your influencer and marketer database. Use filters to prioritize recruitment.</p>
                 
-                <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground">
+                <div className="max-w-4xl mx-auto space-y-6 text-left">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                         <div className="space-y-1 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Status</Label>
@@ -345,10 +345,10 @@ export default function AssociateManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1 text-left text-foreground">
+                        <div className="space-y-1 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Statuses</SelectItem>
                                     <SelectItem value="new">New Lead</SelectItem>
@@ -356,10 +356,10 @@ export default function AssociateManagement() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-1 text-left text-foreground text-foreground">
+                        <div className="space-y-1 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
                             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Staff</SelectItem>
                                     <SelectItem value="none">Unallocated</SelectItem>
@@ -370,12 +370,12 @@ export default function AssociateManagement() {
                     </div>
 
                     <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
-                        <div className="flex-1 space-y-2 text-left text-foreground">
+                        <div className="flex-1 space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Agency or ID</Label>
                             <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
                         </div>
-                        <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground">
-                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
+                        <div className="flex flex-col md:flex-row gap-2 self-end text-left">
+                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left text-white">
                                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
                             </Button>
                         </div>
@@ -385,8 +385,8 @@ export default function AssociateManagement() {
       ) : (
             <div className="space-y-6 text-left">
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-                    <div className="text-left text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Share2 /> Digital Partners</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
-                    <div className="flex gap-2 text-left text-foreground text-foreground">
+                    <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Share2 /> Digital Partners</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
+                    <div className="flex gap-2 text-left">
                         <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2"><RotateCcw className="h-4 w-4" /> New Search</Button>
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         
@@ -397,7 +397,7 @@ export default function AssociateManagement() {
                             <PopoverContent className="w-56 p-2 text-left">
                                 <div className="space-y-1 text-left">
                                     {Object.keys(visibleColumns).map(col => (
-                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                             <span>{col.replace(/([A-Z])/g, ' $1')}</span>
                                             {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                         </div>
@@ -412,8 +412,8 @@ export default function AssociateManagement() {
                     </div>
                 </CardHeader>
                 <Card className="text-left">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                    <CardContent className="pt-6 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                             <div className="space-y-1 text-left">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -443,13 +443,14 @@ export default function AssociateManagement() {
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
+                            <div className="flex items-end text-left"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left">
+                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4 text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+                                     <div className="flex justify-center pt-4 text-left">
+                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-left">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records
                                         </Button>
