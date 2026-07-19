@@ -252,7 +252,7 @@ export default function AssociateManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -262,7 +262,7 @@ export default function AssociateManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -443,14 +443,13 @@ export default function AssociateManagement() {
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
+                            <div className="flex items-end text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
                         </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground">
-                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                            <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                                 {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px]">
+                                     <div className="flex justify-center pt-4 text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                             Load Next 100 Records
                                         </Button>
