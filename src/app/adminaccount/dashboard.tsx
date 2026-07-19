@@ -82,7 +82,7 @@ export default function AdminDashboardContent() {
         ];
     }, [leads, companies]);
 
-    if (isLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /><p className="mt-4 font-bold uppercase text-[10px] tracking-widest text-muted-foreground text-center">Mapping Stats...</p></div>;
+    if (isLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /><p className="mt-4 font-bold uppercase text-[10px] tracking-widest text-muted-foreground text-center text-foreground">Mapping Stats...</p></div>;
 
     return (
         <div className="space-y-8 text-left text-foreground">
@@ -103,7 +103,7 @@ export default function AdminDashboardContent() {
                         <CardContent className="text-left text-foreground">
                             <div className="text-3xl font-black text-left">{stage.count}</div>
                             {idx > 0 && funnelData[idx-1].count > 0 && (
-                                <p className="text-[10px] font-bold text-green-600 mt-1 uppercase text-left">
+                                <p className="text-[10px] font-bold text-green-600 mt-1 uppercase text-left text-foreground">
                                     {((stage.count / funnelData[idx-1].count) * 100).toFixed(1)}% Yield
                                 </p>
                             )}

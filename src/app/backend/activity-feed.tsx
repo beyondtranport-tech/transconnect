@@ -90,7 +90,7 @@ export default function ActivityFeed() {
 
     if (isLoading) {
         return (
-            <div className="flex justify-center items-center py-20">
+            <div className="flex justify-center items-center py-20 text-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
@@ -113,7 +113,7 @@ export default function ActivityFeed() {
                     <Activity className="h-6 w-6 text-primary" />
                     <CardTitle className="text-left">Platform Activity Feed</CardTitle>
                 </div>
-                <CardDescription className="text-left">A real-time overview of all significant actions and forensic engagement pings.</CardDescription>
+                <CardDescription className="text-left text-muted-foreground text-left">A real-time overview of all significant actions and forensic engagement pings.</CardDescription>
             </CardHeader>
              {logs.length > 0 ? (
                 <div className="space-y-6 text-left">
@@ -157,7 +157,7 @@ export default function ActivityFeed() {
                     })}
                 </div>
             ) : (
-                <div className="text-center py-20 border-2 border-dashed rounded-lg opacity-30">
+                <div className="text-center py-20 border-2 border-dashed rounded-lg opacity-30 text-foreground">
                     <Activity className="mx-auto h-12 w-12 text-muted-foreground" />
                     <h3 className="mt-4 text-xl font-semibold">Registry Standby</h3>
                     <p className="mt-2 text-muted-foreground">Recent platform activities and pings will appear here.</p>

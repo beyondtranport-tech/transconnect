@@ -299,7 +299,7 @@ export default function AssociateManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns, type]);
+  }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -320,7 +320,7 @@ export default function AssociateManagement() {
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="associates" onEngageSuccess={() => fetchData()} />
       <AssociateDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left">
+        <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
@@ -389,17 +389,17 @@ export default function AssociateManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Share2 /> Digital Partners</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2 text-left">
-                        <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2 text-left"><RotateCcw className="h-4 w-4" /> New Search</Button>
-                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
+                        <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2 text-left text-foreground"><RotateCcw className="h-4 w-4" /> New Search</Button>
+                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="gap-2 text-left"><Settings2 className="h-4 w-4" /> Columns</Button>
+                                <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2 text-left">
                                 <div className="space-y-1 text-left">
                                     {Object.keys(visibleColumns).map(col => (
-                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                             <span>{col.replace(/([A-Z])/g, ' $1')}</span>
                                             {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                         </div>
@@ -408,15 +408,15 @@ export default function AssociateManagement() {
                             </PopoverContent>
                         </Popover>
 
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'associates-backup.csv')} disabled={isLoading} className="text-left"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                        <BulkImportDialog type="associate" onComplete={() => fetchData()}><Button variant="outline" className="text-left"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                        <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'associates-backup.csv')} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
+                        <BulkImportDialog type="associate" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-white"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
                     </div>
                 </CardHeader>
                 <Card className="text-left">
                     <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
-                            <div className="space-y-1 text-left">
+                            <div className="space-y-1 text-left text-foreground">
                                 <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
                                     <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
@@ -446,7 +446,7 @@ export default function AssociateManagement() {
                                 </Select>
                             </div>
                             <div className="flex items-end text-left text-foreground">
-                                <Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left">
+                                <Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground">
                                     <Link href="/adminaccount?view=associate-oversight">
                                         <Clock className="mr-1 h-3 w-3" /> Performance Monitoring
                                     </Link>

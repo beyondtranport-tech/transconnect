@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -23,6 +22,8 @@ import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@
 import { doc } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({
   instanceBatchSize: z.coerce.number().min(1, 'Batch size must be at least 1'),
@@ -169,7 +170,7 @@ export default function AdPricingSettings() {
                         </FormItem>
                     )} />
                     
-                    <div className="flex justify-end pt-4">
+                    <div className="flex justify-end pt-4 text-left">
                         <Button type="submit" disabled={isSaving} className="h-14 px-12 font-black uppercase tracking-widest shadow-2xl text-white">
                             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Publish Visibility Pricing
