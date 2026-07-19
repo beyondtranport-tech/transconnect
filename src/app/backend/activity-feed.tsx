@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, Activity, User, Building, FileText, ShoppingCart, Users, Mail, MousePointer2 } from 'lucide-react';
+import { Loader2, Activity, User, Building, FileText, ShoppingCart, Users, Mail, MousePointer2, ArrowRight } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';

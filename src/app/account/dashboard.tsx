@@ -437,20 +437,20 @@ export default function AccountDashboard() {
                     </div>
 
                     <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
-                        <CardHeader className="text-left text-foreground text-left">
-                            <CardTitle className="flex items-center gap-2 text-left"><HeartHandshake className="text-primary text-left" /> Help the Community & Earn Rewards</CardTitle>
+                        <CardHeader className="text-left text-foreground text-left text-foreground">
+                            <CardTitle className="flex items-center gap-2 text-left text-foreground"><HeartHandshake className="text-primary text-left text-foreground" /> Help the Community & Earn Rewards</CardTitle>
                         </CardHeader>
-                        <CardContent className="text-left text-foreground">
-                            <p className="text-muted-foreground text-sm leading-relaxed text-left text-foreground">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
+                        <CardContent className="text-left text-foreground text-foreground">
+                            <p className="text-muted-foreground text-sm leading-relaxed text-left text-foreground text-foreground">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
                         </CardContent>
-                        <CardFooter className="text-left">
-                            <Button asChild size="sm" className="text-white">
-                                <Link href="/contribute">Contribute Data <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                        <CardFooter className="text-left text-foreground">
+                            <Button asChild size="sm" className="text-white text-foreground">
+                                <Link href="/contribute">Contribute Data <ArrowRight className="ml-2 h-4 w-4 text-foreground" /></Link>
                             </Button>
                         </CardFooter>
                     </Card>
                     
-                    <div className="space-y-8 text-left text-foreground">
+                    <div className="space-y-8 text-left text-foreground text-foreground">
                         <QuotesCard />
                         <EnquiriesCard />
                     </div>

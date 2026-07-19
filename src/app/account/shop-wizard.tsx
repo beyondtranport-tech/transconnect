@@ -576,7 +576,7 @@ function StepRateSheet() {
 
     const locationOptionsList = useMemo(() => {
         return provinces.flatMap(p => 
-            p.cities.map(c => typeof c === 'string' ? `${c}, ${p.name}` : `${c.name}, ${p.name}`)
+            p.cities.map(c => `${c.name}, ${p.name}`)
         );
     }, []);
 

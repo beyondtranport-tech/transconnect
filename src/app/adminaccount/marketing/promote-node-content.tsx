@@ -239,7 +239,7 @@ export default function PromoteNodeContent() {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-8 space-y-8 text-left">
+                        <CardContent className="p-8 space-y-8 text-left text-foreground">
                             <div className="space-y-4 text-left">
                                 <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">1. Campaign Label</Label>
                                 <Input 

@@ -48,8 +48,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V8
- * High-fidelity scanner designed to handle every possible nomenclature.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V9
+ * Clinically hardened for imported industrial datasets.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -65,23 +65,26 @@ function resolveContact(partner: any) {
 
     const searchObj = (obj: any, keys: string[]): string => {
         if (!obj || typeof obj !== 'object') return '';
+        // Try exact keys first
         for (const k of keys) {
             if (obj[k]) {
                 const c = clean(obj[k]);
                 if (c) return c;
             }
-            for (const actualKey in obj) {
-                if (actualKey.toLowerCase() === k.toLowerCase()) {
-                    const c = clean(obj[actualKey]);
-                    if (c) return c;
-                }
+        }
+        // Try case-insensitive keys
+        for (const actualKey in obj) {
+            const lowKey = actualKey.toLowerCase();
+            if (keys.some(k => k.toLowerCase() === lowKey)) {
+                const c = clean(obj[actualKey]);
+                if (c) return c;
             }
         }
         return '';
     };
 
-    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'workEmail', 'main_email', 'EMAIL'];
-    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone'];
+    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'workEmail', 'main_email', 'EMAIL', 'mail'];
+    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'mobile_number'];
 
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
@@ -93,12 +96,12 @@ function resolveContact(partner: any) {
     const email = searchObj(partner.marketingManager, emailKeys) || 
                   searchObj(partner.ceo, emailKeys) || 
                   searchObj(partner, emailKeys) ||
-                  clean(partner.email_address || partner.contact_email);
+                  clean(partner.email_address || partner.contact_email || partner.email);
 
     const mobile = searchObj(partner.marketingManager, phoneKeys) || 
                    searchObj(partner.ceo, phoneKeys) || 
                    searchObj(partner, phoneKeys) ||
-                   clean(partner.mobile_number || partner.contact_no);
+                   clean(partner.mobile_number || partner.contact_no || partner.mobile || partner.phone);
 
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
