@@ -3,7 +3,41 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- CORE AUTHORIZATION HELPERS ---
+    // --- 1. PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
+    
+    match /partners/{partnerId} {
+      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
+      allow get: if true; 
+      allow list: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
+        request.auth.token.get('admin', false) == true
+      );
+      match /{allSub=**} { 
+        allow read, write: if request.auth != null && (
+          request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
+          request.auth.token.get('admin', false) == true
+        ); 
+      }
+    }
+
+    match /leads/{leadId} {
+      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
+      allow get: if true; 
+      allow list: if request.auth != null;
+      allow write: if request.auth != null && (
+        request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
+        request.auth.token.get('admin', false) == true
+      );
+      match /{allSub=**} { 
+        allow read, write: if request.auth != null && (
+          request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
+          request.auth.token.get('admin', false) == true
+        ); 
+      }
+    }
+
+    // --- 2. CORE AUTHORIZATION HELPERS ---
     
     function isSignedIn() {
       return request.auth != null;
@@ -17,9 +51,6 @@ service cloud.firestore {
       );
     }
 
-    /**
-     * IS MEMBER / OWNER CHECK
-     */
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
@@ -32,25 +63,7 @@ service cloud.firestore {
       );
     }
 
-    // --- PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
-
-    match /partners/{partnerId} {
-      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
-      allow get: if true; 
-      allow list: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-
-    match /leads/{leadId} {
-      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
-      allow get: if true; 
-      allow list: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-
-    // --- PUBLIC / CONFIGURATION RULES ---
+    // --- 3. PUBLIC / CONFIGURATION RULES ---
 
     match /configuration/{configId} {
       allow get, list: if true;
@@ -67,12 +80,12 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // --- ADMIN OVERRIDE ---
+    // --- 4. ADMIN OVERRIDE ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- STANDARD PATH RULES ---
+    // --- 5. STANDARD PATH RULES ---
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -119,7 +132,7 @@ service cloud.firestore {
       }
     }
 
-    // --- COLLECTION GROUP RULES ---
+    // --- 6. COLLECTION GROUP RULES ---
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /{path=**}/adCampaigns/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }

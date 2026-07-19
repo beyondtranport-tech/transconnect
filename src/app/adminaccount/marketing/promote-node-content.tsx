@@ -55,11 +55,11 @@ function YieldDrillDown({ campaignId }: { campaignId: string }) {
                 ) : logs && logs.length > 0 ? (
                     <ScrollArea className="h-[400px] rounded-xl border bg-white shadow-inner text-left">
                         <Table>
-                            <TableHeader className="bg-slate-50 sticky top-0 z-10">
+                            <TableHeader className="bg-slate-50 sticky top-0 z-10 text-left text-foreground">
                                 <TableRow>
-                                    <TableHead className="text-[10px] font-black uppercase">Timestamp</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase">Entity (Viewer)</TableHead>
-                                    <TableHead className="text-[10px] font-black uppercase">Action Taken</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase text-left">Timestamp</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase text-left">Entity (Viewer)</TableHead>
+                                    <TableHead className="text-[10px] font-black uppercase text-left">Action Taken</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -68,7 +68,7 @@ function YieldDrillDown({ campaignId }: { campaignId: string }) {
                                         <TableCell className="text-[10px] font-mono text-muted-foreground">{formatDateSafe(log.timestamp, "dd MMM, HH:mm")}</TableCell>
                                         <TableCell className="font-bold text-xs">{log.companyName || 'Anonymous Hub'}</TableCell>
                                         <TableCell>
-                                            <Badge variant={log.action === 'ad_click' ? 'default' : 'outline'} className="gap-1 px-2 h-5 text-[8px] uppercase font-black">
+                                            <Badge variant={log.action === 'ad_click' ? 'default' : 'outline'} className="gap-1 px-2 h-5 text-[8px] uppercase font-black text-left">
                                                 {log.action === 'ad_click' ? <MousePointer2 className="h-2 w-2" /> : <Eye className="h-2 w-2" />}
                                                 {log.action === 'ad_click' ? 'Clicked' : 'Viewed'}
                                             </Badge>
@@ -176,7 +176,7 @@ export default function PromoteNodeContent() {
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-black text-primary text-left">{(row.original.metrics?.impressions || 0).toLocaleString()} / {row.original.totalInstances?.toLocaleString()}</span>
-                    <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest text-left">Views Served</p>
+                    <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest text-left text-foreground">Views Served</p>
                 </div>
             )
         },
@@ -184,7 +184,7 @@ export default function PromoteNodeContent() {
             header: 'Yield', 
             cell: ({row}) => (
                 <div className="flex items-center gap-2 text-left">
-                    <div className="flex flex-col text-left">
+                    <div className="flex flex-col text-left text-foreground">
                          <span className="font-black text-blue-600 text-left">{row.original.metrics?.clicks || 0}</span>
                          <p className="text-[8px] font-black uppercase text-blue-600/60 tracking-widest text-left">Direct Clicks</p>
                     </div>
@@ -217,10 +217,10 @@ export default function PromoteNodeContent() {
         }
     ];
 
-    if (isUserLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin text-primary mx-auto" /></div>;
+    if (isUserLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /><p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Loading Hub...</p></div>;
 
     return (
-        <div className="space-y-12 text-left text-foreground">
+        <div className="space-y-12 text-left text-foreground text-foreground">
             <div className="text-left space-y-1">
                 <h1 className="text-4xl font-black font-headline tracking-tight text-left">Industrial Promotion Hub</h1>
                 <p className="text-muted-foreground text-lg text-left">Maximize your forensic visibility and secure prioritized search rankings.</p>
@@ -240,7 +240,7 @@ export default function PromoteNodeContent() {
                         </CardHeader>
                         <CardContent className="p-8 space-y-8 text-left text-foreground">
                             <div className="space-y-4 text-left">
-                                <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">1. Campaign Label</Label>
+                                <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">1. Campaign Label</Label>
                                 <Input 
                                     value={title} 
                                     onChange={e => setTitle(e.target.value)} 
@@ -251,7 +251,7 @@ export default function PromoteNodeContent() {
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                                 <div className="space-y-4 text-left">
-                                    <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">2. Target Audience</Label>
+                                    <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">2. Target Audience</Label>
                                     <Select value={target} onValueChange={setTarget}>
                                         <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue placeholder="Select Audience" /></SelectTrigger>
                                         <SelectContent>
@@ -260,7 +260,7 @@ export default function PromoteNodeContent() {
                                     </Select>
                                 </div>
                                 <div className="space-y-4 text-left">
-                                    <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">3. Purchase Volume</Label>
+                                    <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">3. Purchase Volume</Label>
                                     <Select value={String(batches)} onValueChange={(v) => setBatches(Number(v))}>
                                         <SelectTrigger className="h-12 border-2 font-bold text-left"><SelectValue placeholder="Select Volume" /></SelectTrigger>
                                         <SelectContent>
@@ -271,15 +271,15 @@ export default function PromoteNodeContent() {
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic pl-1 text-left">
+                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground italic pl-1 text-left text-foreground">
                                         <Info className="h-3 w-3" />
                                         <span>1 Batch = {batchSize.toLocaleString()} Impressions. Served until consumed.</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 text-left text-foreground">
-                                <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1 text-left">4. Creative Asset URL</Label>
+                            <div className="space-y-4 text-left">
+                                <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">4. Creative Asset URL</Label>
                                 <div className="flex gap-2 text-left">
                                     <Input 
                                         value={creativeUrl} 
@@ -287,7 +287,7 @@ export default function PromoteNodeContent() {
                                         placeholder="Paste link from Studio or Asset Gallery..." 
                                         className="h-12 border-2 font-mono text-xs text-left" 
                                     />
-                                    <Button variant="outline" className="h-12 border-2 gap-2 font-bold text-left text-foreground" asChild>
+                                    <Button variant="outline" className="h-12 border-2 gap-2 font-bold text-left" asChild>
                                         <Link href="/account?view=marketing-studio"><Search className="h-4 w-4" /> Studio</Link>
                                     </Button>
                                 </div>
@@ -295,8 +295,8 @@ export default function PromoteNodeContent() {
                         </CardContent>
                         <CardFooter className="bg-slate-900 border-t p-8 flex justify-between items-center rounded-b-xl text-white text-left">
                             <div className="text-left text-white">
-                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Total Investment</p>
-                                <p className="text-2xl font-black text-primary text-left">{formatCurrency(totalCost)}</p>
+                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Total Investment</p>
+                                <p className="text-2xl font-black text-primary">{formatCurrency(totalCost)}</p>
                             </div>
                             <Button size="lg" className="h-16 px-12 font-black uppercase tracking-tight shadow-xl gap-3 text-lg text-white" onClick={handleLaunch} disabled={isProcessing}>
                                 {isProcessing ? <Loader2 className="animate-spin h-6 w-6" /> : <Zap className="h-6 w-6 fill-current" />}
@@ -305,20 +305,20 @@ export default function PromoteNodeContent() {
                         </CardFooter>
                     </Card>
 
-                    <div className="space-y-6 text-left text-foreground">
-                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2 text-left">
+                    <div className="space-y-6 text-left">
+                        <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground ml-1 flex items-center gap-2">
                             <History className="h-4 w-4" />
                             Behavioral Performance Audit
                         </h3>
                         <Card className="border-none shadow-xl bg-white text-left text-foreground">
-                            <CardContent className="pt-6 text-left text-foreground">
+                            <CardContent className="pt-6 text-left">
                                 {isCampaignsLoading ? (
-                                    <div className="flex justify-center p-20 text-foreground text-left"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>
+                                    <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>
                                 ) : campaigns && campaigns.length > 0 ? (
                                     <DataTable columns={columns} data={campaigns} />
                                 ) : (
                                     <div className="py-20 text-center text-foreground opacity-20 border-2 border-dashed rounded-2xl bg-muted/10 text-left">
-                                        <BarChart3 className="h-12 w-12 mx-auto mb-2 text-left" />
+                                        <BarChart3 className="h-12 w-12 mx-auto mb-2" />
                                         <p className="text-xs font-black uppercase tracking-widest text-center">No active yield logs</p>
                                     </div>
                                 )}
@@ -330,7 +330,7 @@ export default function PromoteNodeContent() {
                 <div className="space-y-8 text-left text-foreground">
                     <Card className="bg-slate-900 text-white border-none shadow-2xl p-8 text-left relative overflow-hidden">
                         <CardHeader className="p-0 mb-6 text-left">
-                            <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white text-left">
+                            <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white">
                                 <Search className="text-primary h-8 w-8" />
                                 Redirect Logic
                             </CardTitle>
@@ -339,25 +339,25 @@ export default function PromoteNodeContent() {
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="p-0 text-left">
-                             <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-full text-left text-primary">
-                                <ShieldCheck className="h-3 w-3 fill-current text-left"/> Secure Handshake Integrity
+                             <div className="flex items-center gap-2 text-[10px] font-black uppercase text-primary bg-primary/10 px-3 py-1.5 rounded-full text-left">
+                                <ShieldCheck className="h-3 w-3 fill-current"/> Secure Handshake Integrity
                              </div>
                         </CardFooter>
                     </Card>
 
-                    <div className="space-y-4 text-left text-foreground">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Economics of Scale</Label>
-                        <Card className="border-dashed border-2 bg-muted/20 text-left text-foreground">
+                    <div className="space-y-4 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Economics of Scale</Label>
+                        <Card className="border-dashed border-2 bg-muted/20 text-left">
                             <CardContent className="p-6 space-y-4 text-left text-foreground">
-                                <div className="flex items-start gap-4 text-left text-foreground">
+                                <div className="flex items-start gap-4 text-left">
                                     <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><Layers className="h-4 w-4 text-primary" /></div>
                                     <div className="text-left text-foreground">
                                         <p className="text-xs font-black uppercase text-foreground text-left">Batch Consumption</p>
-                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left text-foreground">Views are only deducted when your boosted profile is actually rendered for a unique viewer.</p>
+                                        <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left">Views are only deducted when your boosted profile is actually rendered for a unique viewer.</p>
                                     </div>
                                 </div>
-                                <div className="flex items-start gap-4 text-left text-foreground">
-                                    <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left"><TrendingUp className="h-4 w-4 text-primary" /></div>
+                                <div className="flex items-start gap-4 text-left">
+                                    <div className="bg-primary/10 p-2 rounded-lg mt-1 text-left text-foreground"><TrendingUp className="h-4 w-4 text-primary" /></div>
                                     <div className="text-left text-foreground">
                                         <p className="text-xs font-black uppercase text-foreground text-left">Conversion Accountability</p>
                                         <p className="text-[11px] text-muted-foreground leading-relaxed mt-1 text-left">Access a forensic list of every company that viewed or clicked your content via the Drill-Down tool.</p>

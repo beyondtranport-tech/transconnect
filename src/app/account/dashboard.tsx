@@ -119,7 +119,7 @@ export default function AccountDashboard() {
     const isLender = userData?.declaredPosition === 'lender' || user?.role === 'lender' || companyData?.declaredRole === 'lender';
     
     const referralLink = useMemo(() => {
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://logisticsflow.co.za';
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
         return `${baseUrl}/join?ref=${userData?.companyId || 'SYSTEM'}`;
     }, [userData?.companyId]);
 

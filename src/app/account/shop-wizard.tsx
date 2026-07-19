@@ -377,7 +377,7 @@ function StepWarehouseSecurity() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="accessControl" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Access Control Type</FormLabel>
+                        <FormLabel>Access Control Type</Label>
                         <FormControl><Input placeholder="e.g. Biometric / Keycard / Manual log" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     </FormItem>
                 )} />

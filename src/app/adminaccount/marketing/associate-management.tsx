@@ -252,7 +252,7 @@ export default function AssociateManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-blue-100 p-0.5 rounded-full"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -262,7 +262,7 @@ export default function AssociateManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-purple-100 p-0.5 rounded-full"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -336,7 +336,7 @@ export default function AssociateManagement() {
                 <div className="max-w-4xl mx-auto space-y-6 text-left">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                         <div className="space-y-1 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Outreach Status</Label>
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Outreach Status</Label>
                             <Select value={outreachFilter} onValueChange={setOutreachFilter}>
                                 <SelectTrigger className="bg-white"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                 <SelectContent>
@@ -357,7 +357,7 @@ export default function AssociateManagement() {
                             </Select>
                         </div>
                         <div className="space-y-1 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-left">Assignee</Label>
                             <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                                 <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                 <SelectContent>
@@ -387,12 +387,12 @@ export default function AssociateManagement() {
                 <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
                     <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Share2 /> Digital Partners</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
                     <div className="flex gap-2 text-left">
-                        <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2"><RotateCcw className="h-4 w-4" /> New Search</Button>
+                        <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)} className="gap-2 text-left"><RotateCcw className="h-4 w-4" /> New Search</Button>
                         {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                         
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button variant="outline" className="gap-2"><Settings2 className="h-4 w-4" /> Columns</Button>
+                                <Button variant="outline" className="gap-2 text-left"><Settings2 className="h-4 w-4" /> Columns</Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-56 p-2 text-left">
                                 <div className="space-y-1 text-left">
@@ -415,9 +415,9 @@ export default function AssociateManagement() {
                     <CardContent className="pt-6 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
                             <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Filter className="h-3 w-3"/> Status</Label>
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Statuses</SelectItem>
                                         <SelectItem value="new">New</SelectItem>
@@ -425,10 +425,10 @@ export default function AssociateManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                                 <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                                    <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Staff</SelectItem>
                                         <SelectItem value="none">Unallocated</SelectItem>
@@ -436,14 +436,14 @@ export default function AssociateManagement() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-1 text-left">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Send className="h-3 w-3"/> Outreach</Label>
+                            <div className="space-y-1 text-left text-foreground">
+                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
                                 <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
+                            <div className="flex items-end text-left text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">
