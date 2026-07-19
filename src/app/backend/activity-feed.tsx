@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,7 +8,7 @@ import { getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { formatDateSafe } from '@/lib/utils';
+import { formatDateSafe, cn } from '@/lib/utils';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -80,7 +81,7 @@ export default function ActivityFeed() {
         loadLogs();
     }, [loadLogs]);
     
-    const actionConfig: { [key: string]: { color: 'default' | 'destructive' | 'secondary' | 'outline', text: string } } = {
+    const actionConfig: { [key: string]: { color: 'default' | 'secondary' | 'destructive' | 'outline', text: string } } = {
         create: { color: 'default', text: 'created a new' },
         update: { color: 'secondary', text: 'updated the' },
         delete: { color: 'destructive', text: 'deleted a' },

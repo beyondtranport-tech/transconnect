@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -481,7 +482,7 @@ function StepWarehouseFees() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="space-y-6 text-left">
                     <FormField control={control} name="availablePallets" render={({ field }) => (
-                        <FormItem className="text-left"><FormLabel>Current Pallet Positions</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                        <FormItem className="text-left"><FormLabel>Current Pallet Positions</Label><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                     )} />
                     <FormField control={control} name="monthlyStorageFee" render={({ field }) => (
                         <FormItem className="text-left"><FormLabel>Monthly Storage Rate (per plt)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>

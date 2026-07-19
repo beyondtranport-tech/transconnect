@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -350,7 +351,7 @@ export default function AssociateManagement() {
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="all">All Statuses</SelectItem>
                                     <SelectItem value="new">New Lead</SelectItem>
                                     <SelectItem value="contacted">In Research</SelectItem>
                                 </SelectContent>
