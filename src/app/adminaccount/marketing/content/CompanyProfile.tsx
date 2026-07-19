@@ -13,6 +13,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
 
     const firstName = resolvedName.split(' ')[0];
     const email = partner?.email || '';
+    const companyName = partner?.companyName || 'your business';
     const aud = (audience || '').toLowerCase();
 
     const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
@@ -21,13 +22,25 @@ export default function CompanyProfile({ audience, partner }: { audience: string
 
     const introText = useMemo(() => {
         if (aud === 'supplier' || aud === 'vendor') {
-            return `As a supplier to the South African transport industry, the primary benefit of Logistics Flow is our ability to connect your business with high-intent buyers, automate your sales outreach, and ensure you get paid on time.`;
+            return (
+                <>
+                    As a supplier to the South African transport industry, the primary benefit of Logistics Flow for <strong>{companyName}</strong> is our ability to connect your business with high-intent buyers, automate your sales outreach, and ensure you get paid on time.
+                </>
+            );
         }
         if (aud === 'transporter' || aud === 'haulier') {
-            return `As a transporter, the primary benefits of joining Logistics Flow will be your immediate access to community-negotiated spare parts discounts, verified haulier deal-flow, and specialized asset finance.`;
+            return (
+                <>
+                    As a transporter, the primary benefits of <strong>{companyName}</strong> joining Logistics Flow will be your immediate access to community-negotiated spare parts discounts, verified haulier deal-flow, and specialized asset finance.
+                </>
+            );
         }
-        return `Logistics Flow is a Data-as-a-Service (DaaS) ecosystem designed to optimize the South African transport industry. We provide the map and the tools to break the information constraints that prevent industrial growth.`;
-    }, [aud]);
+        return (
+            <>
+                Logistics Flow is a Data-as-a-Service (DaaS) ecosystem designed to optimize the South African transport industry for companies like <strong>{companyName}</strong>. We provide the map and the tools to break the information constraints that prevent industrial growth.
+            </>
+        );
+    }, [aud, companyName]);
 
     return (
         <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>

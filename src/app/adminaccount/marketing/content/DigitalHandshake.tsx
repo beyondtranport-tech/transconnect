@@ -50,12 +50,24 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
 
     const introText = useMemo(() => {
         if (aud === 'supplier' || aud === 'vendor') {
-            return `Logistics Flow is a unified digital ecosystem designed to help suppliers to the transport industry like <strong>${companyName}</strong> sell more products, find more customers, and simplify the sales process.`;
+            return (
+                <>
+                    Logistics Flow is a unified digital ecosystem designed to help suppliers to the transport industry like <strong>{companyName}</strong> sell more products, find more customers, and simplify the sales process.
+                </>
+            );
         }
         if (aud === 'transporter' || aud === 'haulier') {
-            return `Logistics Flow is a unified digital ecosystem designed to help transporters like <strong>${companyName}</strong> find reliable suppliers, buy at deep discounts, and access the finance needed to scale your fleet.`;
+            return (
+                <>
+                    Logistics Flow is a unified digital ecosystem designed to help transporters like <strong>{companyName}</strong> find reliable suppliers, buy at deep discounts, and access the finance needed to scale your fleet.
+                </>
+            );
         }
-        return `Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and information fragmentation for companies like <strong>${companyName}</strong>.`;
+        return (
+            <>
+                Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and information fragmentation for companies like <strong>{companyName}</strong>.
+            </>
+        );
     }, [aud, companyName]);
 
     return (
