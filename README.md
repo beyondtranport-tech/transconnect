@@ -18,7 +18,7 @@ git add .
 ### Step 2: Save Your Changes
 Commit your changes with a descriptive message.
 ```bash
-git commit -m "Forensic V5: Definitive build resolution, activated engagement engine, and hardened public security rules"
+git commit -m "Forensic V6: Refined engagement content with proper bold rendering and Free Registration mandate"
 ```
 
 ### Step 3: Push Your Backup to GitHub
@@ -31,13 +31,12 @@ git push
 
 ---
 
-## Recent Updates: Forensic V5 (Production Ready)
-- **Definitive Build Stabilization**: Resolved all JSX token mismatches, missing component imports, and Promise logic errors, ensuring a successful production build on Firebase App Hosting.
-- **Authorized Public Handshake**: Hardened Firestore security rules to allow `get` access for unauthenticated recipients, definitively resolving the "Critical System Error" on landing pages.
-- **Exhaustive Contact Resolver**: Optimized the engagement wizard to deep-scan 15 potential data nodes for emails and phone numbers, reactivating the Outlook and Dispatch buttons for the imported BPW dataset.
-- **Production URL Normalization**: Standardized all outreach links to the verified live origin (`https://studio--ecosystem-hub.us-central1.hosted.app`) to bypass connection refusal errors.
+## Recent Updates: Forensic V6
+- **Proper HTML Rendering**: Converted intro text to JSX to ensure `<strong>` tags correctly bold the company name instead of showing as literal text.
+- **"Free Registration" Mandate**: Overhauled all outreach sequences to emphasize zero-cost activation.
+- **Channel Personalization**: Implemented dynamic value propositions for Suppliers vs Transporters vs Partners.
 
-## Earlier Updates: Forensic V4
-- **WhatsApp Business Protocol**: Implemented dedicated WhatsApp Business number prioritization with seamless personal fallback.
-- **Registry Hardening**: Integrated "Specialized Tags" (BPW) as an active search index in the Supplier CRM for instant batch management.
-- **Deep-Mined Profiles**: Implemented a 300-word verbatim extraction protocol to capture technical service wording directly from company sitemaps.
+## Forensic V5 (Production Ready)
+- **Definitive Build Stabilization**: Resolved all JSX token mismatches, missing component imports, and Promise logic errors.
+- **Authorized Public Handshake**: Hardened Firestore security rules to allow `get` access for unauthenticated recipients.
+- **Exhaustive Contact Resolver**: Optimized the engagement wizard to scan 15 potential data nodes for emails and phone numbers.

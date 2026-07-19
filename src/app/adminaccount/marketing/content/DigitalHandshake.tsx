@@ -38,7 +38,6 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
                 </ul>
             );
         }
-        // Default / Partner / ISA
         return (
             <ul style={{ paddingLeft: '20pt' }}>
                 <li><strong>Network Monetization:</strong> Turn your existing industry contacts into a recurring revenue engine.</li>
@@ -51,22 +50,22 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
     const introText = useMemo(() => {
         if (aud === 'supplier' || aud === 'vendor') {
             return (
-                <>
+                <p>
                     Logistics Flow is a unified digital ecosystem designed to help suppliers to the transport industry like <strong>{companyName}</strong> sell more products, find more customers, and simplify the sales process.
-                </>
+                </p>
             );
         }
         if (aud === 'transporter' || aud === 'haulier') {
             return (
-                <>
+                <p>
                     Logistics Flow is a unified digital ecosystem designed to help transporters like <strong>{companyName}</strong> find reliable suppliers, buy at deep discounts, and access the finance needed to scale your fleet.
-                </>
+                </p>
             );
         }
         return (
-            <>
+            <p>
                 Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and information fragmentation for companies like <strong>{companyName}</strong>.
-            </>
+            </p>
         );
     }, [aud, companyName]);
 
@@ -81,7 +80,7 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
             
             <p>Good day {firstName},</p>
             
-            <p>{introText}</p>
+            {introText}
             
             <p>We are currently establishing a secure communication bridge between our industrial matching engine and the market leadership. Before we can deliver verified matches, RFQs, or community savings to your dashboard, we require a formal digital handshake.</p>
             

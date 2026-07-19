@@ -23,22 +23,22 @@ export default function CompanyProfile({ audience, partner }: { audience: string
     const introText = useMemo(() => {
         if (aud === 'supplier' || aud === 'vendor') {
             return (
-                <>
+                <p>
                     As a supplier to the South African transport industry, the primary benefit of Logistics Flow for <strong>{companyName}</strong> is our ability to connect your business with high-intent buyers, automate your sales outreach, and ensure you get paid on time.
-                </>
+                </p>
             );
         }
         if (aud === 'transporter' || aud === 'haulier') {
             return (
-                <>
+                <p>
                     As a transporter, the primary benefits of <strong>{companyName}</strong> joining Logistics Flow will be your immediate access to community-negotiated spare parts discounts, verified haulier deal-flow, and specialized asset finance.
-                </>
+                </p>
             );
         }
         return (
-            <>
+            <p>
                 Logistics Flow is a Data-as-a-Service (DaaS) ecosystem designed to optimize the South African transport industry for companies like <strong>{companyName}</strong>. We provide the map and the tools to break the information constraints that prevent industrial growth.
-            </>
+            </p>
         );
     }, [aud, companyName]);
 
@@ -53,7 +53,7 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             
             <p>Good day {firstName}, we write to formally introduce the Logistics Flow ecosystem to your business.</p>
             
-            <p>{introText}</p>
+            {introText}
             
             <p style={{ margin: '15pt 0', fontWeight: 'bold' }}>Our Pillars for Your Success:</p>
             <ul style={{ paddingLeft: '20pt' }}>
