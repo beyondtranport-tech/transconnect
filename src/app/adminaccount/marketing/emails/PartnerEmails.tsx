@@ -9,7 +9,6 @@ import { useUser } from '@/firebase';
 const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
     const personalizedContent = React.useMemo(() => {
         let text = content;
-        // Smart First Name extraction
         const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
         const company = partner?.companyName || '[Your Company]';
         
@@ -51,7 +50,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                         <div className="flex items-center gap-4 text-left">
                             <span className="flex items-center gap-1 text-left"><LinkIcon className="h-3 w-3"/> Referral ID: <span className="font-mono text-primary font-bold">{partner.id}</span></span>
                         </div>
-                        <span className="italic text-left">Establish the handshake to activate the intelligence pipeline.</span>
+                        <span className="italic text-left">Start free and scale with intelligence.</span>
                     </div>
                 </CardFooter>
             )}
@@ -61,21 +60,21 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 
 const templates = {
     handshake: {
-        subject: "The Digital Handshake: Absolute Industrial Transparency",
+        subject: "The Digital Handshake: Free Access to the Industrial Brain",
         content: `
 Hi [Partner Name],
 
 The transport industry has long been held back by an "Information Divide." Large players have the data; smaller hauliers and vendors are left in the dark. Logistics Flow exists to break this constraint.
 
-Before we provide you with access to our forensic industrial registry or match you with our funding syndicate, we require a formal "Digital Handshake." This establishes a secure, POPI-compliant connection between your business and our industrial brain.
+Registration is 100% free. Before we provide you with access to our forensic industrial registry or match you with our funding syndicate, we require a formal "Digital Handshake." This establishes a secure, POPI-compliant connection between your business and our industrial brain.
 
-Establish the connection in 30 seconds here:
+Establish your free account in 30 seconds here:
 [Opt-in Link]
 
 Why establish this foundation?
-- Intelligence Access: Unlock direct contacts for 22,000+ industry decision-makers.
-- Synergy Matching: Proactive alerts for load matches and group savings alerts.
-- Verified Standing: Start building a digital track record for future capital access.
+- Free Registry Access: Unlock the map to 22,000+ industry decision-makers.
+- Synergy Matching: Proactive alerts for load matches and group savings.
+- Digital Standing: Build a verified track record to unlock future capital.
 
 Best regards,
 
@@ -83,20 +82,20 @@ The Logistics Flow Team
         `
     },
     intelligence: {
-        subject: "Mapping the Industry: The Intelligence Advantage",
+        subject: "Mapping the Industry: The Free Intelligence Advantage",
         content: `
 Dear [Partner Name],
 
 Information is the only true hedge against rising operating costs.
 
-Logistics Flow gives your business a dedicated "Industrial Intelligence" division for just R100/month. We have mapped the entire South African transport grid, cataloging every haulier, supplier, and lender into a forensic database.
+Registration for Logistics Flow is free. We have mapped the entire South African transport grid, cataloging every haulier, supplier, and lender into a forensic database.
 
-Sign up now to unlock:
-- Direct E-mail & Mobile numbers for leadership at top firms.
-- AI-powered capacity matching to eliminate empty miles.
+Sign up for free now to unlock:
+- Direct MD/CEO Contacts for 22,000+ records.
+- AI-powered capacity matching to find the right work.
 - Instant introductions to our 85+ specialized finance partners.
 
-Access the registry here: [Sign-up Link]
+Access the registry for free here: [Sign-up Link]
 
 Best regards,
 
@@ -109,7 +108,6 @@ const tabs = [
     { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
     { value: "intelligence", label: "1. The Intelligence Pitch", icon: Zap },
 ];
-
 
 export default function PartnerEmails({ partner }: { partner?: any }) {
     const { user } = useUser();

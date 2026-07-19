@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
-import { UserCheck, ShieldCheck, Zap } from 'lucide-react';
+import { UserCheck, ShieldCheck, Zap, ShoppingCart, TrendingUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -10,7 +10,6 @@ import { useUser } from '@/firebase';
 const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
     const personalizedContent = React.useMemo(() => {
         let text = content;
-        // Smart First Name extraction
         const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Supplier');
         const company = partner?.companyName || '[Your Company]';
         
@@ -42,13 +41,13 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                 </div>
             </CardHeader>
             <CardContent className="px-0 text-left text-foreground">
-                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground leading-relaxed">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
             {partner && (
                 <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
-                    Establish the handshake to secure your direct line to 5,400+ transport decision makers.
+                    Sell more, faster. Registration is free.
                 </CardFooter>
             )}
         </Card>
@@ -57,25 +56,21 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 
 const getTemplates = (supplierType: string) => ({
     handshake: {
-        subject: `The Digital Handshake: Direct Sales Channel for ${supplierType}`,
+        subject: `Sell More ${supplierType}: Claim Your Free Digital Branch`,
         content: `
 Hi [Supplier Name],
 
-Fragmented industrial maps lead to inefficient sales cycles. Logistics Flow exists to break this constraint. We have cataloged the national transport grid and currently host over 5,400+ verified transport companies in our community.
+The South African transport sector is ready for your products, but manual sales cycles are slow. Logistics Flow is writing to simplify your sales process and find you more customers.
 
-We want to open this base directly to [Your Company] as a preferred supply partner. 
+Registration is 100% free. We have mapped the national grid and currently host over 5,400+ verified transport companies in our community—all looking for reliable suppliers like [Your Company].
 
-Crucially, we have solved the payment bottleneck: we provide direct funding to these transporters specifically to increase their capacity to purchase from our vetted suppliers. You get paid in full, upfront, while they get the equipment they need to scale.
+How we increase your sales volume:
+1. **Free Digital Branch:** Publish your product catalogue directly to the haulier registry.
+2. **Simplified RFQs:** Receive high-intent enquiries from owners who match your specialization.
+3. **Embedded Finance:** We provide direct funding to transporters so they can buy from you. You get paid in full, upfront.
 
-Before we can deliver high-intent RFQs to your dashboard or invite you to publish your digital branch, we require a formal "Digital Handshake."
-
-Establish your standing here:
+Establish your free standing and start selling more today:
 [Opt-in Link]
-
-Why establish the connection?
-- Direct Market Access: Sell to 5,400+ fleet owners actively searching for ${supplierType}.
-- Embedded Finance: We fund the buyers so they can spend more with you.
-- Forensic Targeting: We match your specialized inventory with the exact equipment declared by our members.
 
 Best regards,
 
@@ -83,15 +78,15 @@ The Logistics Flow Team
         `
     },
     velocity: {
-        subject: `Sales Velocity: Unlock the Forensic Haulier Registry`,
+        subject: `Sales Velocity: Unlock 5,400+ Vetted Haulier Leads for Free`,
         content: `
 Hi [Supplier Name],
 
-Stop cold-calling switchboards. Logistics Flow gives you a direct line to the people who sign the checks in the transport sector.
+Stop cold-calling switchboards and find your next major account for free.
 
-Our "Intelligence Access" tier provides verified mobile numbers and professional e-mails for thousands of haulier decision-makers. Filter by region, vehicle type, and fleet capacity to find your next major account instantly.
+Registration for Logistics Flow is free. Our registry gives [Your Company] a direct line to the people who sign the checks in the transport sector. Filter our 5,400+ verified hauliers by region and fleet capacity to find exactly who needs your ${supplierType}.
 
-Launch your sales velocity engine here for R100/mo: [Sign-up Link]
+Launch your sales velocity engine here for free: [Sign-up Link]
 
 Best regards,
 
@@ -101,10 +96,9 @@ Best regards,
 });
 
 const tabs = [
-    { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
-    { value: "velocity", label: "1. Sales Velocity Pitch", icon: Zap },
+    { value: "handshake", label: "0. Sales Growth Pitch", icon: TrendingUp },
+    { value: "velocity", label: "1. Customer Discovery", icon: ShoppingCart },
 ];
-
 
 export default function SupplierEmails({ partner }: { partner?: any }) {
     const { user } = useUser();

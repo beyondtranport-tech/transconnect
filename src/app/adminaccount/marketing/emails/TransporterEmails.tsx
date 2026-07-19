@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClipboardCopy, Mail, UserCheck, ShieldCheck, Zap } from 'lucide-react';
+import { ClipboardCopy, Mail, UserCheck, ShieldCheck, Zap, Truck, Landmark } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
@@ -12,7 +12,6 @@ import { useUser } from '@/firebase';
 const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
     const personalizedContent = React.useMemo(() => {
         let text = content;
-        // Smart First Name extraction
         const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Partner');
         const company = partner?.companyName || '[Your Company]';
         
@@ -28,7 +27,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
     }, [content, partner, referralLink]);
 
     return (
-        <Card className="border-none shadow-none bg-transparent text-left">
+        <Card className="border-none shadow-none bg-transparent text-left text-foreground">
             <CardHeader className="px-0 text-left">
                 <div className="flex items-center justify-between text-left text-foreground">
                     <div className="text-left">
@@ -43,13 +42,13 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                 </div>
             </CardHeader>
             <CardContent className="px-0 text-left text-foreground">
-                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground leading-relaxed">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
              {partner && (
                 <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
-                    Secure your standing in our communication pipeline by establishing the handshake.
+                    Buy better and get funded. Registration is free.
                 </CardFooter>
             )}
         </Card>
@@ -58,21 +57,19 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 
 const getTemplates = (transporterType: string) => ({
     handshake: {
-        subject: "The Digital Handshake: Optimized Transport Capacity",
+        subject: "Sourcing & Savings: Claim Your Free Transporter Node",
         content: `
 Hi [Name],
 
-Inefficiency is a silent tax on your transport business. Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs and empty miles.
+Inefficiency is a silent tax on your transport business. Logistics Flow is a unified digital ecosystem designed to break the constraints of high operating costs for fleets like [Your Company].
 
-Before we can send you matching freight loads or group discount offers for your [Your Company] fleet, we require a formal "Digital Handshake."
+Registration is 100% free. We give you the map to the industry:
+1. **Find Better Suppliers:** Connect with thousands of verified parts and service providers instantly.
+2. **Buy at Discounts:** Tap into community-negotiated "syndicate" pricing for tires and spares.
+3. **Get Funded to Scale:** Access our direct finance path for asset acquisition and working capital.
 
-Please take 30 seconds to establish the connection here:
+Please take 30 seconds to establish your free standing here:
 [Opt-in Link]
-
-By establishing this handshake, you unlock:
-- Capacity Intelligence: Proactive AI alerts for loads that match your empty leg routes.
-- Funder Visibility: Start building a digital track record for asset finance.
-- Forensic Savings: Access community-negotiated parts and tire discounts.
 
 Best regards,
 
@@ -80,15 +77,15 @@ The Logistics Flow Team
         `
     },
     efficiency: {
-        subject: `Operating Efficiency: The Intelligence Tier for [Your Company]`,
+        subject: `Slash [Your Company] Costs: Free Registry & Growth Capital`,
         content: `
 Hi [Name],
 
-How much do empty miles cost [Your Company] each month?
+How much do empty miles and high spares costs impact [Your Company] each month?
 
-For just R100/mo, our Intelligence Membership provides you with the tools to map the entire industrial landscape. Identify freight providers, find specialized suppliers, and connect directly with funders who understood the trucking sector.
+Registration for Logistics Flow is free. Our platform provides you with the forensic haulier registry to identify freight providers, find specialized discounted suppliers, and connect directly with funders who actually understand the trucking sector.
 
-Join the intelligence flow: [Sign-up Link]
+Join for free and start saving: [Sign-up Link]
 
 Best regards,
 
@@ -98,10 +95,9 @@ Best regards,
 });
 
 const tabs = [
-    { value: "handshake", label: "0. Digital Handshake", icon: ShieldCheck },
-    { value: "efficiency", label: "1. Efficiency Pitch", icon: Zap },
+    { value: "handshake", label: "0. Growth & Savings Pitch", icon: Truck },
+    { value: "efficiency", label: "1. Capital Access", icon: Landmark },
 ];
-
 
 export default function TransporterEmails({ partner }: { partner?: any }) {
     const { user } = useUser();
@@ -116,7 +112,7 @@ export default function TransporterEmails({ partner }: { partner?: any }) {
     }, [partner, baseUrl]);
 
     return (
-        <div className="space-y-8 text-left">
+        <div className="space-y-8 text-left text-foreground">
             <Tabs defaultValue="handshake" className="w-full text-left">
                 <TabsList className="h-auto flex-wrap justify-start bg-muted/30 text-left text-foreground">
                    {tabs.map(tab => (
