@@ -47,8 +47,8 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 /**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V9
- * Clinically hardened for imported industrial datasets.
+ * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V15
+ * Clinical recovery of email data from fragmented BPW datasets.
  */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
@@ -64,14 +64,9 @@ function resolveContact(partner: any) {
 
     const searchObj = (obj: any, keys: string[]): string => {
         if (!obj || typeof obj !== 'object') return '';
-        // Try exact keys first
-        for (const k of keys) {
-            if (obj[k]) {
-                const c = clean(obj[k]);
-                if (c) return c;
-            }
-        }
-        // Try case-insensitive keys
+        // Exact Case Search
+        for (const k of keys) if (obj[k]) { const c = clean(obj[k]); if (c) return c; }
+        // Case-Insensitive Key Search
         for (const actualKey in obj) {
             const lowKey = actualKey.toLowerCase();
             if (keys.some(k => k.toLowerCase() === lowKey)) {
@@ -82,8 +77,14 @@ function resolveContact(partner: any) {
         return '';
     };
 
-    const emailKeys = ['email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 'workEmail', 'main_email', 'EMAIL', 'mail'];
-    const phoneKeys = ['mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 'telephone', 'mobile_number'];
+    const emailKeys = [
+        'email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 
+        'workEmail', 'main_email', 'EMAIL', 'mail', 'primaryEmail', 'marketingEmail', 'ceoEmail'
+    ];
+    const phoneKeys = [
+        'mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 
+        'telephone', 'mobile_number', 'work_phone', 'mobile_phone'
+    ];
 
     const name = clean(partner.marketingManager?.name || 
                        partner.ceo?.name || 
@@ -95,12 +96,12 @@ function resolveContact(partner: any) {
     const email = searchObj(partner.marketingManager, emailKeys) || 
                   searchObj(partner.ceo, emailKeys) || 
                   searchObj(partner, emailKeys) ||
-                  clean(partner.email_address || partner.contact_email || partner.email);
+                  clean(partner.email_address || partner.contact_email || partner.email || partner.emailAddress);
 
     const mobile = searchObj(partner.marketingManager, phoneKeys) || 
                    searchObj(partner.ceo, phoneKeys) || 
                    searchObj(partner, phoneKeys) ||
-                   clean(partner.mobile_number || partner.contact_no || partner.mobile || partner.phone);
+                   clean(partner.mobile_number || partner.contact_no || partner.mobile || partner.phone || partner.mobilePhone);
 
     const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
 
@@ -126,8 +127,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
 
-  const hasEmail = !!contact.email;
-  const hasPhone = !!contact.whatsapp;
+  // Permissive logic: Enable buttons if ANY string exists, let API handle format validation
+  const hasEmail = contact.email.length > 3; 
+  const hasPhone = contact.whatsapp.length > 5;
 
   const normalizedAudience = useMemo(() => {
       let aud = (audience || 'partner').toLowerCase();
@@ -154,7 +156,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
     setIsProcessing(true);
     try {
-        const token = await getClientSideAuthToken();
+        const token = (await getClientSideAuthToken()) || '';
         if (!token) throw new Error("Authentication failed.");
         
         await performAdminAction(token, 'logCommunication', {
@@ -190,7 +192,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     if (!currentPartner) return;
     setIsDispatching(true);
     try {
-        const token = await getClientSideAuthToken();
+        const token = (await getClientSideAuthToken()) || '';
         if (!token) throw new Error("Session expired.");
         
         const contentId = `engage-content-wrapper-${activeTab}`;

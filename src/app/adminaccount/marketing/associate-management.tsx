@@ -121,7 +121,9 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                         <FormItem className="text-left">
                             <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="bg-white text-left text-foreground">
+                                    <SelectValue placeholder="Select status..." />
+                                </SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="new">New Lead</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
@@ -297,7 +299,7 @@ export default function AssociateManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+  }, [fetchData, handleEngage, visibleColumns, type]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -443,7 +445,13 @@ export default function AssociateManagement() {
                                     <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
                                 </Select>
                             </div>
-                            <div className="flex items-end text-left text-foreground"><Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground"><Link href="/adminaccount?view=associate-oversight"><Clock className="mr-1 h-3 w-3" /> Performance Monitoring</Link></Button></div>
+                            <div className="flex items-end text-left text-foreground">
+                                <Button variant="outline" size="sm" asChild className="h-9 w-full text-[10px] font-black uppercase tracking-widest text-left">
+                                    <Link href="/adminaccount?view=associate-oversight">
+                                        <Clock className="mr-1 h-3 w-3" /> Performance Monitoring
+                                    </Link>
+                                </Button>
+                            </div>
                         </div>
                         {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                             <div className="space-y-6 text-left">

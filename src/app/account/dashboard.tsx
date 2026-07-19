@@ -287,7 +287,7 @@ export default function AccountDashboard() {
                 <>
                     {isFreeMember && (
                         <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
-                            <CardHeader className="text-left text-foreground text-left">
+                            <CardHeader className="text-left text-foreground text-left text-foreground">
                                 <div className="flex items-start gap-4 text-left text-foreground">
                                     <div className="bg-primary/10 p-3 rounded-full shrink-0">
                                     <Sparkles className="h-6 w-6 text-primary" />

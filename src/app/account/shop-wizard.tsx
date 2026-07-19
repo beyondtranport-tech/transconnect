@@ -155,7 +155,7 @@ function StepLegal() {
                 Legal Authorization
             </h3>
             <div className="space-y-6">
-                <Alert className="bg-primary/5 border-primary/20">
+                <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="font-bold">Operational Compliance Audit</AlertTitle>
                     <AlertDescription className="text-xs leading-relaxed">
@@ -377,7 +377,7 @@ function StepWarehouseSecurity() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="accessControl" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Access Control Type</Label>
+                        <FormLabel>Access Control Type</FormLabel>
                         <FormControl><Input placeholder="e.g. Biometric / Keycard / Manual log" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     </FormItem>
                 )} />
@@ -474,7 +474,7 @@ function StepWarehouseFees() {
     const { control } = useFormContext<NodeFormValues>();
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2">
                 <Banknote className="h-6 w-6 text-primary" />
                 Storage Yield Settings
             </h3>
@@ -526,7 +526,7 @@ function StepBrokerageCommercials() {
                         </FormItem>
                     )} />
                 </div>
-                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left">
+                <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-2 shadow-xl flex flex-col justify-center text-left text-white">
                     <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
                         Platform Success Fee
                         <ShieldCheck className="h-3 w-3 text-primary" />
@@ -544,7 +544,7 @@ function StepBrokerageCommercials() {
                         <Info className="h-4 w-4 text-primary" />
                         Commercial Transparency Breakdown
                     </h4>
-                    <div className="space-y-2 text-sm">
+                    <div className="space-y-2 text-sm text-foreground">
                         <div className="flex justify-between border-b pb-2">
                             <span className="text-muted-foreground">Total Load Value (Example)</span>
                             <span className="font-bold">R 10,000.00</span>
@@ -743,7 +743,7 @@ function StepCommercials({ shop }: { shop: any }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="p-6 border rounded-3xl bg-muted/30 space-y-4 text-left">
                     <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Standard Platform Rate</p>
-                    <p className="text-3xl font-black">2.5%</p>
+                    <p className="text-3xl font-black text-foreground">2.5%</p>
                     <p className="text-xs text-muted-foreground leading-relaxed">The facilitating commission earned by Logistics Flow on each transaction.</p>
                 </div>
                 
@@ -801,7 +801,7 @@ function StepCatalog({ shop }: { shop: any }) {
                 </Dialog>
             </div>
             
-            <div className="min-h-[300px]">
+            <div className="min-h-[300px] text-left">
                 {products && products.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {products.map(p => (
@@ -1092,14 +1092,14 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
-            <CardHeader className="bg-slate-50 border-b p-6">
-                <CardTitle className="text-2xl font-black font-headline">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
-                <CardDescription>Establish legal and commercial parameters for this business unit.</CardDescription>
+            <CardHeader className="bg-slate-50 border-b p-6 text-left">
+                <CardTitle className="text-2xl font-black font-headline text-left">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
+                <CardDescription className="text-left">Establish legal and commercial parameters for this business unit.</CardDescription>
                 <Progress value={((currentStep + 1) / wizardSteps.length) * 100} className="h-2 mt-4" />
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 text-left">
                 <FormProvider {...methods}>
-                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
+                    <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
                         <div className="bg-slate-50/50 border-r p-6 space-y-2 text-left">
                             {wizardSteps.map((step, index) => (
                                 <Button 
@@ -1110,23 +1110,23 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     onClick={() => setCurrentStep(index)}
                                 >
                                     <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-xs font-black shrink-0", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                    <span className="font-bold text-[10px] uppercase tracking-widest">{step.name}</span>
+                                    <span className="font-bold text-[10px] uppercase tracking-widest text-left">{step.name}</span>
                                 </Button>
                             ))}
                         </div>
-                        <div className="p-10 min-h-[500px]">
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                        <div className="p-10 min-h-[500px] text-left text-foreground">
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-left">
                                 {wizardSteps[currentStep].component}
                             </div>
                         </div>
                     </div>
                 </FormProvider>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between">
-                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">
+            <CardFooter className="bg-slate-50 border-t p-6 flex justify-between text-left">
+                <Button type="button" variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold text-foreground">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Previous
                 </Button>
-                <div className="flex gap-3">
+                <div className="flex gap-3 text-left">
                     <Button type="button" variant="outline" onClick={methods.handleSubmit(async (v) => {
                         setIsSaving(true);
                         try {
@@ -1141,7 +1141,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                             onUpdate();
                         } catch (e) { toast({ variant: 'destructive', title: 'Sync Failed' }); }
                         finally { setIsSaving(false); }
-                    })} disabled={isSaving} className="font-bold">
+                    })} disabled={isSaving} className="font-bold text-foreground">
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />} Sync Draft
                     </Button>
                     {currentStep < wizardSteps.length - 1 && (

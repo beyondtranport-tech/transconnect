@@ -178,7 +178,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
                     <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -399,7 +399,7 @@ function LeadsDatabaseComponent() {
                 </PopoverContent>
             </Popover>
             <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground text-white"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
 
