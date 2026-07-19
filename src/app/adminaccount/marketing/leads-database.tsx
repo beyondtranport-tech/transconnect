@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -25,7 +24,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getClientSideAuthToken, useUser, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Sparkles, Zap, Smartphone, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -148,16 +147,16 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     <Building className="h-4 w-4" /> Core Entity Details
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                    <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                    <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="whatsapp" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="whatsapp" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                 <FormField control={form.control} name="status" render={({ field }) => (
@@ -172,14 +171,14 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     </SelectContent></Select></FormItem>
                 )} />
                 </div>
-                <FormField control={form.control} name="address" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                <FormField control={form.control} name="address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
             </div>
 
             <Separator />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
                     <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -188,7 +187,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </div>
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
                         <UserCheck className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -341,7 +340,7 @@ function LeadsDatabaseComponent() {
             <div className="flex flex-col gap-1 text-left">
                 <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
                 {row.original.enhancementMethod && (
-                    <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
+                    <Badge className="bg-primary/10 text-primary text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit text-left">
                         <Zap className="h-2 w-2 fill-current" /> {row.original.enhancementMethod} {formatDateSafe(row.original.lastEnrichedAt, "dd/MM")}
                     </Badge>
                 )}
@@ -380,7 +379,7 @@ function LeadsDatabaseComponent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-left">
+      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
           <div className="text-left text-foreground text-left text-foreground text-foreground text-foreground">
             <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>

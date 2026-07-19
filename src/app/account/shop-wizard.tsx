@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -576,7 +575,7 @@ function StepRateSheet() {
 
     const locationOptionsList = useMemo(() => {
         return provinces.flatMap(p => 
-            p.cities.map(c => `${c.name}, ${p.name}`)
+            p.cities.map(c => typeof c === 'string' ? `${c}, ${p.name}` : `${c.name}, ${p.name}`)
         );
     }, []);
 
@@ -1094,7 +1093,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
 
     return (
         <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
-            <CardHeader className="bg-slate-50 border-b p-6 text-left text-foreground">
+            <CardHeader className="bg-slate-50 border-b p-6 text-left">
                 <div className="text-left text-foreground">
                     <CardTitle className="text-2xl font-black font-headline text-left text-foreground">{nodeTitleMap[nodeType] || "Industrial Node Configuration"}</CardTitle>
                     <CardDescription className="text-left text-foreground">Establish legal and commercial parameters for this business unit.</CardDescription>

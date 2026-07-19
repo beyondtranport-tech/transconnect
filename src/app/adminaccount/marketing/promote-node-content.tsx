@@ -283,7 +283,7 @@ export default function PromoteNodeContent() {
                                 <div className="space-y-4 text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">3. Target Audience</Label>
                                     <Select value={target} onValueChange={setTarget}>
-                                        <SelectTrigger className="h-12 border-2 font-bold"><SelectValue/></SelectTrigger>
+                                        <SelectTrigger className="h-12 border-2 font-bold"><SelectValue placeholder="Select Audience" /></SelectTrigger>
                                         <SelectContent>
                                             {audiences.map(a => <SelectItem key={a.id} value={a.id} className="font-bold">{a.label}</SelectItem>)}
                                         </SelectContent>
@@ -291,8 +291,8 @@ export default function PromoteNodeContent() {
                                 </div>
                                 <div className="space-y-4 text-left">
                                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] ml-1">4. Purchase Volume</Label>
-                                    <Select value={String(batches)} onValueChange={setBatches(Number)}>
-                                        <SelectTrigger className="h-12 border-2 font-bold"><SelectValue/></SelectTrigger>
+                                    <Select value={String(batches)} onValueChange={(v) => setBatches(Number(v))}>
+                                        <SelectTrigger className="h-12 border-2 font-bold"><SelectValue placeholder="Select Volume" /></SelectTrigger>
                                         <SelectContent>
                                             {[1, 5, 10, 25, 50].map(b => (
                                                 <SelectItem key={b} value={String(b)} className="font-bold">
@@ -345,7 +345,7 @@ export default function PromoteNodeContent() {
                                 {isCampaignsLoading ? (
                                     <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>
                                 ) : campaigns && campaigns.length > 0 ? (
-                                    <DataTable columns={columns} data={campaigns} onSelectionChange={setSelectedIds} />
+                                    <DataTable columns={columns} data={campaigns} onSelectionChange={() => {}} />
                                 ) : (
                                     <div className="py-20 text-center text-foreground opacity-20 border-2 border-dashed rounded-2xl bg-muted/10 text-left">
                                         <BarChart3 className="h-12 w-12 mx-auto mb-2" />
