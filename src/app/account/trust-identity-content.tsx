@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { 
     Fingerprint, ShieldCheck, Scale, FileText, Download, AlertTriangle, 
     Trash2, Loader2, CheckCircle, Info, ExternalLink, MessageSquareQuote,
-    Lock, Ban
+    Lock, Ban, ShieldAlert, UserCheck, Smartphone
 } from 'lucide-react';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, serverTimestamp, doc, setDoc } from 'firebase/firestore';
@@ -22,18 +21,8 @@ import {
     AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-        cache: 'no-store'
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
-    return result;
-}
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 export default function TrustIdentityContent() {
     const { user, isUserLoading } = useUser();
@@ -151,8 +140,8 @@ export default function TrustIdentityContent() {
             header: 'Feedback', 
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
-                    <p className="text-sm italic">"{row.original.comment}"</p>
-                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase">Rating: {row.original.rating}/5</Badge>
+                    <p className="text-sm italic text-left">"{row.original.comment}"</p>
+                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase text-left">Rating: {row.original.rating}/5</Badge>
                 </div>
             )
         },
@@ -169,22 +158,22 @@ export default function TrustIdentityContent() {
         }
     ];
 
-    if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" /></div>;
+    if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary mx-auto" /></div>;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
             <div className="text-left space-y-1">
-                <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                     <Fingerprint className="h-8 w-8 text-primary" />
                     Trust & Identity Hub
                 </h1>
                 <p className="text-muted-foreground text-left">Manage your industrial standing, data privacy, and community reputation.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <Tabs defaultValue="reputation" className="w-full">
-                        <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left text-foreground">
+                <div className="lg:col-span-2 space-y-8 text-left">
+                    <Tabs defaultValue="reputation" className="w-full text-left">
+                        <TabsList className="bg-muted/50 p-1 h-auto flex-wrap justify-start text-left">
                             <TabsTrigger value="reputation" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                                 <ShieldCheck className="h-3.5 w-3.5" /> Community Standing
                             </TabsTrigger>
@@ -193,10 +182,10 @@ export default function TrustIdentityContent() {
                             </TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="reputation" className="mt-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-4">
-                                <Card className="bg-green-50 border-green-100">
-                                    <CardContent className="pt-6 text-center">
+                        <TabsContent value="reputation" className="mt-8 space-y-6 text-left">
+                            <div className="grid grid-cols-2 gap-4 text-left">
+                                <Card className="bg-green-50 border-green-100 text-left">
+                                    <CardContent className="pt-6 text-center text-foreground">
                                         <div className="bg-white p-3 rounded-full w-fit mx-auto mb-2 shadow-sm">
                                             <ShieldCheck className="h-6 w-6 text-green-600" />
                                         </div>
@@ -204,37 +193,37 @@ export default function TrustIdentityContent() {
                                         <p className="text-[10px] font-black uppercase text-green-600/70 tracking-widest">Accuracy Vouches</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-primary/5 border-primary/20">
+                                <Card className="bg-primary/5 border-primary/20 text-left">
                                     <CardContent className="pt-6 text-center text-foreground">
                                         <div className="bg-white p-3 rounded-full w-fit mx-auto mb-2 shadow-sm">
                                             <MessageSquareQuote className="h-6 w-6 text-primary" />
                                         </div>
                                         <p className="text-2xl font-black text-primary">{reviews?.length || 0}</p>
-                                        <p className="text-[10px] font-black uppercase text-primary/70 tracking-widest">Verified Reviews</p>
+                                        <p className="text-[10px] font-black uppercase text-primary/70 tracking-widest text-center">Verified Reviews</p>
                                     </CardContent>
                                 </Card>
                             </div>
 
                             <Card className="border-none shadow-xl bg-white text-left">
                                 <CardHeader className="border-b bg-muted/10 text-left">
-                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground">Performance Ledger</CardTitle>
+                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-foreground text-left">Performance Ledger</CardTitle>
                                 </CardHeader>
                                 <CardContent className="pt-6 text-left">
-                                    {isReviewsLoading ? <Loader2 className="animate-spin mx-auto h-6 w-6" /> : (
+                                    {isReviewsLoading ? <Loader2 className="animate-spin mx-auto h-6 w-6 text-primary" /> : (
                                         <DataTable columns={reviewColumns} data={reviews || []} />
                                     )}
                                 </CardContent>
                             </Card>
                         </TabsContent>
 
-                        <TabsContent value="popi" className="mt-8 space-y-6">
+                        <TabsContent value="popi" className="mt-8 space-y-6 text-left">
                             <Card className="border-none shadow-xl bg-white text-left">
                                 <CardHeader className="text-left text-foreground">
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-3 text-left">
                                         <div className="bg-primary/10 p-2 rounded-lg text-left"><FileText className="h-5 w-5 text-primary" /></div>
                                         <CardTitle className="text-xl font-bold text-left">Personal Data Control</CardTitle>
                                     </div>
-                                    <CardDescription className="text-left">In compliance with the POPI Act, you have the right to access and export your data profile.</CardDescription>
+                                    <CardDescription className="text-left text-muted-foreground">In compliance with the POPI Act, you have the right to access and export your data profile.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4 text-left">
                                     <p className="text-sm text-muted-foreground leading-relaxed text-left">
@@ -253,24 +242,24 @@ export default function TrustIdentityContent() {
                 <div className="space-y-6 text-left text-foreground">
                     <Card className="bg-slate-900 text-white border-none shadow-2xl p-6 text-left">
                         <CardHeader className="p-0 mb-4 text-left">
-                            <CardTitle className="text-lg font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                <ShieldCheck className="h-5 w-5" /> Verified identity
+                            <CardTitle className="text-lg font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                                <ShieldCheck className="h-5 w-5 text-primary" /> Verified identity
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0 space-y-4 text-left">
                             <p className="text-xs text-slate-400 leading-relaxed text-left">
                                 Your digital node is currently verified. This standing allows you to transact in the Malls and receive direct RFQs.
                             </p>
-                            <Badge className="bg-green-600 text-white border-none text-[8px] h-4 uppercase font-black">Active Grid Node</Badge>
+                            <Badge className="bg-green-600 text-white border-none text-[8px] h-4 uppercase font-black px-3 py-1">Active Grid Node</Badge>
                         </CardContent>
                     </Card>
 
-                    <div className="p-6 border-2 border-dashed rounded-3xl space-y-4 text-left">
-                         <div className="flex items-center gap-2 text-left">
+                    <div className="p-6 border-2 border-dashed rounded-3xl space-y-4 text-left bg-white text-foreground">
+                         <div className="flex items-center gap-2 text-left text-foreground">
                             <Ban className="h-5 w-5 text-destructive" />
                             <h4 className="font-bold text-sm uppercase text-destructive text-left">Exit Structure</h4>
                          </div>
-                         <p className="text-[11px] text-muted-foreground leading-relaxed text-left">
+                         <p className="text-[11px] text-muted-foreground leading-relaxed text-left text-foreground">
                             Formally deactivating your node removes you from public searches and halts any active Connect Plan billing. You can reactivate at any time.
                          </p>
                          <AlertDialog>
@@ -280,14 +269,14 @@ export default function TrustIdentityContent() {
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="text-left text-foreground">
-                                <AlertDialogHeader>
+                                <AlertDialogHeader className="text-left">
                                     <AlertDialogTitle className="text-left">Are you sure you want to exit?</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-left">
+                                    <AlertDialogDescription className="text-left text-muted-foreground">
                                         This will hide your digital branch from the registry and stop your active subscriptions. Your wallet balance will remain preserved.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogFooter className="text-left">
+                                    <AlertDialogCancel onClick={() => {}}>Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleExitGrid} className={cn(buttonVariants({ variant: 'destructive' }))}>
                                         Confirm Deactivation
                                     </AlertDialogAction>

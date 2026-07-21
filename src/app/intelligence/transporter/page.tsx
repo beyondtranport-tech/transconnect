@@ -114,20 +114,22 @@ export default function TransporterIntelligencePage() {
         setIsVouching(targetId);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Please sign in to vouch.");
+
             const res = await fetch('/api/vouch', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Verification Recorded", description: "Your vouch for this data has been logged." });
-                handleSearch(); // Refresh list
+                handleSearch(); 
             } else {
                 toast({ variant: 'destructive', title: "Action Failed", description: result.error });
             }
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Error" });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
         } finally {
             setIsVouching(null);
         }
@@ -137,6 +139,8 @@ export default function TransporterIntelligencePage() {
         setIsClaiming(targetId);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication required.");
+
             const res = await fetch('/api/claimNode', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -144,14 +148,14 @@ export default function TransporterIntelligencePage() {
             });
             const result = await res.json();
             if (result.success) {
-                toast({ title: "Node Claimed!", description: "Identity bound successfully." });
+                toast({ title: "Node Claimed!", description: "Identity bound successfully. Transaction isolated." });
                 forceRefresh();
                 handleSearch();
             } else {
                 toast({ variant: 'destructive', title: "Claim Failed", description: result.error });
             }
-        } catch (e) {
-            toast({ variant: 'destructive', title: "Error" });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
         } finally {
             setIsClaiming(null);
         }
@@ -216,7 +220,7 @@ export default function TransporterIntelligencePage() {
                                 <Info className="h-5 w-5 text-primary" />
                                 <AlertTitle className="font-bold text-left">Why do we ask for this?</AlertTitle>
                                 <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
-                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
+                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data.
                                 </AlertDescription>
                             </Alert>
 
@@ -242,8 +246,8 @@ export default function TransporterIntelligencePage() {
         <div className="bg-slate-50 min-h-screen text-left text-foreground">
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
-                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
-                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white">Transporter intelligence</h1>
+                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest text-center">Forensic Registry</Badge>
+                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center">Transporter intelligence</h1>
                     <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center">Map the South African transport landscape. Find verified hauliers based on precise fleet capabilities.</p>
                 </div>
             </section>
@@ -255,13 +259,13 @@ export default function TransporterIntelligencePage() {
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Requirements
                         </CardTitle>
-                        <CardDescription>Select your location and the specific service type to match with verified capacity.</CardDescription>
+                        <CardDescription className="text-left">Select your location and the specific service type to match with verified capacity.</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left">
+                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left text-foreground">
                         <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
-                                <SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Province" /></SelectTrigger>
                                 <SelectContent>
                                     {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
                                 </SelectContent>
@@ -270,7 +274,7 @@ export default function TransporterIntelligencePage() {
                         <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
-                                <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select City" /></SelectTrigger>
                                 <SelectContent>
                                     {cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
                                 </SelectContent>
@@ -279,7 +283,7 @@ export default function TransporterIntelligencePage() {
                         <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hub / Suburb</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
-                                <SelectTrigger><SelectValue placeholder="Select Suburb" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Suburb" /></SelectTrigger>
                                 <SelectContent>
                                     {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
@@ -288,7 +292,7 @@ export default function TransporterIntelligencePage() {
                         <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Required Service</Label>
                             <Select value={selectedService} onValueChange={setSelectedService}>
-                                <SelectTrigger><SelectValue placeholder="Select Service" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Service" /></SelectTrigger>
                                 <SelectContent>
                                     {servicesMap.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
                                 </SelectContent>
@@ -304,18 +308,18 @@ export default function TransporterIntelligencePage() {
                 </Card>
             </section>
 
-            <section className="container mx-auto px-4 py-16 text-left">
+            <section className="container mx-auto px-4 py-16 text-left text-foreground">
                 {error && (
                     <Card className="max-w-2xl mx-auto border-destructive bg-destructive/10 text-left">
                         <CardHeader className="flex flex-row items-center gap-3">
                             <AlertCircle className="h-6 w-6 text-destructive" />
                             <CardTitle className="text-destructive">Search Restricted</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="text-left text-foreground">
                             <p className="text-sm text-destructive-foreground font-bold">{error}</p>
                             <p className="text-xs text-muted-foreground mt-2">Upgrade to Intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
                         </CardContent>
-                        <CardFooter className="flex flex-wrap gap-2 pt-0">
+                        <CardFooter className="flex flex-wrap gap-2 pt-0 text-left">
                             <Button asChild size="sm">
                                 <Link href="/checkout/intelligence">Unlock Paid Intelligence</Link>
                             </Button>
@@ -327,19 +331,19 @@ export default function TransporterIntelligencePage() {
                 )}
 
                 {!hasSearched && !error ? (
-                    <div className="text-center py-20 opacity-20">
+                    <div className="text-center py-20 opacity-20 text-foreground">
                         <Database className="h-24 w-24 mx-auto mb-4" />
-                        <p className="text-xl font-bold uppercase tracking-widest">Ready to Match Capacity</p>
+                        <p className="text-xl font-bold uppercase tracking-widest text-center">Ready to Match Capacity</p>
                     </div>
                 ) : isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center">Mapping intelligence Data...</p>
+                        <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping intelligence Data...</p>
                     </div>
                 ) : !error && (
-                    <div className="max-w-6xl mx-auto space-y-8 text-left">
-                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
-                            <div className="text-left">
+                    <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
+                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground">
+                            <div className="text-left text-foreground">
                                 <h2 className="text-2xl font-black text-left flex items-center gap-2">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
@@ -353,27 +357,27 @@ export default function TransporterIntelligencePage() {
                             )}
                         </div>
 
-                        <Card className="border-none shadow-xl overflow-hidden text-left bg-white">
+                        <Card className="border-none shadow-xl overflow-hidden text-left bg-white text-foreground">
                             <Table>
-                                <TableHeader className="bg-slate-900 hover:bg-slate-900">
+                                <TableHeader className="bg-slate-900 hover:bg-slate-900 text-left text-white">
                                     <TableRow className="hover:bg-slate-900 border-none">
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Company Entity</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Trust Signals</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Fleet Head</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Direct Contacts</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Company Entity</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Trust Signals</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Fleet Head</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Direct Contacts</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody>
+                                <TableBody className="text-left text-foreground">
                                     {results.length > 0 ? results.map((res) => (
-                                        <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors">
+                                        <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left text-foreground">
                                             <TableCell className="py-4 text-left">
                                                 <div className="flex flex-col text-left">
                                                     <span className="font-black text-sm text-slate-900">{res.companyName}</span>
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Haulier'}</Badge>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left">
+                                            <TableCell className="text-left text-foreground">
                                                 <div className="flex flex-wrap gap-2 text-left">
                                                     <Button 
                                                         variant="ghost" 
@@ -391,7 +395,7 @@ export default function TransporterIntelligencePage() {
                                                         <Button 
                                                             variant="outline" 
                                                             size="sm" 
-                                                            className="h-7 px-2 text-[10px] font-black uppercase gap-1 border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                                                            className="h-7 px-2 text-[10px] font-black uppercase gap-1 border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 text-left"
                                                             onClick={() => handleClaim(res.id)}
                                                             disabled={!!isClaiming}
                                                         >
@@ -401,18 +405,18 @@ export default function TransporterIntelligencePage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left">
+                                            <TableCell className="text-left text-foreground">
                                                 <span className={cn("text-xs font-bold text-left", !isPaid && "blur-sm select-none opacity-50")}>
                                                     {res.contactPerson || 'Forensic ID Verified'}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-left">
+                                            <TableCell className="text-left text-foreground">
                                                 <div className={cn("flex flex-col gap-1 text-left", !isPaid && "blur-sm select-none opacity-50")}>
                                                     <span className="text-[10px] font-mono text-primary font-bold">{res.email || 'locked@tc.co.za'}</span>
                                                     <span className="text-[10px] font-mono text-muted-foreground">{res.mobile || res.phone || '0XX XXX XXXX'}</span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right text-foreground">
                                                 {isPaid ? (
                                                     <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase">Book</Button>

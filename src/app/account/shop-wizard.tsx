@@ -27,7 +27,7 @@ import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { collection, query, orderBy, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, query, orderBy, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { provinces } from '@/lib/geodata';
@@ -137,12 +137,37 @@ function FileUploadField({
 
     return (
         <div className="space-y-2 text-left">
-            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1"> {label}</Label>}
-            <Button type="button" variant="outline" className={cn("w-full min-h-[3rem] h-auto border-2 border-dashed py-2 whitespace-normal leading-tight", currentUrl && "border-solid border-green-50 border-green-500 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
+            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{label}</Label>}
+            <Button type="button" variant="outline" className={cn("w-full min-h-[3rem] h-auto border-2 border-dashed py-2 whitespace-normal leading-tight", currentUrl && "border-solid border-green-500 text-green-700")} onClick={() => document.getElementById(`up-${name}`)?.click()} disabled={isUploading}>
                 {isUploading ? <Loader2 className="animate-spin h-4 w-4" /> : currentUrl ? <CheckCircle className="h-4 w-4 mr-2" /> : <FileUp className="h-4 w-4 mr-2" />}
                 {currentUrl ? "File Attached" : `Select ${label}`}
             </Button>
             <input id={`up-${name}`} type="file" className="hidden" onChange={handleUpload} />
+        </div>
+    );
+}
+
+function StepMain() {
+    const { control } = useFormContext<NodeFormValues>();
+    return (
+        <div className="space-y-6 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2"><Store className="h-6 w-6 text-primary"/> Node Identity</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="shopName" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Identity Label (Business Name)</FormLabel><FormControl><Input {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                )} />
+                <FormField control={control} name="category" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Industrial Classification</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select classification..." /></SelectTrigger></FormControl><SelectContent>{supplierCategories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent></Select></FormItem>
+                )} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="contactEmail" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Public Contact Email</FormLabel><FormControl><Input {...field} type="email" className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                )} />
+                <FormField control={control} name="contactPhone" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Public Contact Number</FormLabel><FormControl><Input {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                )} />
+            </div>
         </div>
     );
 }
@@ -201,15 +226,15 @@ function StepWarehouseSecurity() {
                 <p className="text-sm text-muted-foreground mt-1">Provide forensic clarity on how cargo is protected within your node.</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 text-left">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 ml-1">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     Security Infrastructure
                 </Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 text-left">
                     {securityOptions.map(opt => (
                         <FormField key={opt} control={control} name="securityFeatures" render={({ field }) => (
-                            <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors">
+                            <div className="flex items-center space-x-2 p-2 border rounded-md bg-white hover:bg-slate-50 transition-colors text-left">
                                 <Checkbox 
                                     checked={field.value?.includes(opt)} 
                                     onCheckedChange={(checked) => {
@@ -219,7 +244,7 @@ function StepWarehouseSecurity() {
                                             : current.filter((v: string) => v !== opt));
                                     }} 
                                 />
-                                <span className="text-[11px] font-medium">{opt}</span>
+                                <span className="text-[11px] font-medium text-left">{opt}</span>
                             </div>
                         )} />
                     ))}
@@ -228,15 +253,15 @@ function StepWarehouseSecurity() {
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                 <FormField control={control} name="accessControl" render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-left">
                         <FormLabel>Access Control Type</FormLabel>
                         <FormControl><Input placeholder="e.g. Biometric / Keycard / Manual log" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     </FormItem>
                 )} />
                 <FormField control={control} name="rollerDoors" render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-left">
                         <FormLabel>Roller Door Configuration</FormLabel>
                         <FormControl><Input placeholder="e.g. 4 x Automated Heavy Duty" {...field} className="h-10 border-2 bg-white" /></FormControl>
                     </FormItem>
@@ -244,10 +269,10 @@ function StepWarehouseSecurity() {
             </div>
 
             <FormField control={control} name="operatingHours" render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="flex items-center gap-2"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
+                <FormItem className="text-left">
+                    <FormLabel className="flex items-center gap-2 text-left"><Clock className="h-4 w-4" /> Receiving & Dispatch Hours</FormLabel>
                     <FormControl><Input placeholder="e.g. Mon-Fri: 08:00 - 16:30, Sat: 08:00 - 12:00" {...field} className="h-10 border-2 bg-white" /></FormControl>
-                    <FormDescription className="text-[10px]">Critical for haulier planning and matching.</FormDescription>
+                    <FormDescription className="text-[10px] text-left">Critical for haulier planning and matching.</FormDescription>
                 </FormItem>
             )} />
         </div>
@@ -294,14 +319,14 @@ function StepGallery() {
     };
 
     return (
-        <div className="space-y-6 text-left">
+        <div className="space-y-6 text-left text-foreground">
             <h3 className="text-xl font-black font-headline flex items-center gap-2">
                 <Camera className="h-6 w-6 text-primary" /> 
                 Facility Gallery
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
                 {imageUrls.map((url: string, i: number) => (
-                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-100 group">
+                    <div key={i} className="relative aspect-square rounded-xl overflow-hidden border-2 border-slate-100 group text-left">
                         <Image src={url} alt="Gallery" fill className="object-cover" />
                         <Button 
                             type="button" 
@@ -343,10 +368,10 @@ function StepRateSheet() {
             </h3>
 
             <FormField control={control} name="rateType" render={({ field }) => (
-                <FormItem className="space-y-4">
-                    <FormLabel className="font-bold">Select Rate Structure</FormLabel>
+                <FormItem className="space-y-4 text-left">
+                    <FormLabel className="font-bold text-left">Select Rate Structure</FormLabel>
                     <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border rounded-xl cursor-pointer", field.value === 'none' ? "bg-primary/5 border-primary" : "bg-white")}>
                                 <RadioGroupItem value="none" id="r-none" /><Label htmlFor="r-none" className="cursor-pointer">No Sheet</Label>
                             </div>
@@ -363,7 +388,7 @@ function StepRateSheet() {
 
             {rateType === 'per_km' && (
                 <FormField control={control} name="kmRate" render={({ field }) => (
-                    <FormItem className="max-w-xs animate-in slide-in-from-top-2">
+                    <FormItem className="max-w-xs animate-in slide-in-from-top-2 text-left">
                         <FormLabel>Standard Rate per Kilometer (ZAR)</FormLabel>
                         <FormControl><Input type="number" placeholder="e.g. 22.50" {...field} className="h-12 text-xl font-bold bg-white" /></FormControl>
                     </FormItem>
@@ -381,7 +406,7 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm text-left">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black text-muted-foreground">Origin</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
@@ -390,7 +415,7 @@ function StepRateSheet() {
                                 </FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] uppercase font-black text-muted-foreground">Destination</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl><SelectTrigger className="h-9 bg-white text-left text-foreground"><SelectValue/></SelectTrigger></FormControl>
@@ -479,7 +504,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     return (
         <DialogContent className="sm:max-w-xl text-left text-foreground">
             <DialogHeader>
-                <DialogTitle className="text-left text-foreground">Product Management</DialogTitle>
+                <DialogTitle className="text-left">Product Management</DialogTitle>
                 <DialogDescription className="text-left">Define the technical and commercial details of this item.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
@@ -496,7 +521,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                          )} />
                     </div>
                     <FormField control={form.control} name="description" render={({ field }) => (
-                      <FormItem className="text-left text-foreground"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>
+                      <FormItem className="text-left"><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Technical specifics..." {...field} className="bg-white" /></FormControl></FormItem>
                     )} />
                     
                     <div className="space-y-4 text-left">
@@ -516,7 +541,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
                     </div>
 
                     <DialogFooter className="bg-slate-50 p-6 border-t rounded-b-lg">
-                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest">
+                        <Button type="submit" disabled={loading} className="w-full h-12 font-bold uppercase tracking-widest text-white">
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Commit Product
                         </Button>
@@ -527,8 +552,191 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     );
 }
 
-// Ensure all other required parts are present...
+function StepCatalog({ shop }: { shop: any }) {
+    const firestore = useFirestore();
+    const [selectedProd, setSelectedProd] = useState<any | null>(null);
+    const [isAddOpen, setIsAddOpen] = useState(false);
+    
+    const prodQuery = useMemoFirebase(() => {
+        if (!firestore || !shop?.id) return null;
+        return query(collection(firestore, `companies/${shop.companyId}/shops/${shop.id}/products`), orderBy('updatedAt', 'desc'));
+    }, [firestore, shop]);
+    const { data: products, isLoading, forceRefresh } = useCollection(prodQuery);
+
+    const columns: ColumnDef<any>[] = [
+        { header: 'Product Item', cell: ({row}) => <div className="font-bold">{row.original.name}</div> },
+        { header: 'Price', cell: ({row}) => <span className="font-mono text-primary font-bold">{formatCurrency(row.original.price)}</span> },
+        { header: 'Inventory', cell: ({row}) => <span>{row.original.stock} Units</span> },
+        { id: 'actions', header: <div className="text-right">Manage</div>, cell: ({row}) => (
+            <div className="text-right">
+                <Dialog>
+                    <DialogTrigger asChild><Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button></DialogTrigger>
+                    <ProductDialogContent shop={shop} product={row.original} onComplete={forceRefresh} />
+                </Dialog>
+            </div>
+        )}
+    ];
+
+    return (
+        <div className="space-y-6 text-left">
+            <div className="flex justify-between items-center text-left">
+                <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground"><ListOrdered className="h-6 w-6 text-primary" /> Product Catalogue</h3>
+                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <DialogTrigger asChild><Button className="gap-2 font-bold"><PlusCircle className="h-4 w-4" /> Add New Item</Button></DialogTrigger>
+                    <ProductDialogContent shop={shop} onComplete={() => { forceRefresh(); setIsAddOpen(false); }} />
+                </Dialog>
+            </div>
+            <Card className="border-none shadow-xl bg-white text-left">
+                <CardContent className="pt-6">
+                    {isLoading ? <div className="py-20 flex justify-center"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : (
+                        <DataTable columns={columns} data={products || []} />
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
 export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: string, onUpdate: () => void }) {
-    // ... existing implementation ...
-    return <div/>; // Placeholder for brevity
+    const { toast } = useToast();
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
+
+    const isWarehouse = nodeType === 'warehouse';
+    const isTransport = nodeType === 'transport';
+    const isSupplier = nodeType === 'supplier' || nodeType === 'default';
+
+    const wizardSteps = useMemo(() => {
+        const base = [
+            { id: 'main', title: 'Identity', icon: Store, fields: ['shopName', 'category', 'contactEmail', 'contactPhone'] },
+        ];
+        if (isWarehouse) {
+            base.push({ id: 'fees', title: 'Storage Yield', icon: Banknote, fields: ['availablePallets', 'monthlyStorageFee', 'upliftFee', 'placementFee'] });
+            base.push({ id: 'security', title: 'Security Protocol', icon: Shield, fields: ['securityFeatures', 'accessControl', 'rollerDoors', 'operatingHours'] });
+        }
+        if (isTransport) {
+            base.push({ id: 'rates', title: 'Rate Sheet', icon: ListOrdered, fields: ['rateType', 'kmRate', 'routeRates'] });
+        }
+        if (isSupplier) {
+            base.push({ id: 'catalog', title: 'Product Catalog', icon: ListOrdered, fields: [] });
+        }
+        base.push({ id: 'gallery', title: 'Facility Gallery', icon: Camera, fields: ['imageUrls'] });
+        base.push({ id: 'branding', title: 'Brand Presence', icon: Sparkles, fields: ['homeHeading', 'aboutText'] });
+        base.push({ id: 'submit', title: 'Audit Submission', icon: ShieldCheck, fields: [] });
+        return base;
+    }, [isWarehouse, isTransport, isSupplier]);
+
+    const methods = useForm<NodeFormValues>({
+        resolver: zodResolver(nodeFormSchema),
+        mode: 'onChange',
+        defaultValues: {
+            ...shop,
+            routeRates: shop.routeRates || [],
+            securityFeatures: shop.securityFeatures || [],
+            imageUrls: shop.imageUrls || []
+        }
+    });
+
+    const onSubmit = async (values: NodeFormValues) => {
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed");
+            
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `companies/${shop.companyId}/shops/${shop.id}`,
+                    data: { ...values, status: 'pending_review', updatedAt: { _methodName: 'serverTimestamp' } }
+                })
+            });
+            
+            toast({ title: "Terminal Handshake Complete", description: "Node submitted for platform audit." });
+            onUpdate();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Update Failed", description: e.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleNext = async () => {
+        const step = wizardSteps[currentStep];
+        if (step.fields.length > 0) {
+            const isValid = await methods.trigger(step.fields as any);
+            if (!isValid) return;
+        }
+        if (currentStep < wizardSteps.length - 1) setCurrentStep(prev => prev + 1);
+    };
+
+    return (
+        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden">
+            <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5">
+                <div className="flex items-center gap-4 text-left text-white">
+                    <div className="bg-primary/20 p-3 rounded-xl"><PackageSearch className="h-6 w-6 text-primary" /></div>
+                    <div className="text-left text-white">
+                        <CardTitle className="text-2xl font-black font-headline text-white">Node Terminal: {wizardSteps[currentStep].title}</CardTitle>
+                        <CardDescription className="text-slate-400">Registry ID: <span className="font-mono text-[10px]">{shop.id}</span></CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="p-8">
+                <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12 text-left">
+                    <div className="space-y-2 border-r pr-6 text-left">
+                        {wizardSteps.map((step, i) => (
+                            <Button key={step.id} variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-11 px-3 transition-all", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(i)}>
+                                <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>{i+1}</div>
+                                <span className={cn("text-xs", currentStep === i ? "font-black" : "font-medium")}>{step.title}</span>
+                            </Button>
+                        ))}
+                    </div>
+                    <FormProvider {...methods}>
+                        <div className="min-h-[450px] text-left text-foreground">
+                            {wizardSteps[currentStep].id === 'main' && <StepMain />}
+                            {wizardSteps[currentStep].id === 'fees' && <StepWarehouseFees />}
+                            {wizardSteps[currentStep].id === 'security' && <StepWarehouseSecurity />}
+                            {wizardSteps[currentStep].id === 'rates' && <StepRateSheet />}
+                            {wizardSteps[currentStep].id === 'catalog' && <StepCatalog shop={shop} />}
+                            {wizardSteps[currentStep].id === 'gallery' && <StepGallery />}
+                            {wizardSteps[currentStep].id === 'branding' && (
+                                <div className="space-y-8 text-left">
+                                    <h3 className="text-xl font-black font-headline flex items-center gap-2"><Sparkles className="h-6 w-6 text-primary"/> Brand Presence</h3>
+                                    <div className="space-y-4">
+                                         <FormField control={methods.control} name="homeHeading" render={({ field }) => (
+                                            <FormItem className="text-left"><FormLabel>Public Headline</FormLabel><FormControl><Input placeholder="e.g. Premium Scania Spares Durban" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>
+                                         )} />
+                                         <FormField control={methods.control} name="aboutText" render={({ field }) => (
+                                            <FormItem className="text-left text-foreground"><FormLabel>Professional Summary (300 Words)</FormLabel><FormControl><Textarea placeholder="Explain your standing and technical reliability..." {...field} className="min-h-[200px] border-2 bg-white leading-relaxed" /></FormControl></FormItem>
+                                         )} />
+                                    </div>
+                                </div>
+                            )}
+                            {wizardSteps[currentStep].id === 'submit' && (
+                                <div className="text-center py-20 space-y-6">
+                                    <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto mb-4 border border-primary/20">
+                                        <ShieldCheck className="h-16 w-16 text-primary" />
+                                    </div>
+                                    <div className="space-y-2 text-center text-foreground">
+                                        <h3 className="text-3xl font-black">Audit Verified</h3>
+                                        <p className="text-muted-foreground max-w-sm mx-auto">This digital node is ready for platform publishing. Submitting initiates the forensic handshake with our Mall administrators.</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </FormProvider>
+                </div>
+            </CardContent>
+            <CardFooter className="bg-slate-50 border-t p-8 flex justify-between">
+                <Button variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0}><ArrowLeft className="mr-2 h-4 w-4"/> Back</Button>
+                {currentStep < wizardSteps.length - 1 ? (
+                    <Button onClick={handleNext} className="px-8 font-black uppercase text-xs tracking-widest text-white">Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
+                ) : (
+                    <Button onClick={methods.handleSubmit(onSubmit)} disabled={isSaving} className="h-14 px-12 font-black uppercase tracking-tight text-lg shadow-xl text-white">
+                        {isSaving ? <Loader2 className="animate-spin h-6 w-6 mr-2" /> : <Save className="mr-2 h-6 w-6" />} Submit Handshake
+                    </Button>
+                )}
+            </CardFooter>
+        </Card>
+    );
 }
