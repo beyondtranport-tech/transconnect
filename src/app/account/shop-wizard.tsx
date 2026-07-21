@@ -14,7 +14,7 @@ import {
     Warehouse, ShieldCheck, PackageSearch,
     ClipboardList, Sparkles, Store, FileUp, Trash2, PlusCircle, 
     Package, Info, Clock, Camera, ListOrdered, Edit, Tag, Zap,
-    FileText, Lock, Globe
+    FileText, Lock, Globe, UploadCloud
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -381,7 +381,7 @@ function StepMedia() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
                 <div className="space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Company Logo</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Company Logo</Label>
                     <div className="flex items-center gap-6 text-left">
                         <div className="relative h-24 w-24 rounded-2xl border-2 border-dashed bg-muted flex items-center justify-center overflow-hidden shrink-0">
                             {watch('logoUrl') ? <Image src={watch('logoUrl')!} alt="Logo" fill className="object-contain" /> : <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />}
@@ -558,7 +558,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                                     </div>
                                     <div className="space-y-2 text-center">
                                         <h3 className="text-3xl font-black">Audit Verified</h3>
-                                        <p className="text-muted-foreground max-w-sm mx-auto">This digital node is ready for platform publishing. Submitting initiates the forensic handshake with our Mall administrators.</p>
+                                        <p className="text-muted-foreground max-sm mx-auto">This digital node is ready for platform publishing. Submitting initiates the forensic handshake with our Mall administrators.</p>
                                     </div>
                                 </div>
                             )}

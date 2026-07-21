@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Loader2, Store, PlusCircle, ShieldAlert, Edit, ArrowLeft, Warehouse, Truck, ShieldCheck, Landmark, PackageSearch, ShoppingCart, Zap, Eye, Clock, ExternalLink } from 'lucide-react';
+import { Loader2, Store, PlusCircle, ShieldAlert, Edit, ArrowLeft, Warehouse, Truck, ShieldCheck, Landmark, PackageSearch, ShoppingCart, Zap, Eye, Clock, ExternalLink, ArrowRight } from 'lucide-react';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useSearchParams, useRouter } from 'next/navigation';
 import PromoteNodeContent from './promote-node-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { formatDateSafe } from '@/lib/utils';
+import { cn, formatDateSafe } from '@/lib/utils';
 import Link from 'next/link';
 
 const nodeConfig: Record<string, { title: string; description: string; icon: any }> = {
@@ -149,7 +149,7 @@ export default function ShopContent() {
     return (
         <div className="space-y-8 animate-in fade-in duration-500 text-left">
             <div className="text-left space-y-1 mb-8">
-                <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                     <config.icon className="h-8 w-8 text-primary" />
                     {config.title} Terminal
                 </h1>
