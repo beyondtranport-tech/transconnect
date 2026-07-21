@@ -1,28 +1,18 @@
-
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle, ShieldAlert, Edit, ArrowLeft, Warehouse, Truck, ShieldCheck, Landmark, PackageSearch, ShoppingCart, Zap } from 'lucide-react';
-import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ShopWizard } from './shop-wizard';
 import { usePermissions } from '@/hooks/use-permissions';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useSearchParams } from 'next/navigation';
 import PromoteNodeContent from './promote-node-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-  draft: 'secondary',
-  pending_review: 'outline',
-  approved: 'default',
-  rejected: 'destructive',
-};
 
 const nodeConfig: Record<string, { title: string; description: string; icon: any }> = {
     loads: { 
@@ -134,24 +124,34 @@ export default function ShopContent() {
 
   if (!!companyData?.shopId) {
     return (
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full text-left">
-            <TabsList className="bg-muted/50 p-1 h-auto mb-8">
-                <TabsTrigger value="terminal" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                    <config.icon className="h-3.5 w-3.5" /> Node Terminal
-                </TabsTrigger>
-                <TabsTrigger value="promote" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                    <Zap className="h-3.5 w-3.5" /> Visibility Boost
-                </TabsTrigger>
-            </TabsList>
+        <div className="space-y-6">
+            <div className="text-left space-y-1 mb-8">
+                <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <config.icon className="h-8 w-8 text-primary" />
+                    {config.title}
+                </h1>
+                <p className="text-muted-foreground">{config.description}</p>
+            </div>
 
-            <TabsContent value="terminal">
-                {userShop && <ShopWizard shop={userShop} nodeType={nodeType} onUpdate={() => { forceRefreshUser(); forceRefreshCompany(); if(forceRefreshShop) forceRefreshShop(); }} />}
-            </TabsContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full text-left">
+                <TabsList className="bg-muted/50 p-1 h-auto mb-8 flex-wrap justify-start">
+                    <TabsTrigger value="terminal" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                        <config.icon className="h-3.5 w-3.5" /> Node Terminal
+                    </TabsTrigger>
+                    <TabsTrigger value="promote" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                        <Zap className="h-3.5 w-3.5" /> Visibility Boost
+                    </TabsTrigger>
+                </TabsList>
 
-            <TabsContent value="promote">
-                <PromoteNodeContent />
-            </TabsContent>
-        </Tabs>
+                <TabsContent value="terminal" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    {userShop && <ShopWizard shop={userShop} nodeType={nodeType} onUpdate={() => { forceRefreshUser(); forceRefreshCompany(); if(forceRefreshShop) forceRefreshShop(); }} />}
+                </TabsContent>
+
+                <TabsContent value="promote" className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <PromoteNodeContent />
+                </TabsContent>
+            </Tabs>
+        </div>
     );
   }
 

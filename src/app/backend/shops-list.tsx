@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { ShopActionMenu } from './shop-action-menu';
 import { format as formatDateFns } from 'date-fns';
 
-// --- Interfaces & Helper Functions ---
 interface Shop {
     id: string;
     shopName: string;
@@ -33,15 +32,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 
 const formatDate = (dateValue: any) => {
     if (!dateValue) return 'N/A';
-    let date;
-    if (typeof dateValue === 'string') {
-        date = new Date(dateValue);
-    } else if (dateValue.toDate && typeof dateValue.toDate === 'function') {
-        date = dateValue.toDate();
-    } else {
-        return 'N/A';
-    }
-
+    const date = new Date(dateValue);
     if (isNaN(date.getTime())) return 'Invalid Date';
     return formatDateFns(date, "dd MMM yyyy, HH:mm");
 };
@@ -49,33 +40,14 @@ const formatDate = (dateValue: any) => {
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        let message = `API Error ${response.status}`;
-        try {
-            const errorJson = JSON.parse(errorText);
-            message = errorJson.error || message;
-        } catch (e) {
-            // Not JSON
-        }
-        throw new Error(message);
-    }
-
     const result = await response.json();
-    if (!result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
     return result;
 }
 
-// --- Main Component ---
 export default function ShopsList() {
     const [shops, setShops] = useState<Shop[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -87,7 +59,6 @@ export default function ShopsList() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-
             const result = await fetchFromAdminAPI(token, 'getShops');
             setShops(result.data || []);
         } catch(e: any) {
@@ -97,10 +68,7 @@ export default function ShopsList() {
         }
     }, []);
 
-    useEffect(() => {
-        loadData();
-    }, [loadData]);
-
+    useEffect(() => { loadData(); }, [loadData]);
 
     const columns: ColumnDef<Shop>[] = useMemo(() => [
         { 
@@ -111,7 +79,7 @@ export default function ShopsList() {
         { 
             accessorKey: 'category', 
             header: 'Category',
-            cell: ({ row }) => <div>{row.original.category}</div>,
+            cell: ({ row }) => <div className="text-xs uppercase font-black text-muted-foreground">{row.original.category || 'General'}</div>,
         },
         { 
           accessorKey: 'status', 
@@ -121,7 +89,7 @@ export default function ShopsList() {
         { 
             accessorKey: 'createdAt', 
             header: 'Date Created', 
-            cell: ({row}) => <div className="text-xs text-muted-foreground">{formatDate(row.original.createdAt)}</div> 
+            cell: ({row}) => <div className="text-[10px] font-mono text-muted-foreground">{formatDate(row.original.createdAt)}</div> 
         },
         {
             id: 'actions',
@@ -134,39 +102,30 @@ export default function ShopsList() {
         <div className="space-y-6 text-left">
             <CardHeader className="px-0 pt-0 flex flex-row items-center justify-between">
                  <div className="text-left">
-                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Store /> Supplier Mall Registry</CardTitle>
-                    <CardDescription className="text-left">
-                        Oversight of all member digital branches and catalog submissions.
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Store /> Member Shop Registry</CardTitle>
+                    <CardDescription className="text-left">Oversight of all member digital branches and node submissions.</CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
                     <RefreshCcw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
-                    Refresh Mall
+                    Refresh List
                 </Button>
             </CardHeader>
             
             {error ? (
-                <Card className="border-destructive bg-destructive/5">
-                    <CardContent className="p-8 text-center space-y-4">
-                        <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
-                        <div className="space-y-1">
-                            <h3 className="font-bold text-destructive">Load Error</h3>
-                            <p className="text-sm text-muted-foreground">{error}</p>
-                        </div>
-                        <Button onClick={loadData} variant="outline" className="border-destructive text-destructive hover:bg-destructive hover:text-white">Retry Connection</Button>
-                    </CardContent>
-                </Card>
+                <Card className="border-destructive bg-destructive/5 text-left"><CardContent className="p-8 text-center space-y-4">
+                    <AlertTriangle className="h-12 w-12 text-destructive mx-auto" />
+                    <p className="text-sm text-muted-foreground">{error}</p>
+                    <Button onClick={loadData} variant="outline">Retry</Button>
+                </CardContent></Card>
             ) : (
-                <Card className="text-left border-none shadow-xl">
-                    <CardContent className="pt-6 text-left">
+                <Card className="border-none shadow-xl bg-white text-left">
+                    <CardContent className="pt-6">
                         {isLoading ? (
                             <div className="flex flex-col items-center justify-center py-20 gap-4">
                                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Retrieving Mall Nodes...</p>
+                                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Retrieving Member Nodes...</p>
                             </div>
-                        ) : (
-                            <DataTable columns={columns} data={shops} />
-                        )}
+                        ) : <DataTable columns={columns} data={shops} />}
                     </CardContent>
                 </Card>
             )}

@@ -2,15 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
-import { enrichPartner } from '@/ai/flows/enrich-partner-flow';
 import sgMail from '@sendgrid/mail';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * Resilient Serialization Utility
- * Sanitizes Firestore objects to ensure clean JSON transmission.
- */
 function serializeData(docData: any): any {
     if (docData === null || docData === undefined) return docData;
     if (docData instanceof Timestamp) return docData.toDate().toISOString();
@@ -56,6 +51,27 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
+            case 'getShops': {
+                const snap = await db.collectionGroup('shops').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'approveShop': {
+                const { shopId, companyId } = payload;
+                const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
+                const publicRef = db.doc(`shops/${shopId}`);
+                
+                const snap = await shopRef.get();
+                if (!snap.exists) throw new Error("Shop not found.");
+                
+                const data = snap.data()!;
+                await db.runTransaction(async (t) => {
+                    t.update(shopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                    t.set(publicRef, { ...data, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'savePartner': {
                 const { partner, collection: colName = 'partners' } = payload;
                 const id = partner.id || db.collection(colName).doc().id;
@@ -77,74 +93,6 @@ export async function POST(req: NextRequest) {
                 });
                 await partnerRef.update({ status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type: recType } = payload;
-                const colName = (recType === 'lead' || !recType) ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    const partnerRef = db.collection(colName).doc(id);
-                    const logRef = partnerRef.collection('communications').doc();
-                    batch.set(logRef, {
-                        id: logRef.id,
-                        type: 'System',
-                        subject: 'BULK FORENSIC INITIATED',
-                        notes: 'Record included in V4 Batch Research command.',
-                        timestamp: FieldValue.serverTimestamp()
-                    });
-                    batch.update(partnerRef, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getPartnersByType': {
-                const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).get();
-                const leadsSnap = await db.collection('leads').where('role', '==', type.charAt(0).toUpperCase() + type.slice(1)).get();
-                const combined = [
-                    ...snap.docs.map(d => ({ ...d.data(), source: 'Member' })),
-                    ...leadsSnap.docs.map(d => ({ ...d.data(), source: 'Lead' }))
-                ];
-                return NextResponse.json({ success: true, data: serializeData(combined) });
-            }
-
-            case 'invitePartner': {
-                const { partnerId } = payload;
-                await db.collection('partners').doc(partnerId).update({ 
-                    invitationStatus: 'invited', 
-                    status: 'invited',
-                    updatedAt: FieldValue.serverTimestamp() 
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getStaff':
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'findDuplicateLeads': {
-                const snap = await db.collection('leads').get();
-                const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                const groups: any = {};
-                leads.forEach((l: any) => {
-                    const key = (l.companyName || l.email || l.id).toLowerCase().trim();
-                    if (!groups[key]) groups[key] = [];
-                    groups[key].push(l);
-                });
-                const duplicates = Object.values(groups).filter((g: any) => g.length > 1);
-                return NextResponse.json({ success: true, data: serializeData(duplicates) });
             }
 
             case 'dispatchEngagement': {
@@ -181,14 +129,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
-            case 'logCommunication': {
-                const { partnerId, collection: colOverride, type, subject, notes } = payload;
-                const colName = colOverride || 'partners';
-                const partnerRef = db.collection(colName).doc(partnerId);
-                const logRef = partnerRef.collection('communications').doc();
-                await logRef.set({ id: logRef.id, type: type || 'Note', subject, notes: notes || '', timestamp: FieldValue.serverTimestamp() });
-                await partnerRef.update({ status: 'contacted', lastOutreachSubject: subject, lastOutreachAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true });
+            case 'getGlobalLoads': {
+                const snap = await db.collectionGroup('loads').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             default: 
