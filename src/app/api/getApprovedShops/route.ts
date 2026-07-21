@@ -3,7 +3,8 @@ import { getAdminApp } from '@/lib/firebase-admin';
 import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 
-// Helper to convert Firestore Timestamps to JSON-serializable strings
+export const dynamic = 'force-dynamic';
+
 function serializeTimestamps(docData: any) {
     if (!docData) return docData;
     const newDocData: { [key: string]: any } = {};
@@ -12,14 +13,13 @@ function serializeTimestamps(docData: any) {
         if (value instanceof Timestamp) {
             newDocData[key] = value.toDate().toISOString();
         } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-            newDocData[key] = serializeTimestamps(value); // Recursively serialize nested objects
+            newDocData[key] = serializeTimestamps(value);
         } else {
             newDocData[key] = value;
         }
     }
     return newDocData;
 }
-
 
 export async function GET() {
     const { app, error: initError } = getAdminApp();
@@ -30,39 +30,33 @@ export async function GET() {
     const db = getFirestore(app);
 
     try {
-        const shopsRef = db.collection('shops');
-        const snapshot = await shopsRef.where('status', '==', 'approved').get();
+        // Fetch all approved shops from the public root collection
+        const snapshot = await db.collection('shops').where('status', '==', 'approved').get();
         
         if (snapshot.empty) {
             return NextResponse.json({ success: true, data: [] });
         }
         
-        const approvedShops = snapshot.docs.map(doc => {
-            const data = doc.data();
-            const serializedData = serializeTimestamps(data);
-            return { id: doc.id, ...serializedData };
-        });
+        const approvedShops = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...serializeTimestamps(doc.data())
+        }));
 
-        // De-duplication logic: If multiple shops exist for the same company, only keep the most recently updated one.
+        // De-duplicate: Ensure one node per company, keeping newest.
         const uniqueShopsMap = new Map();
         approvedShops.forEach(shop => {
-            if (!shop.companyId) return; // Ignore shops without a companyId
-
-            const existing = uniqueShopsMap.get(shop.companyId);
-            const shopUpdatedAt = shop.updatedAt ? new Date(shop.updatedAt).getTime() : 0;
-            const existingUpdatedAt = existing?.updatedAt ? new Date(existing.updatedAt).getTime() : 0;
-
-            if (!existing || shopUpdatedAt > existingUpdatedAt) {
-                uniqueShopsMap.set(shop.companyId, shop);
+            const cid = shop.companyId;
+            if (!cid) return;
+            const existing = uniqueShopsMap.get(cid);
+            if (!existing || new Date(shop.updatedAt) > new Date(existing.updatedAt)) {
+                uniqueShopsMap.set(cid, shop);
             }
         });
 
-        const uniqueApprovedShops = Array.from(uniqueShopsMap.values());
-        
-        return NextResponse.json({ success: true, data: uniqueApprovedShops });
+        return NextResponse.json({ success: true, data: Array.from(uniqueShopsMap.values()) });
 
     } catch (error: any) {
-        console.error('Error fetching approved shops:', error);
+        console.error('Error in getApprovedShops:', error);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 }
