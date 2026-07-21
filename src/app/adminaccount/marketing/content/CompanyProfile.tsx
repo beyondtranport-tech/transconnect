@@ -47,6 +47,17 @@ export default function CompanyProfile({ audience, partner }: { audience: string
             <p style={{ fontWeight: 'bold', color: '#228B22', fontSize: '14pt', marginBottom: '5pt' }}>
                 REGISTRATION IS 100% FREE
             </p>
+            
+            {/* TRUST SHIELD MODULE */}
+            <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', padding: '12pt', borderRadius: '6pt', marginBottom: '15pt' }}>
+                <p style={{ fontWeight: 'bold', fontSize: '9pt', color: '#64748b', textTransform: 'uppercase', margin: '0 0 4pt 0' }}>
+                    🛡️ FORENSIC INTEGRITY NOTICE
+                </p>
+                <p style={{ fontSize: '9pt', margin: '0' }}>
+                    This correspondence is issued by the Logistics Flow Engagement Division. We have verified <strong>{companyName}</strong> as a legitimate industry stakeholder. Our links are secure, unbranded, and mapped directly to your forensic profile.
+                </p>
+            </div>
+
             <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt', marginBottom: '15pt' }}>
                 INDUSTRIAL MEMO: THE DIGITALIZATION OF LOGISTICS FLOW
             </p>

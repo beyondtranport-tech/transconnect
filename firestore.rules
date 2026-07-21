@@ -3,41 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- 1. PUBLIC HANDSHAKE RULES (CRITICAL: MUST BE TOP) ---
-    
-    match /partners/{partnerId} {
-      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
-      allow get: if true; 
-      allow list: if request.auth != null;
-      allow write: if request.auth != null && (
-        request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
-        request.auth.token.get('admin', false) == true
-      );
-      match /{allSub=**} { 
-        allow read, write: if request.auth != null && (
-          request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
-          request.auth.token.get('admin', false) == true
-        ); 
-      }
-    }
-
-    match /leads/{leadId} {
-      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
-      allow get: if true; 
-      allow list: if request.auth != null;
-      allow write: if request.auth != null && (
-        request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
-        request.auth.token.get('admin', false) == true
-      );
-      match /{allSub=**} { 
-        allow read, write: if request.auth != null && (
-          request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
-          request.auth.token.get('admin', false) == true
-        ); 
-      }
-    }
-
-    // --- 2. CORE AUTHORIZATION HELPERS ---
+    // --- CORE AUTHORIZATION HELPERS ---
     
     function isSignedIn() {
       return request.auth != null;
@@ -63,7 +29,38 @@ service cloud.firestore {
       );
     }
 
-    // --- 3. PUBLIC / CONFIGURATION RULES ---
+    // --- PUBLIC HANDSHAKE & TRUST RULES (CRITICAL: MUST BE TOP) ---
+
+    match /partners/{partnerId} {
+      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
+      allow get: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      
+      match /vouches/{vouchId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn(); 
+      }
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+      }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    match /leads/{leadId} {
+      allow get: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      
+      match /vouches/{vouchId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn(); 
+      }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    // --- PUBLIC / CONFIGURATION RULES ---
 
     match /configuration/{configId} {
       allow get, list: if true;
@@ -80,12 +77,12 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // --- 4. ADMIN OVERRIDE ---
+    // --- ADMIN OVERRIDE ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
 
-    // --- 5. STANDARD PATH RULES ---
+    // --- STANDARD PATH RULES ---
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -132,7 +129,7 @@ service cloud.firestore {
       }
     }
 
-    // --- 6. COLLECTION GROUP RULES ---
+    // --- COLLECTION GROUP RULES ---
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /{path=**}/adCampaigns/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
@@ -140,5 +137,6 @@ service cloud.firestore {
     match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
   }
 }
