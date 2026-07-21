@@ -13,7 +13,8 @@ import {
     Banknote, ArrowRight, ArrowLeft, ImageIcon, 
     Warehouse, ShieldCheck, PackageSearch,
     ClipboardList, Sparkles, Store, FileUp, Trash2, PlusCircle, 
-    Package, Info, Clock, Camera, ListOrdered, Edit, Tag, Zap
+    Package, Info, Clock, Camera, ListOrdered, Edit, Tag, Zap,
+    FileText, Lock, Globe
 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -34,6 +35,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 
 const routeRateSchema = z.object({
     origin: z.string().min(1, "Origin required"),
@@ -70,6 +72,8 @@ const nodeFormSchema = z.object({
   kmRate: z.coerce.number().min(0).optional(),
   routeRates: z.array(routeRateSchema).default([]),
   imageUrls: z.array(z.string()).default([]),
+  termsText: z.string().optional(),
+  privacyText: z.string().optional(),
 });
 
 type NodeFormValues = z.infer<typeof nodeFormSchema>;
@@ -198,10 +202,10 @@ function StepRateSheet() {
                     {fields.map((item, index) => (
                         <div key={item.id} className="grid grid-cols-3 gap-4 items-end p-4 border rounded-xl bg-white shadow-sm">
                             <FormField control={control} name={`routeRates.${index}.origin` as any} render={({ field }) => (
-                                <FormItem><FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9 bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locationOptions.slice(0,50).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select></FormItem>
+                                <FormItem><FormLabel className="text-[10px] uppercase font-black">Origin</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locationOptions.slice(0,50).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select></FormItem>
                             )} />
                             <FormField control={control} name={`routeRates.${index}.destination` as any} render={({ field }) => (
-                                <FormItem><FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9 bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locationOptions.slice(0,50).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select></FormItem>
+                                <FormItem><FormLabel className="text-[10px] uppercase font-black">Destination</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-9 bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent>{locationOptions.slice(0,50).map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent></Select></FormItem>
                             )} />
                             <div className="flex items-center gap-2">
                                 <FormField control={control} name={`routeRates.${index}.price` as any} render={({ field }) => (
@@ -250,7 +254,7 @@ function ProductDialogContent({ shop, product, onComplete }: { shop: any, produc
     };
 
     return (
-        <DialogContent className="sm:max-w-xl text-left">
+        <DialogContent className="sm:max-w-xl text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>Product Management</DialogTitle>
                 <DialogDescription>Define the technical and commercial details of this item.</DialogDescription>
@@ -327,6 +331,114 @@ function StepCatalog({ shop }: { shop: any }) {
     );
 }
 
+function StepMedia() {
+    const { control, watch, setValue } = useFormContext<NodeFormValues>();
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [uploading, setUploading] = useState<string | null>(null);
+    const [progress, setProgress] = useState(0);
+
+    const imageUrls = watch('imageUrls') || [];
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'gallery') => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+        setUploading(type);
+        setProgress(10);
+        try {
+            const token = await getClientSideAuthToken();
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>(res => {
+                reader.onload = () => res(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `shops/${user.uid}`, fileName: `${type}_${Date.now()}_${file.name}` })
+            });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error);
+            
+            if (type === 'logo') setValue('logoUrl', result.url);
+            else setValue('imageUrls', [...imageUrls, result.url]);
+            
+            toast({ title: "Upload Success" });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: e.message });
+        } finally {
+            setUploading(null);
+            setProgress(0);
+        }
+    };
+
+    return (
+        <div className="space-y-10 text-left">
+             <div className="space-y-4">
+                <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground text-left"><Camera className="h-6 w-6 text-primary" /> Media Assets</h3>
+                <p className="text-sm text-muted-foreground text-left">Upload your official logo and facility/fleet images to establish forensic trust.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
+                <div className="space-y-4 text-left">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Company Logo</Label>
+                    <div className="flex items-center gap-6 text-left">
+                        <div className="relative h-24 w-24 rounded-2xl border-2 border-dashed bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                            {watch('logoUrl') ? <Image src={watch('logoUrl')!} alt="Logo" fill className="object-contain" /> : <ImageIcon className="h-8 w-8 text-muted-foreground opacity-20" />}
+                        </div>
+                        <div className="flex-1 space-y-2 text-left">
+                            <input type="file" id="logo-up" className="hidden" onChange={e => handleUpload(e, 'logo')} />
+                            <Button variant="outline" size="sm" onClick={() => document.getElementById('logo-up')?.click()} disabled={!!uploading}>
+                                {uploading === 'logo' ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <UploadCloud className="h-4 w-4 mr-2" />}
+                                Upload Logo
+                            </Button>
+                            <p className="text-[10px] text-muted-foreground">PNG or JPG. Square recommended.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-4 text-left">
+                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Facility Gallery</Label>
+                     <div className="grid grid-cols-3 gap-2 text-left">
+                        {imageUrls.map((url, i) => (
+                            <div key={i} className="relative aspect-square rounded-lg border bg-muted overflow-hidden group">
+                                <Image src={url} alt="Gallery" fill className="object-cover" />
+                                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setValue('imageUrls', imageUrls.filter((_, idx) => idx !== i))}>
+                                    <Trash2 className="h-3 w-3" />
+                                </Button>
+                            </div>
+                        ))}
+                        <button type="button" onClick={() => document.getElementById('gallery-up')?.click()} className="aspect-square rounded-lg border-2 border-dashed flex flex-col items-center justify-center gap-1 hover:border-primary transition-colors text-muted-foreground hover:text-primary">
+                            <PlusCircle className="h-5 w-5" />
+                            <span className="text-[9px] font-bold uppercase">Add Photo</span>
+                        </button>
+                        <input type="file" id="gallery-up" className="hidden" onChange={e => handleUpload(e, 'gallery')} />
+                     </div>
+                </div>
+            </div>
+            {uploading && <Progress value={progress} className="h-1" />}
+        </div>
+    );
+}
+
+function StepLegal() {
+    const { control } = useFormContext<NodeFormValues>();
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground text-left text-foreground text-foreground"><Lock className="h-6 w-6 text-primary" /> Legal & Compliance</h3>
+            <p className="text-sm text-muted-foreground">Define your operational boundaries and data privacy commitments.</p>
+            <div className="space-y-6 text-left">
+                <FormField control={control} name="termsText" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Terms of Engagement</FormLabel><FormControl><Textarea placeholder="Explain your payment terms, delivery conditions, and liability caps..." {...field} className="min-h-[150px] bg-white border-2" /></FormControl></FormItem>
+                )} />
+                <FormField control={control} name="privacyText" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Privacy Policy (POPI)</FormLabel><FormControl><Textarea placeholder="How you handle client data and POPI compliance..." {...field} className="min-h-[100px] bg-white border-2" /></FormControl></FormItem>
+                )} />
+            </div>
+        </div>
+    );
+}
+
 export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: string, onUpdate: () => void }) {
     const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(0);
@@ -350,7 +462,9 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
         if (isSupplier) {
             base.push({ id: 'catalog', title: 'Product Catalog', icon: ListOrdered, fields: [] });
         }
+        base.push({ id: 'media', title: 'Media Assets', icon: Camera, fields: ['logoUrl', 'imageUrls'] });
         base.push({ id: 'branding', title: 'Brand Presence', icon: Sparkles, fields: ['homeHeading', 'aboutText'] });
+        base.push({ id: 'legal', title: 'Legal & Privacy', icon: Lock, fields: ['termsText', 'privacyText'] });
         base.push({ id: 'submit', title: 'Audit Submission', icon: ShieldCheck, fields: [] });
         return base;
     }, [isWarehouse, isTransport, isSupplier]);
@@ -391,48 +505,54 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
     };
 
     return (
-        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left">
-            <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5">
-                <div className="flex items-center gap-4 text-white">
-                    <div className="bg-primary/20 p-3 rounded-xl"><PackageSearch className="h-6 w-6 text-primary" /></div>
-                    <div className="text-left">
-                        <CardTitle className="text-2xl font-black font-headline text-white">Node Terminal: {wizardSteps[currentStep].title}</CardTitle>
-                        <CardDescription className="text-slate-400">Registry ID: <span className="font-mono text-[10px]">{shop.id}</span></CardDescription>
+        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
+            <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-foreground">
+                <div className="flex items-center gap-4 text-white text-left">
+                    <div className="bg-primary/20 p-3 rounded-xl text-left"><PackageSearch className="h-6 w-6 text-primary" /></div>
+                    <div className="text-left text-foreground">
+                        <CardTitle className="text-2xl font-black font-headline text-white text-left">Node Terminal: {wizardSteps[currentStep].title}</CardTitle>
+                        <CardDescription className="text-slate-400">Identity: <span className="font-mono text-[10px] uppercase font-bold">{shop.id}</span></CardDescription>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-8">
+            <CardContent className="p-8 text-left">
                 <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12 text-left">
                     <div className="space-y-2 border-r pr-6 text-left">
-                        {wizardSteps.map((step, i) => (
-                            <Button key={step.id} variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-11 px-3 transition-all", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(i)}>
-                                <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>{i+1}</div>
-                                <span className={cn("text-xs", currentStep === i ? "font-black" : "font-medium")}>{step.title}</span>
-                            </Button>
-                        ))}
+                        {wizardSteps.map((step, i) => {
+                            const Icon = step.icon;
+                            return (
+                                <Button key={step.id} variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-11 px-3 transition-all text-left text-foreground", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(i)}>
+                                    <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>{i+1}</div>
+                                    <Icon className="h-4 w-4" />
+                                    <span className={cn("text-xs", currentStep === i ? "font-black" : "font-medium")}>{step.title}</span>
+                                </Button>
+                            );
+                        })}
                     </div>
                     <FormProvider {...methods}>
-                        <div className="min-h-[450px] text-left text-foreground">
+                        <div className="min-h-[500px] text-left text-foreground">
                             {wizardSteps[currentStep].id === 'main' && <StepMain />}
                             {wizardSteps[currentStep].id === 'fees' && <StepWarehouseFees />}
                             {wizardSteps[currentStep].id === 'security' && <StepWarehouseSecurity />}
                             {wizardSteps[currentStep].id === 'rates' && <StepRateSheet />}
                             {wizardSteps[currentStep].id === 'catalog' && <StepCatalog shop={shop} />}
+                            {wizardSteps[currentStep].id === 'media' && <StepMedia />}
                             {wizardSteps[currentStep].id === 'branding' && (
-                                <div className="space-y-8 text-left">
-                                    <h3 className="text-xl font-black font-headline flex items-center gap-2"><Sparkles className="h-6 w-6 text-primary"/> Brand Presence</h3>
-                                    <div className="space-y-4">
+                                <div className="space-y-8 text-left text-foreground">
+                                    <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground text-left text-foreground text-foreground"><Sparkles className="h-6 w-6 text-primary"/> Brand Presence</h3>
+                                    <div className="space-y-4 text-left">
                                          <FormField control={methods.control} name="homeHeading" render={({ field }) => (
-                                            <FormItem className="text-left"><FormLabel>Public Headline</FormLabel><FormControl><Input placeholder="e.g. Premium Scania Spares Durban" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>
+                                            <FormItem className="text-left text-foreground"><FormLabel>Public Headline</FormLabel><FormControl><Input placeholder="e.g. Premium Scania Spares Durban" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>
                                          )} />
                                          <FormField control={methods.control} name="aboutText" render={({ field }) => (
-                                            <FormItem className="text-left"><FormLabel>Professional Summary (300 Words)</FormLabel><FormControl><Textarea placeholder="Explain your standing and technical reliability..." {...field} className="min-h-[200px] border-2 bg-white leading-relaxed" /></FormControl></FormItem>
+                                            <FormItem className="text-left text-foreground"><FormLabel>Professional Summary (300 Words)</FormLabel><FormControl><Textarea placeholder="Explain your standing and technical reliability..." {...field} className="min-h-[200px] border-2 bg-white leading-relaxed" /></FormControl></FormItem>
                                          )} />
                                     </div>
                                 </div>
                             )}
+                            {wizardSteps[currentStep].id === 'legal' && <StepLegal />}
                             {wizardSteps[currentStep].id === 'submit' && (
-                                <div className="text-center py-20 space-y-6">
+                                <div className="text-center py-20 space-y-6 text-left text-foreground">
                                     <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto mb-4 border border-primary/20">
                                         <ShieldCheck className="h-16 w-16 text-primary" />
                                     </div>
@@ -446,7 +566,7 @@ export function ShopWizard({ shop, nodeType, onUpdate }: { shop: any, nodeType: 
                     </FormProvider>
                 </div>
             </CardContent>
-            <CardFooter className="bg-slate-50 border-t p-8 flex justify-between">
+            <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
                 <Button variant="ghost" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0}><ArrowLeft className="mr-2 h-4 w-4"/> Back</Button>
                 {currentStep < wizardSteps.length - 1 ? (
                     <Button onClick={() => setCurrentStep(prev => prev + 1)} className="px-8 font-black uppercase text-xs tracking-widest text-white">Next Step <ArrowRight className="ml-2 h-4 w-4"/></Button>
