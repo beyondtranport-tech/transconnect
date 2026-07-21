@@ -1,10 +1,10 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import data from "@/lib/placeholder-images.json";
 import { Warehouse, ArrowRight, Search, MapPin, Loader2, Database, ShieldCheck, Calculator, Banknote, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
@@ -12,7 +12,6 @@ import Link from "next/link";
 import * as gtag from '@/lib/gtag';
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Label } from '@/components/ui/label';
 
 const { placeholderImages } = data;
 const warehouseMallImage = placeholderImages.find(p => p.id === 'mall-division');
