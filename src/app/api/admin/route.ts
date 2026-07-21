@@ -9,32 +9,18 @@ export const dynamic = 'force-dynamic';
 
 /**
  * Resilient Serialization Utility
- * Recursively sanitizes Firestore objects to ensure clean JSON transmission.
- * Prevents "Failed to parse stream" errors on the client.
+ * Sanitizes Firestore objects to ensure clean JSON transmission.
  */
 function serializeData(docData: any): any {
     if (docData === null || docData === undefined) return docData;
-    
-    if (docData instanceof Timestamp) {
-        return docData.toDate().toISOString();
-    }
-    
-    if (docData && typeof docData === 'object' && docData.constructor?.name === 'FieldValue') {
-        return new Date().toISOString(); 
-    }
-
-    if (Array.isArray(docData)) {
-        return docData.map(serializeData);
-    }
-    
+    if (docData instanceof Timestamp) return docData.toDate().toISOString();
+    if (docData && typeof docData === 'object' && docData.constructor?.name === 'FieldValue') return new Date().toISOString(); 
+    if (Array.isArray(docData)) return docData.map(serializeData);
     if (typeof docData === 'object') {
         const serialized: { [key: string]: any } = {};
-        for (const key in docData) {
-            serialized[key] = serializeData(docData[key]);
-        }
+        for (const key in docData) serialized[key] = serializeData(docData[key]);
         return serialized;
     }
-    
     return docData;
 }
 
@@ -65,193 +51,143 @@ export async function POST(req: NextRequest) {
         const payload = body.payload || {};
 
         switch (action) {
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
             case 'savePartner': {
                 const { partner, collection: colName = 'partners' } = payload;
-                if (!partner) throw new Error("Payload error: Partner data required.");
-
                 const id = partner.id || db.collection(colName).doc().id;
-                const partnerData = {
-                    ...partner,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                };
-
-                await db.collection(colName).doc(id).set(partnerData, { merge: true });
+                await db.collection(colName).doc(id).set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'bulkSavePartners': {
-                const { partners, type } = payload;
-                if (!Array.isArray(partners)) throw new Error("Partners array expected.");
-                
-                const colName = (type === 'lead' || !type) ? 'leads' : 'partners';
-                const batch = db.batch();
-                
-                partners.forEach((p: any) => {
-                    const id = p.record_id || p.id || db.collection(colName).doc().id;
-                    const ref = db.collection(colName).doc(id);
-                    batch.set(ref, {
-                        ...p,
-                        id,
-                        type: type || p.type || 'lead',
-                        status: p.status || 'new',
-                        updatedAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const colName = isLead ? 'leads' : 'partners';
+                const partnerRef = db.collection(colName).doc(partnerId);
+                const logRef = partnerRef.collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    type: 'System',
+                    subject: 'FORENSIC RESEARCH INITIATED',
+                    notes: 'Forensic gap-analysis command generated for AI Studio.',
+                    timestamp: FieldValue.serverTimestamp()
                 });
-                
+                await partnerRef.update({ status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type: recType } = payload;
+                const colName = (recType === 'lead' || !recType) ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    const partnerRef = db.collection(colName).doc(id);
+                    const logRef = partnerRef.collection('communications').doc();
+                    batch.set(logRef, {
+                        id: logRef.id,
+                        type: 'System',
+                        subject: 'BULK FORENSIC INITIATED',
+                        notes: 'Record included in V4 Batch Research command.',
+                        timestamp: FieldValue.serverTimestamp()
+                    });
+                    batch.update(partnerRef, { status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                });
                 await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPartnersByType': {
+                const { type } = payload;
+                const snap = await db.collection('partners').where('type', '==', type).get();
+                const leadsSnap = await db.collection('leads').where('role', '==', type.charAt(0).toUpperCase() + type.slice(1)).get();
+                const combined = [
+                    ...snap.docs.map(d => ({ ...d.data(), source: 'Member' })),
+                    ...leadsSnap.docs.map(d => ({ ...d.data(), source: 'Lead' }))
+                ];
+                return NextResponse.json({ success: true, data: serializeData(combined) });
+            }
+
+            case 'invitePartner': {
+                const { partnerId } = payload;
+                await db.collection('partners').doc(partnerId).update({ 
+                    invitationStatus: 'invited', 
+                    status: 'invited',
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getStaff':
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
+            }
+
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'findDuplicateLeads': {
+                const snap = await db.collection('leads').get();
+                const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                const groups: any = {};
+                leads.forEach((l: any) => {
+                    const key = (l.companyName || l.email || l.id).toLowerCase().trim();
+                    if (!groups[key]) groups[key] = [];
+                    groups[key].push(l);
+                });
+                const duplicates = Object.values(groups).filter((g: any) => g.length > 1);
+                return NextResponse.json({ success: true, data: serializeData(duplicates) });
             }
 
             case 'dispatchEngagement': {
                 const { partnerId, email, subject, html, collection: colOverride } = payload;
-                
-                if (!email || !emailRegex.test(email.trim())) {
-                    throw new Error(`Dispatch Aborted: "${email}" is missing or invalid.`);
-                }
-                if (!subject || !html) throw new Error("Missing mandatory content.");
-
+                if (!email || !emailRegex.test(email.trim())) throw new Error("Invalid email.");
                 const apiKey = process.env.SENDGRID_API_KEY;
-                if (!apiKey) throw new Error("Transactional Email API not configured (SENDGRID_API_KEY missing).");
-
+                if (!apiKey) throw new Error("SendGrid Key Missing.");
                 sgMail.setApiKey(apiKey);
-                const msg = {
-                    to: email.trim(),
-                    from: 'Logistics Flow <noreply@logisticsflow.co.za>',
-                    subject: subject,
-                    html: html,
-                    trackingSettings: {
-                        clickTracking: { enable: true },
-                        openTracking: { enable: true }
-                    }
-                };
-
-                try {
-                    await sgMail.send(msg);
-                } catch (sgError: any) {
-                    const detailedError = sgError.response?.body?.errors?.[0]?.message || sgError.message;
-                    throw new Error(`SendGrid Error: ${detailedError}`);
-                }
-
+                await sgMail.send({ to: email.trim(), from: 'Logistics Flow <noreply@logisticsflow.co.za>', subject, html });
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
-
                 const logRef = partnerRef.collection('communications').doc();
-                await logRef.set({
-                    id: logRef.id,
-                    type: 'Email',
-                    subject: subject,
-                    notes: 'Sent via Automated Transactional Dispatch.',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-
-                await partnerRef.update({
-                    status: 'contacted',
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
+                await logRef.set({ id: logRef.id, type: 'Email', subject, notes: 'Sent via SendGrid API.', timestamp: FieldValue.serverTimestamp() });
+                await partnerRef.update({ status: 'contacted', lastOutreachSubject: subject, lastOutreachAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true });
-            }
-
-            case 'autoEnrichRecord': {
-                const { id, type: recType } = payload;
-                const colName = recType === 'lead' ? 'leads' : 'partners';
-                const ref = db.collection(colName).doc(id);
-                const snap = await ref.get();
-                if (!snap.exists) throw new Error("Record not found.");
-                
-                const data = snap.data()!;
-                const enrichment = await enrichPartner({ companyName: data.companyName || data.firstName });
-                
-                await ref.update({
-                    ...enrichment,
-                    lastEnrichedAt: FieldValue.serverTimestamp(),
-                    enhancementMethod: 'Forensic V4',
-                    status: 'qualified',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                
-                return NextResponse.json({ success: true, data: enrichment });
             }
 
             case 'searchRegistry': {
                 const { type: queryType, term, limit = 100 } = payload;
                 const collectionName = (queryType === 'all' || queryType === 'lead') ? 'leads' : 'partners';
                 let q: any = db.collection(collectionName);
-                
-                if (collectionName === 'partners' && queryType !== 'all') {
-                    q = q.where('type', '==', queryType);
-                }
-
+                if (collectionName === 'partners' && queryType !== 'all') q = q.where('type', '==', queryType);
                 const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limit, 20000)).get();
                 let results = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
-
                 if (term) {
                     const lowTerm = term.toLowerCase();
-                    results = results.filter((r: any) => 
-                        (r.companyName || '').toLowerCase().includes(lowTerm) || 
-                        (r.email || '').toLowerCase().includes(lowTerm) ||
-                        (r.industrial_tags || []).some((t: string) => t.toLowerCase().includes(lowTerm))
-                    );
+                    results = results.filter((r: any) => (r.companyName || '').toLowerCase().includes(lowTerm) || (r.email || '').toLowerCase().includes(lowTerm));
                 }
-
                 return NextResponse.json({ success: true, data: serializeData(results) });
             }
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').get();
-                const members = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: serializeData(members) });
-            }
-
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
-                const leads = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: serializeData(leads) });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: snap.docs.map(d => ({ id: d.id, ...d.data() })) });
-            }
-
-            case 'getAudienceCommunications': {
-                const { type } = payload;
-                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(100).get();
-                const logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                return NextResponse.json({ success: true, data: serializeData(logs) });
-            }
-
-            case 'deletePartner': {
-                const { partnerId, source } = payload;
-                const colName = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(colName).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'logCommunication': {
                 const { partnerId, collection: colOverride, type, subject, notes } = payload;
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
-
                 const logRef = partnerRef.collection('communications').doc();
-                await logRef.set({
-                    id: logRef.id,
-                    type: type || 'Note',
-                    subject: subject || 'Interaction',
-                    notes: notes || '',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-
-                await partnerRef.update({
-                    status: 'contacted',
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
+                await logRef.set({ id: logRef.id, type: type || 'Note', subject, notes: notes || '', timestamp: FieldValue.serverTimestamp() });
+                await partnerRef.update({ status: 'contacted', lastOutreachSubject: subject, lastOutreachAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true });
             }
 
@@ -260,7 +196,6 @@ export async function POST(req: NextRequest) {
         }
     } catch (error: any) {
         console.error(`Admin API Error:`, error);
-        const errorMessage = error.response?.body?.errors?.[0]?.message || error.message || "An unknown server error occurred.";
-        return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
+        return NextResponse.json({ success: false, error: error.message || "Server error." }, { status: 500 });
     }
 }
