@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -38,6 +39,7 @@ import {
   Loader2,
   Truck,
   Box,
+  Fingerprint,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -65,6 +67,7 @@ import IntelligenceHistory from './intelligence-history';
 import MarketingStudio from './marketing-studio';
 import MyFacilitiesContent from './facilities-content';
 import ShopContent from './shop-content';
+import TrustIdentityContent from './trust-identity-content';
 
 // Mall Gate Components
 import { MallGate } from './malls/MallGate';
@@ -132,6 +135,7 @@ function AccountPageContent() {
       case 'marketing-studio': return <MarketingStudio />;
       case 'my-facilities': return <MyFacilitiesContent />;
       case 'search-history': return <IntelligenceHistory />;
+      case 'trust-identity': return <TrustIdentityContent />;
       case 'connect-loyalty': return <LoyaltyPlanPage />;
       case 'connect-rewards': return <RewardsPlanPage />;
       case 'connect-actions': return <ActionsPlanPage />;
@@ -214,7 +218,7 @@ function AccountPageContent() {
                     <SidebarMenuButton tooltip="Company Profile" isActive={activeView === 'company'} onClick={() => navigate('company')}><Building /><span>Company Profile</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="My Profile" isActive={activeView === 'profile'} onClick={() => navigate('profile')}><User /><span>My Profile</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Trust & Identity" isActive={activeView === 'trust-identity'} onClick={() => navigate('trust-identity')}><Fingerprint /><span>Trust & Identity</span></SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Wallet & Payouts" isActive={activeView === 'wallet'} onClick={() => navigate('wallet')}><Wallet /><span>Wallet & Payouts</span></SidebarMenuButton>
