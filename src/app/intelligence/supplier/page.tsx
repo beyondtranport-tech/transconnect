@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -17,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'navigation';
+import { useRouter } from 'next/navigation';
 
 export default function SupplierIntelligencePage() {
     const { user, isUserLoading } = useUser();
@@ -217,7 +216,7 @@ export default function SupplierIntelligencePage() {
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s.name} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -288,7 +287,7 @@ export default function SupplierIntelligencePage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-left text-foreground text-foreground">
-                                                <div className="flex flex-wrap gap-2 text-left text-foreground">
+                                                <div className="flex flex-wrap gap-2 text-left text-foreground text-foreground">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 

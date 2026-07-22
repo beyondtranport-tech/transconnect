@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -193,7 +192,7 @@ export default function CapitalIntelligencePage() {
                         <CardDescription>Select a region and funding type to scan the registry.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left text-foreground">
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger>
@@ -202,7 +201,7 @@ export default function CapitalIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City / Town</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
@@ -211,7 +210,7 @@ export default function CapitalIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Suburb</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
@@ -243,7 +242,7 @@ export default function CapitalIntelligencePage() {
                 {!hasSearched && !error ? (
                     <div className="text-center py-20 opacity-20">
                         <Banknote className="h-24 w-24 mx-auto mb-4" />
-                        <p className="text-xl font-bold uppercase tracking-widest">Ready to Scan Capital Registry</p>
+                        <p className="text-xl font-bold uppercase tracking-widest text-center">Ready to Scan Capital Registry</p>
                     </div>
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">

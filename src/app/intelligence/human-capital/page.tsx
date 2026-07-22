@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -344,7 +343,7 @@ export default function HumanCapitalIntelligencePage() {
                                 <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center">
                                     <Users className="h-10 w-10 text-primary" />
                                 </div>
-                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center">Complete Talent transparency</h3>
+                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center text-white">Complete Talent transparency</h3>
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white">
                                     You are viewing a restricted preview of the talent registry. Upgrade to **Intelligence Access** to remove blurring and unlock direct lines to thousands of verified professionals.
                                 </p>

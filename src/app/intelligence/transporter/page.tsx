@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -295,7 +294,7 @@ export default function TransporterIntelligencePage() {
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Haulier'}</Badge>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left text-foreground text-foreground text-foreground">
+                                            <TableCell className="text-left text-foreground text-foreground text-foreground text-foreground">
                                                 <div className="flex flex-wrap gap-2 text-left">
                                                     <Button 
                                                         variant="ghost" 
