@@ -13,9 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import * as gtag from '@/lib/gtag';
 import { cn, formatCurrency } from '@/lib/utils';
-import FleetContent from '@/app/account/fleet-content';
-import NeedsContent from '@/app/account/needs-content';
-import SupplierProductContent from '@/app/account/supplier-product-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -37,26 +34,9 @@ export default function CapitalIntelligencePage() {
     const [isVouching, setIsVouching] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
-    const [skipProfile, setSkipProfile] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
-    const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
-    const isSupplier = user?.declaredPosition === 'vendor' || user?.companyData?.shopType === 'vendor';
-
-    const isProfileComplete = useMemo(() => {
-        if (!user || !user.companyData) return false;
-        if (isTransporter) {
-            const fleet = user.companyData.fleet;
-            return !!(fleet && fleet.poweredUnits?.length > 0 && fleet.trailers?.length > 0);
-        } else if (isSupplier) {
-            const productProfile = user.companyData.productProfile;
-            return !!(productProfile && productProfile.categories?.length > 0 && productProfile.supportedBrands?.length > 0);
-        } else {
-            const needs = user.companyData.logisticsNeeds;
-            return !!(needs && needs.cargoTypes?.length > 0 && needs.routes?.length > 0);
-        }
-    }, [user, isTransporter, isSupplier]);
 
     const cities = useMemo(() => {
         const prov = provinces.find(p => p.name === selectedProvince);
@@ -95,15 +75,6 @@ export default function CapitalIntelligencePage() {
             }
 
             setResults(result.data || []);
-            
-            if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
-                gtag.event({
-                    action: 'capital_intelligence_search',
-                    category: 'Capital Intelligence',
-                    label: `${selectedCity}_${selectedCategory}`,
-                    value: result.data?.length || 0
-                });
-            }
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -113,15 +84,13 @@ export default function CapitalIntelligencePage() {
 
     const handleVouch = async (targetId: string) => {
         if (!user) {
-            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to vouch for community data." });
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to vouch for community data." });
             router.push('/signin');
             return;
         }
         setIsVouching(targetId);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Please sign in to vouch.");
-
             const res = await fetch('/api/vouch', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -129,10 +98,8 @@ export default function CapitalIntelligencePage() {
             });
             const result = await res.json();
             if (result.success) {
-                toast({ title: "Verification Recorded", description: "Your vouch for this data has been logged." });
+                toast({ title: "Verification Recorded" });
                 handleSearch(); 
-            } else {
-                toast({ variant: 'destructive', title: "Action Failed", description: result.error });
             }
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Error", description: e.message });
@@ -143,18 +110,14 @@ export default function CapitalIntelligencePage() {
 
     const handleClaim = async (targetId: string) => {
         if (!user) {
-            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to claim your industrial node." });
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to claim your node." });
             router.push('/signin');
             return;
         }
 
         const balance = user.companyData?.availableBalance || 0;
         if (balance < 10) {
-            toast({ 
-                variant: 'destructive', 
-                title: "Insufficient Funds", 
-                description: "You need at least R10 in your wallet to claim this node." 
-            });
+            toast({ variant: 'destructive', title: "Low Balance", description: "R10 required in wallet." });
             router.push('/account?view=wallet');
             return;
         }
@@ -162,8 +125,6 @@ export default function CapitalIntelligencePage() {
         setIsClaiming(targetId);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication required.");
-
             const res = await fetch('/api/claimNode', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -171,101 +132,16 @@ export default function CapitalIntelligencePage() {
             });
             const result = await res.json();
             if (result.success) {
-                toast({ title: "Node Claimed!", description: "Identity bound successfully. R10 debited from wallet." });
+                toast({ title: "Node Claimed!" });
                 forceRefresh();
                 handleSearch();
-            } else {
-                toast({ variant: 'destructive', title: "Claim Failed", description: result.error });
             }
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+            toast({ variant: 'destructive', title: "Claim Failed", description: e.message });
         } finally {
             setIsClaiming(null);
         }
     };
-
-    if (isUserLoading) {
-        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-    }
-
-    if (!user) {
-        return (
-            <div className="container mx-auto px-4 py-20 text-left">
-                <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden border-none bg-slate-900 text-white text-left">
-                    <CardHeader className="p-8 pb-4 text-center">
-                        <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6">
-                            <Lock className="h-12 w-12 text-primary" />
-                        </div>
-                        <CardTitle className="text-4xl font-black font-headline">Member Access Only</CardTitle>
-                        <CardDescription className="text-slate-400 text-lg mt-2">The forensic capital registry is exclusive to registered members.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-8 pt-4 space-y-6">
-                        <div className="space-y-4 text-left text-foreground">
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
-                                <p className="text-sm text-slate-300">Access verified funding partners and specialized lenders.</p>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
-                                <p className="text-sm text-slate-300">Connect directly with Heads of Credit and Asset Finance leaders.</p>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button size="lg" className="h-14 text-lg font-black uppercase tracking-tight shadow-xl" asChild>
-                                <Link href="/join">Join for Free</Link>
-                            </Button>
-                            <Button variant="ghost" className="text-slate-400 hover:text-white" asChild>
-                                <Link href="/signin">Sign In</Link>
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
-    if (!isProfileComplete && !skipProfile) {
-        return (
-            <div className="bg-slate-50 min-h-screen py-16 text-left">
-                <div className="container mx-auto px-4 max-w-4xl">
-                    <Card className="shadow-2xl border-none text-left text-foreground">
-                        <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8">
-                            <div className="flex items-center gap-4 text-left text-white">
-                                <div className="bg-primary/20 p-3 rounded-lg"><Sparkles className="h-6 w-6 text-primary" /></div>
-                                <div className="text-left">
-                                    <CardTitle className="text-2xl font-black font-headline text-left text-white">Complete Your Strategic Profile</CardTitle>
-                                    <CardDescription className="text-slate-400 mt-1 text-left">To ensure high-fidelity matches, we need to understand your requirements.</CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-8 space-y-8 bg-white text-left">
-                            <Alert className="bg-primary/5 border-primary/20 text-left">
-                                <Info className="h-5 w-5 text-primary" />
-                                <AlertTitle className="font-bold text-left text-foreground">Why do we ask for this?</AlertTitle>
-                                <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
-                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
-                                </AlertDescription>
-                            </Alert>
-
-                            {isSupplier ? (
-                                <SupplierProductContent />
-                            ) : isTransporter ? (
-                                <FleetContent />
-                            ) : (
-                                <NeedsContent />
-                            )}
-                            
-                            <div className="flex flex-col items-center pt-8 border-t">
-                                <Button variant="ghost" className="text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-[10px]" onClick={() => setSkipProfile(true)}>
-                                    Proceed without profile <ArrowRight className="ml-1 h-3 w-3" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="bg-slate-50 min-h-screen text-left text-foreground">
@@ -306,7 +182,7 @@ export default function CapitalIntelligencePage() {
                             </Select>
                         </div>
                         <div className="space-y-2 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Industrial Suburb</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Suburb</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
@@ -334,24 +210,6 @@ export default function CapitalIntelligencePage() {
             </section>
 
             <section className="container mx-auto px-4 py-16">
-                {error && (
-                    <Card className="max-w-2xl mx-auto border-destructive bg-destructive/10 text-left">
-                        <CardHeader className="flex flex-row items-center gap-3">
-                            <AlertCircle className="h-6 w-6 text-destructive" />
-                            <CardTitle className="text-destructive">Search Restricted</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-destructive-foreground font-bold">{error}</p>
-                            <p className="text-xs text-muted-foreground mt-2">Upgrade to Intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
-                        </CardContent>
-                        <CardFooter className="flex flex-wrap gap-2 pt-0">
-                            <Button asChild size="sm">
-                                <Link href="/checkout/intelligence">Unlock Paid Intelligence</Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                )}
-
                 {!hasSearched && !error ? (
                     <div className="text-center py-20 opacity-20">
                         <Banknote className="h-24 w-24 mx-auto mb-4" />
@@ -362,7 +220,7 @@ export default function CapitalIntelligencePage() {
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
                         <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping Capital intelligence...</p>
                     </div>
-                ) : !error && (
+                ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div className="text-left">
@@ -386,7 +244,6 @@ export default function CapitalIntelligencePage() {
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Funder Entity</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Trust Signals</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Head of Credit</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Forensic Contacts</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -432,17 +289,11 @@ export default function CapitalIntelligencePage() {
                                                     {res.contactPerson || 'Credit Authority Verified'}
                                                 </span>
                                             </TableCell>
-                                            <TableCell>
-                                                <div className={cn("flex flex-col gap-1", !isPaid && "blur-sm select-none opacity-50")}>
-                                                    <span className="text-[10px] font-mono text-primary font-bold">{res.email || 'locked@tc.co.za'}</span>
-                                                    <span className="text-[10px] font-mono text-muted-foreground">{res.mobile || res.phone || '0XX XXX XXXX'}</span>
-                                                </div>
-                                            </TableCell>
                                             <TableCell className="text-right">
                                                 {isPaid ? (
                                                     <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase">Apply</Button>
-                                                        <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">Profile</Button>
+                                                        <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">Website</Button>
                                                     </div>
                                                 ) : (
                                                     <Button asChild size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100">
@@ -456,7 +307,7 @@ export default function CapitalIntelligencePage() {
                             </Table>
                         </Card>
 
-                        {!isPaid && results.length >= 10 && (
+                        {!isPaid && results.length > 0 && (
                             <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
                                 <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
                                     <Lock className="h-10 w-10 text-primary" />
@@ -466,7 +317,7 @@ export default function CapitalIntelligencePage() {
                                     You are viewing a restricted preview. To bypass data blurring and see direct contact details for over **85+ specialized lenders**, upgrade to Intelligence Access.
                                 </p>
                                 <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
-                                    <Link href="/pricing">Unlock Funder Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
+                                    <Link href="/checkout/intelligence">Unlock Funder Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                 </Button>
                             </Card>
                         )}

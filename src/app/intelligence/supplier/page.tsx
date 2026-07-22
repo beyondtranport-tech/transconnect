@@ -13,9 +13,6 @@ import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
 import * as gtag from '@/lib/gtag';
 import { cn } from '@/lib/utils';
-import FleetContent from '@/app/account/fleet-content';
-import NeedsContent from '@/app/account/needs-content';
-import SupplierProductContent from '@/app/account/supplier-product-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -36,26 +33,9 @@ export default function SupplierIntelligencePage() {
     const [isVouching, setIsVouching] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
-    const [skipProfile, setSkipProfile] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
     const isPaid = user?.companyData?.membershipId && user.companyData.membershipId !== 'free';
-    const isTransporter = user?.declaredPosition === 'transporter' || user?.companyData?.shopType === 'transporter';
-    const isSupplier = user?.declaredPosition === 'vendor' || user?.companyData?.shopType === 'vendor';
-
-    const isProfileComplete = useMemo(() => {
-        if (!user || !user.companyData) return false;
-        if (isTransporter) {
-            const fleet = user.companyData.fleet;
-            return !!(fleet && fleet.poweredUnits?.length > 0 && fleet.trailers?.length > 0);
-        } else if (isSupplier) {
-            const productProfile = user.companyData.productProfile;
-            return !!(productProfile && productProfile.categories?.length > 0 && productProfile.supportedBrands?.length > 0);
-        } else {
-            const needs = user.companyData.logisticsNeeds;
-            return !!(needs && needs.cargoTypes?.length > 0 && needs.routes?.length > 0);
-        }
-    }, [user, isTransporter, isSupplier]);
 
     const cities = useMemo(() => {
         const prov = provinces.find(p => p.name === selectedProvince);
@@ -103,15 +83,13 @@ export default function SupplierIntelligencePage() {
 
     const handleVouch = async (targetId: string) => {
         if (!user) {
-            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to vouch for community data." });
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to vouch for community data." });
             router.push('/signin');
             return;
         }
         setIsVouching(targetId);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Please sign in to vouch.");
-
             const res = await fetch('/api/vouch', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -119,10 +97,8 @@ export default function SupplierIntelligencePage() {
             });
             const result = await res.json();
             if (result.success) {
-                toast({ title: "Verification Recorded", description: "Your vouch for this data has been logged." });
+                toast({ title: "Verification Recorded" });
                 handleSearch(); 
-            } else {
-                toast({ variant: 'destructive', title: "Action Failed", description: result.error });
             }
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Error", description: e.message });
@@ -133,18 +109,14 @@ export default function SupplierIntelligencePage() {
 
     const handleClaim = async (targetId: string) => {
         if (!user) {
-            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to claim your industrial node." });
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to claim your node." });
             router.push('/signin');
             return;
         }
 
         const balance = user.companyData?.availableBalance || 0;
         if (balance < 10) {
-            toast({ 
-                variant: 'destructive', 
-                title: "Insufficient Funds", 
-                description: "You need at least R10 in your wallet to claim this node." 
-            });
+            toast({ variant: 'destructive', title: "Low Balance", description: "R10 required in wallet." });
             router.push('/account?view=wallet');
             return;
         }
@@ -152,8 +124,6 @@ export default function SupplierIntelligencePage() {
         setIsClaiming(targetId);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication required.");
-
             const res = await fetch('/api/claimNode', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -161,68 +131,19 @@ export default function SupplierIntelligencePage() {
             });
             const result = await res.json();
             if (result.success) {
-                toast({ title: "Node Claimed!", description: "Identity bound successfully. R10 debited from wallet." });
+                toast({ title: "Node Claimed!" });
                 forceRefresh();
                 handleSearch();
-            } else {
-                toast({ variant: 'destructive', title: "Claim Failed", description: result.error });
             }
         } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+            toast({ variant: 'destructive', title: "Claim Failed", description: e.message });
         } finally {
             setIsClaiming(null);
         }
     };
 
-    if (isUserLoading) {
-        return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-    }
-
-    if (!isProfileComplete && !skipProfile) {
-        return (
-            <div className="bg-slate-50 min-h-screen py-16 text-left">
-                <div className="container mx-auto px-4 max-w-4xl text-left">
-                    <Card className="shadow-2xl border-none text-left">
-                        <CardHeader className="bg-slate-900 text-white rounded-t-xl p-8 text-left">
-                            <div className="flex items-center gap-4 text-left">
-                                <div className="bg-primary/20 p-3 rounded-lg"><Sparkles className="h-6 w-6 text-primary" /></div>
-                                <div className="text-left">
-                                    <CardTitle className="text-2xl font-black font-headline text-left">Complete Your Strategic Profile</CardTitle>
-                                    <CardDescription className="text-slate-400 mt-1 text-left">To ensure high-fidelity matches, we need to understand your requirements.</CardDescription>
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="p-8 space-y-8 bg-white text-left">
-                            <Alert className="bg-primary/5 border-primary/20 text-left">
-                                <Info className="h-5 w-5 text-primary" />
-                                <AlertTitle className="font-bold text-left text-foreground">Why do we ask for this?</AlertTitle>
-                                <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
-                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data. This eliminates "empty searches" and connects you with the right capacity instantly. This data also helps us negotiate collective group discounts for your specific equipment.
-                                </AlertDescription>
-                            </Alert>
-
-                            {isSupplier ? (
-                                <SupplierProductContent />
-                            ) : isTransporter ? (
-                                <FleetContent />
-                            ) : (
-                                <NeedsContent />
-                            )}
-                            
-                            <div className="flex flex-col items-center pt-8 border-t">
-                                <Button variant="ghost" className="text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-[10px]" onClick={() => setSkipProfile(true)}>
-                                    Proceed without profile <ArrowRight className="ml-1 h-3 w-3" />
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="bg-slate-50 min-h-screen text-left">
+        <div className="bg-slate-50 min-h-screen text-left text-foreground">
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
@@ -260,7 +181,7 @@ export default function SupplierIntelligencePage() {
                             </Select>
                         </div>
                         <div className="space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Industrial Suburb</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hub</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
@@ -268,8 +189,8 @@ export default function SupplierIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Industry Category</Label>
+                        <div className="space-y-2 text-left text-foreground">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category</Label>
                             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                                 <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                                 <SelectContent>
@@ -288,39 +209,21 @@ export default function SupplierIntelligencePage() {
             </section>
 
             <section className="container mx-auto px-4 py-16 text-left">
-                {error && (
-                    <Card className="max-w-2xl mx-auto border-destructive bg-destructive/10 text-left">
-                        <CardHeader className="flex flex-row items-center gap-3">
-                            <AlertCircle className="h-6 w-6 text-destructive" />
-                            <CardTitle className="text-destructive">Search Restricted</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-destructive-foreground font-bold">{error}</p>
-                            <p className="text-xs text-muted-foreground mt-2 text-left">Upgrade to intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
-                        </CardContent>
-                        <CardFooter className="flex flex-wrap gap-2 pt-0">
-                            <Button asChild size="sm">
-                                <Link href="/checkout/intelligence">Unlock Paid intelligence</Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                )}
-
-                {!hasSearched && !error ? (
+                {!hasSearched ? (
                     <div className="text-center py-20 opacity-20">
-                        <Database className="h-24 w-24 mx-auto mb-4" />
-                        <p className="text-xl font-bold uppercase tracking-widest">Ready to Scan Registry</p>
+                        <Building2 className="h-24 w-24 mx-auto mb-4" />
+                        <p className="text-xl font-bold uppercase tracking-widest text-center">Ready to Scan Registry</p>
                     </div>
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center">Mapping Supplier intelligence...</p>
+                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center text-foreground">Mapping Supplier intelligence...</p>
                     </div>
-                ) : !error && (
+                ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
                             <div className="text-left">
-                                <h2 className="text-2xl font-black flex items-center gap-2">
+                                <h2 className="text-2xl font-black text-foreground flex items-center gap-2">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
                                 </h2>
@@ -333,14 +236,13 @@ export default function SupplierIntelligencePage() {
                             )}
                         </div>
 
-                        <Card className="border-none shadow-xl overflow-hidden">
+                        <Card className="border-none shadow-xl overflow-hidden text-left bg-white text-foreground">
                             <Table>
-                                <TableHeader className="bg-slate-900 hover:bg-slate-900">
+                                <TableHeader className="bg-slate-900 hover:bg-slate-900 text-left">
                                     <TableRow className="hover:bg-slate-900 border-none">
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Supplier Entity</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Trust Signals</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Leadership</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Forensic Contacts</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -386,12 +288,6 @@ export default function SupplierIntelligencePage() {
                                                     {res.contactPerson || 'Vetted Decision Maker'}
                                                 </span>
                                             </TableCell>
-                                            <TableCell>
-                                                <div className={cn("flex flex-col gap-1", !isPaid && "blur-sm select-none opacity-50")}>
-                                                    <span className="text-[10px] font-mono text-primary font-bold">{res.email || 'locked@tc.co.za'}</span>
-                                                    <span className="text-[10px] font-mono text-muted-foreground">{res.mobile || res.phone || '0XX XXX XXXX'}</span>
-                                                </div>
-                                            </TableCell>
                                             <TableCell className="text-right">
                                                 {isPaid ? (
                                                     <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -409,6 +305,21 @@ export default function SupplierIntelligencePage() {
                                 </TableBody>
                             </Table>
                         </Card>
+
+                        {!isPaid && results.length > 0 && (
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
+                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                                    <Lock className="h-10 w-10 text-primary" />
+                                </div>
+                                <h3 className="text-3xl font-black font-headline mb-4">Complete Supplier transparency</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                    You are viewing a restricted preview of the industrial registry. Upgrade to **intelligence Access** to remove blurring and see direct contact details for over **22,000+ verified records**.
+                                </p>
+                                <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                    <Link href="/checkout/intelligence">Unlock Full Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
+                                </Button>
+                            </Card>
+                        )}
                     </div>
                 )}
             </section>
