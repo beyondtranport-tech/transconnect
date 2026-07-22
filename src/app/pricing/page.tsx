@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart, Zap, Landmark, Warehouse } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart, Zap, Landmark, Warehouse, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -11,6 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import * as React from 'react';
 
+/**
+ * DEFAULT PLANS (FALLBACK)
+ * Used if the Firestore collection is empty.
+ */
 const defaultPlans = [
     {
         id: 'free',
@@ -32,13 +36,14 @@ const defaultPlans = [
         name: 'Intelligence Access',
         price: 100,
         type: 'foundation',
+        isPopular: true,
         description: 'The foundation for industrial growth. Unlock the map.',
         features: [
             "Unlimited Registry Search",
             "Access to 22,000+ Records",
+            "Reveal Direct MD/CEO Contacts",
             "Publish Your Digital Branch",
             "Apply for Direct Funding",
-            "Community Buying Discounts",
         ],
         cta: "Activate Foundation",
         variant: "default" as const
@@ -79,7 +84,6 @@ const defaultPlans = [
         id: 'buy_sell_intelligence',
         name: 'Buy & Sell Intelligence',
         price: 150,
-        isPopular: true,
         type: 'earning',
         description: 'The Marketplace Node. Secure vehicle trading.',
         features: [
@@ -106,6 +110,7 @@ export default function MembershipPage() {
   const { data: dbPlans, isLoading } = useCollection(membershipsQuery);
 
   const plans = React.useMemo(() => {
+    // If we have data from Firestore, use it. Otherwise, use defaults.
     if (!dbPlans || dbPlans.length === 0) return defaultPlans;
     
     return dbPlans.map(p => {
@@ -117,34 +122,39 @@ export default function MembershipPage() {
             description: p.description,
             features: p.features || [],
             isPopular: p.isPopular,
-            type: dPlan?.type || 'earning',
-            cta: "Activate Node",
+            // Logic: if price is low and it's a foundation ID, mark as foundation
+            type: (p.id === 'free' || p.id === 'intelligence') ? 'foundation' : 'earning',
+            cta: p.id === 'free' ? "Start Free" : (p.id === 'intelligence' ? "Activate Foundation" : "Activate Node"),
             variant: p.id === 'free' ? "outline" : "default"
         };
     }).sort((a,b) => a.price - b.price);
   }, [dbPlans]);
 
   return (
-    <div className="bg-background min-h-screen text-left">
+    <div className="bg-background min-h-screen text-left text-foreground">
       <div className="container mx-auto px-4 py-16 md:py-24">
-        <div className="text-center max-w-3xl mx-auto mb-12">
+        <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Business Intelligence</Badge>
-          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight">Intelligence that pays.</h1>
-          <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-            Activate the specialized intelligence nodes required for your industrial growth.
+          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-foreground">Intelligence that pays.</h1>
+          <p className="mt-4 text-lg md:text-xl text-muted-foreground leading-relaxed">
+            Logistics Flow is a modular ecosystem. Activate the foundation for industrial transparency, or plug in a specialized earning node to scale your operations.
           </p>
         </div>
 
         {isLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto"/></div>
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <Loader2 className="animate-spin h-10 w-10 text-primary" />
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Synchronizing Plan Ledger...</p>
+            </div>
         ) : (
-            <div className="space-y-16 max-w-7xl mx-auto">
+            <div className="space-y-24 max-w-7xl mx-auto">
+                
                 {/* FOUNDATION SECTION */}
-                <div className="space-y-8">
-                    <div className="flex items-center gap-4 border-l-4 border-primary pl-6">
-                        <div className="text-left">
-                            <h2 className="text-2xl font-black uppercase tracking-tight">The Foundation</h2>
-                            <p className="text-muted-foreground text-sm font-medium">Registry search and community discounts.</p>
+                <div className="space-y-10">
+                    <div className="flex items-center gap-4 border-l-4 border-primary pl-6 text-left">
+                        <div className="text-left text-foreground">
+                            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">The Foundation</h2>
+                            <p className="text-muted-foreground text-sm font-medium">Establishing your standing in the national industrial registry.</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
@@ -155,11 +165,11 @@ export default function MembershipPage() {
                 </div>
 
                 {/* EARNING NODES SECTION */}
-                <div className="space-y-8">
-                    <div className="flex items-center gap-4 border-l-4 border-amber-500 pl-6">
+                <div className="space-y-10">
+                    <div className="flex items-center gap-4 border-l-4 border-amber-500 pl-6 text-left text-foreground">
                         <div className="text-left">
-                            <h2 className="text-2xl font-black uppercase tracking-tight text-amber-600">Industrial Earning Nodes</h2>
-                            <p className="text-muted-foreground text-sm font-medium">Transactional intelligence and direct contact data.</p>
+                            <h2 className="text-3xl font-black uppercase tracking-tight text-amber-600">Industrial Earning Nodes</h2>
+                            <p className="text-muted-foreground text-sm font-medium">Modular specialized functions. Requires Foundation activation.</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -171,17 +181,33 @@ export default function MembershipPage() {
             </div>
         )}
 
-        <div className="mt-24 max-w-3xl mx-auto text-left">
-             <Alert className="bg-primary/5 border-primary/20 p-8 rounded-3xl text-foreground text-left">
-                <ShieldCheck className="h-8 w-8 text-primary" />
-                <div className="ml-4">
-                    <AlertTitle className="text-xl font-black uppercase tracking-tight">Data as a Currency</AlertTitle>
-                    <AlertDescription className="mt-2 text-muted-foreground leading-relaxed text-left">
-                        Contribute your verified fleet data (RC1) or supplier lists to earn **Reward Points** that can be applied to reduce the cost of any Intelligence Node.
-                    </AlertDescription>
-                    <Button variant="link" className="p-0 h-auto font-bold mt-4" asChild><Link href="/contribute">Start Contributing <ArrowRight className="ml-1 h-3 w-3"/></Link></Button>
+        {/* DATA AS CURRENCY CTA */}
+        <div className="mt-32 max-w-4xl mx-auto text-left text-foreground">
+             <Card className="bg-slate-900 text-white border-none shadow-2xl relative overflow-hidden text-left">
+                <div className="absolute top-0 right-0 p-8 opacity-5">
+                    <Zap className="h-40 w-40" />
                 </div>
-            </Alert>
+                <CardContent className="p-10 flex flex-col md:flex-row items-center gap-10">
+                    <div className="bg-primary/20 p-6 rounded-3xl border border-primary/30 shrink-0">
+                        <ShieldCheck className="h-12 w-12 text-primary" />
+                    </div>
+                    <div className="space-y-4 text-left flex-1">
+                        <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest">Rewards Integration</Badge>
+                        <h3 className="text-3xl font-black font-headline leading-tight">Data as a Platform Currency</h3>
+                        <p className="text-slate-400 text-lg leading-relaxed">
+                            Don't want to pay cash? Contribute your verified fleet data (RC1) or supplier lists to the community registry to earn **Reward Points**. These points can be redeemed to pay for any Intelligence Node or Connect Plan.
+                        </p>
+                        <div className="flex flex-wrap gap-4 pt-4">
+                            <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest shadow-xl">
+                                <Link href="/contribute">Start Contributing <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                            </Button>
+                            <Button variant="outline" asChild className="h-14 px-10 border-white/20 hover:bg-white/10 text-white font-black uppercase">
+                                <Link href="/connect/rewards">Learn About Rewards</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
       </div>
     </div>
@@ -189,41 +215,45 @@ export default function MembershipPage() {
 }
 
 function PlanCard({ plan, user }: { plan: any, user: any }) {
+    const isEarningNode = plan.type === 'earning';
+    
     return (
         <Card className={cn(
-            "flex flex-col shadow-xl transition-all duration-300 relative border-none overflow-hidden",
-            plan.isPopular ? "ring-2 ring-primary ring-offset-2 scale-105" : "bg-slate-50",
-            plan.type === 'earning' && "border-amber-100"
+            "flex flex-col shadow-xl transition-all duration-300 relative border-none overflow-hidden text-left",
+            plan.isPopular ? "ring-4 ring-primary ring-offset-4 scale-[1.02] z-10" : "bg-white",
+            isEarningNode ? "border-t-4 border-t-amber-500" : ""
         )}>
             {plan.isPopular && (
-                <div className="absolute top-0 right-0 bg-primary text-white px-4 py-1 text-[10px] font-black uppercase rounded-bl-xl z-10">
+                <div className="absolute top-0 right-0 bg-primary text-white px-6 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-bl-2xl z-20">
                     High Conversion
                 </div>
             )}
-            <CardHeader className="text-left pb-4">
-                <CardTitle className="text-2xl font-black">{plan.name}</CardTitle>
-                <CardDescription className="mt-1 text-xs min-h-[40px] leading-relaxed">{plan.description}</CardDescription>
-                <div className="pt-6">
-                    <div className="flex items-baseline gap-1">
-                        <span className="text-4xl font-black text-foreground">{formatCurrency(plan.price)}</span>
-                        <span className="text-muted-foreground font-medium text-xs">/month</span>
+            <CardHeader className="p-8 text-left pb-6">
+                <CardTitle className="text-3xl font-black tracking-tight">{plan.name}</CardTitle>
+                <CardDescription className="mt-2 text-sm font-medium text-slate-500 leading-relaxed min-h-[48px]">{plan.description}</CardDescription>
+                <div className="pt-8 text-left">
+                    <div className="flex items-baseline gap-1.5">
+                        <span className="text-5xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
+                        <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">/ month</span>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="flex-grow bg-white p-6">
-                <ul className="space-y-3">
+            <CardContent className="flex-grow p-8 pt-0 space-y-8 text-left">
+                <Separator />
+                <ul className="space-y-4">
                     {(plan.features as string[]).map((feature, i) => (
-                        <li key={i} className="flex items-start text-[11px] leading-tight">
-                            <Check className="h-3.5 w-3.5 text-green-500 mr-2 shrink-0 mt-0.5" />
-                            <span className="font-bold text-slate-700 uppercase tracking-tight">{feature}</span>
+                        <li key={i} className="flex items-start gap-3">
+                            <Check className={cn("h-4 w-4 shrink-0 mt-0.5", isEarningNode ? "text-amber-600" : "text-primary")} />
+                            <span className="text-sm font-bold text-slate-700 uppercase tracking-tight leading-tight">{feature}</span>
                         </li>
                     ))}
                 </ul>
             </CardContent>
-            <CardFooter className="pt-6 bg-white">
-                <Button asChild className="w-full py-6 text-sm font-black uppercase tracking-widest shadow-lg" variant={plan.variant as any}>
+            <CardFooter className="p-8 pt-0 text-left">
+                <Button asChild className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl group" variant={plan.id === 'free' ? "outline" : "default"}>
                     <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${plan.id}`}>
                         {plan.cta}
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Link>
                 </Button>
             </CardFooter>
