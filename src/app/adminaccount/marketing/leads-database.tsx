@@ -44,7 +44,7 @@ import { EnrichPartnerButton } from './EnrichPartnerButton';
 import { PartnerTasksDialog } from './PartnerTasksDialog';
 import { CommunicationLogDialog } from './CommunicationLogDialog';
 import { EngageDialog } from './EngageDialog';
-import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
+import { PartnerOversightDialog } from './PartnerOversightDialog';
 import { BulkImportDialog } from './BulkImportDialog';
 import { AddCommunicationLogDialog } from './AddCommunicationLogDialog';
 
@@ -147,16 +147,16 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     <Building className="h-4 w-4" /> Core Entity Details
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                    <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                    <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem>)} />
-                    <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
-                    <FormField control={form.control} name="mobile" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem>)} />
-                    <FormField control={form.control} name="whatsapp" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="+27..." /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="whatsapp" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input placeholder="+27..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                 <FormField control={form.control} name="status" render={({ field }) => (
@@ -403,9 +403,9 @@ function LeadsDatabaseComponent() {
           </div>
         </CardHeader>
 
-        <Card className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+        <Card className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
             <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
-                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
+                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>
