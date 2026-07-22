@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -16,6 +17,7 @@ import FleetContent from '@/app/account/fleet-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 const servicesMap = [
     { id: 'all', label: 'All Services' },
@@ -29,6 +31,7 @@ const servicesMap = [
 export default function TransporterIntelligencePage() {
     const { user, isUserLoading, forceRefresh } = useUser();
     const { toast } = useToast();
+    const router = useRouter();
     
     const [selectedProvince, setSelectedProvince] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
@@ -108,6 +111,11 @@ export default function TransporterIntelligencePage() {
     };
 
     const handleVouch = async (targetId: string) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to vouch for community data." });
+            router.push('/signin');
+            return;
+        }
         setIsVouching(targetId);
         try {
             const token = await getClientSideAuthToken();
@@ -118,7 +126,7 @@ export default function TransporterIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await response.json();
+            const result = await res.json();
             if (result.success) {
                 toast({ title: "Verification Recorded", description: "Your vouch for this data has been logged." });
                 handleSearch(); 
@@ -133,6 +141,23 @@ export default function TransporterIntelligencePage() {
     };
 
     const handleClaim = async (targetId: string) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to claim your industrial node." });
+            router.push('/signin');
+            return;
+        }
+
+        const balance = user.companyData?.availableBalance || 0;
+        if (balance < 10) {
+            toast({ 
+                variant: 'destructive', 
+                title: "Insufficient Funds", 
+                description: "You need at least R10 in your wallet to claim this node." 
+            });
+            router.push('/account?view=wallet');
+            return;
+        }
+
         setIsClaiming(targetId);
         try {
             const token = await getClientSideAuthToken();
@@ -145,7 +170,7 @@ export default function TransporterIntelligencePage() {
             });
             const result = await res.json();
             if (result.success) {
-                toast({ title: "Node Claimed!", description: "Identity bound successfully. Transaction isolated." });
+                toast({ title: "Node Claimed!", description: "Identity bound successfully. R10 debited from wallet." });
                 forceRefresh();
                 handleSearch();
             } else {

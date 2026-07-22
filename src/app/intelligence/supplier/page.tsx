@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Building2, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Database, Info, CheckCircle2, AlertCircle, Table as TableIcon } from 'lucide-react';
+import { Building2, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Database, Info, CheckCircle2, AlertCircle, Table as TableIcon, ThumbsUp, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -19,9 +19,13 @@ import SupplierProductContent from '@/app/account/supplier-product-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function SupplierIntelligencePage() {
-    const { user, isUserLoading } = useUser();
+    const { user, isUserLoading, forceRefresh } = useUser();
+    const { toast } = useToast();
+    const router = useRouter();
     
     const [selectedProvince, setSelectedProvince] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
@@ -29,6 +33,8 @@ export default function SupplierIntelligencePage() {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [results, setResults] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isVouching, setIsVouching] = useState<string | null>(null);
+    const [isClaiming, setIsClaiming] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
     const [skipProfile, setSkipProfile] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -88,15 +94,6 @@ export default function SupplierIntelligencePage() {
             }
 
             setResults(result.data || []);
-            
-            if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
-                gtag.event({
-                    action: 'supplier_intelligence_search',
-                    category: 'Supplier intelligence',
-                    label: `${selectedCity}_${selectedCategory}`,
-                    value: result.data?.length || 0
-                });
-            }
         } catch (e: any) {
             setError(e.message);
         } finally {
@@ -104,44 +101,81 @@ export default function SupplierIntelligencePage() {
         }
     };
 
+    const handleVouch = async (targetId: string) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to vouch for community data." });
+            router.push('/signin');
+            return;
+        }
+        setIsVouching(targetId);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Please sign in to vouch.");
+
+            const res = await fetch('/api/vouch', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetId, collection: 'partners' })
+            });
+            const result = await res.json();
+            if (result.success) {
+                toast({ title: "Verification Recorded", description: "Your vouch for this data has been logged." });
+                handleSearch(); 
+            } else {
+                toast({ variant: 'destructive', title: "Action Failed", description: result.error });
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsVouching(null);
+        }
+    };
+
+    const handleClaim = async (targetId: string) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Please sign in to claim your industrial node." });
+            router.push('/signin');
+            return;
+        }
+
+        const balance = user.companyData?.availableBalance || 0;
+        if (balance < 10) {
+            toast({ 
+                variant: 'destructive', 
+                title: "Insufficient Funds", 
+                description: "You need at least R10 in your wallet to claim this node." 
+            });
+            router.push('/account?view=wallet');
+            return;
+        }
+
+        setIsClaiming(targetId);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Authentication required.");
+
+            const res = await fetch('/api/claimNode', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetId, collection: 'partners' })
+            });
+            const result = await res.json();
+            if (result.success) {
+                toast({ title: "Node Claimed!", description: "Identity bound successfully. R10 debited from wallet." });
+                forceRefresh();
+                handleSearch();
+            } else {
+                toast({ variant: 'destructive', title: "Claim Failed", description: result.error });
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsClaiming(null);
+        }
+    };
+
     if (isUserLoading) {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
-    }
-
-    if (!user) {
-        return (
-            <div className="container mx-auto px-4 py-20 text-left">
-                <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden border-none bg-slate-900 text-white text-left">
-                    <CardHeader className="p-8 pb-4 text-center">
-                        <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6">
-                            <Lock className="h-12 w-12 text-primary" />
-                        </div>
-                        <CardTitle className="text-4xl font-black font-headline">Member Access Only</CardTitle>
-                        <CardDescription className="text-slate-400 text-lg mt-2">The forensic supplier registry is exclusive to registered members.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-8 pt-4 space-y-6 text-left">
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3 text-left">
-                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
-                                <p className="text-sm text-slate-300">Access thousands of verified industrial suppliers nationwide.</p>
-                            </div>
-                            <div className="flex items-start gap-3 text-left">
-                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
-                                <p className="text-sm text-slate-300">Connect directly with owners and managing directors.</p>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button size="lg" className="h-14 text-lg font-black uppercase tracking-tight shadow-xl" asChild>
-                                <Link href="/join">Join for Free</Link>
-                            </Button>
-                            <Button variant="ghost" className="text-slate-400 hover:text-white" asChild>
-                                <Link href="/signin">Sign In</Link>
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
     }
 
     if (!isProfileComplete && !skipProfile) {
@@ -200,13 +234,13 @@ export default function SupplierIntelligencePage() {
             <section className="container mx-auto px-4 -mt-12 text-left">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left">
                     <CardHeader className="bg-white rounded-t-xl border-b text-left">
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-left">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Search Variables
                         </CardTitle>
                         <CardDescription>Select a region and category to scan the registry.</CardDescription>
                     </CardHeader>
-                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left">
+                    <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left text-foreground">
                         <div className="space-y-2 text-left">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
@@ -268,9 +302,6 @@ export default function SupplierIntelligencePage() {
                             <Button asChild size="sm">
                                 <Link href="/checkout/intelligence">Unlock Paid intelligence</Link>
                             </Button>
-                            <Button asChild variant="outline" size="sm">
-                                <Link href="/pricing">View All Plans</Link>
-                            </Button>
                         </CardFooter>
                     </Card>
                 )}
@@ -307,7 +338,7 @@ export default function SupplierIntelligencePage() {
                                 <TableHeader className="bg-slate-900 hover:bg-slate-900">
                                     <TableRow className="hover:bg-slate-900 border-none">
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Supplier Entity</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Location</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Trust Signals</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Leadership</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Forensic Contacts</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
@@ -315,17 +346,39 @@ export default function SupplierIntelligencePage() {
                                 </TableHeader>
                                 <TableBody>
                                     {results.map((res) => (
-                                        <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors">
+                                        <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left text-foreground">
                                             <TableCell className="py-4">
                                                 <div className="flex flex-col">
                                                     <span className="font-black text-sm text-slate-900">{res.companyName}</span>
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Vendor'}</Badge>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                <div className="flex items-center gap-1">
-                                                    <MapPin className="h-3 w-3 shrink-0" />
-                                                    <span className="truncate max-w-[150px]">{res.address || 'South Africa'}</span>
+                                            <TableCell className="text-left text-foreground">
+                                                <div className="flex flex-wrap gap-2 text-left">
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        className={cn("h-7 px-2 text-[10px] font-black uppercase gap-1", res.vouchCount > 0 ? "text-green-600 bg-green-50" : "text-muted-foreground")}
+                                                        onClick={() => handleVouch(res.id)}
+                                                        disabled={!!isVouching}
+                                                    >
+                                                        {isVouching === res.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <ThumbsUp className="h-3 w-3" />}
+                                                        Vouched ({res.vouchCount || 0})
+                                                    </Button>
+                                                    {res.isClaimed ? (
+                                                        <Badge className="bg-primary text-white h-7 gap-1 border-none"><ShieldCheck className="h-3 w-3" /> Claimed Node</Badge>
+                                                    ) : (
+                                                        <Button 
+                                                            variant="outline" 
+                                                            size="sm" 
+                                                            className="h-7 px-2 text-[10px] font-black uppercase gap-1 border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100 text-left"
+                                                            onClick={() => handleClaim(res.id)}
+                                                            disabled={!!isClaiming}
+                                                        >
+                                                            {isClaiming === res.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <ShieldAlert className="h-3 w-3" />}
+                                                            Claim (R10)
+                                                        </Button>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -356,21 +409,6 @@ export default function SupplierIntelligencePage() {
                                 </TableBody>
                             </Table>
                         </Card>
-
-                        {!isPaid && results.length >= 10 && (
-                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
-                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
-                                    <ShieldCheck className="h-10 w-10 text-primary" />
-                                </div>
-                                <h3 className="text-3xl font-black font-headline mb-4">Unlock Industrial Intelligence</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-                                    You are viewing a restricted preview. To bypass data blurring and see direct emails and mobile numbers for **{results.length}+ industrial suppliers**, upgrade to Intelligence Access.
-                                </p>
-                                <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
-                                    <Link href="/pricing">Unlock Contact Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
-                                </Button>
-                            </Card>
-                        )}
                     </div>
                 )}
             </section>
