@@ -96,7 +96,7 @@ export default function HumanCapitalIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
@@ -296,8 +296,8 @@ export default function HumanCapitalIntelligencePage() {
                                                 {isPaid ? (
                                                     <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase opacity-0 group-hover:opacity-100 transition-opacity">View Profile</Button>
                                                 ) : (
-                                                    <Button asChild size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100">
-                                                        <Link href="/pricing"><Lock className="h-3 w-3 mr-1" /> Unlock</Link>
+                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
+                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Unlock Info</Link>
                                                     </Button>
                                                 )}
                                             </TableCell>

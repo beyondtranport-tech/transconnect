@@ -296,8 +296,8 @@ export default function CapitalIntelligencePage() {
                                                         <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">Website</Button>
                                                     </div>
                                                 ) : (
-                                                    <Button asChild size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100">
-                                                        <Link href="/pricing"><Lock className="h-3 w-3 mr-1" /> Unlock</Link>
+                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
+                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Unlock Info</Link>
                                                     </Button>
                                                 )}
                                             </TableCell>
@@ -313,8 +313,8 @@ export default function CapitalIntelligencePage() {
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>
                                 <h3 className="text-3xl font-black font-headline mb-4">Complete Funder transparency</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-                                    You are viewing a restricted preview. To bypass data blurring and see direct contact details for over **85+ specialized lenders**, upgrade to Intelligence Access.
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center">
+                                    You are viewing a restricted preview. To remove data blurring and see direct contact details for over **85+ specialized lenders**, upgrade to Intelligence Access.
                                 </p>
                                 <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
                                     <Link href="/checkout/intelligence">Unlock Funder Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>

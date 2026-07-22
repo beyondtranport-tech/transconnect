@@ -295,8 +295,8 @@ export default function SupplierIntelligencePage() {
                                                         <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">Website</Button>
                                                     </div>
                                                 ) : (
-                                                    <Button asChild size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase text-amber-600 bg-amber-50 hover:bg-amber-100 border border-amber-100">
-                                                        <Link href="/pricing"><Lock className="h-3 w-3 mr-1" /> Unlock</Link>
+                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
+                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Unlock Info</Link>
                                                     </Button>
                                                 )}
                                             </TableCell>
