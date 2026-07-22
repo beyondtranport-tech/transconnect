@@ -9,6 +9,7 @@ import { collection, query } from 'firebase/firestore';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Separator } from '@/components/ui/separator';
 import * as React from 'react';
 
 /**
