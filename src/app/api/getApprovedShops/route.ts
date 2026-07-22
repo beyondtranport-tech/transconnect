@@ -1,6 +1,6 @@
 
 import { getAdminApp } from '@/lib/firebase-admin';
-import { getFirestore, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,7 @@ export async function GET() {
             return NextResponse.json({ success: true, data: [] });
         }
         
-        const approvedShops = snapshot.docs.map(doc => ({
+        const approvedShops = snapshot.docs.map((doc: QueryDocumentSnapshot) => ({
             id: doc.id,
             ...serializeTimestamps(doc.data())
         }));

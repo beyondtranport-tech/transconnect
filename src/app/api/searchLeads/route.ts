@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, FieldValue, Timestamp } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, Timestamp, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         
         const snapshot = await q.orderBy('updatedAt', 'desc').limit(100).get();
 
-        const finalResults = snapshot.docs.map(doc => {
+        const finalResults = snapshot.docs.map((doc: QueryDocumentSnapshot) => {
             const item = doc.data();
             const normalized = {
                 id: doc.id,

@@ -2,7 +2,7 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
         // --- Step 1: Delete old public products ---
         if (!existingPublicProductsSnap.empty) {
             const deleteBatch = db.batch();
-            existingPublicProductsSnap.docs.forEach(doc => deleteBatch.delete(doc.ref));
+            existingPublicProductsSnap.docs.forEach((doc: QueryDocumentSnapshot) => deleteBatch.delete(doc.ref));
             await deleteBatch.commit();
         }
         
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         }, { merge: true });
 
         // Copy all current products to the public collection.
-        memberProductsSnap.docs.forEach(productDoc => {
+        memberProductsSnap.docs.forEach((productDoc: QueryDocumentSnapshot) => {
             const publicProductRef = publicProductsCollection.doc(productDoc.id);
             writeBatch.set(publicProductRef, productDoc.data());
         });

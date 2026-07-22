@@ -1,177 +1,359 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, Database, Sparkles, Send, Mail, Download, Upload, RotateCcw, Search, ChevronDown, Zap, Target, MousePointer2, Filter, Ban } from 'lucide-react';
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Badge } from '@/components/ui/badge';
+import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { downloadDataAsCSV, cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { getClientSideAuthToken } from '@/firebase';
 
-// Content components
+// Content components using absolute paths
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
 const TechArchitecture = dynamic(() => import('@/app/adminaccount/marketing/content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
 const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
 const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
 const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
-const SalesIntelligence = dynamic(() => import('@/app/adminaccount/marketing/content/SalesIntelligence'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Tactical
-const TheWedge = dynamic(() => import('@/app/adminaccount/marketing/content/TheWedge'), { loading: () => <Loader2 className="animate-spin" /> });
-const TheSignal = dynamic(() => import('@/app/adminaccount/marketing/content/TheSignal'), { loading: () => <Loader2 className="animate-spin" /> });
-const TheEliteFilter = dynamic(() => import('@/app/adminaccount/marketing/content/TheEliteFilter'), { loading: () => <Loader2 className="animate-spin" /> });
-const TheBreakUp = dynamic(() => import('@/app/adminaccount/marketing/content/TheBreakUp'), { loading: () => <Loader2 className="animate-spin" /> });
-
-// Offers
+// Audience-specific components using absolute paths
 const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
-const AssociateOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/AssociateOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Emails
 const PartnerEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/SupplierEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Discovery Engines
-const DiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/discovery-engine'), { loading: () => <Loader2 className="animate-spin" /> });
-const TransporterDiscovery = dynamic(() => import('@/app/adminaccount/marketing/transporter-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const FinanceDiscovery = dynamic(() => import('@/app/adminaccount/marketing/finance-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const DriverDiscovery = dynamic(() => import('@/app/adminaccount/marketing/driver-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const AssociateDiscovery = dynamic(() => import('@/app/adminaccount/marketing/associate-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const WarehouseDiscovery = dynamic(() => import('@/app/adminaccount/marketing/warehouse-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const DistributionDiscovery = dynamic(() => import('@/app/adminaccount/marketing/distribution-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const LoadsDiscovery = dynamic(() => import('@/app/adminaccount/marketing/loads-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const BuySellDiscovery = dynamic(() => import('@/app/adminaccount/marketing/buy-sell-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+// Management components using absolute paths
+const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const ISAManagement = dynamic(() => import('@/app/adminaccount/marketing/isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const DeveloperManagement = dynamic(() => import('@/app/adminaccount/marketing/developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const SupplierManagement = dynamic(() => import('@/app/adminaccount/marketing/supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing/transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// High-Fidelity Unified Management
-import PartnerManagement from '@/app/adminaccount/marketing/partner-management';
-import ForensicBridge from '@/app/adminaccount/marketing/ForensicBridge';
-import AudienceOversightTable from '@/app/adminaccount/marketing/AudienceOversightTable';
-
-const audienceConfig: Record<string, any> = {
-    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, type: 'partner' },
-    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, type: 'isa' },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Discovery: DiscoveryEngine, type: 'supplier' },
-    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Discovery: TransporterDiscovery, type: 'transporter' },
-    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, type: 'investor' },
-    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, type: 'developer' },
-    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: PartnerEmails, Discovery: AssociateDiscovery, type: 'associate' },
-    drivers: { title: 'Workforce', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DriverDiscovery, type: 'driver' },
-    finance: { title: 'Finance Mall', Offer: InvestorOffer, Emails: InvestorEmails, Discovery: FinanceDiscovery, type: 'finance' },
-    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: WarehouseDiscovery, type: 'warehouse' },
-    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: DistributionDiscovery, type: 'distributor' },
-    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: LoadsDiscovery, type: 'loads' },
-    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Discovery: BuySellDiscovery, type: 'buy-sell' },
+const audienceConfig = {
+    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
+    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
+    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement },
+    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
+    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
+    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
 };
 
 interface MarketingPageProps {
-  audience: string;
+  audience: keyof typeof audienceConfig;
+}
+
+type ApiPartnerType = 'partner' | 'isa' | 'investor' | 'developer' | 'supplier' | 'transporter';
+
+async function performAdminAction(token: string, action: string, payload: any) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, payload }),
+    });
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error for action: ${action}`);
+    }
+    return result;
+}
+
+const logSchema = z.object({
+  partnerId: z.string().min(1, "Please select a partner."),
+  communicationType: z.string().min(1, "Please select a type."),
+  notes: z.string().optional(),
+});
+
+type LogFormValues = z.infer<typeof logSchema>;
+
+function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, activeTabLabel, onLogAndCopy, audienceTitle }: any) {
+    const form = useForm<LogFormValues>({
+        resolver: zodResolver(logSchema),
+    });
+
+    const [isLogging, setIsLogging] = useState(false);
+
+    const singularAudience = useMemo(() => {
+        if (!audienceTitle) return 'Partner';
+        if (audienceTitle === 'Suppliers') return 'Supplier';
+        if (audienceTitle === 'Transporters') return 'Transporter';
+        if (audienceTitle.endsWith('s')) {
+            return audienceTitle.slice(0, -1);
+        }
+        return audienceTitle;
+    }, [audienceTitle]);
+
+    const handleSubmit = async (values: LogFormValues) => {
+        setIsLogging(true);
+        try {
+            await onLogAndCopy({
+                ...values,
+                subject: activeTabLabel,
+            });
+        } catch (e) {
+            // Error is handled by the parent component's toast
+        } finally {
+            setIsLogging(false);
+        }
+    };
+    
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Log and Copy Content</DialogTitle>
+                    <DialogDescription>
+                        Select a partner to log this communication against before copying the content.
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+                        <FormField control={form.control} name="partnerId" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Log against {singularAudience}</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger disabled={isLoadingPartners}>
+                                        <SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} />
+                                    </SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="communicationType" render={({ field }) => (
+                             <FormItem>
+                                <FormLabel>Communication Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Email">Email</SelectItem>
+                                        <SelectItem value="WhatsApp">WhatsApp</SelectItem>
+                                        <SelectItem value="Call">Call</SelectItem>
+                                        <SelectItem value="Meeting">Meeting</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField
+                            control={form.control}
+                            name="notes"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Notes (Optional)</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Add notes about the call or meeting..." {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <DialogFooter>
+                            <Button type="submit" disabled={isLogging}>
+                                {isLogging && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Log & Copy
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
 }
 
 export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
-  const [activeTab, setActiveTab] = useState('management');
+  const { Offer, Emails, Management } = config;
+  const [activeTab, setActiveTab] = useState('company-profile');
   const { toast } = useToast();
   
-  if (!config) return <div className="p-12 text-center italic text-muted-foreground">Audience configuration for "{audience}" not found.</div>;
+  const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
+  const [partners, setPartners] = useState<any[]>([]);
+  const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
-  const { type } = config;
+  const fetchPartnersForLogging = useCallback(async () => {
+    if (!Management) {
+      setIsLoadingPartners(false);
+      setPartners([]);
+      return;
+    }
+    
+    setIsLoadingPartners(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Not authenticated");
+
+        let apiType: ApiPartnerType = 'partner';
+        if (audience === 'isa') apiType = 'isa';
+        else if (audience === 'investors') apiType = 'investor';
+        else if (audience === 'developers') apiType = 'developer';
+        else if (audience === 'suppliers') apiType = 'supplier';
+        else if (audience === 'transporters') apiType = 'transporter';
+        
+        const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
+        setPartners(result.data || []);
+        
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: `Could not load partners for logging`, description: e.message });
+    } finally {
+        setIsLoadingPartners(false);
+    }
+  }, [audience, Management, toast]);
+
+  useEffect(() => {
+    fetchPartnersForLogging();
+  }, [fetchPartnersForLogging]);
+
+
+  const handleCopyContent = async () => {
+    const contentId = `tab-content-${activeTab}`;
+    const contentElement = document.getElementById(contentId);
+
+    if (contentElement) {
+      try {
+        const contentClone = contentElement.cloneNode(true) as HTMLElement;
+        const images = contentClone.querySelectorAll('img');
+        images.forEach(img => {
+            if (img.src.startsWith('/')) {
+                img.src = `${window.location.origin}${img.src}`;
+            }
+        });
+        
+        const blob = new Blob([contentClone.innerHTML], { type: 'text/html' });
+        const clipboardItem = new ClipboardItem({ 'text/html': blob });
+        await navigator.clipboard.write([clipboardItem]);
+        
+      } catch (err) {
+        console.error('Failed to copy content: ', err);
+        throw new Error('Your browser may not support this feature, or there was an error.');
+      }
+    } else {
+      throw new Error(`Could not find the content for the active tab (ID: ${contentId}).`);
+    }
+  };
+
+  const handleLogAndCopy = async (logData: {partnerId: string, communicationType: string, subject: string, notes?: string}) => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+        
+        await performAdminAction(token, 'logCommunication', {
+            partnerId: logData.partnerId,
+            type: logData.communicationType,
+            subject: logData.subject,
+            notes: logData.notes,
+        });
+
+        await handleCopyContent();
+
+        toast({ title: 'Logged and Copied!', description: 'Communication has been logged. Images may be blocked by the recipient\'s email client.' });
+        setIsLogDialogOpen(false);
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
+    }
+  };
 
   return (
-    <div className="space-y-6 text-left text-foreground">
-        <div className="text-left">
-            <h1 className="text-3xl font-black font-headline text-foreground">{config.title} Command Hub</h1>
-            <p className="text-muted-foreground">Manage your dataset, bridge gaps with AI, and oversee industrial engagement.</p>
-        </div>
-
-        <Tabs value={activeTab} className="w-full text-left" onValueChange={setActiveTab}>
-            <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1 text-foreground">
-                <TabsTrigger value="management" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px]">
-                    <Database className="h-3.5 w-3.5" /> Registry (CRM)
-                </TabsTrigger>
-                {config.Discovery && (
-                    <TabsTrigger value="discovery" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px]">
-                        <Sparkles className="h-3.5 w-3.5" /> Discovery (AI)
-                    </TabsTrigger>
-                )}
-                <TabsTrigger value="bridge" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px] text-primary">
-                    <Zap className="h-3.5 w-3.5" /> Forensic Bridge
-                </TabsTrigger>
-                <TabsTrigger value="oversight" className="gap-2 px-4 py-2 font-bold uppercase tracking-widest text-[10px]">
-                    <Search className="h-3.5 w-3.5" /> Oversight
-                </TabsTrigger>
-                <Separator orientation="vertical" className="mx-2 h-6" />
-                
-                <TabsTrigger value="the-wedge" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-red-600 flex items-center gap-1.5"><Target className="h-3 w-3" /> Wedge</TabsTrigger>
-                <TabsTrigger value="the-signal" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-1.5"><MousePointer2 className="h-3 w-3" /> Signal</TabsTrigger>
-                <TabsTrigger value="the-elite-filter" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><Filter className="h-3 w-3" /> Filter</TabsTrigger>
-                <TabsTrigger value="the-break-up" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><Ban className="h-3 w-3" /> Breakup</TabsTrigger>
-                
-                <Separator orientation="vertical" className="mx-2 h-6" />
-                <TabsTrigger value="company-profile" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Profile</TabsTrigger>
-                <TabsTrigger value="tech-architecture" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Tech</TabsTrigger>
-                <TabsTrigger value="revenue-model" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Revenue</TabsTrigger>
-                <TabsTrigger value="sales-intelligence" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary">Intelligence</TabsTrigger>
-                <TabsTrigger value="offer" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Offer</TabsTrigger>
-                <TabsTrigger value="pitch" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Pitch</TabsTrigger>
-                <TabsTrigger value="framework" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Framework</TabsTrigger>
-                <TabsTrigger value="emails" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Emails</TabsTrigger>
-            </TabsList>
-
-            <div className="mt-6 text-left">
-                <TabsContent value="management">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
-                        <PartnerManagement type={type} />
-                    </div>
-                </TabsContent>
-
-                {config.Discovery && (
-                    <TabsContent value="discovery">
-                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
-                            <config.Discovery />
-                        </div>
-                    </TabsContent>
-                )}
-
-                <TabsContent value="bridge">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
-                        <ForensicBridge audience={audience} />
-                    </div>
-                </TabsContent>
-
-                <TabsContent value="oversight">
-                    <div className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
-                        <AudienceOversightTable audience={audience} />
-                    </div>
-                </TabsContent>
-
-                {/* Tactical Content */}
-                <TabsContent value="the-wedge"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheWedge audience={audience} /></CardContent></Card></TabsContent>
-                <TabsContent value="the-signal"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheSignal /></CardContent></Card></TabsContent>
-                <TabsContent value="the-elite-filter"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheEliteFilter /></CardContent></Card></TabsContent>
-                <TabsContent value="the-break-up"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheBreakUp /></CardContent></Card></TabsContent>
-
-                {/* Standard Content */}
-                <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
-                <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8"><TechArchitecture /></CardContent></Card></TabsContent>
-                <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8"><RevenueModel /></CardContent></Card></TabsContent>
-                <TabsContent value="sales-intelligence"><Card className="border-none shadow-xl"><CardContent className="p-8"><SalesIntelligence /></CardContent></Card></TabsContent>
-                <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8"><config.Offer /></CardContent></Card></TabsContent>
-                <TabsContent value="pitch"><Card className="border-none shadow-xl"><CardContent className="p-8"><PitchDeck /></CardContent></Card></TabsContent>
-                <TabsContent value="framework"><Card className="border-none shadow-xl"><CardContent className="p-8"><Framework /></CardContent></Card></TabsContent>
-                <TabsContent value="emails"><Card className="border-none shadow-xl"><CardContent className="p-8"><config.Emails /></CardContent></Card></TabsContent>
+    <>
+        <LogAndCopyDialog 
+            open={isLogDialogOpen}
+            onOpenChange={setIsLogDialogOpen}
+            partners={partners}
+            isLoadingPartners={isLoadingPartners}
+            activeTabLabel={activeTab}
+            onLogAndCopy={handleLogAndCopy}
+            audienceTitle={config.title}
+        />
+        <div className="space-y-6">
+            <div>
+                <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
+                <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
             </div>
-        </Tabs>
-    </div>
+            <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
+                <TabsList className="h-auto flex-wrap justify-start">
+                    <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
+                    <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
+                    <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
+                    <TabsTrigger value="offer">The Offer</TabsTrigger>
+                    <TabsTrigger value="pitch">The Pitch</TabsTrigger>
+                    <TabsTrigger value="framework">The Framework</TabsTrigger>
+                    <TabsTrigger value="emails">Emails</TabsTrigger>
+                    {Management && <TabsTrigger value="management">Management</TabsTrigger>}
+                </TabsList>
+
+                <Card className="mt-4">
+                    <CardHeader className="flex flex-row items-center justify-end border-b">
+                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
+                            {isLoadingPartners ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <ClipboardCopy className="mr-2 h-4 w-4" />
+                            )}
+                            Log & Copy Content
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <TabsContent value="company-profile">
+                            <div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div>
+                        </TabsContent>
+                        <TabsContent value="tech-architecture">
+                            <div id="tab-content-tech-architecture"><TechArchitecture /></div>
+                        </TabsContent>
+                        <TabsContent value="revenue-model">
+                            <div id="tab-content-revenue-model"><RevenueModel /></div>
+                        </TabsContent>
+                        <TabsContent value="offer">
+                            <div id="tab-content-offer"><Offer /></div>
+                        </TabsContent>
+                        <TabsContent value="pitch">
+                            <div id="tab-content-pitch"><PitchDeck /></div>
+                        </TabsContent>
+                        <TabsContent value="framework">
+                            <div id="tab-content-framework"><Framework /></div>
+                        </TabsContent>
+                        <TabsContent value="emails">
+                            <div id="tab-content-emails"><Emails /></div>
+                        </TabsContent>
+                        {Management && (
+                            <TabsContent value="management">
+                                <div id="tab-content-management"><Management /></div>
+                            </TabsContent>
+                        )}
+                    </CardContent>
+                </Card>
+            </Tabs>
+        </div>
+    </>
   );
 }
-

@@ -1,5 +1,6 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { getFirestore, Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 import sgMail from '@sendgrid/mail';
@@ -56,22 +57,22 @@ export async function POST(req: NextRequest) {
         switch (action) {
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getShops': {
                 const snap = await db.collectionGroup('shops').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getLeads': {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'savePartner': {
@@ -142,17 +143,17 @@ export async function POST(req: NextRequest) {
 
             case 'getAudienceCommunications': {
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getAudienceTasks': {
                 const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getBrokerAgreements': {
                 const snap = await db.collectionGroup('brokerAgreements').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, path: d.ref.path, ...d.data() }))) });
             }
 
             case 'updateBrokerAgreementStatus': {
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
                 let q: any = db.collection(collectionName);
                 if (collectionName === 'partners' && queryType !== 'all') q = q.where('type', '==', queryType);
                 const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limit, 20000)).get();
-                let results = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+                let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
                 if (term) {
                     const lowTerm = term.toLowerCase();
                     results = results.filter((r: any) => (r.companyName || '').toLowerCase().includes(lowTerm) || (r.email || '').toLowerCase().includes(lowTerm));
@@ -208,12 +209,12 @@ export async function POST(req: NextRequest) {
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getGlobalLoads': {
                 const snap = await db.collectionGroup('loads').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             default: 
