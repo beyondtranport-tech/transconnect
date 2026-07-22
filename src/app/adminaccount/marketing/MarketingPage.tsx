@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, Database, Sparkles, Send, Mail, Download, Upload, RotateCcw, Search, ChevronDown, Zap } from 'lucide-react';
+import { Loader2, Database, Sparkles, Send, Mail, Download, Upload, RotateCcw, Search, ChevronDown, Zap, Target, MousePointer2, Filter, Ban } from 'lucide-react';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
@@ -19,6 +19,12 @@ const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/
 const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
 const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
 const SalesIntelligence = dynamic(() => import('@/app/adminaccount/marketing/content/SalesIntelligence'), { loading: () => <Loader2 className="animate-spin" /> });
+
+// Tactical
+const TheWedge = dynamic(() => import('@/app/adminaccount/marketing/content/TheWedge'), { loading: () => <Loader2 className="animate-spin" /> });
+const TheSignal = dynamic(() => import('@/app/adminaccount/marketing/content/TheSignal'), { loading: () => <Loader2 className="animate-spin" /> });
+const TheEliteFilter = dynamic(() => import('@/app/adminaccount/marketing/content/TheEliteFilter'), { loading: () => <Loader2 className="animate-spin" /> });
+const TheBreakUp = dynamic(() => import('@/app/adminaccount/marketing/content/TheBreakUp'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Offers
 const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -104,6 +110,13 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     <Search className="h-3.5 w-3.5" /> Oversight
                 </TabsTrigger>
                 <Separator orientation="vertical" className="mx-2 h-6" />
+                
+                <TabsTrigger value="the-wedge" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-red-600 flex items-center gap-1.5"><Target className="h-3 w-3" /> Wedge</TabsTrigger>
+                <TabsTrigger value="the-signal" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary flex items-center gap-1.5"><MousePointer2 className="h-3 w-3" /> Signal</TabsTrigger>
+                <TabsTrigger value="the-elite-filter" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><Filter className="h-3 w-3" /> Filter</TabsTrigger>
+                <TabsTrigger value="the-break-up" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5"><Ban className="h-3 w-3" /> Breakup</TabsTrigger>
+                
+                <Separator orientation="vertical" className="mx-2 h-6" />
                 <TabsTrigger value="company-profile" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Tech</TabsTrigger>
                 <TabsTrigger value="revenue-model" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Revenue</TabsTrigger>
@@ -141,6 +154,13 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     </div>
                 </TabsContent>
 
+                {/* Tactical Content */}
+                <TabsContent value="the-wedge"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheWedge audience={audience} /></CardContent></Card></TabsContent>
+                <TabsContent value="the-signal"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheSignal /></CardContent></Card></TabsContent>
+                <TabsContent value="the-elite-filter"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheEliteFilter /></CardContent></Card></TabsContent>
+                <TabsContent value="the-break-up"><Card className="border-none shadow-xl"><CardContent className="p-8"><TheBreakUp /></CardContent></Card></TabsContent>
+
+                {/* Standard Content */}
                 <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
                 <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8"><TechArchitecture /></CardContent></Card></TabsContent>
                 <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8"><RevenueModel /></CardContent></Card></TabsContent>
@@ -154,3 +174,4 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     </div>
   );
 }
+

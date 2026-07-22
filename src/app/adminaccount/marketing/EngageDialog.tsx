@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -17,6 +17,12 @@ import RevenueModel from './content/RevenueModel';
 import PitchDeck from './content/PitchDeck';
 import Framework from './content/Framework';
 import SalesIntelligence from './content/SalesIntelligence';
+
+// Tactical modules
+import TheWedge from './content/TheWedge';
+import TheSignal from './content/TheSignal';
+import TheEliteFilter from './content/TheEliteFilter';
+import TheBreakUp from './content/TheBreakUp';
 
 // Offers
 import PartnerOffer from './offers/PartnerOffer';
@@ -47,10 +53,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-/**
- * EXHAUSTIVE DEEP-SCAN CONTACT RESOLVER V15
- * Clinical recovery of email data from fragmented BPW datasets.
- */
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
@@ -66,50 +68,22 @@ function resolveContact(partner: any) {
     const searchObj = (obj: any, keys: string[]): string => {
         if (!obj || typeof obj !== 'object') return '';
         for (const k of keys) if (obj[k]) { const c = clean(obj[k]); if (c) return c; }
-        for (const actualKey in obj) {
-            const lowKey = actualKey.toLowerCase();
-            if (keys.some(k => k.toLowerCase() === lowKey)) {
-                const c = clean(obj[actualKey]);
-                if (c) return c;
-            }
-        }
         return '';
     };
 
-    const emailKeys = [
-        'email', 'email_address', 'emailAddress', 'contact_email', 'contactEmail', 
-        'workEmail', 'main_email', 'EMAIL', 'mail', 'primaryEmail', 'marketingEmail', 'ceoEmail'
-    ];
-    const phoneKeys = [
-        'mobile', 'whatsapp', 'whatsapp_number', 'phone', 'cell', 'contact_number', 
-        'telephone', 'mobile_number', 'work_phone', 'mobile_phone'
-    ];
+    const emailKeys = ['email', 'email_address', 'contact_email', 'mail'];
+    const phoneKeys = ['mobile', 'whatsapp', 'phone', 'cell'];
 
-    const name = clean(partner.marketingManager?.name || 
-                       partner.ceo?.name || 
-                       partner.contactPerson || 
-                       partner.firstName || 
-                       partner.companyName ||
-                       'Partner');
-
-    const email = searchObj(partner.marketingManager, emailKeys) || 
-                  searchObj(partner.ceo, emailKeys) || 
-                  searchObj(partner, emailKeys) ||
-                  clean(partner.email_address || partner.contact_email || partner.email || partner.emailAddress);
-
-    const mobile = searchObj(partner.marketingManager, phoneKeys) || 
-                   searchObj(partner.ceo, phoneKeys) || 
-                   searchObj(partner, phoneKeys) ||
-                   clean(partner.mobile_number || partner.contact_no || partner.mobile || partner.phone || partner.mobilePhone);
-
-    const whatsapp = clean(partner.whatsapp || partner.whatsapp_number) || mobile;
+    const name = clean(partner.marketingManager?.name || partner.ceo?.name || partner.contactPerson || partner.firstName || partner.companyName || 'Partner');
+    const email = searchObj(partner.marketingManager, emailKeys) || searchObj(partner.ceo, emailKeys) || searchObj(partner, emailKeys) || clean(partner.email);
+    const mobile = searchObj(partner.marketingManager, phoneKeys) || searchObj(partner.ceo, phoneKeys) || searchObj(partner, phoneKeys) || clean(partner.mobile || partner.phone);
+    const whatsapp = clean(partner.whatsapp) || mobile;
 
     return { name, email, mobile, whatsapp };
 }
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
   const { toast } = useToast();
-  const { user } = useUser();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -125,7 +99,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   }, [partners, currentIndex]);
 
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
-
   const hasEmail = contact.email.length > 3; 
   const hasPhone = contact.whatsapp.length > 5;
 
@@ -146,7 +119,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
       return `Logistics Flow: ${label} for ${company}`;
   }
 
-  const handleLogCopyAndLaunch = async (channel: 'outlook' | 'whatsapp') => {
+  const handleLogAndLaunch = async (channel: 'outlook' | 'whatsapp') => {
     if (!currentPartner) return;
     const contentId = `engage-content-wrapper-${activeTab}`;
     const contentElement = document.getElementById(contentId);
@@ -167,10 +140,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
         if (channel === 'whatsapp') {
             const rawText = contentElement.innerText || contentElement.textContent || '';
-            const targetNumber = contact.whatsapp;
-            if (!targetNumber) throw new Error("No contact number found.");
-            
-            const cleanNumber = targetNumber.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
+            const cleanNumber = contact.whatsapp.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
             window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(rawText)}`, '_blank');
         } else {
             const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt;">${contentElement.innerHTML}</div>`;
@@ -197,12 +167,9 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const contentElement = document.getElementById(contentId);
         if (!contentElement) throw new Error("Content not found.");
 
-        const emailToUse = contact.email;
-        if (!emailToUse) throw new Error("Recipient email not found.");
-
         await performAdminAction(token, 'dispatchEngagement', {
             partnerId: currentPartner.id,
-            email: emailToUse,
+            email: contact.email,
             subject: getSubject(),
             html: contentElement.innerHTML,
             collection: targetCollection
@@ -248,10 +215,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogAndCopyAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
+                        <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
-                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogAndCopyAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
+                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
                         <Button className="font-bold shadow-lg text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || !hasEmail}>
@@ -262,26 +229,53 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-2 overflow-y-auto">
-                    {[
-                        { id: 'digital-handshake', label: '0. Digital Handshake' },
-                        { id: 'company-profile', label: '1. Company Profile' },
-                        { id: 'tech-architecture', label: '2. Tech Architecture' },
-                        { id: 'revenue-model', label: '3. Revenue Model' },
-                        { id: 'offer', label: '4. The Offer' },
-                        { id: 'pitch', label: '5. The Pitch' },
-                        { id: 'framework', label: '6. The Framework' },
-                        { id: 'sales-intelligence', label: '7. Sales Intelligence' },
-                    ].map((tab) => (
-                        <Button
-                            key={tab.id}
-                            variant={activeTab === tab.id ? "secondary" : "ghost"}
-                            className={cn("w-full justify-start text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm")}
-                            onClick={() => setActiveTab(tab.id)}
-                        >
-                            {tab.label}
-                        </Button>
-                    ))}
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto">
+                    <div className="space-y-1">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Standard Narrative</Label>
+                        {[
+                            { id: 'digital-handshake', label: '0. Digital Handshake' },
+                            { id: 'company-profile', label: '1. Company Profile' },
+                            { id: 'tech-architecture', label: '2. Tech Architecture' },
+                            { id: 'revenue-model', label: '3. Revenue Model' },
+                            { id: 'offer', label: '4. The Offer' },
+                            { id: 'pitch', label: '5. The Pitch' },
+                            { id: 'framework', label: '6. The Framework' },
+                            { id: 'sales-intelligence', label: '7. Sales Intelligence' },
+                        ].map((tab) => (
+                            <Button
+                                key={tab.id}
+                                variant={activeTab === tab.id ? "secondary" : "ghost"}
+                                className={cn("w-full justify-start text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm")}
+                                onClick={() => setActiveTab(tab.id)}
+                            >
+                                {tab.label}
+                            </Button>
+                        ))}
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-1">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary px-2 mb-2 block flex items-center gap-2">
+                            <Zap className="h-3 w-3" /> Tactical Sequences
+                        </Label>
+                        {[
+                            { id: 'the-wedge', label: 'The Wedge (Gap)', icon: Target },
+                            { id: 'the-signal', label: 'The Signal (Interest)', icon: MousePointer2 },
+                            { id: 'the-elite-filter', label: 'The Elite Filter', icon: Filter },
+                            { id: 'the-break-up', label: 'The Break-Up', icon: Ban },
+                        ].map((tab) => (
+                            <Button
+                                key={tab.id}
+                                variant={activeTab === tab.id ? "secondary" : "ghost"}
+                                className={cn("w-full justify-start text-xs h-10 px-3 transition-all", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
+                                onClick={() => setActiveTab(tab.id)}
+                            >
+                                <tab.icon className="h-3.5 w-3.5 mr-2 text-primary" />
+                                {tab.label}
+                            </Button>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
@@ -299,6 +293,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
                             {activeTab === 'framework' && <Framework partner={currentPartner} />}
                             {activeTab === 'sales-intelligence' && <SalesIntelligence partner={currentPartner} />}
+                            
+                            {/* Tactical Renderers */}
+                            {activeTab === 'the-wedge' && <TheWedge partner={currentPartner} audience={normalizedAudience} />}
+                            {activeTab === 'the-signal' && <TheSignal partner={currentPartner} />}
+                            {activeTab === 'the-elite-filter' && <TheEliteFilter partner={currentPartner} />}
+                            {activeTab === 'the-break-up' && <TheBreakUp partner={currentPartner} />}
                         </Suspense>
                     </div>
                 </div>
@@ -307,3 +307,4 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     </Dialog>
   );
 }
+
