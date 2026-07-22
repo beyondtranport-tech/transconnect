@@ -135,7 +135,7 @@ export default function TransporterIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await response.json();
+            const result = await res.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
@@ -183,7 +183,7 @@ export default function TransporterIntelligencePage() {
 
     return (
         <div className="bg-slate-50 min-h-screen text-left text-foreground">
-            <section className="bg-slate-900 text-white py-16 text-center">
+            <section className="bg-slate-900 text-white py-16 text-center text-white">
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest text-center text-white">Forensic Registry</Badge>
                     <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center text-white">Transporter intelligence</h1>
@@ -260,7 +260,7 @@ export default function TransporterIntelligencePage() {
                     </div>
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
-                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground">
+                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground text-foreground">
                             <div className="text-left text-foreground">
                                 <h2 className="text-2xl font-black text-left flex items-center gap-2">
                                     <TableIcon className="h-6 w-6 text-primary" />
@@ -286,17 +286,17 @@ export default function TransporterIntelligencePage() {
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody className="text-left text-foreground">
+                                <TableBody className="text-left text-foreground text-foreground">
                                     {results.map((res) => (
                                         <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left text-foreground">
                                             <TableCell className="py-4 text-left text-foreground">
-                                                <div className="flex flex-col text-left">
+                                                <div className="flex flex-col text-left text-foreground">
                                                     <span className="font-black text-sm text-slate-900">{res.companyName}</span>
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Haulier'}</Badge>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left text-foreground">
-                                                <div className="flex flex-wrap gap-2 text-left text-foreground">
+                                            <TableCell className="text-left text-foreground text-foreground text-foreground">
+                                                <div className="flex flex-wrap gap-2 text-left">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 
@@ -323,12 +323,12 @@ export default function TransporterIntelligencePage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left text-foreground">
+                                            <TableCell className="text-left text-foreground text-foreground">
                                                 <span className={cn("text-xs font-bold text-left", !isPaid && "blur-sm select-none opacity-50")}>
                                                     {res.contactPerson || 'Forensic ID Verified'}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-left text-foreground">
+                                            <TableCell className="text-left text-foreground text-foreground text-foreground">
                                                 <div className={cn("flex flex-col gap-1 text-left", !isPaid && "blur-sm select-none opacity-50")}>
                                                     <span className="text-[10px] font-mono text-primary font-bold">{res.email || 'locked@tc.co.za'}</span>
                                                     <span className="text-[10px] font-mono text-muted-foreground">{res.mobile || res.phone || '0XX XXX XXXX'}</span>
@@ -352,15 +352,15 @@ export default function TransporterIntelligencePage() {
                         </Card>
 
                         {!isPaid && results.length > 0 && (
-                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left text-foreground">
-                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center">
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left text-foreground text-white">
+                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center text-white">
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>
-                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center">Complete Haulier transparency</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white">
-                                    You are viewing a restricted preview. To remove data blurring and see direct lines to over **5,400+ verified hauliers**, upgrade to intelligence Access.
+                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center text-white">Complete Haulier transparency</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white text-white">
+                                    You are viewing a restricted preview. To remove data blurring and see direct contact details for over **5,400+ verified hauliers**, upgrade to intelligence Access.
                                 </p>
-                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20 text-white">
                                     <Link href="/checkout/intelligence">Unlock Full Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                 </Button>
                             </Card>

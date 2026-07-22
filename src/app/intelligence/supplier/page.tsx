@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'navigation';
 
 export default function SupplierIntelligencePage() {
     const { user, isUserLoading } = useUser();
@@ -128,7 +128,7 @@ export default function SupplierIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await response.json();
+            const result = await res.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
@@ -178,23 +178,23 @@ export default function SupplierIntelligencePage() {
         <div className="bg-slate-50 min-h-screen text-left">
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
-                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
-                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white">Supplier intelligence</h1>
-                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">Map the South African industrial landscape by category and region.</p>
+                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest text-center text-white">Forensic Registry</Badge>
+                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center text-white">Supplier intelligence</h1>
+                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center text-white">Map the South African industrial landscape by category and region.</p>
                 </div>
             </section>
 
             <section className="container mx-auto px-4 -mt-12 text-left">
-                <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left">
+                <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left text-foreground">
                     <CardHeader className="bg-white rounded-t-xl border-b text-left text-foreground">
-                        <CardTitle className="flex items-center gap-2 text-left">
+                        <CardTitle className="flex items-center gap-2 text-left text-foreground">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Search Variables
                         </CardTitle>
-                        <CardDescription>Select a region and category to scan the registry.</CardDescription>
+                        <CardDescription className="text-left text-foreground">Select a region and category to scan the registry.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left text-foreground">
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger>
@@ -203,7 +203,7 @@ export default function SupplierIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City / Town</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
@@ -212,7 +212,7 @@ export default function SupplierIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hub</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
@@ -221,7 +221,7 @@ export default function SupplierIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category</Label>
                             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                                 <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
@@ -231,8 +231,8 @@ export default function SupplierIntelligencePage() {
                             </Select>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t flex justify-center p-4">
-                        <Button className="h-12 px-12 font-black uppercase text-xs tracking-widest gap-2" onClick={handleSearch} disabled={isLoading || !selectedCategory}>
+                    <CardFooter className="bg-slate-50 border-t flex justify-center p-4 text-foreground">
+                        <Button className="h-12 px-12 font-black uppercase text-xs tracking-widest gap-2 text-white" onClick={handleSearch} disabled={isLoading || !selectedCategory}>
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="h-4 w-4" />}
                             Execute Search
                         </Button>
@@ -242,24 +242,24 @@ export default function SupplierIntelligencePage() {
 
             <section className="container mx-auto px-4 py-16 text-left">
                 {!hasSearched ? (
-                    <div className="text-center py-20 opacity-20">
+                    <div className="text-center py-20 opacity-20 text-center">
                         <Building2 className="h-24 w-24 mx-auto mb-4" />
                         <p className="text-xl font-bold uppercase tracking-widest text-center">Ready to Scan Registry</p>
                     </div>
                 ) : isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
                         <p className="font-bold text-muted-foreground uppercase tracking-widest text-center text-foreground">Mapping Supplier intelligence...</p>
                     </div>
                 ) : (
-                    <div className="max-w-6xl mx-auto space-y-8 text-left">
-                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground">
-                            <div className="text-left text-foreground">
+                    <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
+                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground text-foreground">
+                            <div className="text-left text-foreground text-foreground">
                                 <h2 className="text-2xl font-black text-foreground flex items-center gap-2">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
                                 </h2>
-                                <p className="text-xs text-muted-foreground">Showing verified suppliers matching <strong>{selectedCategory}</strong>.</p>
+                                <p className="text-xs text-muted-foreground text-left">Showing verified suppliers matching <strong>{selectedCategory}</strong>.</p>
                             </div>
                             {!isPaid && (
                                 <Badge variant="secondary" className="gap-1.5 py-1.5 px-4 border border-amber-200 text-amber-700 bg-amber-50">
@@ -270,7 +270,7 @@ export default function SupplierIntelligencePage() {
 
                         <Card className="border-none shadow-xl overflow-hidden text-left bg-white text-foreground">
                             <Table>
-                                <TableHeader className="bg-slate-900 hover:bg-slate-900 text-left">
+                                <TableHeader className="bg-slate-900 hover:bg-slate-900 text-left text-white">
                                     <TableRow className="hover:bg-slate-900 border-none">
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Supplier Entity</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Trust Signals</TableHead>
@@ -278,17 +278,17 @@ export default function SupplierIntelligencePage() {
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
-                                <TableBody>
+                                <TableBody className="text-left text-foreground text-foreground">
                                     {results.map((res) => (
                                         <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left text-foreground">
                                             <TableCell className="py-4 text-left">
-                                                <div className="flex flex-col text-left">
+                                                <div className="flex flex-col text-left text-foreground">
                                                     <span className="font-black text-sm text-slate-900">{res.companyName}</span>
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Vendor'}</Badge>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left text-foreground">
-                                                <div className="flex flex-wrap gap-2 text-left">
+                                            <TableCell className="text-left text-foreground text-foreground">
+                                                <div className="flex flex-wrap gap-2 text-left text-foreground">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 
@@ -315,12 +315,12 @@ export default function SupplierIntelligencePage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left">
+                                            <TableCell className="text-left text-foreground">
                                                 <span className={cn("text-xs font-bold text-left", !isPaid && "blur-sm select-none opacity-50")}>
                                                     {res.contactPerson || 'Vetted Decision Maker'}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className="text-right">
+                                            <TableCell className="text-right text-foreground">
                                                 <Button 
                                                     size="sm" 
                                                     variant={isPaid ? "default" : "secondary"} 
@@ -338,15 +338,15 @@ export default function SupplierIntelligencePage() {
                         </Card>
 
                         {!isPaid && results.length > 0 && (
-                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
-                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left text-foreground">
+                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center text-white">
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>
-                                <h3 className="text-3xl font-black font-headline mb-4">Complete Supplier transparency</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center text-white">Complete Supplier transparency</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white text-white">
                                     You are viewing a restricted preview of the industrial registry. Upgrade to **intelligence Access** to remove blurring and see direct contact details for over **22,000+ verified records**.
                                 </p>
-                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20 text-white">
                                     <Link href="/checkout/intelligence">Unlock Full Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                 </Button>
                             </Card>

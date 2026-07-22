@@ -127,7 +127,7 @@ export default function HumanCapitalIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await response.json();
+            const result = await res.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
@@ -178,7 +178,7 @@ export default function HumanCapitalIntelligencePage() {
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest text-center text-white">Forensic Registry</Badge>
-                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center">Human Capital intelligence</h1>
+                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center text-white">Human Capital intelligence</h1>
                     <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center text-white">Map the South African industrial talent landscape. Connect with vetted drivers, mechanics, and controllers.</p>
                 </div>
             </section>
@@ -216,7 +216,7 @@ export default function HumanCapitalIntelligencePage() {
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s.name} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
