@@ -2,9 +2,11 @@
 
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, ArrowRight, Store, Rocket, Handshake, Users, ShieldCheck, Database, Zap, Target, TrendingUp, Gift, Sparkles, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import React from "react";
 import { useUser } from "@/firebase";
@@ -86,21 +88,21 @@ export default function AboutPage() {
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="md:order-2 space-y-6 text-left">
                         <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner"><Store className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-4xl font-black font-headline text-foreground leading-tight">Your Digital Branch</h3>
-                        <p className="text-lg text-muted-foreground leading-relaxed">
+                        <h3 className="text-4xl font-black font-headline text-foreground uppercase leading-tight">Your Digital Branch</h3>
+                        <p className="text-lg text-muted-foreground leading-relaxed text-left">
                             Bypass generic marketplaces. Establish a high-fidelity digital branch mapped directly to the industrial grid. Your node is the engine that powers your presence in our specialized malls.
                         </p>
                         <div className="grid grid-cols-1 gap-4 text-left">
                              <Card className="border-none shadow-sm bg-white">
                                 <CardContent className="p-4 flex items-center gap-4">
                                     <Building className="h-6 w-6 text-primary shrink-0" />
-                                    <p className="text-sm font-bold">List fleet capacity, pallet positions, or technical spares catalogues.</p>
+                                    <p className="text-sm font-bold text-left">List fleet capacity, pallet positions, or technical spares catalogues.</p>
                                 </CardContent>
                              </Card>
-                             <Card className="border-none shadow-sm bg-white">
-                                <CardContent className="p-4 flex items-center gap-4">
+                             <Card className="border-none shadow-sm bg-white text-left">
+                                <CardContent className="p-4 flex items-center gap-4 text-left">
                                     <Handshake className="h-6 w-6 text-primary shrink-0" />
-                                    <p className="text-sm font-bold">Standardized handshake tools including OTPs and automated invoicing.</p>
+                                    <p className="text-sm font-bold text-left text-foreground">Standardized handshake tools including OTPs and automated invoicing.</p>
                                 </CardContent>
                              </Card>
                         </div>
@@ -124,7 +126,7 @@ export default function AboutPage() {
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-6 text-left">
                         <div className="bg-amber-100 p-4 rounded-2xl w-fit shadow-inner"><Gift className="h-10 w-10 text-amber-600"/></div>
-                        <h3 className="text-4xl font-black font-headline text-foreground leading-tight">Data as a Currency</h3>
+                        <h3 className="text-4xl font-black font-headline text-foreground uppercase leading-tight">Data as a Currency</h3>
                         <p className="text-lg text-muted-foreground leading-relaxed">
                             Information is the oxygen of industrial growth. We incentivize members to contribute to the "Registry of Truth" by awarding reward points for verified data uploads.
                         </p>
@@ -155,16 +157,16 @@ export default function AboutPage() {
         </section>
 
         {/* PASSIVE REVENUE (ISA PATHWAY) */}
-        <section className="py-24 bg-slate-950 text-white overflow-hidden">
-            <div className="container mx-auto px-4">
-                <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <section className="py-24 bg-slate-950 text-white overflow-hidden text-left">
+            <div className="container mx-auto px-4 text-left">
+                <div className="grid lg:grid-cols-2 gap-16 items-center text-left">
                     <div className="lg:order-2 space-y-8 text-left">
                         <div className="bg-primary/20 p-4 rounded-2xl w-fit shadow-inner border border-primary/20"><TrendingUp className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-4xl md:text-5xl font-black font-headline text-white leading-tight">Passive Revenue & The ISA Pathway</h3>
-                        <p className="text-xl text-slate-300 leading-relaxed">
+                        <h3 className="text-4xl md:text-5xl font-black font-headline text-white leading-tight uppercase">Passive Revenue & The ISA Pathway</h3>
+                        <p className="text-xl text-slate-300 leading-relaxed text-left">
                             Your industry network is your most valuable digital asset. Our <strong>Independent Sales Agent (ISA)</strong> program allows you to monetize your influence by digitalizing your existing contacts.
                         </p>
-                        <div className="space-y-6">
+                        <div className="space-y-6 text-left">
                             <div className="p-6 bg-white/5 rounded-2xl border border-white/10 hover:border-primary transition-colors text-left">
                                 <p className="font-black text-primary uppercase tracking-widest text-xs mb-2">Residual Annuity</p>
                                 <p className="text-sm text-slate-400">Earn a recurring percentage share of every membership fee and transaction commission generated by your referred node network.</p>
@@ -183,7 +185,7 @@ export default function AboutPage() {
                                 <CardTitle className="text-3xl font-black text-white text-left">Monetize Your Influence</CardTitle>
                                 <CardDescription className="text-slate-400 text-lg mt-2 text-left">Turn industry connections into a perpetual yield engine.</CardDescription>
                             </CardHeader>
-                            <CardContent className="p-0 space-y-6">
+                            <CardContent className="p-0 space-y-6 text-left">
                                 <ul className="space-y-4">
                                     {["Residual Membership Splits", "Transactional Mall Commissions", "Marketplace Product Revenue", "Performance Tier Bonuses"].map(f => (
                                         <li key={f} className="flex items-center gap-3 text-lg font-bold text-slate-100">
@@ -191,7 +193,7 @@ export default function AboutPage() {
                                         </li>
                                     ))}
                                 </ul>
-                                <Button asChild size="lg" className="w-full h-16 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20 mt-6">
+                                <Button asChild size="lg" className="w-full h-16 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20 mt-6 text-white">
                                     <Link href="/join?role=associate">Apply for ISA Authorization</Link>
                                 </Button>
                             </CardContent>
@@ -206,11 +208,11 @@ export default function AboutPage() {
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-16">
                     <h2 className="text-4xl font-black font-headline text-foreground">The Earning Pathway</h2>
-                    <p className="mt-4 text-lg text-muted-foreground">
+                    <p className="mt-4 text-lg text-muted-foreground text-center">
                         Our most successful members don't just use the data—they help build the registry and get paid in return.
                     </p>
                 </div>
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-3 gap-8 text-left">
                     <Card className="bg-slate-50 border-none shadow-lg text-left group hover:bg-primary transition-colors">
                         <CardHeader>
                             <Database className="h-8 w-8 text-primary mb-2 group-hover:text-white" />
@@ -244,8 +246,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-function Badge({ children, className }: { children: React.ReactNode, className?: string }) {
-    return <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)}>{children}</span>
-}
-
