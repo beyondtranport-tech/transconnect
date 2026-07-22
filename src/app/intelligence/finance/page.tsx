@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 const financeCategories = ["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders", "Bridging", "Insurance"];
 
 export default function CapitalIntelligencePage() {
-    const { user, isUserLoading, forceRefresh } = useUser();
+    const { user, isUserLoading } = useUser();
     const { toast } = useToast();
     const router = useRouter();
     
@@ -33,6 +33,7 @@ export default function CapitalIntelligencePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isVouching, setIsVouching] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
+    const [isEngaging, setIsEngaging] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
@@ -82,6 +83,36 @@ export default function CapitalIntelligencePage() {
         }
     };
 
+    const handleEngage = async (res: any) => {
+        if (!isPaid) {
+            router.push('/checkout/intelligence');
+            return;
+        }
+
+        setIsEngaging(res.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            await fetch('/api/recordEngagement', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    targetId: res.id, 
+                    targetName: res.companyName,
+                    targetType: res.isLead ? 'lead' : 'partner'
+                })
+            });
+            
+            toast({ title: "Funder Connection Logged" });
+            router.push(`/funding/apply?origination=market&type=${res.entryType}`);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsEngaging(null);
+        }
+    };
+
     const handleVouch = async (targetId: string) => {
         if (!user) {
             toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to vouch for community data." });
@@ -96,13 +127,13 @@ export default function CapitalIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
             }
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Error" });
         } finally {
             setIsVouching(null);
         }
@@ -130,10 +161,9 @@ export default function CapitalIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await response.json();
+            const result = await res.json();
             if (result.success) {
                 toast({ title: "Node Claimed!" });
-                forceRefresh();
                 handleSearch();
             }
         } catch (e: any) {
@@ -155,7 +185,7 @@ export default function CapitalIntelligencePage() {
 
             <section className="container mx-auto px-4 -mt-12 text-left">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left">
-                    <CardHeader className="bg-white rounded-t-xl border-b text-left">
+                    <CardHeader className="bg-white rounded-t-xl border-b text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-left">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Search Variables
@@ -186,7 +216,7 @@ export default function CapitalIntelligencePage() {
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s.value} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -216,15 +246,15 @@ export default function CapitalIntelligencePage() {
                         <p className="text-xl font-bold uppercase tracking-widest">Ready to Scan Capital Registry</p>
                     </div>
                 ) : isLoading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
                         <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping Capital intelligence...</p>
                     </div>
                 ) : (
-                    <div className="max-w-6xl mx-auto space-y-8 text-left">
-                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
+                    <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
+                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground">
                             <div className="text-left text-foreground">
-                                <h2 className="text-2xl font-black flex items-center gap-2 text-left">
+                                <h2 className="text-2xl font-black flex items-center gap-2 text-left text-foreground">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
                                 </h2>
@@ -257,7 +287,7 @@ export default function CapitalIntelligencePage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-left text-foreground">
-                                                <div className="flex flex-wrap gap-2 text-left">
+                                                <div className="flex flex-wrap gap-2 text-left text-foreground">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 
@@ -290,15 +320,15 @@ export default function CapitalIntelligencePage() {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                {isPaid ? (
-                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href={`/funding/apply?origination=market&type=${res.entryType}`}>Select to Engage</Link>
-                                                    </Button>
-                                                ) : (
-                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Select to Unlock</Link>
-                                                    </Button>
-                                                )}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant={isPaid ? "default" : "secondary"} 
+                                                    className="h-8 text-[10px] font-black uppercase shadow-sm"
+                                                    onClick={() => handleEngage(res)}
+                                                    disabled={isEngaging === res.id}
+                                                >
+                                                    {isEngaging === res.id ? <Loader2 className="h-3 w-3 animate-spin"/> : isPaid ? "Select to Engage" : <><Lock className="h-3 w-3 mr-1" /> Select to Unlock</>}
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -307,12 +337,12 @@ export default function CapitalIntelligencePage() {
                         </Card>
 
                         {!isPaid && results.length > 0 && (
-                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left">
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left text-foreground">
                                 <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center">
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>
                                 <h3 className="text-3xl font-black font-headline mb-4 text-white text-center">Complete Funder transparency</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center">
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white">
                                     You are viewing a restricted preview. To remove data blurring and see direct contact details for over **85+ specialized lenders**, upgrade to Intelligence Access.
                                 </p>
                                 <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">

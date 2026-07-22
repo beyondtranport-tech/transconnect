@@ -1,15 +1,16 @@
+
 'use client';
 
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck, ImageIcon, ExternalLink } from "lucide-react";
-import { doc, collection, query, limit, where } from 'firebase/firestore';
+import { Award, Gem, Loader2, HeartHandshake, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck, ImageIcon, ExternalLink, MousePointer2, UserPlus, Info } from "lucide-react";
+import { doc, collection, query, limit, where, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import EnquiriesCard from './enquiries-card';
 import QuotesCard from './quotes-card';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, formatDateSafe } from '@/lib/utils';
 import { useMemoFirebase, useCollection } from '@/firebase';
 import { useConfig } from '@/hooks/use-config';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +20,6 @@ import Image from 'next/image';
 
 /**
  * AD BILLBOARD COMPONENT
- * Renders high-impact banners targeting the current user's role.
  */
 function AdBillboard({ audience }: { audience: string }) {
     const firestore = useFirestore();
@@ -40,7 +40,6 @@ function AdBillboard({ audience }: { audience: string }) {
     if (isLoading || !ads || ads.length === 0) return null;
 
     const ad = ads[0];
-    const trackUrl = `/api/trackEmailOpen/${ad.id}?source=ad_impression&campaignId=${ad.id}&advertiserId=${ad.companyId}`;
     const clickUrl = `/api/trackEmailOpen/${ad.id}?source=ad_click&campaignId=${ad.id}&advertiserId=${ad.companyId}`;
 
     return (
@@ -55,9 +54,90 @@ function AdBillboard({ audience }: { audience: string }) {
                         Open Digital Branch <ArrowRight className="h-4 w-4" />
                     </div>
                 </div>
-                <img src={trackUrl} width="1" height="1" className="hidden" alt="" />
             </Card>
         </a>
+    );
+}
+
+/**
+ * ENGAGEMENT YIELD MODULE
+ * Conversion trigger for target members.
+ */
+function EngagementYieldModule({ companyId, isPaid }: { companyId: string, isPaid: boolean }) {
+    const firestore = useFirestore();
+    
+    const pingsQuery = useMemoFirebase(() => {
+        if (!firestore || !companyId) return null;
+        return query(
+            collection(firestore, 'engagementPings'),
+            where('targetId', '==', companyId),
+            orderBy('timestamp', 'desc'),
+            limit(20)
+        );
+    }, [firestore, companyId]);
+
+    const { data: pings, isLoading } = useCollection(pingsQuery);
+
+    if (isLoading || !pings || pings.length === 0) return null;
+
+    return (
+        <Card className={cn(
+            "border-none shadow-2xl overflow-hidden text-left bg-white",
+            !isPaid && "ring-2 ring-amber-500/20"
+        )}>
+            <CardHeader className="bg-slate-900 text-white p-6">
+                <div className="flex justify-between items-center">
+                    <div className="text-left">
+                        <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                            <Zap className="h-5 w-5 text-primary" />
+                            Engagement Yield Audit
+                        </CardTitle>
+                        <CardDescription className="text-slate-400">High-intent traffic recorded on your digital node.</CardDescription>
+                    </div>
+                    <Badge className="bg-primary text-white border-none">{pings.length}</Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0">
+                <div className={cn("relative", !isPaid && "max-h-[250px] overflow-hidden")}>
+                    <div className="divide-y text-left">
+                        {pings.map((ping) => (
+                            <div key={ping.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-primary/10 p-2 rounded-full"><UserPlus className="h-4 w-4 text-primary" /></div>
+                                    <div className="text-left">
+                                        <p className={cn("text-sm font-bold", !isPaid && "blur-sm select-none")}>
+                                            {isPaid ? ping.engagerName : "Forensic Lead Hidden"}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-bold">{formatDateSafe(ping.timestamp, "dd MMM, HH:mm")}</p>
+                                    </div>
+                                </div>
+                                <Badge variant="outline" className="text-[9px] uppercase font-black">Engagement</Badge>
+                            </div>
+                        ))}
+                    </div>
+
+                    {!isPaid && (
+                        <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent flex flex-col items-center justify-center p-8 text-center pt-20">
+                             <div className="bg-amber-500/10 p-3 rounded-full mb-2">
+                                <Lock className="h-6 w-6 text-amber-600" />
+                            </div>
+                            <h4 className="text-xl font-black text-foreground">Sales Leads Restricted</h4>
+                            <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 leading-relaxed">
+                                <strong>{pings.length} companies</strong> have engaged with your profile. Upgrade to Intelligence Access to reveal their identities and initiate the handshake.
+                            </p>
+                            <Button asChild size="sm" className="mt-4 font-black uppercase text-[10px] tracking-widest h-10 px-8 shadow-xl">
+                                <Link href="/checkout/intelligence">Unlock Leads Now</Link>
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+            {isPaid && (
+                <CardFooter className="bg-slate-50 border-t p-4 text-center">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mx-auto">Lead recording is live and verified.</p>
+                </CardFooter>
+            )}
+        </Card>
     );
 }
 
@@ -130,7 +210,7 @@ export default function AccountDashboard() {
 
     if (isUserLoading || (user && (isCompanyLoading || isSettingsLoading))) {
         return (
-            <div className="flex justify-center items-center min-h-[calc(100vh-8rem)] w-full">
+            <div className="flex justify-center items-center py-40 w-full text-left">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
@@ -149,9 +229,6 @@ export default function AccountDashboard() {
                         <p className="font-medium text-left">There was a problem fetching your account data.</p>
                         <p className="text-xs text-muted-foreground mt-2 bg-muted p-2 rounded font-mono text-left">{error.message}</p>
                     </CardContent>
-                    <CardFooter className="border-t pt-6 text-left">
-                        <Button onClick={() => window.location.reload()}>Try Again</Button>
-                    </CardFooter>
                 </Card>
             </div>
         );
@@ -168,13 +245,17 @@ export default function AccountDashboard() {
                 </div>
             </div>
 
-            {/* AD BILLBOARD SLOT */}
             <AdBillboard audience={audience} />
+
+            {/* ENGAGEMENT PINGS MODULE */}
+            {userData?.companyId && (
+                <EngagementYieldModule companyId={userData.companyId} isPaid={!isFreeMember} />
+            )}
 
             {isAdmin && (
                  <Card className="border-primary bg-primary/5 text-left text-foreground">
                     <CardHeader className="text-left">
-                        <div className="flex items-center gap-4 text-left">
+                        <div className="flex items-center gap-4 text-left text-foreground">
                             <ShieldCheck className="h-10 w-10 text-primary" />
                             <div className="text-left text-foreground">
                                 <CardTitle className="text-2xl text-left">Administrator Account</CardTitle>
@@ -188,7 +269,7 @@ export default function AccountDashboard() {
                         </p>
                     </CardContent>
                     <CardFooter className="text-left">
-                        <Button variant="default" size="lg" asChild className="text-white">
+                        <Button variant="default" size="lg" asChild className="text-white text-foreground text-left">
                             <Link href="/adminaccount">
                                 Go to Admin Portal <ArrowRight className="ml-2 h-5 w-5" />
                             </Link>
@@ -197,13 +278,12 @@ export default function AccountDashboard() {
                 </Card>
             )}
 
-            {/* Core Stats - Role Filtered */}
             <div className={cn(
-                "grid grid-cols-1 md:grid-cols-2 gap-8",
+                "grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground",
                 !isAssociate && !isLender && "lg:grid-cols-3"
             )}>
                  {!isAssociate && !isLender && (
-                    <Card>
+                    <Card className="text-left text-foreground">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                             <CardTitle className="text-sm font-medium">Membership Tier</CardTitle>
                             <Gem className="h-4 w-4 text-muted-foreground" />
@@ -221,7 +301,7 @@ export default function AccountDashboard() {
                     </Card>
                  )}
                 
-                <Card>
+                <Card className="text-left text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                         <CardTitle className="text-sm font-medium">Available to Spend</CardTitle>
                          <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -235,7 +315,7 @@ export default function AccountDashboard() {
                 </Card>
 
                  {!isAssociate && !isLender && (
-                    <Card>
+                    <Card className="text-left text-foreground">
                         <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                             <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
                             <Award className="h-4 w-4 text-muted-foreground" />
@@ -251,7 +331,6 @@ export default function AccountDashboard() {
                  )}
             </div>
 
-            {/* Associate Specific Referral Card */}
             {isAssociate && (
                 <Card className="border-primary bg-primary/5 text-left text-foreground">
                     <CardHeader className="text-left text-foreground">
@@ -267,62 +346,21 @@ export default function AccountDashboard() {
                 </Card>
             )}
 
-            {/* Lender Specific Control Card */}
-            {isLender && !isAdmin && (
-                <Card className="border-primary bg-primary/5 text-left text-foreground">
-                    <CardHeader className="text-left text-foreground">
-                        <CardTitle className="flex items-center gap-2 text-left"><Landmark className="text-primary" /> Lender Control Center</CardTitle>
-                        <CardDescription className="text-left text-foreground">Manage your lending mandate and review inbound deal flow matching your criteria.</CardDescription>
-                    </CardHeader>
-                    <CardFooter className="text-left">
-                        <Button asChild size="lg" className="text-white">
-                            <Link href="/account?view=lending-desk">Open Lending Desk <ArrowRight className="ml-2 h-4 w-4" /></Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            )}
-
-            {/* General Member Sections */}
             {!isAssociate && !isLender && (
                 <>
-                    {isFreeMember && (
-                        <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
-                            <CardHeader className="text-left text-foreground text-left text-foreground">
-                                <div className="flex items-start gap-4 text-left text-foreground">
-                                    <div className="bg-primary/10 p-3 rounded-full shrink-0">
-                                    <Sparkles className="h-6 w-6 text-primary" />
-                                    </div>
-                                    <div className="text-left">
-                                        <CardTitle className="text-left text-foreground">Unlock Your Full Potential</CardTitle>
-                                        <CardDescription className="mt-1 text-left text-foreground">
-                                            You are currently on the Free plan. Upgrade your membership to access forensic data and publishing tools.
-                                        </CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardFooter className="text-left">
-                                <Button asChild className="text-white">
-                                    <Link href="/pricing">
-                                        Compare Plans and Upgrade <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    )}
-
                     <div className="space-y-4 text-left text-foreground">
                         <h2 className="text-2xl font-black font-headline text-left">Strategic Funding Center</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                             <Card className="border-primary/20 bg-primary/5 shadow-md flex flex-col text-left text-foreground">
                                 <CardHeader className="pb-2 text-left text-foreground">
-                                    <div className="flex items-center gap-3 text-left">
+                                    <div className="flex items-center gap-3 text-left text-foreground">
                                         <div className="bg-primary/20 p-2 rounded-lg"><Landmark className="h-5 w-5 text-primary" /></div>
                                         <CardTitle className="text-lg font-bold text-left">Direct In-House Funding</CardTitle>
                                     </div>
                                     <CardDescription className="text-left">Apply directly to the Logistics Flow capital division.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-grow text-left text-foreground">
-                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Use this path for prioritized, BFIs rapid decisions based on your platform activity and verified fleet profile.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Use this path for prioritized decisions based on your verified fleet profile.</p>
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-primary/10 text-left">
                                     <Button asChild className="w-full font-bold h-11 shadow-lg text-white" variant="default">
@@ -342,7 +380,7 @@ export default function AccountDashboard() {
                                     <CardDescription className="text-left">Distribute your enquiry to our 85+ partner lenders.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-grow text-left text-foreground">
-                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Compare the market. Your application is automatically matched with niche lenders based on your criteria.</p>
+                                    <p className="text-sm text-muted-foreground leading-relaxed text-left">Compare the market. Your application is automatically matched with niche lenders.</p>
                                 </CardContent>
                                 <CardFooter className="pt-4 border-t border-blue-100 text-left">
                                     <Button asChild className="w-full font-bold h-11" variant="outline">
@@ -354,102 +392,8 @@ export default function AccountDashboard() {
                             </Card>
                         </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                        <Card className="shadow-sm text-left text-foreground">
-                            <CardHeader className="bg-slate-50 border-b text-left text-foreground">
-                                <CardTitle className="flex items-center gap-2 text-left">
-                                    <Landmark className="h-5 w-5 text-primary" />
-                                    Issued Funding Facilities
-                                </CardTitle>
-                                <CardDescription className="text-left">
-                                    Active capital offers issued to your business.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-6 text-left">
-                                {isFacilitiesLoading ? <Loader2 className="animate-spin h-6 w-6 text-primary mx-auto"/> : (
-                                    facilities && facilities.length > 0 ? (
-                                        <div className="space-y-4 text-left">
-                                            {facilities.map((f: any) => (
-                                                <div key={f.id} className="flex justify-between items-center p-3 border rounded-lg bg-white shadow-sm text-left">
-                                                    <div className="text-left text-foreground">
-                                                        <p className="font-bold text-sm capitalize text-left">{f.type?.replace(/_/g, ' ')}</p>
-                                                        {isFreeMember && !isAdmin ? (
-                                                            <div className="flex items-center gap-1.5 mt-1 text-left">
-                                                                <Lock className="h-3 w-3 text-amber-600"/>
-                                                                <span className="text-[10px] font-black uppercase text-amber-600 tracking-widest text-left">Terms Restricted</span>
-                                                            </div>
-                                                        ) : (
-                                                            <p className="text-xs font-mono font-bold text-primary text-left">{formatCurrency(f.limit)}</p>
-                                                        )}
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" asChild className="text-[10px] font-black uppercase h-8 px-3 text-left">
-                                                        <Link href="/account?view=my-facilities">Manage <ArrowRight className="ml-1 h-3 w-3" /></Link>
-                                                    </Button>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-6 border-2 border-dashed rounded-lg opacity-40">
-                                            <p className="text-xs font-bold uppercase tracking-widest text-center">No Facilities Issued</p>
-                                        </div>
-                                    )
-                                )}
-                            </CardContent>
-                            <CardFooter className="border-t pt-4 text-left">
-                                <Button variant="outline" size="sm" asChild className="w-full font-bold h-9 text-left">
-                                    <Link href="/account?view=my-facilities">View All Facilities</Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-
-                        <Card className="shadow-sm text-left text-foreground">
-                            <CardHeader className="bg-slate-50 border-b text-left text-foreground">
-                                <CardTitle className="flex items-center gap-2 text-left">
-                                    <Award className="h-5 w-5 text-primary" />
-                                    My Loyalty Benefits
-                                </CardTitle>
-                                <CardDescription className="text-left text-foreground">
-                                    You are on the <span className="font-semibold text-primary capitalize">{loyaltyTier}</span> tier.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-6 text-left">
-                                {userBenefits.length > 0 ? (
-                                    <ul className="space-y-3 text-left text-foreground">
-                                        {userBenefits.map((benefit: any) => (
-                                            <li key={benefit.name} className="flex items-center gap-3 text-left">
-                                                <CheckCircle className="h-5 w-5 text-green-500" />
-                                                <span className="font-medium text-sm text-left">{benefit.name}: <span className="font-bold text-primary">{benefit.value}</span></span>
-                                            </li>
-                                        ))}
-                                    </ul>
-                                ) : (
-                                    <p className="text-muted-foreground text-sm italic text-center">No benefits are currently configured for your tier.</p>
-                                )}
-                            </CardContent>
-                            <CardFooter className="border-t pt-4 text-left">
-                                <Button variant="outline" size="sm" asChild className="w-full font-bold h-9">
-                                    <Link href="/connect?view=rewards">Open Rewards Store</Link>
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </div>
-
-                    <Card className="bg-primary/5 border-primary/20 text-left text-foreground">
-                        <CardHeader className="text-left text-foreground text-left text-foreground">
-                            <CardTitle className="flex items-center gap-2 text-left text-foreground"><HeartHandshake className="text-primary text-left text-foreground" /> Help the Community & Earn Rewards</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-left text-foreground text-foreground">
-                            <p className="text-muted-foreground text-sm leading-relaxed text-left text-foreground text-foreground">Help the community by sharing anonymous data. Each contribution earns you reward points.</p>
-                        </CardContent>
-                        <CardFooter className="text-left text-foreground">
-                            <Button asChild size="sm" className="text-white text-foreground">
-                                <Link href="/contribute">Contribute Data <ArrowRight className="ml-2 h-4 w-4 text-foreground" /></Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
                     
-                    <div className="space-y-8 text-left text-foreground text-foreground">
+                    <div className="space-y-8 text-left text-foreground">
                         <QuotesCard />
                         <EnquiriesCard />
                     </div>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { provinces } from '@/lib/geodata';
-import { Building2, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Database, Info, CheckCircle2, AlertCircle, Table as TableIcon, ThumbsUp, ShieldAlert } from 'lucide-react';
+import { Building2, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, Sparkles, Database, Info, CheckCircle2, AlertCircle, Table as TableIcon, ThumbsUp, ShieldAlert, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
 export default function SupplierIntelligencePage() {
-    const { user, isUserLoading, forceRefresh } = useUser();
+    const { user, isUserLoading } = useUser();
     const { toast } = useToast();
     const router = useRouter();
     
@@ -32,6 +32,7 @@ export default function SupplierIntelligencePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isVouching, setIsVouching] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
+    const [isEngaging, setIsEngaging] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
@@ -81,6 +82,38 @@ export default function SupplierIntelligencePage() {
         }
     };
 
+    const handleEngage = async (res: any) => {
+        if (!isPaid) {
+            router.push('/checkout/intelligence');
+            return;
+        }
+
+        setIsEngaging(res.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            const response = await fetch('/api/recordEngagement', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    targetId: res.id, 
+                    targetName: res.companyName,
+                    targetType: res.isLead ? 'lead' : 'partner'
+                })
+            });
+
+            if (!response.ok) throw new Error("Failed to record engagement.");
+            
+            toast({ title: "Engagement Logged", description: "The partner has been notified of your interest." });
+            router.push(`/mall/supplier/${res.id}`);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsEngaging(null);
+        }
+    };
+
     const handleVouch = async (targetId: string) => {
         if (!user) {
             toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to vouch for community data." });
@@ -95,13 +128,13 @@ export default function SupplierIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
             }
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Error" });
         } finally {
             setIsVouching(null);
         }
@@ -132,7 +165,6 @@ export default function SupplierIntelligencePage() {
             const result = await res.json();
             if (result.success) {
                 toast({ title: "Node Claimed!" });
-                forceRefresh();
                 handleSearch();
             }
         } catch (e: any) {
@@ -143,7 +175,7 @@ export default function SupplierIntelligencePage() {
     };
 
     return (
-        <div className="bg-slate-50 min-h-screen text-left text-foreground">
+        <div className="bg-slate-50 min-h-screen text-left">
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
@@ -154,7 +186,7 @@ export default function SupplierIntelligencePage() {
 
             <section className="container mx-auto px-4 -mt-12 text-left">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left">
-                    <CardHeader className="bg-white rounded-t-xl border-b text-left">
+                    <CardHeader className="bg-white rounded-t-xl border-b text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-left">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Search Variables
@@ -185,7 +217,7 @@ export default function SupplierIntelligencePage() {
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -221,7 +253,7 @@ export default function SupplierIntelligencePage() {
                     </div>
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
-                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
+                        <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground">
                             <div className="text-left text-foreground">
                                 <h2 className="text-2xl font-black text-foreground flex items-center gap-2">
                                     <TableIcon className="h-6 w-6 text-primary" />
@@ -240,9 +272,9 @@ export default function SupplierIntelligencePage() {
                             <Table>
                                 <TableHeader className="bg-slate-900 hover:bg-slate-900 text-left">
                                     <TableRow className="hover:bg-slate-900 border-none">
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Supplier Entity</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Trust Signals</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Leadership</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Supplier Entity</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Trust Signals</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Leadership</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -289,15 +321,15 @@ export default function SupplierIntelligencePage() {
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                {isPaid ? (
-                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href={`/mall/supplier/${res.id}`}>Select to Engage</Link>
-                                                    </Button>
-                                                ) : (
-                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Select to Unlock</Link>
-                                                    </Button>
-                                                )}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant={isPaid ? "default" : "secondary"} 
+                                                    className="h-8 text-[10px] font-black uppercase shadow-sm"
+                                                    onClick={() => handleEngage(res)}
+                                                    disabled={isEngaging === res.id}
+                                                >
+                                                    {isEngaging === res.id ? <Loader2 className="h-3 w-3 animate-spin"/> : isPaid ? "Select to Engage" : <><Lock className="h-3 w-3 mr-1" /> Select to Unlock</>}
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -314,7 +346,7 @@ export default function SupplierIntelligencePage() {
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed">
                                     You are viewing a restricted preview of the industrial registry. Upgrade to **intelligence Access** to remove blurring and see direct contact details for over **22,000+ verified records**.
                                 </p>
-                                <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
                                     <Link href="/checkout/intelligence">Unlock Full Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                 </Button>
                             </Card>

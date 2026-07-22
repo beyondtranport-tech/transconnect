@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 const talentCategories = ["Code 14 Driver", "Diesel Mechanic", "Logistics Manager", "Operations Lead", "Fleet Controller", "Warehouse Manager"];
 
 export default function HumanCapitalIntelligencePage() {
-    const { user, isUserLoading, forceRefresh } = useUser();
+    const { user, isUserLoading } = useUser();
     const { toast } = useToast();
     const router = useRouter();
     
@@ -33,6 +33,7 @@ export default function HumanCapitalIntelligencePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isVouching, setIsVouching] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
+    const [isEngaging, setIsEngaging] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
@@ -82,6 +83,36 @@ export default function HumanCapitalIntelligencePage() {
         }
     };
 
+    const handleEngage = async (res: any) => {
+        if (!isPaid) {
+            router.push('/checkout/intelligence');
+            return;
+        }
+
+        setIsEngaging(res.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            await fetch('/api/recordEngagement', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    targetId: res.id, 
+                    targetName: res.service_handle || res.companyName,
+                    targetType: res.isLead ? 'lead' : 'partner'
+                })
+            });
+            
+            toast({ title: "Talent Engagement Logged" });
+            // In future, redirect to direct messaging or detailed profile
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsEngaging(null);
+        }
+    };
+
     const handleVouch = async (targetId: string) => {
         if (!user) {
             toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to vouch for community data." });
@@ -96,13 +127,13 @@ export default function HumanCapitalIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
             }
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Error" });
         } finally {
             setIsVouching(null);
         }
@@ -130,10 +161,9 @@ export default function HumanCapitalIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await response.json();
+            const result = await res.json();
             if (result.success) {
                 toast({ title: "Node Claimed!" });
-                forceRefresh();
                 handleSearch();
             }
         } catch (e: any) {
@@ -155,7 +185,7 @@ export default function HumanCapitalIntelligencePage() {
 
             <section className="container mx-auto px-4 -mt-12 text-left">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left text-foreground">
-                    <CardHeader className="bg-white rounded-t-xl border-b text-left">
+                    <CardHeader className="bg-white rounded-t-xl border-b text-left text-foreground">
                         <CardTitle className="flex items-center gap-2 text-left text-foreground">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Search Variables
@@ -163,7 +193,7 @@ export default function HumanCapitalIntelligencePage() {
                         <CardDescription className="text-left text-foreground">Select a region and talent category to scan the registry.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left text-foreground">
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select Province" /></SelectTrigger>
@@ -172,7 +202,7 @@ export default function HumanCapitalIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City / Town</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                 <SelectTrigger><SelectValue placeholder="Select City" /></SelectTrigger>
@@ -181,17 +211,17 @@ export default function HumanCapitalIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Suburb</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2 text-left text-foreground text-foreground">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Role Type</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Role Type</Label>
                             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                                 <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                                 <SelectContent>
@@ -218,17 +248,17 @@ export default function HumanCapitalIntelligencePage() {
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center">Mapping Human Capital intelligence...</p>
+                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center text-foreground">Mapping Human Capital intelligence...</p>
                     </div>
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground">
                             <div className="text-left text-foreground">
-                                <h2 className="text-2xl font-black text-left flex items-center gap-2">
+                                <h2 className="text-2xl font-black text-left flex items-center gap-2 text-foreground">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
                                 </h2>
-                                <p className="text-xs text-muted-foreground">Showing verified talent matching <strong>{selectedCategory}</strong>.</p>
+                                <p className="text-xs text-muted-foreground text-left">Showing verified talent matching <strong>{selectedCategory}</strong>.</p>
                             </div>
                             {!isPaid && (
                                 <Badge variant="secondary" className="gap-1.5 py-1.5 px-4 border border-amber-200 text-amber-700 bg-amber-50">
@@ -258,8 +288,8 @@ export default function HumanCapitalIntelligencePage() {
                                                     </span>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-left text-foreground">
-                                                <div className="flex flex-wrap gap-2 text-left text-foreground">
+                                            <TableCell className="text-left text-foreground text-foreground">
+                                                <div className="flex flex-wrap gap-2 text-left">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 
@@ -286,20 +316,22 @@ export default function HumanCapitalIntelligencePage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-xs text-muted-foreground">
-                                                <div className="flex items-center gap-1 text-left">
+                                            <TableCell className="text-xs text-muted-foreground text-left">
+                                                <div className="flex items-center gap-1 text-left text-foreground">
                                                     <MapPin className="h-3 w-3 shrink-0" />
                                                     <span className="truncate max-w-[150px]">{res.operational_hub || 'South Africa'}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right text-foreground">
-                                                {isPaid ? (
-                                                    <Button size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">Select to Engage</Button>
-                                                ) : (
-                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Select to Unlock</Link>
-                                                    </Button>
-                                                )}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant={isPaid ? "default" : "secondary"} 
+                                                    className="h-8 text-[10px] font-black uppercase shadow-sm"
+                                                    onClick={() => handleEngage(res)}
+                                                    disabled={isEngaging === res.id}
+                                                >
+                                                    {isEngaging === res.id ? <Loader2 className="h-3 w-3 animate-spin"/> : isPaid ? "Select to Engage" : <><Lock className="h-3 w-3 mr-1" /> Select to Unlock</>}
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}

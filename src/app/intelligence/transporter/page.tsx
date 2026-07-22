@@ -29,7 +29,7 @@ const servicesMap = [
 ];
 
 export default function TransporterIntelligencePage() {
-    const { user, isUserLoading, forceRefresh } = useUser();
+    const { user, isUserLoading } = useUser();
     const { toast } = useToast();
     const router = useRouter();
     
@@ -41,6 +41,7 @@ export default function TransporterIntelligencePage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isVouching, setIsVouching] = useState<string | null>(null);
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
+    const [isEngaging, setIsEngaging] = useState<string | null>(null);
     const [hasSearched, setHasSearched] = useState(false);
     const [error, setError] = useState<string | null>(null);
     
@@ -90,6 +91,36 @@ export default function TransporterIntelligencePage() {
         }
     };
 
+    const handleEngage = async (res: any) => {
+        if (!isPaid) {
+            router.push('/checkout/intelligence');
+            return;
+        }
+
+        setIsEngaging(res.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            await fetch('/api/recordEngagement', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    targetId: res.id, 
+                    targetName: res.companyName,
+                    targetType: res.isLead ? 'lead' : 'partner'
+                })
+            });
+            
+            toast({ title: "Haulier Engagement Logged", description: "Direct communication node established." });
+            router.push(`/mall/transporter/${res.id}`);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsEngaging(null);
+        }
+    };
+
     const handleVouch = async (targetId: string) => {
         if (!user) {
             toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to vouch for community data." });
@@ -104,13 +135,13 @@ export default function TransporterIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Verification Recorded" });
                 handleSearch(); 
             }
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Error" });
         } finally {
             setIsVouching(null);
         }
@@ -138,10 +169,9 @@ export default function TransporterIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await response.json();
+            const result = await res.json();
             if (result.success) {
                 toast({ title: "Node Claimed!" });
-                forceRefresh();
                 handleSearch();
             }
         } catch (e: any) {
@@ -156,7 +186,7 @@ export default function TransporterIntelligencePage() {
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest text-center text-white">Forensic Registry</Badge>
-                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center">Transporter intelligence</h1>
+                    <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center text-white">Transporter intelligence</h1>
                     <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center text-white">Map the South African transport landscape. Find verified hauliers based on precise fleet capabilities.</p>
                 </div>
             </section>
@@ -171,7 +201,7 @@ export default function TransporterIntelligencePage() {
                         <CardDescription className="text-left text-foreground">Select your location and the specific service type to match with verified capacity.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left text-foreground">
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
                                 <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select Province" /></SelectTrigger>
@@ -180,7 +210,7 @@ export default function TransporterIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                 <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select City" /></SelectTrigger>
@@ -189,16 +219,16 @@ export default function TransporterIntelligencePage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hub</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s.name} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left text-foreground">
+                        <div className="space-y-2 text-left text-foreground text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Service Type</Label>
                             <Select value={selectedService} onValueChange={setSelectedService}>
                                 <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select Service" /></SelectTrigger>
@@ -226,7 +256,7 @@ export default function TransporterIntelligencePage() {
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center">Mapping intelligence Data...</p>
+                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center text-foreground">Mapping intelligence Data...</p>
                     </div>
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
@@ -259,14 +289,14 @@ export default function TransporterIntelligencePage() {
                                 <TableBody className="text-left text-foreground">
                                     {results.map((res) => (
                                         <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left text-foreground">
-                                            <TableCell className="py-4 text-left">
+                                            <TableCell className="py-4 text-left text-foreground">
                                                 <div className="flex flex-col text-left">
                                                     <span className="font-black text-sm text-slate-900">{res.companyName}</span>
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Haulier'}</Badge>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-left text-foreground">
-                                                <div className="flex flex-wrap gap-2 text-left">
+                                                <div className="flex flex-wrap gap-2 text-left text-foreground">
                                                     <Button 
                                                         variant="ghost" 
                                                         size="sm" 
@@ -305,15 +335,15 @@ export default function TransporterIntelligencePage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right text-foreground">
-                                                {isPaid ? (
-                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href={`/mall/transporter/${res.id}`}>Select to Engage</Link>
-                                                    </Button>
-                                                ) : (
-                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Select to Unlock</Link>
-                                                    </Button>
-                                                )}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant={isPaid ? "default" : "secondary"} 
+                                                    className="h-8 text-[10px] font-black uppercase shadow-sm"
+                                                    onClick={() => handleEngage(res)}
+                                                    disabled={isEngaging === res.id}
+                                                >
+                                                    {isEngaging === res.id ? <Loader2 className="h-3 w-3 animate-spin"/> : isPaid ? "Select to Engage" : <><Lock className="h-3 w-3 mr-1" /> Select to Unlock</>}
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -330,7 +360,7 @@ export default function TransporterIntelligencePage() {
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white">
                                     You are viewing a restricted preview. To remove data blurring and see direct lines to over **5,400+ verified hauliers**, upgrade to intelligence Access.
                                 </p>
-                                <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
                                     <Link href="/checkout/intelligence">Unlock Full Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                 </Button>
                             </Card>
