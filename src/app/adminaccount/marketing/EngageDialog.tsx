@@ -3,11 +3,13 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
@@ -280,7 +282,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                     <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border min-h-full">
-                        <Suspense fallback={<Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />}>
+                        <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
@@ -307,4 +309,3 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
     </Dialog>
   );
 }
-
