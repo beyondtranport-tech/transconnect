@@ -270,7 +270,7 @@ export default function TrustIdentityContent() {
                             </AlertDialogTrigger>
                             <AlertDialogContent className="text-left text-foreground">
                                 <AlertDialogHeader className="text-left">
-                                    <AlertDialogTitle className="text-left">Are you sure you want to exit?</AlertDialogTitle>
+                                    <AlertDialogTitle className="text-left text-foreground">Are you sure you want to exit?</AlertDialogTitle>
                                     <AlertDialogDescription className="text-left text-muted-foreground">
                                         This will hide your digital branch from the registry and stop your active subscriptions. Your wallet balance will remain preserved.
                                     </AlertDialogDescription>

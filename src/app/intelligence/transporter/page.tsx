@@ -13,7 +13,6 @@ import { useUser, getClientSideAuthToken } from '@/firebase';
 import * as gtag from '@/lib/gtag';
 import { cn, formatCurrency } from '@/lib/utils';
 import FleetContent from '@/app/account/fleet-content';
-import NeedsContent from '@/app/account/needs-content';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
@@ -51,10 +50,8 @@ export default function TransporterIntelligencePage() {
         if (isTransporter) {
             const fleet = user.companyData.fleet;
             return !!(fleet && fleet.poweredUnits?.length > 0 && fleet.trailers?.length > 0);
-        } else {
-            const needs = user.companyData.logisticsNeeds;
-            return !!(needs && needs.cargoTypes?.length > 0 && needs.routes?.length > 0);
         }
+        return true;
     }, [user, isTransporter]);
 
     const cities = useMemo(() => {
@@ -165,42 +162,6 @@ export default function TransporterIntelligencePage() {
         return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
 
-    if (!user) {
-        return (
-            <div className="container mx-auto px-4 py-20 text-left">
-                <Card className="max-w-2xl mx-auto shadow-2xl overflow-hidden border-none bg-slate-900 text-white text-left text-foreground">
-                    <CardHeader className="p-8 pb-4 text-center">
-                        <div className="bg-primary/10 p-4 rounded-full w-fit mx-auto mb-6">
-                            <Lock className="h-12 w-12 text-primary" />
-                        </div>
-                        <CardTitle className="text-4xl font-black font-headline text-center">Member Access Only</CardTitle>
-                        <CardDescription className="text-slate-400 text-lg mt-2 text-center">The forensic haulier registry is exclusive to registered members.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-8 pt-4 space-y-6">
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
-                                <p className="text-sm text-slate-300">Access thousands of verified transporters nationwide.</p>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <CheckCircle2 className="h-5 w-5 text-primary mt-1 shrink-0" />
-                                <p className="text-sm text-slate-300">See direct contact details for fleet owners and MDs.</p>
-                            </div>
-                        </div>
-                        <div className="flex flex-col gap-3 pt-4">
-                            <Button size="lg" className="h-14 text-lg font-black uppercase tracking-tight shadow-xl" asChild>
-                                <Link href="/join">Join for Free</Link>
-                            </Button>
-                            <Button variant="ghost" className="text-slate-400 hover:text-white" asChild>
-                                <Link href="/signin">Sign In</Link>
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
     if (!isProfileComplete && !skipProfile) {
         return (
             <div className="bg-slate-50 min-h-screen py-16 text-left text-foreground">
@@ -220,15 +181,11 @@ export default function TransporterIntelligencePage() {
                                 <Info className="h-5 w-5 text-primary" />
                                 <AlertTitle className="font-bold text-left">Why do we ask for this?</AlertTitle>
                                 <AlertDescription className="text-sm text-muted-foreground leading-relaxed mt-1 text-left">
-                                    Our intelligence engine uses your specific fleet data or cargo needs to automatically filter the registry and deliver more accurate search data.
+                                    Our intelligence engine uses your specific fleet data to automatically filter the registry and deliver more accurate search data.
                                 </AlertDescription>
                             </Alert>
 
-                            {isTransporter ? (
-                                <FleetContent />
-                            ) : (
-                                <NeedsContent />
-                            )}
+                            <FleetContent />
                             
                             <div className="flex flex-col items-center pt-8 border-t">
                                 <Button variant="ghost" className="text-muted-foreground hover:text-primary font-bold uppercase tracking-widest text-[10px]" onClick={() => setSkipProfile(true)}>
@@ -317,14 +274,11 @@ export default function TransporterIntelligencePage() {
                         </CardHeader>
                         <CardContent className="text-left text-foreground">
                             <p className="text-sm text-destructive-foreground font-bold">{error}</p>
-                            <p className="text-xs text-muted-foreground mt-2">Upgrade to Intelligence Access to unlock unlimited daily searches across all forensic registries.</p>
+                            <p className="text-xs text-muted-foreground mt-2">Upgrade to Intelligence Access to unlock unlimited daily searches.</p>
                         </CardContent>
                         <CardFooter className="flex flex-wrap gap-2 pt-0 text-left">
                             <Button asChild size="sm">
                                 <Link href="/checkout/intelligence">Unlock Paid Intelligence</Link>
-                            </Button>
-                            <Button asChild variant="outline" size="sm">
-                                <Link href="/pricing">View All Plans</Link>
                             </Button>
                         </CardFooter>
                     </Card>
@@ -338,7 +292,7 @@ export default function TransporterIntelligencePage() {
                 ) : isLoading ? (
                     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                        <p className="font-bold text-muted-foreground uppercase tracking-widest">Mapping intelligence Data...</p>
+                        <p className="font-bold text-muted-foreground uppercase tracking-widest text-center">Mapping intelligence Data...</p>
                     </div>
                 ) : !error && (
                     <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
@@ -433,7 +387,7 @@ export default function TransporterIntelligencePage() {
                                         <TableRow>
                                             <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
                                                 <Info className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                                                <p>No matching transporters found in this region. Try broadening your search area.</p>
+                                                <p>No matching transporters found in this region.</p>
                                             </TableCell>
                                         </TableRow>
                                     )}
