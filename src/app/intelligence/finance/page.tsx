@@ -178,7 +178,7 @@ export default function CapitalIntelligencePage() {
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
                     <h1 className="text-4xl md:text-6xl font-black font-headline text-white">Capital intelligence</h1>
-                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center">Map the South African funding landscape. Connect with specialized lenders and asset finance partners.</p>
+                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center text-white">Map the South African funding landscape. Connect with specialized lenders and asset finance partners.</p>
                 </div>
             </section>
 
@@ -340,7 +340,7 @@ export default function CapitalIntelligencePage() {
                                 <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center">
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>
-                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center">Complete Funder transparency</h3>
+                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center text-white">Complete Funder transparency</h3>
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white">
                                     You are viewing a restricted preview. To remove data blurring and see direct contact details for over **85+ specialized lenders**, upgrade to Intelligence Access.
                                 </p>

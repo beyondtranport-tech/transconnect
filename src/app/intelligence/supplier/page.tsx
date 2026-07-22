@@ -216,7 +216,7 @@ export default function SupplierIntelligencePage() {
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s.name} value={s}>{s}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -337,7 +337,7 @@ export default function SupplierIntelligencePage() {
                         </Card>
 
                         {!isPaid && results.length > 0 && (
-                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left text-foreground">
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left text-foreground text-white">
                                 <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center text-white">
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>

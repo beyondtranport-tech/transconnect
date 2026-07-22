@@ -223,7 +223,7 @@ export default function TransporterIntelligencePage() {
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s.name} value={s}>{s}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -260,7 +260,7 @@ export default function TransporterIntelligencePage() {
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left text-foreground">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left text-foreground text-foreground">
-                            <div className="text-left text-foreground">
+                            <div className="text-left text-foreground text-foreground">
                                 <h2 className="text-2xl font-black text-left flex items-center gap-2">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
