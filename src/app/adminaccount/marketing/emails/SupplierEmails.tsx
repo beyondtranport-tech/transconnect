@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
-import { UserCheck, ShieldCheck, Zap, ShoppingCart, TrendingUp } from 'lucide-react';
+import { UserCheck, ShieldCheck, Zap, ShoppingCart, TrendingUp, BarChart3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -29,7 +29,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
         <Card className="border-none shadow-none bg-transparent text-left">
             <CardHeader className="px-0 text-left">
                 <div className="flex items-center justify-between text-left">
-                    <div className="text-left">
+                    <div className="text-left text-foreground text-left text-foreground">
                         <CardTitle className="text-lg text-left text-foreground">Email Subject</CardTitle>
                         <CardDescription className="font-medium text-foreground select-all text-left">{subject}</CardDescription>
                     </div>
@@ -40,14 +40,14 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                     )}
                 </div>
             </CardHeader>
-            <CardContent className="px-0 text-left text-foreground">
+            <CardContent className="px-0 text-left text-foreground text-foreground text-foreground">
                 <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground leading-relaxed">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
             {partner && (
                 <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
-                    Sell more, faster. Registration is free.
+                    Sell more, faster. Registration is 100% free.
                 </CardFooter>
             )}
         </Card>
@@ -77,27 +77,30 @@ Best regards,
 The Logistics Flow Team
         `
     },
-    velocity: {
-        subject: `Sales Velocity: Unlock 5,400+ Vetted Haulier Leads for Free`,
+    leadyield: {
+        subject: `Lead Yield Audit: Handshake Requests for [Your Company]`,
         content: `
 Hi [Supplier Name],
 
-Stop cold-calling switchboards and find your next major account for free.
+I am writing to notify you that our industrial registry has recorded multiple "High-Intent Engagements" for your business profile.
 
-Registration for Logistics Flow is free. Our registry gives [Your Company] a direct line to the people who sign the checks in the transport sector. Filter our 5,400+ verified hauliers by region and fleet capacity to find exactly who needs your ${supplierType}.
+Logistics Flow tracks every time a verified member—primarily fleet owners and procurement leads—selects your profile to engage. This "Intelligence Mechanism" is already identifying demand for your ${supplierType} services.
 
-Launch your sales velocity engine here for free: [Sign-up Link]
+Currently, these leads are held as "Blind Leads." To reveal the direct contacts and initiate the handshake with these prospective buyers, establish your free digital node here:
+[Opt-in Link]
+
+Turn passive interest into confirmed sales velocity.
 
 Best regards,
 
-[Your Name]
+The Logistics Flow Team
         `
     }
 });
 
 const tabs = [
     { value: "handshake", label: "0. Sales Growth Pitch", icon: TrendingUp },
-    { value: "velocity", label: "1. Customer Discovery", icon: ShoppingCart },
+    { value: "leadyield", label: "1. Lead Yield Pitch", icon: BarChart3 },
 ];
 
 export default function SupplierEmails({ partner }: { partner?: any }) {

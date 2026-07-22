@@ -16,6 +16,7 @@ import TechArchitecture from './content/TechArchitecture';
 import RevenueModel from './content/RevenueModel';
 import PitchDeck from './content/PitchDeck';
 import Framework from './content/Framework';
+import SalesIntelligence from './content/SalesIntelligence';
 
 // Offers
 import PartnerOffer from './offers/PartnerOffer';
@@ -64,9 +65,7 @@ function resolveContact(partner: any) {
 
     const searchObj = (obj: any, keys: string[]): string => {
         if (!obj || typeof obj !== 'object') return '';
-        // Exact Case Search
         for (const k of keys) if (obj[k]) { const c = clean(obj[k]); if (c) return c; }
-        // Case-Insensitive Key Search
         for (const actualKey in obj) {
             const lowKey = actualKey.toLowerCase();
             if (keys.some(k => k.toLowerCase() === lowKey)) {
@@ -127,7 +126,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   const contact = useMemo(() => resolveContact(currentPartner), [currentPartner]);
 
-  // Permissive logic: Enable buttons if ANY string exists, let API handle format validation
   const hasEmail = contact.email.length > 3; 
   const hasPhone = contact.whatsapp.length > 5;
 
@@ -250,10 +248,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogCopyAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
+                        <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogAndCopyAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
-                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogCopyAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
+                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogAndCopyAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
                         <Button className="font-bold shadow-lg text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || !hasEmail}>
@@ -273,6 +271,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         { id: 'offer', label: '4. The Offer' },
                         { id: 'pitch', label: '5. The Pitch' },
                         { id: 'framework', label: '6. The Framework' },
+                        { id: 'sales-intelligence', label: '7. Sales Intelligence' },
                     ].map((tab) => (
                         <Button
                             key={tab.id}
@@ -299,6 +298,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             )}
                             {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
                             {activeTab === 'framework' && <Framework partner={currentPartner} />}
+                            {activeTab === 'sales-intelligence' && <SalesIntelligence partner={currentPartner} />}
                         </Suspense>
                     </div>
                 </div>

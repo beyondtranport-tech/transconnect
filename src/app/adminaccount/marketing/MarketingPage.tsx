@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +18,7 @@ const TechArchitecture = dynamic(() => import('@/app/adminaccount/marketing/cont
 const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
 const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
 const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
+const SalesIntelligence = dynamic(() => import('@/app/adminaccount/marketing/content/SalesIntelligence'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Offers
 const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -107,6 +107,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <TabsTrigger value="company-profile" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Profile</TabsTrigger>
                 <TabsTrigger value="tech-architecture" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Tech</TabsTrigger>
                 <TabsTrigger value="revenue-model" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Revenue</TabsTrigger>
+                <TabsTrigger value="sales-intelligence" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-primary">Intelligence</TabsTrigger>
                 <TabsTrigger value="offer" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Offer</TabsTrigger>
                 <TabsTrigger value="pitch" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Pitch</TabsTrigger>
                 <TabsTrigger value="framework" className="px-4 py-2 text-[10px] font-bold uppercase tracking-widest">Framework</TabsTrigger>
@@ -143,6 +144,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <TabsContent value="company-profile"><Card className="border-none shadow-xl"><CardContent className="p-8"><CompanyProfile audience={audience} /></CardContent></Card></TabsContent>
                 <TabsContent value="tech-architecture"><Card className="border-none shadow-xl"><CardContent className="p-8"><TechArchitecture /></CardContent></Card></TabsContent>
                 <TabsContent value="revenue-model"><Card className="border-none shadow-xl"><CardContent className="p-8"><RevenueModel /></CardContent></Card></TabsContent>
+                <TabsContent value="sales-intelligence"><Card className="border-none shadow-xl"><CardContent className="p-8"><SalesIntelligence /></CardContent></Card></TabsContent>
                 <TabsContent value="offer"><Card className="border-none shadow-xl"><CardContent className="p-8"><config.Offer /></CardContent></Card></TabsContent>
                 <TabsContent value="pitch"><Card className="border-none shadow-xl"><CardContent className="p-8"><PitchDeck /></CardContent></Card></TabsContent>
                 <TabsContent value="framework"><Card className="border-none shadow-xl"><CardContent className="p-8"><Framework /></CardContent></Card></TabsContent>

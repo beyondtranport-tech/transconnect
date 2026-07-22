@@ -3,7 +3,7 @@
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, ArrowRight, Store, Rocket, Handshake, Users, ShieldCheck, Database } from "lucide-react";
+import { CheckCircle, ArrowRight, Store, Rocket, Handshake, Users, ShieldCheck, Database, Zap, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import React from "react";
@@ -17,7 +17,7 @@ export default function AboutPage() {
   const ctaLink = user ? '/account?view=shop' : '/join?role=vendor';
 
   return (
-    <div className="bg-background">
+    <div className="bg-background text-left">
         <section className="relative w-full h-64 md:h-80 bg-slate-900">
             {aboutHeroImage && (
                 <Image
@@ -40,44 +40,44 @@ export default function AboutPage() {
                 <div className="max-w-4xl mx-auto text-center mb-16">
                     <h2 className="text-3xl md:text-4xl font-bold font-headline">From Information to Transaction</h2>
                     <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
-                       The biggest barrier to growth is the lack of verified information. We provide the forensic intelligence to find your next partner, and the digital tools to close the deal. Once you've unlocked the registry, we provide the infrastructure to scale.
+                       The biggest barrier to growth is the lack of verified information. We provide the forensic intelligence to find your next partner, and the digital tools to close the deal.
                     </p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-12 items-center">
                     <div className="space-y-6">
-                        <div className="bg-primary/10 p-4 rounded-2xl w-fit"><Store className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-3xl font-black font-headline text-foreground">Your Digital Branch</h3>
+                        <div className="bg-primary/10 p-4 rounded-2xl w-fit"><Zap className="h-10 w-10 text-primary"/></div>
+                        <h3 className="text-3xl font-black font-headline text-foreground">The Intelligence Mechanism</h3>
                         <p className="text-lg text-muted-foreground leading-relaxed">
-                            Creating a professional online presence shouldn't be a hurdle. With an Intelligence Membership, you unlock the ability to create a complete digital twin of your business in minutes.
+                            We don't just list your business; we actively track market interest. Our system records every time a verified member selects your profile to engage, creating a high-intent sales pipeline for you.
                         </p>
                         <div className="space-y-4">
                             <div className="flex gap-4">
                                 <CheckCircle className="h-6 w-6 text-primary shrink-0" />
                                 <div>
-                                    <p className="font-bold">Automated Shop Wizard</p>
-                                    <p className="text-sm text-muted-foreground">List products, service lanes, and routes with a simple forensic-ready interface.</p>
+                                    <p className="font-bold">Inbound Interest Tracking</p>
+                                    <p className="text-sm text-muted-foreground">Receive real-time alerts on your dashboard when community members are looking at your capacity.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4">
                                 <CheckCircle className="h-6 w-6 text-primary shrink-0" />
                                 <div>
-                                    <p className="font-bold">Verified Capacity Registry</p>
-                                    <p className="text-sm text-muted-foreground">Contribute your RC1 data to prove your fleet's standing to potential shippers.</p>
+                                    <p className="font-bold">Forensic Lead Generation</p>
+                                    <p className="text-sm text-muted-foreground">Unlock "Blind Leads" to see exactly which companies want to do business with you.</p>
                                 </div>
                             </div>
                         </div>
                         <Button asChild size="lg" className="mt-4 font-bold">
-                            <Link href={ctaLink}>Setup Your Digital Storefront <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                            <Link href={ctaLink}>Activate Your Sales Node <ArrowRight className="ml-2 h-4 w-4" /></Link>
                         </Button>
                     </div>
                     <div className="relative aspect-square rounded-3xl overflow-hidden shadow-2xl">
                          <Image
-                            src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=1000"
-                            alt="Business Growth"
+                            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000"
+                            alt="Data Analytics"
                             fill
                             className="object-cover"
-                            data-ai-hint="business growth"
+                            data-ai-hint="data analytics"
                         />
                     </div>
                 </div>
@@ -99,16 +99,16 @@ export default function AboutPage() {
                             <CardTitle>Data as an Asset</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-slate-400">Contribute your supplier or fleet data to earn points. High-quality data de-risks your business for our finance partners.</p>
+                            <p className="text-sm text-slate-400">Contribute your verified fleet or supplier data to earn reward points and de-risk your business for funders.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-white/5 border-white/10 text-white">
                         <CardHeader>
-                            <Rocket className="h-8 w-8 text-primary mb-2" />
-                            <CardTitle>ISA Partnership</CardTitle>
+                            <Target className="h-8 w-8 text-primary mb-2" />
+                            <CardTitle>High-Intent Matches</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-slate-400">Top connectors can graduate to our Independent Sales Agent tier, unlocking a share of total ecosystem revenue.</p>
+                            <p className="text-sm text-slate-400">We match your specific fleet capabilities with incoming freight requirements in the Loads Mall.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-white/5 border-white/10 text-white">
@@ -117,7 +117,7 @@ export default function AboutPage() {
                             <CardTitle>Trusted Handshake</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-sm text-slate-400">We verify identities to ensure you're transacting with real business owners, not brokers or middlemen.</p>
+                            <p className="text-sm text-slate-400">We verify identities to ensure you're transacting with real business owners, not middlemen.</p>
                         </CardContent>
                     </Card>
                 </div>
