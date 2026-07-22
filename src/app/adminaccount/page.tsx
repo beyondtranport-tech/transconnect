@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -103,6 +102,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     
+    // Stabilize check with primitive values to prevent loop
     const uid = user?.uid;
     const email = user?.email;
 
@@ -150,7 +150,7 @@ function AdminAccountContent() {
 
   const renderContent = useCallback(() => {
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.replace('marketing-', '');
+        const audience = activeView.replace('marketing-', '') as "transporters" | "suppliers" | "investors" | "partners" | "isa" | "developers";
         return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
@@ -196,6 +196,7 @@ function AdminAccountContent() {
   };
 
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
+  const isSocialActive = activeView.startsWith('social-');
   const isMarketingActive = activeView.startsWith('marketing-');
 
   return (
@@ -300,9 +301,7 @@ function AdminAccountContent() {
     </Sidebar>
     <SidebarInset>
         <div className="p-6 text-left">
-            <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
-                {renderContent()}
-            </Suspense>
+            {renderContent()}
         </div>
     </SidebarInset>
     </SidebarProvider>
@@ -312,7 +311,9 @@ function AdminAccountContent() {
 export default function AdminAccountPage() {
   return (
     <AdminAuthGuard>
-        <AdminAccountContent />
+        <Suspense fallback={<div className="flex justify-center items-center py-20 text-left"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+            <AdminAccountContent />
+        </Suspense>
     </AdminAuthGuard>
   );
 }

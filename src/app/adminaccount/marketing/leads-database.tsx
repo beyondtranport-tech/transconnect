@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -177,7 +176,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground text-foreground">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
                     <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                         <Users className="h-4 w-4" /> Marketing Manager
@@ -187,7 +186,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                     <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
 
-                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
+                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground text-foreground">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
                         <UserCheck className="h-4 w-4" /> CEO / Principal
                     </h4>
@@ -380,7 +379,7 @@ function LeadsDatabaseComponent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
+      <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
         <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
           <div className="text-left text-foreground text-left text-foreground text-foreground text-foreground">
             <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>
@@ -405,7 +404,7 @@ function LeadsDatabaseComponent() {
         </CardHeader>
 
         <Card className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
-            <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+            <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                 {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
