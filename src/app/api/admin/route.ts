@@ -6,6 +6,10 @@ import sgMail from '@sendgrid/mail';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * UTILITY: SERIALIZE DATA
+ * Converts Firestore objects to JSON-serializable strings.
+ */
 function serializeData(docData: any): any {
     if (docData === null || docData === undefined) return docData;
     if (docData instanceof Timestamp) return docData.toDate().toISOString();
@@ -21,6 +25,10 @@ function serializeData(docData: any): any {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+/**
+ * MASTER ADMIN API ROUTER
+ * High-fidelity oversight for registries, commercial agreements, and engagement.
+ */
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -56,20 +64,14 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
-            case 'approveShop': {
-                const { shopId, companyId } = payload;
-                const shopRef = db.doc(`companies/${companyId}/shops/${shopId}`);
-                const publicRef = db.doc(`shops/${shopId}`);
-                
-                const snap = await shopRef.get();
-                if (!snap.exists) throw new Error("Shop not found.");
-                
-                const data = snap.data()!;
-                await db.runTransaction(async (t) => {
-                    t.update(shopRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
-                    t.set(publicRef, { ...data, status: 'approved', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                });
-                return NextResponse.json({ success: true });
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'savePartner': {
@@ -79,19 +81,83 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id });
             }
 
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const colName = isLead ? 'leads' : 'partners';
-                const partnerRef = db.collection(colName).doc(partnerId);
-                const logRef = partnerRef.collection('communications').doc();
+            case 'deletePartner': {
+                const { partnerId, source } = payload;
+                const col = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(col).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                const batch = db.batch();
+                partners.forEach((p: any) => {
+                    const id = p.record_id || p.id || db.collection('partners').doc().id;
+                    const col = (type === 'lead' || p.source === 'Lead') ? 'leads' : 'partners';
+                    batch.set(db.collection(col).doc(id), {
+                        ...p,
+                        id,
+                        type: type || p.type || 'partner',
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                const colName = type === 'lead' ? 'leads' : 'partners';
+                const docRef = db.collection(colName).doc(id);
+                const snap = await docRef.get();
+                if (!snap.exists) throw new Error("Record not found.");
+                
+                // MOCK ENRICHMENT FOR PROTOTYPE BRIDGE PIPELINE
+                // In production, this would call the Genkit 'enrichPartnerFlow'
+                const mockEnrichment = {
+                    website: 'https://vetted-industry-site.co.za',
+                    email: 'director@industry-partner.co.za',
+                    marketingManager: { name: 'Vetted Lead', email: 'vetted@site.co.za', mobile: '+27 82 000 1234' },
+                    enhancementMethod: 'Forensic Bridge V4',
+                    lastEnrichedAt: FieldValue.serverTimestamp()
+                };
+                
+                await docRef.update({ ...mockEnrichment, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true, data: mockEnrichment });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type: commType, subject, notes, collection: colOverride } = payload;
+                const colName = colOverride || 'partners';
+                const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
                 await logRef.set({
                     id: logRef.id,
-                    type: 'System',
-                    subject: 'FORENSIC RESEARCH INITIATED',
-                    notes: 'Forensic gap-analysis command generated for AI Studio.',
+                    type: commType,
+                    subject,
+                    notes,
                     timestamp: FieldValue.serverTimestamp()
                 });
-                await partnerRef.update({ status: 'contacted', updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getAudienceCommunications': {
+                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getAudienceTasks': {
+                const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getBrokerAgreements': {
+                const snap = await db.collectionGroup('brokerAgreements').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }))) });
+            }
+
+            case 'updateBrokerAgreementStatus': {
+                const { path, status } = payload;
+                await db.doc(path).update({ status, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true });
             }
 
@@ -101,12 +167,28 @@ export async function POST(req: NextRequest) {
                 const apiKey = process.env.SENDGRID_API_KEY;
                 if (!apiKey) throw new Error("SendGrid Key Missing.");
                 sgMail.setApiKey(apiKey);
-                await sgMail.send({ to: email.trim(), from: 'Logistics Flow <noreply@logisticsflow.co.za>', subject, html });
+                await sgMail.send({ 
+                    to: email.trim(), 
+                    from: 'Logistics Flow <noreply@logisticsflow.co.za>', 
+                    subject, 
+                    html 
+                });
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
                 const logRef = partnerRef.collection('communications').doc();
-                await logRef.set({ id: logRef.id, type: 'Email', subject, notes: 'Sent via SendGrid API.', timestamp: FieldValue.serverTimestamp() });
-                await partnerRef.update({ status: 'contacted', lastOutreachSubject: subject, lastOutreachAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });
+                await logRef.set({ 
+                    id: logRef.id, 
+                    type: 'Email', 
+                    subject, 
+                    notes: 'Sent via SendGrid API.', 
+                    timestamp: FieldValue.serverTimestamp() 
+                });
+                await partnerRef.update({ 
+                    status: 'contacted', 
+                    lastOutreachSubject: subject, 
+                    lastOutreachAt: FieldValue.serverTimestamp(), 
+                    updatedAt: FieldValue.serverTimestamp() 
+                });
                 return NextResponse.json({ success: true });
             }
 
