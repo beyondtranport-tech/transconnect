@@ -185,7 +185,7 @@ export default function SupplierIntelligencePage() {
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
                                 <SelectTrigger><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
-                                    {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {suburbs.map(s => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -222,7 +222,7 @@ export default function SupplierIntelligencePage() {
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
-                            <div className="text-left">
+                            <div className="text-left text-foreground">
                                 <h2 className="text-2xl font-black text-foreground flex items-center gap-2">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
@@ -249,8 +249,8 @@ export default function SupplierIntelligencePage() {
                                 <TableBody>
                                     {results.map((res) => (
                                         <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left text-foreground">
-                                            <TableCell className="py-4">
-                                                <div className="flex flex-col">
+                                            <TableCell className="py-4 text-left">
+                                                <div className="flex flex-col text-left">
                                                     <span className="font-black text-sm text-slate-900">{res.companyName}</span>
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Vendor'}</Badge>
                                                 </div>
@@ -283,20 +283,19 @@ export default function SupplierIntelligencePage() {
                                                     )}
                                                 </div>
                                             </TableCell>
-                                            <TableCell>
-                                                <span className={cn("text-xs font-bold", !isPaid && "blur-sm select-none opacity-50")}>
+                                            <TableCell className="text-left">
+                                                <span className={cn("text-xs font-bold text-left", !isPaid && "blur-sm select-none opacity-50")}>
                                                     {res.contactPerson || 'Vetted Decision Maker'}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 {isPaid ? (
-                                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase">RFQ</Button>
-                                                        <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">Website</Button>
-                                                    </div>
+                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
+                                                        <Link href={`/mall/supplier/${res.id}`}>Select to Engage</Link>
+                                                    </Button>
                                                 ) : (
                                                     <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Unlock Info</Link>
+                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Select to Unlock</Link>
                                                     </Button>
                                                 )}
                                             </TableCell>

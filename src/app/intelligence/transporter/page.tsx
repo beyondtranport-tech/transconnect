@@ -138,7 +138,7 @@ export default function TransporterIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Node Claimed!" });
                 forceRefresh();
@@ -155,61 +155,61 @@ export default function TransporterIntelligencePage() {
         <div className="bg-slate-50 min-h-screen text-left text-foreground">
             <section className="bg-slate-900 text-white py-16 text-center">
                 <div className="container mx-auto px-4">
-                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest text-center">Forensic Registry</Badge>
+                    <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest text-center text-white">Forensic Registry</Badge>
                     <h1 className="text-4xl md:text-6xl font-black font-headline text-white text-center">Transporter intelligence</h1>
-                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center">Map the South African transport landscape. Find verified hauliers based on precise fleet capabilities.</p>
+                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center text-white">Map the South African transport landscape. Find verified hauliers based on precise fleet capabilities.</p>
                 </div>
             </section>
 
-            <section className="container mx-auto px-4 -mt-12 text-left">
+            <section className="container mx-auto px-4 -mt-12 text-left text-foreground">
                 <Card className="max-w-5xl mx-auto shadow-2xl border-none text-left text-foreground">
-                    <CardHeader className="bg-white rounded-t-xl border-b text-left">
-                        <CardTitle className="flex items-center gap-2 text-left">
+                    <CardHeader className="bg-white rounded-t-xl border-b text-left text-foreground">
+                        <CardTitle className="flex items-center gap-2 text-left text-foreground">
                             <Navigation className="h-5 w-5 text-primary" />
                             Specify Requirements
                         </CardTitle>
-                        <CardDescription className="text-left">Select your location and the specific service type to match with verified capacity.</CardDescription>
+                        <CardDescription className="text-left text-foreground">Select your location and the specific service type to match with verified capacity.</CardDescription>
                     </CardHeader>
                     <CardContent className="p-6 grid grid-cols-1 md:grid-cols-4 gap-4 items-end text-left text-foreground">
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Province</Label>
                             <Select value={selectedProvince} onValueChange={setSelectedProvince}>
-                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Province" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select Province" /></SelectTrigger>
                                 <SelectContent>
                                     {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">City</Label>
                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
-                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select City" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select City" /></SelectTrigger>
                                 <SelectContent>
                                     {cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Hub</Label>
                             <Select value={selectedSuburb} onValueChange={setSelectedSuburb} disabled={!selectedCity}>
-                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Hub" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select Hub" /></SelectTrigger>
                                 <SelectContent>
                                     {suburbs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground">
                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Service Type</Label>
                             <Select value={selectedService} onValueChange={setSelectedService}>
-                                <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Service" /></SelectTrigger>
+                                <SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select Service" /></SelectTrigger>
                                 <SelectContent>
                                     {servicesMap.map(s => <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t flex justify-center p-4">
-                        <Button className="h-12 px-12 font-black uppercase text-xs tracking-widest gap-2" onClick={handleSearch} disabled={isLoading}>
+                    <CardFooter className="bg-slate-50 border-t flex justify-center p-4 text-foreground">
+                        <Button className="h-12 px-12 font-black uppercase text-xs tracking-widest gap-2 text-white" onClick={handleSearch} disabled={isLoading}>
                             {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="h-4 w-4" />}
                             Execute Search
                         </Button>
@@ -219,7 +219,7 @@ export default function TransporterIntelligencePage() {
 
             <section className="container mx-auto px-4 py-16 text-left text-foreground">
                 {!hasSearched && !error ? (
-                    <div className="text-center py-20 opacity-20 text-foreground">
+                    <div className="text-center py-20 opacity-20 text-foreground text-center">
                         <Database className="h-24 w-24 mx-auto mb-4" />
                         <p className="text-xl font-bold uppercase tracking-widest text-center">Ready to Match Capacity</p>
                     </div>
@@ -306,13 +306,12 @@ export default function TransporterIntelligencePage() {
                                             </TableCell>
                                             <TableCell className="text-right text-foreground">
                                                 {isPaid ? (
-                                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase">Book</Button>
-                                                        <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">RC1</Button>
-                                                    </div>
+                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
+                                                        <Link href={`/mall/transporter/${res.id}`}>Select to Engage</Link>
+                                                    </Button>
                                                 ) : (
                                                     <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Unlock Info</Link>
+                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Select to Unlock</Link>
                                                     </Button>
                                                 )}
                                             </TableCell>
@@ -323,12 +322,12 @@ export default function TransporterIntelligencePage() {
                         </Card>
 
                         {!isPaid && results.length > 0 && (
-                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
-                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left text-foreground">
+                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center">
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>
                                 <h3 className="text-3xl font-black font-headline mb-4 text-white text-center">Complete Haulier transparency</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center">
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center text-white">
                                     You are viewing a restricted preview. To remove data blurring and see direct lines to over **5,400+ verified hauliers**, upgrade to intelligence Access.
                                 </p>
                                 <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">

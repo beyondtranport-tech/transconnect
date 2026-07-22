@@ -130,7 +130,7 @@ export default function CapitalIntelligencePage() {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetId, collection: 'partners' })
             });
-            const result = await res.json();
+            const result = await response.json();
             if (result.success) {
                 toast({ title: "Node Claimed!" });
                 forceRefresh();
@@ -149,7 +149,7 @@ export default function CapitalIntelligencePage() {
                 <div className="container mx-auto px-4">
                     <Badge className="mb-4 bg-primary/20 text-primary border-primary/30 py-1.5 px-4 text-[10px] font-black uppercase tracking-widest">Forensic Registry</Badge>
                     <h1 className="text-4xl md:text-6xl font-black font-headline text-white">Capital intelligence</h1>
-                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">Map the South African funding landscape. Connect with specialized lenders and asset finance partners.</p>
+                    <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto text-center">Map the South African funding landscape. Connect with specialized lenders and asset finance partners.</p>
                 </div>
             </section>
 
@@ -223,7 +223,7 @@ export default function CapitalIntelligencePage() {
                 ) : (
                     <div className="max-w-6xl mx-auto space-y-8 text-left">
                         <div className="flex justify-between items-center px-4 border-l-4 border-primary text-left">
-                            <div className="text-left">
+                            <div className="text-left text-foreground">
                                 <h2 className="text-2xl font-black flex items-center gap-2 text-left">
                                     <TableIcon className="h-6 w-6 text-primary" />
                                     Forensic Results ({results.length})
@@ -241,9 +241,9 @@ export default function CapitalIntelligencePage() {
                             <Table>
                                 <TableHeader className="bg-slate-900 hover:bg-slate-900">
                                     <TableRow className="hover:bg-slate-900 border-none">
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Funder Entity</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Trust Signals</TableHead>
-                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4">Head of Credit</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Funder Entity</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Trust Signals</TableHead>
+                                        <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-left">Head of Credit</TableHead>
                                         <TableHead className="text-white font-bold uppercase text-[10px] tracking-widest py-4 text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -251,7 +251,7 @@ export default function CapitalIntelligencePage() {
                                     {results.map((res) => (
                                         <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left text-foreground">
                                             <TableCell className="py-4">
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col text-left">
                                                     <span className="font-black text-sm text-slate-900">{res.companyName}</span>
                                                     <Badge variant="outline" className="w-fit text-[9px] h-4 mt-1 border-primary/30 text-primary uppercase">{res.entryType || 'Finance'}</Badge>
                                                 </div>
@@ -285,19 +285,18 @@ export default function CapitalIntelligencePage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <span className={cn("text-xs font-bold", !isPaid && "blur-sm select-none opacity-50")}>
+                                                <span className={cn("text-xs font-bold text-left", !isPaid && "blur-sm select-none opacity-50")}>
                                                     {res.contactPerson || 'Credit Authority Verified'}
                                                 </span>
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 {isPaid ? (
-                                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button size="sm" variant="outline" className="h-8 text-[10px] font-black uppercase">Apply</Button>
-                                                        <Button size="sm" variant="ghost" className="h-8 text-[10px] font-black uppercase">Website</Button>
-                                                    </div>
+                                                    <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
+                                                        <Link href={`/funding/apply?origination=market&type=${res.entryType}`}>Select to Engage</Link>
+                                                    </Button>
                                                 ) : (
                                                     <Button asChild size="sm" variant="default" className="h-8 text-[10px] font-black uppercase shadow-sm">
-                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Unlock Info</Link>
+                                                        <Link href="/checkout/intelligence"><Lock className="h-3 w-3 mr-1" /> Select to Unlock</Link>
                                                     </Button>
                                                 )}
                                             </TableCell>
@@ -308,15 +307,15 @@ export default function CapitalIntelligencePage() {
                         </Card>
 
                         {!isPaid && results.length > 0 && (
-                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto">
-                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6">
+                            <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto text-left">
+                                <div className="bg-primary/20 p-4 rounded-full w-fit mx-auto mb-6 text-center">
                                     <Lock className="h-10 w-10 text-primary" />
                                 </div>
-                                <h3 className="text-3xl font-black font-headline mb-4">Complete Funder transparency</h3>
+                                <h3 className="text-3xl font-black font-headline mb-4 text-white text-center">Complete Funder transparency</h3>
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center">
                                     You are viewing a restricted preview. To remove data blurring and see direct contact details for over **85+ specialized lenders**, upgrade to Intelligence Access.
                                 </p>
-                                <Button asChild size="lg" className="h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
+                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
                                     <Link href="/checkout/intelligence">Unlock Funder Registry <ArrowRight className="ml-2 h-5 w-5"/></Link>
                                 </Button>
                             </Card>
