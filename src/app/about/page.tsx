@@ -44,19 +44,19 @@ export default function AboutPage() {
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-6 text-left">
                         <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner"><Database className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-4xl font-black font-headline text-foreground leading-tight">The Map: Forensic Intelligence</h3>
-                        <p className="text-lg text-muted-foreground leading-relaxed">
+                        <h3 className="text-4xl font-black font-headline text-foreground leading-tight text-left">The Map: Forensic Intelligence</h3>
+                        <p className="text-lg text-muted-foreground leading-relaxed text-left">
                             We have cataloged over 22,000 industrial records. We provide the forensic map of every haulier, supplier, and lender in the grid, giving you direct lines to MD/CEO level decision-makers.
                         </p>
                         <div className="space-y-4">
-                            <div className="flex gap-4 items-start">
+                            <div className="flex gap-4 items-start text-left">
                                 <Fingerprint className="h-6 w-6 text-primary shrink-0 mt-1" />
                                 <div className="text-left">
                                     <p className="font-bold text-foreground">Layer 1: Node Ownership</p>
                                     <p className="text-sm text-muted-foreground">Claim your existing record for R10/mo to verify your digital identity and manage your community reputation.</p>
                                 </div>
                             </div>
-                            <div className="flex gap-4 items-start">
+                            <div className="flex gap-4 items-start text-left">
                                 <Database className="h-6 w-6 text-primary shrink-0 mt-1" />
                                 <div className="text-left">
                                     <p className="font-bold text-foreground">Layer 2: Registry Intelligence</p>
@@ -84,19 +84,19 @@ export default function AboutPage() {
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="md:order-2 space-y-6 text-left">
                         <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner"><Scale className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-4xl font-black font-headline text-white leading-tight">The Engine: Transactional Execution</h3>
+                        <h3 className="text-4xl font-black font-headline text-white leading-tight text-left">The Engine: Transactional Execution</h3>
                         <p className="text-lg text-slate-300 leading-relaxed text-left">
                             A map is useless without a vehicle. Logistics Flow provides the transactional engine to execute deals, verify compliance, and fund your growth.
                         </p>
                         <div className="space-y-4">
-                            <div className="flex gap-4 items-start">
+                            <div className="flex gap-4 items-start text-left">
                                 <Zap className="h-6 w-6 text-primary shrink-0 mt-1" />
                                 <div className="text-left">
                                     <p className="font-bold text-white">Layer 3: Mall Intelligence</p>
                                     <p className="text-sm text-slate-400">Access deep-data nodes within specialized malls to find matching loads, fleet capacity, or warehousing space.</p>
                                 </div>
                             </div>
-                            <div className="flex gap-4 items-start">
+                            <div className="flex gap-4 items-start text-left">
                                 <ShieldCheck className="h-6 w-6 text-primary shrink-0 mt-1" />
                                 <div className="text-left">
                                     <p className="font-bold text-white">Layer 4: Transactional Membership</p>
@@ -121,36 +121,36 @@ export default function AboutPage() {
         {/* SUMMARY SECTION */}
         <section className="py-24 bg-white text-center">
             <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto mb-16">
-                    <h2 className="text-4xl font-black font-headline text-foreground">The Industrial Handshake</h2>
-                    <p className="mt-4 text-lg text-muted-foreground text-center">
+                <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                    <h2 className="text-4xl font-black font-headline text-foreground text-center">The Industrial Handshake</h2>
+                    <p className="text-lg text-muted-foreground text-center">
                         Our most successful members don't just use the data—they help build the registry and get paid in return.
                     </p>
                 </div>
                 <div className="grid md:grid-cols-3 gap-8 text-left">
                     <Card className="bg-slate-50 border-none shadow-lg text-left group hover:bg-primary transition-colors">
-                        <CardContent className="p-8 space-y-4">
+                        <CardContent className="p-8 space-y-4 text-left">
                             <Globe className="h-10 w-10 text-primary group-hover:text-white" />
-                            <h3 className="text-xl font-bold group-hover:text-white">Absolute Visibility</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed">Stop operating in the dark. Use our forensic registry to find every haulier and supplier in South Africa.</p>
+                            <h3 className="text-xl font-bold group-hover:text-white text-left">Absolute Visibility</h3>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">Stop operating in the dark. Use our forensic registry to find every haulier and supplier in South Africa.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg text-left group hover:bg-primary transition-colors">
-                        <CardContent className="p-8 space-y-4">
+                        <CardContent className="p-8 space-y-4 text-left">
                             <Banknote className="h-10 w-10 text-primary group-hover:text-white" />
-                            <h3 className="text-xl font-bold group-hover:text-white">Direct Capital</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed">We use your real-world transactional data to fund your business where traditional banks fail.</p>
+                            <h3 className="text-xl font-bold group-hover:text-white text-left">Direct Capital</h3>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">We use your real-world transactional data to fund your business where traditional banks fail.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg text-left group hover:bg-primary transition-colors">
-                        <CardContent className="p-8 space-y-4">
+                        <CardContent className="p-8 space-y-4 text-left">
                             <Landmark className="h-10 w-10 text-primary group-hover:text-white" />
-                            <h3 className="text-xl font-bold group-hover:text-white">Reputation Nodes</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed">Build a verified track record in the community. Secure your identity and earn the trust of the grid.</p>
+                            <h3 className="text-xl font-bold group-hover:text-white text-left">Reputation Nodes</h3>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">Build a verified track record in the community. Secure your identity and earn the trust of the grid.</p>
                         </CardContent>
                     </Card>
                 </div>
-                <div className="mt-16">
+                <div className="mt-16 text-center">
                     <Button asChild size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
                         <Link href={ctaLink}>Establish My Digital standing <ArrowRight className="ml-2 h-5 w-5"/></Link>
                     </Button>

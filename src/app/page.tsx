@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Button as ShadButton } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, CheckCircle2, Database, Truck, Landmark, Building2, Zap, Scale, Handshake, Fingerprint, FileCheck, Banknote } from "lucide-react";
+import { ArrowRight, CheckCircle2, Database, Truck, Landmark, Building2, Zap, Scale, Handshake, Fingerprint, FileCheck, Banknote, ShieldCheck, ShoppingCart, Network } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -13,6 +13,7 @@ import * as gtag from '@/lib/gtag';
 import { HomeIntentModal } from "./home-intent-modal";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 const { placeholderImages } = data;
 const heroImage = placeholderImages.find(p => p.id === 'hero-home');
@@ -35,7 +36,7 @@ export default function HomePage() {
     <div className="bg-background text-left text-foreground">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
-      {/* HERO SECTION: THE DATA + TRANSACTION IDENTITY */}
+      {/* HERO SECTION */}
       <section className="relative w-full h-[85vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
         <div className="absolute inset-0 z-0 opacity-20">
            {heroImage && <Image src={heroImage.imageUrl} alt="Logistics Background" fill className="object-cover" priority data-ai-hint="truck highway night" />}
@@ -51,53 +52,120 @@ export default function HomePage() {
                     Establish Handshake <ArrowRight className="ml-2 h-5 w-5" />
                 </ShadButton>
                 <ShadButton asChild size="lg" variant="outline" className="h-16 px-12 text-lg font-black uppercase tracking-tight border-white/20 hover:bg-white/10">
-                    <Link href="/pricing">View Industrial Nodes</Link>
+                    <Link href="/pricing">Explore Industrial Nodes</Link>
                 </ShadButton>
             </div>
         </div>
       </section>
 
-      {/* SECTION 1: THE DATA FOUNDATION (THE MAP) */}
-      <section className="py-24 bg-slate-50 border-b">
+      {/* THE 4-LAYER ARCHITECTURE GRID */}
+      <section className="py-24 bg-white border-b">
         <div className="container mx-auto px-4 text-left">
-            <div className="max-w-3xl mx-auto text-center mb-16 space-y-4">
-                <Badge variant="outline" className="border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest px-4">Layer 1: The Registry</Badge>
-                <h2 className="text-3xl md:text-5xl font-black font-headline text-slate-900">22,000+ Forensic Industrial Records</h2>
+            <div className="max-w-4xl mx-auto text-center mb-20 space-y-4">
+                <Badge variant="outline" className="border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest px-4">Platform Blueprint</Badge>
+                <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 tracking-tight text-center">The Industrial Grid Architecture</h2>
                 <p className="text-lg text-muted-foreground leading-relaxed text-center">
-                    Our database is the source of truth for South African logistics. We map direct lines to the decision-makers that other platforms ignore.
+                    Logistics Flow is built in four modular layers. Establish your foundation, then activate specialized intelligence nodes to plug into the grid.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left">
-                    <div className="bg-blue-100 p-3 rounded-2xl w-fit mb-6 group-hover:bg-blue-600 transition-colors text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto text-left">
+                {/* LAYER 1 */}
+                <Card className="bg-slate-50 border-2 border-slate-100 p-8 flex flex-col h-full hover:border-primary/20 transition-all text-left">
+                    <div className="flex items-center gap-3 mb-6 text-left">
+                        <div className="bg-slate-200 p-2 rounded-lg text-left"><Fingerprint className="h-5 w-5 text-slate-600" /></div>
+                        <span className="font-black text-[10px] uppercase tracking-widest text-slate-500">Layer 1</span>
+                    </div>
+                    <h3 className="text-xl font-black mb-2 text-left">Node Ownership</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left">Bind your digital identity to the registry. Verification and reputation management foundation.</p>
+                    <div className="mt-auto">
+                        <p className="font-black text-primary text-xl">R10 <span className="text-[10px] text-muted-foreground font-bold">/ MONTH</span></p>
+                    </div>
+                </Card>
+
+                {/* LAYER 2 */}
+                <Card className="bg-primary/5 border-2 border-primary/20 p-8 flex flex-col h-full hover:border-primary transition-all text-left">
+                    <div className="flex items-center gap-3 mb-6 text-left">
+                        <div className="bg-primary/10 p-2 rounded-lg text-left"><Database className="h-5 w-5 text-primary" /></div>
+                        <span className="font-black text-[10px] uppercase tracking-widest text-primary">Layer 2</span>
+                    </div>
+                    <h3 className="text-xl font-black mb-2 text-left">Registry Intelligence</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left">Unlock the global map. Full direct contact details for 22,000+ verified decision makers.</p>
+                    <div className="mt-auto text-left">
+                        <p className="font-black text-primary text-xl">R100 <span className="text-[10px] text-muted-foreground font-bold">/ MONTH</span></p>
+                    </div>
+                </Card>
+
+                {/* LAYER 3 */}
+                <Card className="bg-amber-50 border-2 border-amber-200 p-8 flex flex-col h-full hover:border-amber-400 transition-all text-left text-foreground">
+                    <div className="flex items-center gap-3 mb-6 text-left text-foreground">
+                        <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
+                        <span className="font-black text-[10px] uppercase tracking-widest text-amber-600 text-left">Layer 3</span>
+                    </div>
+                    <h3 className="text-xl font-black mb-2 text-left text-foreground">Mall Intelligence</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left text-foreground">Specialized deep-data access. View fleet specs, catalogs, and real-time load board matches.</p>
+                    <div className="mt-auto text-left text-foreground">
+                        <Badge variant="outline" className="border-amber-200 text-amber-700 font-bold uppercase text-[9px]">Earning Nodes</Badge>
+                    </div>
+                </Card>
+
+                {/* LAYER 4 */}
+                <Card className="bg-blue-50 border-2 border-blue-200 p-8 flex flex-col h-full hover:border-blue-400 transition-all text-left text-foreground">
+                    <div className="flex items-center gap-3 mb-6 text-left text-foreground">
+                        <div className="bg-blue-100 p-2 rounded-lg text-left text-foreground"><Scale className="h-5 w-5 text-blue-600" /></div>
+                        <span className="font-black text-[10px] uppercase tracking-widest text-blue-600 text-left">Layer 4</span>
+                    </div>
+                    <h3 className="text-xl font-black mb-2 text-left text-foreground">Transactional Tiers</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left text-foreground">The Engine. Operational memberships to create shops, process handshakes, and cerrar deals.</p>
+                    <div className="mt-auto text-left text-foreground">
+                        <Badge variant="outline" className="border-blue-200 text-blue-700 font-bold uppercase text-[9px] text-left">Operational</Badge>
+                    </div>
+                </Card>
+            </div>
+        </div>
+      </section>
+
+      {/* SECTION: THE FORENSIC DATASETS */}
+      <section className="py-24 bg-slate-50 border-b">
+        <div className="container mx-auto px-4 text-left text-foreground">
+            <div className="max-w-3xl mx-auto text-center mb-16 space-y-4">
+                <Badge variant="outline" className="border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest px-4">Layer 2: The Map</Badge>
+                <h2 className="text-3xl md:text-5xl font-black font-headline text-slate-900 text-center">Global Industrial Intelligence</h2>
+                <p className="text-lg text-muted-foreground leading-relaxed text-center">
+                    Direct access to the market leadership. Bypass gatekeepers and reach MD/CEO level stakeholders across the grid.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left text-foreground">
+                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left text-foreground">
+                    <div className="bg-blue-100 p-3 rounded-2xl w-fit mb-6 group-hover:bg-blue-600 transition-colors text-left text-foreground">
                         <Truck className="h-8 w-8 text-blue-600 group-hover:text-white" />
                     </div>
                     <h3 className="text-2xl font-black mb-2 text-left">Transporters</h3>
                     <p className="text-muted-foreground text-sm mb-6 leading-relaxed text-left">Map 5,420+ verified hauliers. Filter by RC1 compliance, GIT insurance, and specialized vehicle classes.</p>
-                    <ShadButton variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary" asChild>
+                    <ShadButton variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary text-left" asChild>
                         <Link href="/intelligence/transporter">Search Registry <ArrowRight className="ml-1 h-3 w-3"/></Link>
                     </ShadButton>
                 </Card>
 
-                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left">
-                    <div className="bg-green-100 p-3 rounded-2xl w-fit mb-6 group-hover:bg-green-600 transition-colors text-left">
+                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left text-foreground text-foreground">
+                    <div className="bg-green-100 p-3 rounded-2xl w-fit mb-6 group-hover:bg-green-600 transition-colors text-left text-foreground">
                         <Building2 className="h-8 w-8 text-green-600 group-hover:text-white" />
                     </div>
-                    <h3 className="text-2xl font-black mb-2 text-left">Suppliers</h3>
-                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed text-left">28 industrial categories mapped. Direct lines to CEO/MD level leadership for parts, fuel, and tires.</p>
-                    <ShadButton variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary" asChild>
+                    <h3 className="text-2xl font-black mb-2 text-left text-foreground">Suppliers</h3>
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed text-left text-foreground">28 industrial categories mapped. Direct lines to CEO/MD level leadership for parts, fuel, and tires.</p>
+                    <ShadButton variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary text-left text-foreground" asChild>
                         <Link href="/intelligence/supplier">Search Registry <ArrowRight className="ml-1 h-3 w-3"/></Link>
                     </ShadButton>
                 </Card>
 
-                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left">
-                    <div className="bg-amber-100 p-3 rounded-2xl w-fit mb-6 group-hover:bg-amber-600 transition-colors text-left">
+                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left text-foreground">
+                    <div className="bg-amber-100 p-3 rounded-2xl w-fit mb-6 group-hover:bg-amber-600 transition-colors text-left text-foreground">
                         <Landmark className="h-8 w-8 text-amber-600 group-hover:text-white" />
                     </div>
-                    <h3 className="text-2xl font-black mb-2 text-left">Capital</h3>
-                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed text-left">Connect with 85+ specialized lenders. Match your operational data with targeted working capital.</p>
-                    <ShadButton variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary" asChild>
+                    <h3 className="text-2xl font-black mb-2 text-left text-foreground">Capital</h3>
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed text-left text-foreground">Connect with 85+ specialized lenders. Match your operational data with targeted working capital.</p>
+                    <ShadButton variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary text-left text-foreground" asChild>
                         <Link href="/intelligence/finance">Search Registry <ArrowRight className="ml-1 h-3 w-3"/></Link>
                     </ShadButton>
                 </Card>
@@ -105,68 +173,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SECTION 2: THE DIFFERENTIATOR (THE TRANSACTION ENGINE) */}
-      <section className="py-24 bg-white relative overflow-hidden">
-        <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-20 items-center">
-                <div className="relative">
-                    <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full opacity-30 animate-pulse" />
-                    <Card className="relative z-10 border-none shadow-2xl bg-slate-900 text-white p-10 rounded-[2.5rem] text-left">
-                        <div className="space-y-8 text-left">
-                            <div className="flex items-center gap-3 text-left">
-                                <Scale className="h-8 w-8 text-primary" />
-                                <h4 className="font-black uppercase tracking-[0.2em] text-sm text-left">Transactional Layer</h4>
-                            </div>
-                            <div className="space-y-4 text-left">
-                                <div className="flex items-start gap-4 text-left">
-                                    <div className="bg-primary/20 p-2 rounded-lg mt-1 text-left text-foreground"><Handshake className="h-5 w-5 text-primary" /></div>
-                                    <div className="text-left"><p className="font-bold text-white text-left">The Handshake Protocol</p><p className="text-xs text-slate-400 text-left">Data-verified matching between transporters and suppliers.</p></div>
-                                </div>
-                                <div className="flex items-start gap-4 text-left">
-                                    <div className="bg-primary/20 p-2 rounded-lg mt-1 text-left text-foreground"><FileCheck className="h-5 w-5 text-primary" /></div>
-                                    <div className="text-left"><p className="font-bold text-white text-left">Fulfillment Ledger</p><p className="text-xs text-slate-400 text-left">Automated Proof of Delivery (POD) and invoicing synchronization.</p></div>
-                                </div>
-                                <div className="flex items-start gap-4 text-left">
-                                    <div className="bg-primary/20 p-2 rounded-lg mt-1 text-left text-foreground"><Banknote className="h-5 w-5 text-primary" /></div>
-                                    <div className="text-left"><p className="font-bold text-white text-left">Capital Injection</p><p className="text-xs text-slate-400 text-left">Real-world activity data allows us to fund your deals instantly.</p></div>
-                                </div>
-                            </div>
-                            <Separator className="bg-white/10" />
-                            <div className="p-6 bg-primary/10 rounded-3xl border border-primary/20 text-center">
-                                <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1 text-center">Total Transactional Flow</p>
-                                <p className="text-3xl font-black text-white text-center">Live Monitoring</p>
-                            </div>
-                        </div>
-                    </Card>
-                </div>
-
-                <div className="space-y-8 text-left text-foreground">
-                    <Badge className="bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Layer 2: The Engine</Badge>
-                    <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 leading-tight text-left">Data is the Map.<br/>Transactions are the Vehicle.</h2>
-                    <p className="text-xl text-muted-foreground leading-relaxed text-left">
-                        A directory is useless if you can't close the deal. Logistics Flow differentiates itself by building <strong>Transactional Hubs</strong> on top of our datasets. 
-                    </p>
-                    <p className="text-lg font-bold text-slate-800 text-left">
-                        We facilitate the handshake, verify the compliance, and provide the capital to execute the work.
-                    </p>
-                    
-                    <div className="pt-4 flex flex-col sm:flex-row gap-4 text-left">
-                        <ShadButton asChild size="lg" className="h-14 px-10 font-black uppercase shadow-xl" onClick={handleJoinClick}>
-                            <Link href={ctaLink}>Activate Transaction Node <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                        </ShadButton>
-                    </div>
-                </div>
-            </div>
-        </div>
-      </section>
-
-      {/* SECTION 3: THE ACTIVATION INCENTIVE */}
+      {/* ACTIVATION BUNDLE SECTION */}
       <section className="py-24 bg-slate-900 text-white border-b">
         <div className="container mx-auto px-4 text-left">
             <div className="grid lg:grid-cols-2 gap-16 items-center text-left">
                 <div className="space-y-6 text-left">
-                    <Badge className="bg-primary text-white border-none font-black text-[10px] uppercase tracking-widest px-4">Immediate ROI</Badge>
-                    <h2 className="text-4xl md:text-5xl font-black font-headline leading-tight text-white">The Activation Bundle</h2>
+                    <Badge className="bg-primary text-white border-none font-black text-[10px] uppercase tracking-widest px-4 py-1 text-left">Immediate ROI</Badge>
+                    <h2 className="text-4xl md:text-5xl font-black font-headline leading-tight text-white text-left">The Activation Bundle</h2>
                     <p className="text-xl text-slate-400 leading-relaxed text-left">
                         Establish your Intelligence Access for **R100/mo** and instantly receive a **R500 Community Welcome Gift** to lower your operating costs from day one.
                     </p>
@@ -176,12 +189,12 @@ export default function HomePage() {
                         <li className="flex items-center gap-3 text-lg font-bold text-slate-200 text-left"><CheckCircle2 className="h-6 w-6 text-primary" /> Direct introduced path to specialized finance</li>
                     </ul>
                 </div>
-                <div className="p-10 bg-white/5 border border-white/10 rounded-[3rem] text-center backdrop-blur-sm">
+                <div className="p-10 bg-white/5 border border-white/10 rounded-[3rem] text-center backdrop-blur-sm text-foreground">
                     <Zap className="h-16 w-16 text-primary mx-auto mb-6 fill-primary" />
-                    <h3 className="text-3xl font-black mb-4 text-white">R100 Membership</h3>
-                    <p className="text-6xl font-black text-white mb-6">R500 <span className="text-xl font-normal text-slate-500">Value</span></p>
-                    <ShadButton asChild size="lg" className="w-full h-16 text-lg font-black uppercase shadow-2xl" onClick={handleJoinClick}>
-                        <Link href={ctaLink}>Claim Activation Bundle <ArrowRight className="ml-2 h-5 w-5"/></Link>
+                    <h3 className="text-3xl font-black mb-4 text-white text-center">R100 Membership</h3>
+                    <p className="text-6xl font-black text-white mb-6 text-center">R500 <span className="text-xl font-normal text-slate-500">Value</span></p>
+                    <ShadButton size="lg" className="w-full h-16 text-lg font-black uppercase shadow-2xl" onClick={handleJoinClick}>
+                        Claim Activation Bundle <ArrowRight className="ml-2 h-5 w-5"/>
                     </ShadButton>
                 </div>
             </div>
@@ -191,11 +204,11 @@ export default function HomePage() {
       {/* FINAL CTA */}
       <section className="py-32 bg-background">
             <div className="container mx-auto px-4 text-center">
-                <h2 className="text-4xl md:text-7xl font-black font-headline text-slate-900 tracking-tighter">Ready to plug into the grid?</h2>
+                <h2 className="text-4xl md:text-7xl font-black font-headline text-slate-900 tracking-tighter text-center">Ready to plug into the grid?</h2>
                 <p className="mt-8 text-xl max-w-2xl mx-auto text-muted-foreground leading-relaxed text-center">Join thousands of industry professionals who have moved from fragmented manual processes to a high-velocity digital ecosystem.</p>
                 <div className="mt-12 flex justify-center gap-6">
-                     <ShadButton asChild size="lg" className="h-16 px-16 text-lg font-black uppercase shadow-2xl" onClick={handleJoinClick}>
-                        <Link href={ctaLink}>Join for Free <ArrowRight className="ml-2 h-5 w-5" /></Link>
+                     <ShadButton size="lg" className="h-16 px-16 text-lg font-black uppercase shadow-2xl" onClick={handleJoinClick}>
+                        Join for Free <ArrowRight className="ml-2 h-5 w-5" />
                     </ShadButton>
                 </div>
             </div>
