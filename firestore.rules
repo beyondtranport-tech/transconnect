@@ -63,13 +63,12 @@ service cloud.firestore {
 
     // --- PUBLIC / CONFIGURATION RULES ---
 
-    match /configuration/{configId} {
-      allow get, list: if true;
-      // Allow public read of all sub-data within configuration (e.g. communityIncentives/active)
-      match /{allSub=**} {
-        allow get, list: if true;
-      }
+    match /configuration/{allPaths=**} {
+      // Allow public read of all configuration data and nested subcollections
+      // This includes communityIncentives/active, bankDetails, etc.
+      allow read: if true;
     }
+    
     match /memberships/{membershipId} {
       allow get, list: if true;
     }
