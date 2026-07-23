@@ -62,8 +62,40 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
             case 'getLeads': {
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getPartnersByType': {
+                const { type: pType } = payload;
+                if (!pType) throw new Error("Partner type is required.");
+                const snap = await db.collection('partners').where('type', '==', pType).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getPendingAgreements': {
+                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getLendingData': {
+                const { collectionName } = payload;
+                if (!['lendingClients', 'agreements', 'lendingAssets', 'facilities', 'securities', 'payments', 'transactions', 'lendingPartners'].includes(collectionName)) {
+                    throw new Error("Invalid lending collection requested.");
+                }
+                const isGroup = ['agreements', 'facilities', 'securities', 'payments', 'transactions'].includes(collectionName);
+                const snap = isGroup ? await db.collectionGroup(collectionName).get() : await db.collection(collectionName).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getGlobalSales': {
+                const snap = await db.collection('sales').get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -110,26 +142,6 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp()
                 });
                 return NextResponse.json({ success: true });
-            }
-
-            case 'getIncentives': {
-                const snap = await db.collection('configuration/communityIncentives/active').orderBy('createdAt', 'desc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getAudienceCommunications': {
-                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getAudienceTasks': {
-                const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(100).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getBrokerAgreements': {
-                const snap = await db.collectionGroup('brokerAgreements').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, path: d.ref.path, ...d.data() }))) });
             }
 
             case 'dispatchEngagement': {
