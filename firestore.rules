@@ -30,10 +30,9 @@ service cloud.firestore {
       );
     }
 
-    // --- PUBLIC HANDSHAKE & TRUST RULES (CRITICAL: MUST BE TOP) ---
+    // --- PUBLIC HANDSHAKE & TRUST RULES ---
 
     match /partners/{partnerId} {
-      // Authorized Public Handshake: Allow single doc retrieval for opt-in links
       allow get: if true; 
       allow list: if isSignedIn();
       allow write: if isAdmin();
@@ -69,7 +68,6 @@ service cloud.firestore {
     // --- PUBLIC / CONFIGURATION RULES ---
 
     match /configuration/{allPaths=**} {
-      // Allow public read of all configuration data and nested subcollections
       allow read: if true;
     }
     
