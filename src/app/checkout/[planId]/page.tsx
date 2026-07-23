@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -32,7 +33,7 @@ const defaultPlans = [
         id: 'intelligence',
         name: 'Intelligence Access',
         price: 100,
-        type: 'membership',
+        type: 'foundation',
         description: 'Foundational access to the forensic industrial registry and community discounts.',
         icon: ShieldCheck
     },
@@ -40,7 +41,7 @@ const defaultPlans = [
         id: 'loads_intelligence',
         name: 'Loads Intelligence',
         price: 75,
-        type: 'node',
+        type: 'earning',
         description: 'The Brokerage Node. Enables posting, taking, and settling freight loads.',
         icon: Truck
     },
@@ -48,7 +49,7 @@ const defaultPlans = [
         id: 'warehouse_intelligence',
         name: 'Warehouse Intelligence',
         price: 125,
-        type: 'node',
+        type: 'earning',
         description: 'The Storage Node. Manage community storage capacity and handling fees.',
         icon: Warehouse
     },
@@ -57,7 +58,7 @@ const defaultPlans = [
         name: 'Buy & Sell Intelligence',
         price: 150,
         isPopular: true,
-        type: 'node',
+        type: 'earning',
         description: 'The Marketplace Node. Secure vehicle trading and document automation.',
         icon: ShoppingCart
     }
@@ -99,7 +100,7 @@ function CheckoutComponent() {
   }, [firestore, userData]);
 
   const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
-  const { data: membershipPlan, isLoading: isMembershipLoading } = useDoc(membershipRef);
+  const { data: membershipPlan, isLoading: isMembershipLoading } = useDoc<any>(membershipRef);
   const { data: connectConfig, isLoading: isConnectLoading } = useDoc<any>(connectConfigRef);
   
   useEffect(() => {
@@ -127,7 +128,10 @@ function CheckoutComponent() {
         const specialOfferDiscount = Number(membershipPlan.specialOfferDiscount) || 0;
         const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
 
-        const type = planId === 'intelligence' ? 'membership' : 'node';
+        let type = membershipPlan.type;
+        if (!type) {
+            type = planId === 'intelligence' ? 'membership' : 'node';
+        }
 
         if (cycle === 'annual') {
             const annualDiscount = Number(membershipPlan.annualDiscount) || 0;
@@ -181,7 +185,7 @@ function CheckoutComponent() {
             companyId: companyData.id,
             amount: planDisplay.price,
             description: `Plan Activation: ${planDisplay.name} (${cycle})`,
-            planType: planDisplay.type, 
+            planType: planDisplay.type === 'earning' ? 'node' : (planDisplay.type === 'connect' ? 'connect' : 'membership'), 
             planId: planId,
             cycle: cycle,
         };
@@ -202,7 +206,6 @@ function CheckoutComponent() {
             description: `Your ${planDisplay.name} is now active. Opening setup wizard...`,
         });
         
-        // REDIRECT TO NODE WIZARD INSTEAD OF DASHBOARD
         router.push('/account?view=shop&subview=wizard');
 
     } catch (error: any) {
@@ -238,17 +241,17 @@ function CheckoutComponent() {
   const hasSufficientFunds = companyData && (companyData.availableBalance || 0) >= planDisplay.price;
 
   return (
-    <div className="container mx-auto px-4 py-16 flex justify-center text-left">
+    <div className="container mx-auto px-4 py-16 flex justify-center text-left text-foreground">
         <Card className="w-full max-w-xl shadow-2xl border-none overflow-hidden text-left bg-white">
             <CardHeader className="bg-slate-900 text-white p-10 text-left">
                 <div className="flex items-center gap-6 text-left text-white">
-                    <div className="bg-primary/20 p-4 rounded-2xl shadow-inner">
+                    <div className="bg-primary/20 p-4 rounded-2xl shadow-inner text-left">
                         <PlanIcon className="h-10 w-10 text-primary" />
                     </div>
                     <div className="text-left">
-                        <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.2em] border-primary/50 text-primary px-3 h-5">
-                                {planDisplay.type === 'node' ? 'Industrial Node' : 'Ecosystem Foundation'}
+                        <div className="flex items-center gap-2 mb-1 text-left">
+                            <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.2em] border-primary/50 text-primary px-3 h-5 text-left">
+                                {planDisplay.type === 'earning' ? 'Industrial Earning Node' : (planDisplay.type === 'foundation' || planDisplay.type === 'membership' ? 'Ecosystem Foundation' : 'Ecosystem Add-on')}
                             </Badge>
                         </div>
                         <CardTitle className="text-3xl font-black font-headline text-white text-left leading-tight">Activate Intelligence</CardTitle>
