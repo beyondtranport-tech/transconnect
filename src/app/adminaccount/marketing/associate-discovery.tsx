@@ -28,18 +28,21 @@ export const associateCategories = [
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     const isInfluencer = category === "Digital Influencer";
     
-    let strategyMandate = `YOU MUST PERFORM A LIVE SEARCH FOR "${category} for logistics in South Africa" on LinkedIn, Facebook, Instagram, and TikTok.`;
+    let strategyMandate = `YOU MUST PERFORM A LIVE SEARCH FOR "${category} for logistics in SOUTH AFRICA" on LinkedIn, Facebook, Instagram, and TikTok.`;
     
     if (isInfluencer) {
         strategyMandate = `ACT AS AN ELITE INDUSTRIAL SCOUT.
-        TASK: Discover exactly 30 UNIQUE "Micro-Influencers" in the South African transport/logistics space.
+        TASK: Discover exactly 30 UNIQUE "Micro-Influencers" BASED IN SOUTH AFRICA within the transport/logistics space.
+        
+        STRICT REGIONAL LOCK: 
+        YOU MUST ONLY RETURN INDIVIDUALS OR HUBS OPERATING WITHIN SOUTH AFRICA. IGNORE ALL INTERNATIONAL RESULTS (e.g., USA, UK, Australia).
         
         STRICT FOLLOWER CONSTRAINT: 
         TARGET ONLY INDIVIDUALS OR SMALL HUBS WITH UP TO 10,000 FOLLOWERS ON THEIR PRIMARY CHANNEL.
         
         CHANNEL SCAN: 
         Check specifically for presence on Facebook, LinkedIn, Instagram, and TikTok. 
-        Focus on creators who talk about trucking, supply chain, harbor activity, or courier life.`;
+        Focus on creators who talk about South African trucking (e.g., N3/N1 corridors), local supply chains, Durban/Cape Town harbor activity, or courier life in RSA.`;
     }
 
     return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
@@ -89,7 +92,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Noise suppression and 10k-follower limit active." });
+        toast({ title: "Research Prompt Ready", description: "Strict South African regional lock and 10k-follower limit active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -103,9 +106,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Micro-Influencer Mandate Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Regional Lock: South Africa</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is commanded to target creators with **up to 10,000 followers** for high-engagement potential.
+                        The agent is commanded to target creators based **exclusively in South Africa** with up to 10,000 followers.
                     </AlertDescription>
                 </Alert>
 
