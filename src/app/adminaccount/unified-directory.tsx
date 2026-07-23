@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, Search, Database, Globe, UserCheck, ShieldAlert, Send, RefreshCcw } from 'lucide-react';
+import { Loader2, Users, Search, Database, Globe, UserCheck, ShieldAlert, Send, RefreshCcw, RotateCcw } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +34,6 @@ export default function UnifiedDirectory() {
     const [members, setMembers] = useState<any[]>([]);
     const [leads, setLeads] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [hasLoaded, setHasLoaded] = useState(false);
     const { toast } = useToast();
 
     const loadData = useCallback(async () => {
@@ -51,13 +49,14 @@ export default function UnifiedDirectory() {
             
             setMembers(membersRes || []);
             setLeads(leadsRes || []);
-            setHasLoaded(true);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Load Error', description: e.message });
         } finally {
             setIsLoading(false);
         }
     }, [toast]);
+
+    useEffect(() => { loadData(); }, [loadData]);
 
     const combinedData = useMemo(() => {
         const enrichedMembers = members.map(m => ({ ...m, source: 'Member', status: m.status || 'active' }));
@@ -126,7 +125,7 @@ export default function UnifiedDirectory() {
                 <div className="flex justify-end gap-1">
                     {row.original.source === 'Lead' ? (
                         <>
-                            <Button variant="ghost" size="icon" asChild>
+                            <Button variant="ghost" size="icon" asChild title="Engage">
                                 <Link href={`/adminaccount?view=marketing-suppliers&subview=management&engage=${row.original.id}`}>
                                     <Send className="h-4 w-4 text-primary" />
                                 </Link>
@@ -143,71 +142,64 @@ export default function UnifiedDirectory() {
 
     return (
         <div className="space-y-6">
-            {!hasLoaded ? (
-                 <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
-                    <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                    <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Master Registry Search</h2>
-                    <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-foreground text-center">Load the unified industry directory to view all members and attributed leads in one forensic view.</p>
-                    <Button size="lg" onClick={loadData} disabled={isLoading} className="h-12 px-8 font-bold">
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                        Load Unified Registry
-                    </Button>
-                </Card>
-            ) : (
-                <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <Card className="bg-primary/5 border-primary/10">
-                            <CardContent className="pt-6 text-left">
-                                <div className="flex items-center gap-4 text-left">
-                                    <Database className="h-8 w-8 text-primary" />
-                                    <div className="text-left">
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Aggregated Snap</p>
-                                        <p className="text-2xl font-black text-left">{combinedData.length}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-blue-50 border-blue-100">
-                            <CardContent className="pt-6 text-left">
-                                <div className="flex items-center gap-4">
-                                    <UserCheck className="h-8 w-8 text-blue-600" />
-                                    <div className="text-left">
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Active Members</p>
-                                        <p className="text-2xl font-black text-blue-700 text-left">{members.length}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <Card className="bg-amber-50 border-amber-100">
-                            <CardContent className="pt-6 text-left">
-                                <div className="flex items-center gap-4">
-                                    <Globe className="h-8 w-8 text-amber-600" />
-                                    <div className="text-left">
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Provisional Leads</p>
-                                        <p className="text-2xl font-black text-amber-700 text-left">{leads.length}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <Card className="text-left">
-                        <CardHeader className="flex flex-row items-center justify-between text-left">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                <Card className="bg-primary/5 border-primary/10">
+                    <CardContent className="pt-6 text-left">
+                        <div className="flex items-center gap-4 text-left">
+                            <Database className="h-8 w-8 text-primary" />
                             <div className="text-left">
-                                <CardTitle className="flex items-center gap-2 text-left"><Users /> Unified Industry Directory</CardTitle>
-                                <CardDescription className="text-left">Forensic view of all platform entities and their referring partners.</CardDescription>
+                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Aggregated Snap</p>
+                                <p className="text-2xl font-black text-left">{combinedData.length}</p>
                             </div>
-                            <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RefreshCcw className="mr-2 h-4 w-4" />}
-                                Refresh Registry
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="text-left">
-                            <DataTable columns={columns} data={combinedData} />
-                        </CardContent>
-                    </Card>
-                </>
-            )}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-blue-50 border-blue-100">
+                    <CardContent className="pt-6 text-left">
+                        <div className="flex items-center gap-4">
+                            <UserCheck className="h-8 w-8 text-blue-600" />
+                            <div className="text-left">
+                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Active Members</p>
+                                <p className="text-2xl font-black text-blue-700 text-left">{members.length}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card className="bg-amber-50 border-amber-100">
+                    <CardContent className="pt-6 text-left">
+                        <div className="flex items-center gap-4">
+                            <Globe className="h-8 w-8 text-amber-600" />
+                            <div className="text-left">
+                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-left">Provisional Leads</p>
+                                <p className="text-2xl font-black text-amber-700 text-left">{leads.length}</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card className="text-left">
+                <CardHeader className="flex flex-row items-center justify-between text-left">
+                    <div className="text-left">
+                        <CardTitle className="flex items-center gap-2 text-left"><Users /> Unified Industry Directory</CardTitle>
+                        <CardDescription className="text-left">Forensic view of all platform entities and their referring partners.</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
+                        Sync Registry
+                    </Button>
+                </CardHeader>
+                <CardContent className="text-left">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" />
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Mapping Master Directory...</p>
+                        </div>
+                    ) : (
+                        <DataTable columns={columns} data={combinedData} />
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }

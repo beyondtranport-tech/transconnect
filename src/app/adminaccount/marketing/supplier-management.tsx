@@ -141,7 +141,6 @@ export default function SupplierManagement() {
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
@@ -170,7 +169,6 @@ export default function SupplierManagement() {
       ]);
       setAllRecords(res.data || []);
       setStaff(staffRes.data || []);
-      setHasLoaded(true);
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
@@ -178,7 +176,7 @@ export default function SupplierManagement() {
     }
   }, [searchTerm, toast]);
 
-  useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -214,7 +212,7 @@ export default function SupplierManagement() {
       { id: 'outreach', header: 'Outreach', cell: ({row}) => <div className="text-[10px] uppercase font-bold text-muted-foreground text-left">{row.original.lastOutreachSubject || 'None'}</div> },
       { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
       { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end gap-1">
+        <div className="flex justify-end gap-1 text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
           <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.companyName} />
@@ -233,31 +231,53 @@ export default function SupplierManagement() {
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="suppliers" onEngageSuccess={() => fetchData()} />
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       
-      {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
-                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-foreground">Supplier Registry Scan</h2>
-                <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-10 font-bold uppercase gap-2 text-left">
-                    {isLoading ? <Loader2 className="animate-spin h-4 w-4 text-left"/> : <Search className="h-4 w-4 text-left"/>} Scan Registry
-                </Button>
-            </Card>
-      ) : (
-            <div className="space-y-6 text-left text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground">
-                      <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
-                      <CardDescription className="text-left">Unified database view ({filteredRecords.length} records).</CardDescription>
+      <div className="space-y-6 text-left text-foreground">
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+              <div className="text-left text-foreground">
+                <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
+                <CardDescription className="text-left text-muted-foreground">Unified database view ({filteredRecords.length} records).</CardDescription>
+              </div>
+              <div className="flex gap-2 text-left text-foreground">
+                  <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
+                  <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+              </div>
+          </CardHeader>
+          <Card className="text-left text-foreground">
+              <CardContent className="pt-6 text-left text-foreground text-foreground">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                    <div className="space-y-1 text-left text-foreground text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                        <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Statuses</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="active">Active</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
-                    <div className="flex gap-2 text-left text-foreground">
-                        <Button variant="outline" size="sm" onClick={() => setHasLoaded(false)}><RotateCcw className="h-4 w-4 mr-2" /> New Search</Button>
-                        <Button onClick={() => setDialog({ type: 'add' })}><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                    <div className="space-y-1 text-left text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                        <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                            <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Staff</SelectItem>
+                                <SelectItem value="none">Unallocated</SelectItem>
+                                {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
-                </CardHeader>
-                <Card className="text-left text-foreground"><CardContent className="pt-6 text-left text-foreground text-foreground">
-                    {isLoading ? <div className="flex justify-center py-20 text-left"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
-                </CardContent></Card>
-            </div>
-      )}
+                    <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground">
+                        <div className="flex-1 space-y-1 text-left">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Criteria</Label>
+                            <Input placeholder="Filter registry by name or tag..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
+                        </div>
+                    </div>
+                  </div>
+                  {isLoading ? <div className="flex justify-center py-20 text-left"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+              </CardContent>
+          </Card>
+      </div>
     </div>
   );
 }

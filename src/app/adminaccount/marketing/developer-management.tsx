@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -101,7 +100,7 @@ function DeveloperDialog({ open, onOpenChange, partner, onSave }: { open: boolea
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
                     <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                     <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company / Agency</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
@@ -141,7 +140,6 @@ export default function DeveloperManagement() {
   const [allRecords, setAllRecords] = useState<any[]>([]);
   const [staff, setStaff] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
@@ -170,7 +168,6 @@ export default function DeveloperManagement() {
         ]);
         setAllRecords(res.data || []);
         setStaff(staffRes.data || []);
-        setHasLoaded(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Fetch Error', description: e.message });
     } finally {
@@ -178,7 +175,7 @@ export default function DeveloperManagement() {
     }
   }, [searchTerm, outreachFilter, toast]);
 
-  useEffect(() => { if (hasLoaded) fetchData(); }, [fetchData, hasLoaded]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleEngage = useCallback((record: any) => {
     const engageList = selectedIds.length > 0 ? allRecords.filter(r => selectedIds.includes(r.id)) : (record ? [record] : []);
@@ -300,137 +297,85 @@ export default function DeveloperManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {!hasLoaded ? (
-            <Card className="bg-primary/5 border-primary/20 p-12 text-center text-foreground">
-                <Database className="mx-auto h-16 w-16 text-primary/20 mb-4" />
-                <h2 className="text-2xl font-black font-headline mb-2 text-center text-foreground text-foreground">Developer Pipeline Scan</h2>
-                <p className="text-muted-foreground max-w-sm mx-auto mb-8 text-center text-foreground text-left text-foreground">Scan your technical partner database. Use filters to prioritize sandbox invitations.</p>
-                
-                <div className="max-w-4xl mx-auto space-y-6 text-left text-foreground">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                        <div className="space-y-1 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1 text-foreground">Outreach Status</Label>
-                            <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                <SelectTrigger className="bg-white"><SelectValue placeholder="All Outreach" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="none">No Outreach Yet</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Pipeline Status</Label>
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Stages" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="new">New Lead</SelectItem>
-                                    <SelectItem value="contacted">In Research</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-1 text-left">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Assignee</Label>
-                            <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Staff</SelectItem>
-                                    <SelectItem value="none">Unallocated</SelectItem>
-                                    {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+      <div className="space-y-6 text-left text-foreground">
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+              <div className="text-left text-foreground text-left text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Code /> Developer Management</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
+              <div className="flex gap-2 text-left text-foreground text-foreground">
+                  <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-foreground text-foreground text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
+                  {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
+                  
+                  <Popover>
+                      <PopoverTrigger asChild>
+                          <Button variant="outline" className="gap-2 text-foreground text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground">
+                          <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
+                              {Object.keys(visibleColumns).map(col => (
+                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                      <span>{col.replace(/([A-Z])/g, ' $1')}</span>
+                                      {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
+                                  </div>
+                              ))}
+                          </div>
+                      </PopoverContent>
+                  </Popover>
 
-                    <div className="flex flex-col md:flex-row justify-center gap-4 max-w-4xl mx-auto text-left">
-                        <div className="flex-1 space-y-2 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Name, Agency or ID</Label>
-                            <Input placeholder="Search criteria..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="h-12 text-lg bg-white" onKeyDown={(e) => e.key === 'Enter' && fetchData()} />
-                        </div>
-                        <div className="flex flex-col md:flex-row gap-2 self-end text-left text-foreground">
-                            <Button size="lg" onClick={() => fetchData()} disabled={isLoading} className="h-12 px-8 font-bold text-left">
-                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />} Execute Scan
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </Card>
-      ) : (
-            <div className="space-y-6 text-left text-foreground">
-                <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-                    <div className="text-left text-foreground text-left text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Code /> Developer Management</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
-                    <div className="flex gap-2 text-left text-foreground text-foreground">
-                        {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
-                        
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="outline" className="gap-2 text-foreground text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground">
-                                <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
-                                    {Object.keys(visibleColumns).map(col => (
-                                        <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
-                                            <span>{col.replace(/([A-Z])/g, ' $1')}</span>
-                                            {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground" />}
-                                        </div>
-                                    ))}
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-
-                        <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'developers-backup.csv')} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                        <BulkImportDialog type="developer" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                        <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
-                    </div>
-                </CardHeader>
-                <Card className="text-left text-foreground text-foreground">
-                    <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                                    <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active</SelectItem></SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
-                                <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                                    <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Staff</SelectItem>
-                                        <SelectItem value="none">Unallocated</SelectItem>
-                                        {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-1 text-left text-foreground">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
-                                <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                                    <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
-                                    <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-end text-left text-foreground"><Button variant="outline" onClick={() => setHasLoaded(false)} className="h-9 w-full text-xs font-bold uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="mr-1 h-3 w-3" /> New Search</Button></div>
-                        </div>
-                        {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                            <div className="space-y-6 text-left text-foreground">
-                                <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
-                                {allRecords.length >= 100 && (
-                                     <div className="flex justify-center pt-4 text-foreground text-foreground">
-                                        <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground">
-                                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
-                                            Load Next 100 Records
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-      )}
+                  <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'developers-backup.csv')} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
+                  <BulkImportDialog type="developer" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                  <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+              </div>
+          </CardHeader>
+          <Card className="text-left text-foreground text-foreground">
+              <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
+                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                          <Select value={statusFilter} onValueChange={setStatusFilter}>
+                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                              <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active</SelectItem></SelectContent>
+                          </Select>
+                      </div>
+                      <div className="space-y-1 text-left text-foreground">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                          <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
+                              <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="all">All Staff</SelectItem>
+                                  <SelectItem value="none">Unallocated</SelectItem>
+                                  {staff.map(s => <SelectItem key={s.id} value={s.id}>{s.firstName} {s.lastName}</SelectItem>)}
+                              </SelectContent>
+                          </Select>
+                      </div>
+                      <div className="space-y-1 text-left text-foreground">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
+                          <Select value={outreachFilter} onValueChange={setOutreachFilter}>
+                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-left text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
+                              <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
+                          </Select>
+                      </div>
+                      <div className="flex items-end text-left text-foreground">
+                          <div className="flex-1 space-y-1 text-left">
+                              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Registry</Label>
+                              <Input placeholder="Name, Agency or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
+                          </div>
+                      </div>
+                  </div>
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                      <div className="space-y-6 text-left text-foreground">
+                          <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
+                          {allRecords.length >= 100 && (
+                               <div className="flex justify-center pt-4 text-foreground text-foreground">
+                                  <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-foreground text-foreground">
+                                      {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
+                                      Load Next 100 Records
+                                  </Button>
+                              </div>
+                          )}
+                      </div>
+                  )}
+              </CardContent>
+          </Card>
+      </div>
     </div>
   );
 }
-
