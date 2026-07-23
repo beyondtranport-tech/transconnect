@@ -10,7 +10,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 /**
  * CORE LAYOUT CONFIGURATION
- * Build ID: 2026-03-15T09:12:00Z - Forced refresh to resolve ChunkLoadError.
+ * Build ID: 2026-03-15T11:55:00Z - Forced refresh to resolve ChunkLoadError.
  */
 export const metadata: Metadata = {
   title: 'Logistics Flow',

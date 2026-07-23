@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy } from 'lucide-react';
+import { Loader2, ClipboardCopy, Search, Users } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -52,7 +53,7 @@ const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails
 const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/AssociateEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Management components using absolute paths
+// Management components
 const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const ISAManagement = dynamic(() => import('@/app/adminaccount/marketing/isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -62,19 +63,31 @@ const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing
 const AssociateManagement = dynamic(() => import('@/app/adminaccount/marketing/associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const FinanceManagement = dynamic(() => import('@/app/adminaccount/marketing/finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
+// Discovery components
+const AssociateDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/associate-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const SupplierDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/discovery-engine'), { loading: () => <Loader2 className="animate-spin" /> });
+const TransporterDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/transporter-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const InvestorDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/investor-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const DeveloperDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/developer-management'), { loading: () => <Loader2 className="animate-spin" /> }); // Placeholder if not specialized
+const FinanceDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/finance-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const WarehouseDiscovery = dynamic(() => import('@/app/adminaccount/marketing/warehouse-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const DistributionDiscovery = dynamic(() => import('@/app/adminaccount/marketing/distribution-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const LoadsDiscovery = dynamic(() => import('@/app/adminaccount/marketing/loads-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+const BuySellDiscovery = dynamic(() => import('@/app/adminaccount/marketing/buy-sell-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
+
 const audienceConfig = {
-    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
-    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
-    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement },
-    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement },
-    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
-    finance: { title: 'Finance Partners', Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement },
-    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
-    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
-    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
-    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
-    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
-    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
+    partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, CRM: PartnerManagement, Discovery: undefined },
+    isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, CRM: ISAManagement, Discovery: undefined },
+    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: AssociateEmails, CRM: AssociateManagement, Discovery: AssociateDiscoveryEngine },
+    suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, CRM: SupplierManagement, Discovery: SupplierDiscoveryEngine },
+    transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, CRM: TransporterManagement, Discovery: TransporterDiscoveryEngine },
+    finance: { title: 'Finance Partners', Offer: InvestorOffer, Emails: InvestorEmails, CRM: FinanceManagement, Discovery: FinanceDiscoveryEngine },
+    investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, CRM: InvestorManagement, Discovery: InvestorDiscoveryEngine },
+    developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, CRM: DeveloperManagement, Discovery: undefined },
+    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, CRM: undefined, Discovery: WarehouseDiscovery },
+    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, CRM: undefined, Discovery: DistributionDiscovery },
+    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, CRM: undefined, Discovery: LoadsDiscovery },
+    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, CRM: undefined, Discovery: BuySellDiscovery },
 };
 
 interface MarketingPageProps {
@@ -211,7 +224,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
   
   const fetchPartnersForLogging = useCallback(async () => {
-    if (!config || !config.Management) {
+    if (!config || (!config.CRM && !config.Discovery)) {
       setIsLoadingPartners(false);
       setPartners([]);
       return;
@@ -248,12 +261,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   if (!config) {
       return (
           <div className="p-12 text-center text-muted-foreground bg-muted/10 rounded-2xl border-2 border-dashed">
-              Marketing library for "{audience}" is not configured in this portal.
+              Marketing library for "{audience}" is not configured.
           </div>
       );
   }
 
-  const { Offer, Emails, Management } = config;
+  const { Offer, Emails, CRM, Discovery } = config;
 
   const handleCopyContent = async () => {
     const contentId = `tab-content-${activeTab}`;
@@ -275,10 +288,10 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         
       } catch (err) {
         console.error('Failed to copy content: ', err);
-        throw new Error('Your browser may not support this feature, or there was an error.');
+        throw new Error('Your browser may not support this feature.');
       }
     } else {
-      throw new Error(`Could not find the content for the active tab (ID: ${contentId}).`);
+      throw new Error(`Could not find content.`);
     }
   };
 
@@ -296,7 +309,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
 
         await handleCopyContent();
 
-        toast({ title: 'Logged and Copied!', description: 'Communication has been logged. Images may be blocked by the recipient\'s email client.' });
+        toast({ title: 'Logged and Copied!', description: 'Communication has been logged.' });
         setIsLogDialogOpen(false);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Action Failed', description: e.message });
@@ -314,12 +327,12 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             onLogAndCopy={handleLogAndCopy}
             audienceTitle={config.title}
         />
-        <div className="space-y-6">
-            <div>
+        <div className="space-y-6 text-left">
+            <div className="text-left">
                 <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
-                <p className="text-muted-foreground">Tailored content and email sequences for engaging with {config.title.toLowerCase()}.</p>
+                <p className="text-muted-foreground">Tailored content and engagement tools for {config.title.toLowerCase()}.</p>
             </div>
-            <Tabs defaultValue="company-profile" className="w-full" onValueChange={setActiveTab}>
+            <Tabs defaultValue="company-profile" className="w-full text-left" onValueChange={setActiveTab}>
                 <TabsList className="h-auto flex-wrap justify-start">
                     <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
                     <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
@@ -328,12 +341,13 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                     <TabsTrigger value="pitch">The Pitch</TabsTrigger>
                     <TabsTrigger value="framework">The Framework</TabsTrigger>
                     <TabsTrigger value="emails">Emails</TabsTrigger>
-                    {Management && <TabsTrigger value="management">Management</TabsTrigger>}
+                    {Discovery && <TabsTrigger value="discovery" className="gap-2"><Search className="h-3.5 w-3.5" /> Discover AI</TabsTrigger>}
+                    {CRM && <TabsTrigger value="crm" className="gap-2"><Users className="h-3.5 w-3.5" /> CRM</TabsTrigger>}
                 </TabsList>
 
-                <Card className="mt-4">
+                <Card className="mt-4 text-left">
                     <CardHeader className="flex flex-row items-center justify-end border-b">
-                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!Management)}>
+                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!CRM)}>
                             {isLoadingPartners ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
@@ -342,33 +356,16 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                             Log & Copy Content
                         </Button>
                     </CardHeader>
-                    <CardContent className="p-6">
-                        <TabsContent value="company-profile">
-                            <div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div>
-                        </TabsContent>
-                        <TabsContent value="tech-architecture">
-                            <div id="tab-content-tech-architecture"><TechArchitecture /></div>
-                        </TabsContent>
-                        <TabsContent value="revenue-model">
-                            <div id="tab-content-revenue-model"><RevenueModel /></div>
-                        </TabsContent>
-                        <TabsContent value="offer">
-                            <div id="tab-content-offer"><Offer /></div>
-                        </TabsContent>
-                        <TabsContent value="pitch">
-                            <div id="tab-content-pitch"><PitchDeck /></div>
-                        </TabsContent>
-                        <TabsContent value="framework">
-                            <div id="tab-content-framework"><Framework /></div>
-                        </TabsContent>
-                        <TabsContent value="emails">
-                            <div id="tab-content-emails"><Emails /></div>
-                        </TabsContent>
-                        {Management && (
-                            <TabsContent value="management">
-                                <div id="tab-content-management"><Management /></div>
-                            </TabsContent>
-                        )}
+                    <CardContent className="p-6 text-left text-foreground">
+                        <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div></TabsContent>
+                        <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture /></div></TabsContent>
+                        <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel /></div></TabsContent>
+                        <TabsContent value="offer"><div id="tab-content-offer"><Offer /></div></TabsContent>
+                        <TabsContent value="pitch"><div id="tab-content-pitch"><PitchDeck /></div></TabsContent>
+                        <TabsContent value="framework"><div id="tab-content-framework"><Framework /></div></TabsContent>
+                        <TabsContent value="emails"><div id="tab-content-emails"><Emails /></div></TabsContent>
+                        {Discovery && <TabsContent value="discovery"> <div id="tab-content-discovery"><Discovery /></div> </TabsContent>}
+                        {CRM && <TabsContent value="crm"><div id="tab-content-crm"><CRM /></div></TabsContent>}
                     </CardContent>
                 </Card>
             </Tabs>
