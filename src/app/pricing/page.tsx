@@ -3,18 +3,18 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart, Zap, Landmark, Warehouse, Info, Gift, CheckCircle2 } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Truck, Loader2, Zap, Gift } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
+import { collection, query, limit } from 'firebase/firestore';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Separator } from '@/components/ui/separator';
 import * as React from 'react';
 
 /**
  * DEFAULT PLANS (FALLBACK)
+ * Used when the database is empty or still initializing.
  */
 const defaultPlans = [
     {
@@ -83,20 +83,45 @@ export default function MembershipPage() {
   }, [firestore]);
   const { data: incentives } = useCollection(incentivesQuery);
 
+  /**
+   * ROBUST PLAN RESOLVER
+   * Merges DB data with fallbacks and ensures every plan has a type for filtering.
+   */
   const plans = React.useMemo(() => {
-    if (!dbPlans || dbPlans.length === 0) return defaultPlans;
-    return dbPlans.map(p => ({
-        id: p.id,
-        name: p.name,
-        price: Number(p.price) || 0,
-        description: p.description,
-        features: p.features || [],
-        isPopular: p.isPopular,
-        type: (p.id === 'free' || p.id === 'intelligence') ? 'foundation' : 'earning',
-        cta: p.id === 'free' ? "Start Free" : (p.id === 'intelligence' ? "Activate Foundation" : "Activate Node"),
-        variant: p.id === 'free' ? "outline" : "default"
-    })).sort((a,b) => a.price - b.price);
-  }, [dbPlans]);
+    // If still loading and no data, return empty to show spinner
+    if (isLoading && !dbPlans) return [];
+    
+    // If loaded but empty, use defaults
+    if (dbPlans && dbPlans.length === 0) return defaultPlans;
+
+    // Use DB plans if they exist
+    if (dbPlans && dbPlans.length > 0) {
+        return dbPlans.map(p => {
+            const planId = p.id?.toLowerCase() || '';
+            // Determine type: Foundation vs Earning Node
+            const type = (planId === 'free' || planId === 'intelligence' || p.type === 'foundation') 
+                ? 'foundation' 
+                : 'earning';
+            
+            return {
+                id: p.id,
+                name: p.name,
+                price: typeof p.price === 'number' ? p.price : (p.price?.monthly || 0),
+                description: p.description,
+                features: p.features || [],
+                isPopular: p.isPopular,
+                type: type,
+                cta: p.id === 'free' ? "Start Free" : (p.id === 'intelligence' ? "Activate Foundation" : "Activate Node"),
+                variant: p.id === 'free' ? "outline" : "default"
+            };
+        }).sort((a,b) => a.price - b.price);
+    }
+
+    return defaultPlans;
+  }, [dbPlans, isLoading]);
+
+  const foundationPlans = plans.filter(p => p.type === 'foundation');
+  const earningPlans = plans.filter(p => p.type === 'earning');
 
   return (
     <div className="bg-background min-h-screen text-left text-foreground">
@@ -143,7 +168,7 @@ export default function MembershipPage() {
           </p>
         </div>
 
-        {isLoading ? (
+        {isLoading && !dbPlans ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Loader2 className="animate-spin h-10 w-10 text-primary" />
                 <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Synchronizing Plan Ledger...</p>
@@ -160,7 +185,7 @@ export default function MembershipPage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">
-                        {plans.filter(p => p.type === 'foundation').map((plan) => (
+                        {foundationPlans.map((plan) => (
                              <PlanCard key={plan.id} plan={plan} user={user} />
                         ))}
                     </div>
@@ -175,7 +200,7 @@ export default function MembershipPage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {plans.filter(p => p.type === 'earning').map((plan) => (
+                        {earningPlans.map((plan) => (
                              <PlanCard key={plan.id} plan={plan} user={user} />
                         ))}
                     </div>
@@ -193,14 +218,14 @@ export default function MembershipPage() {
                     <div className="bg-primary/20 p-6 rounded-3xl border border-primary/30 shrink-0">
                         <ShieldCheck className="h-12 w-12 text-primary" />
                     </div>
-                    <div className="space-y-4 text-left flex-1">
+                    <div className="space-y-4 text-left flex-1 text-white">
                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest">Rewards Integration</Badge>
                         <h3 className="text-3xl font-black font-headline leading-tight">Data as a Platform Currency</h3>
                         <p className="text-slate-400 text-lg leading-relaxed">
                             Don't want to pay cash? Contribute your verified fleet data (RC1) or supplier lists to the community registry to earn **Reward Points**. These points can be redeemed to pay for any Intelligence Node.
                         </p>
                         <div className="flex flex-wrap gap-4 pt-4">
-                            <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest shadow-xl">
+                            <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest shadow-xl text-white">
                                 <Link href="/contribute">Start Contributing <ArrowRight className="ml-2 h-4 w-4"/></Link>
                             </Button>
                             <Button variant="outline" asChild className="h-14 px-10 border-white/20 hover:bg-white/10 text-white font-black uppercase">
@@ -232,9 +257,9 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
             )}
             <CardHeader className="p-8 text-left pb-6">
                 <CardTitle className="text-3xl font-black tracking-tight">{plan.name}</CardTitle>
-                <CardDescription className="mt-2 text-sm font-medium text-slate-500 leading-relaxed min-h-[48px]">{plan.description}</CardDescription>
+                <CardDescription className="mt-2 text-sm font-medium text-slate-500 leading-relaxed min-h-[48px] text-left">{plan.description}</CardDescription>
                 <div className="pt-8 text-left">
-                    <div className="flex items-baseline gap-1.5">
+                    <div className="flex items-baseline gap-1.5 text-left">
                         <span className="text-5xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
                         <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">/ month</span>
                     </div>
@@ -244,15 +269,15 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
                 <Separator />
                 <ul className="space-y-4">
                     {(plan.features as string[]).map((feature, i) => (
-                        <li key={i} className="flex items-start gap-3">
+                        <li key={i} className="flex items-start gap-3 text-left">
                             <Check className={cn("h-4 w-4 shrink-0 mt-0.5", isEarningNode ? "text-amber-600" : "text-primary")} />
-                            <span className="text-sm font-bold text-slate-700 uppercase tracking-tight leading-tight">{feature}</span>
+                            <span className="text-sm font-bold text-slate-700 uppercase tracking-tight leading-tight text-left">{feature}</span>
                         </li>
                     ))}
                 </ul>
             </CardContent>
             <CardFooter className="p-8 pt-0 text-left">
-                <Button asChild className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl group" variant={plan.id === 'free' ? "outline" : "default"}>
+                <Button asChild className="w-full h-14 text-sm font-black uppercase tracking-widest shadow-xl group text-white" variant={plan.id === 'free' ? "outline" : "default"}>
                     <Link href={plan.id === 'free' ? (user ? '/account' : '/join') : `/checkout/${plan.id}`}>
                         {plan.cta}
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
