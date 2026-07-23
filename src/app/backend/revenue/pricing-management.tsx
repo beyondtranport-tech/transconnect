@@ -135,7 +135,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     if (isOpen) {
         const monthlyPrice = (typeof plan?.price === 'object' && plan?.price !== null)
             ? plan.price.monthly || 0
-            : plan?.price || 0;
+            : Number(plan?.price) || 0;
 
         form.reset({
             id: plan?.id || '',
