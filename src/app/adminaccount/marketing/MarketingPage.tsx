@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -44,12 +43,14 @@ const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/
 const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/SupplierOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/AssociateOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const PartnerEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/SupplierEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/InvestorEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/AssociateEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
 // Management components using absolute paths
 const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -58,21 +59,29 @@ const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/in
 const DeveloperManagement = dynamic(() => import('@/app/adminaccount/marketing/developer-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierManagement = dynamic(() => import('@/app/adminaccount/marketing/supplier-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing/transporter-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const AssociateManagement = dynamic(() => import('@/app/adminaccount/marketing/associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
+const FinanceManagement = dynamic(() => import('@/app/adminaccount/marketing/finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
 const audienceConfig = {
     partners: { title: 'Strategic Partners', Offer: PartnerOffer, Emails: PartnerEmails, Management: PartnerManagement },
     isa: { title: 'ISA Agents', Offer: PartnerOffer, Emails: PartnerEmails, Management: ISAManagement },
+    associates: { title: 'Digital Associates', Offer: AssociateOffer, Emails: AssociateEmails, Management: AssociateManagement },
     suppliers: { title: 'Suppliers', Offer: SupplierOffer, Emails: SupplierEmails, Management: SupplierManagement },
     transporters: { title: 'Transporters', Offer: TransporterOffer, Emails: TransporterEmails, Management: TransporterManagement },
+    finance: { title: 'Finance Partners', Offer: InvestorOffer, Emails: InvestorEmails, Management: FinanceManagement },
     investors: { title: 'Investors', Offer: InvestorOffer, Emails: InvestorEmails, Management: InvestorManagement },
     developers: { title: 'Developers', Offer: DeveloperOffer, Emails: DeveloperEmails, Management: DeveloperManagement },
+    warehouse: { title: 'Warehouse Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
+    distribution: { title: 'Distribution Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
+    loads: { title: 'Loads Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
+    'buy-sell': { title: 'Buy & Sell Mall', Offer: PartnerOffer, Emails: PartnerEmails, Management: undefined },
 };
 
 interface MarketingPageProps {
   audience: keyof typeof audienceConfig;
 }
 
-type ApiPartnerType = 'partner' | 'isa' | 'investor' | 'developer' | 'supplier' | 'transporter';
+type ApiPartnerType = 'partner' | 'isa' | 'investor' | 'developer' | 'supplier' | 'transporter' | 'associate' | 'finance';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -193,17 +202,16 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
 }
 
 export default function MarketingPage({ audience }: MarketingPageProps) {
-  const config = audienceConfig[audience];
-  const { Offer, Emails, Management } = config;
-  const [activeTab, setActiveTab] = useState('company-profile');
   const { toast } = useToast();
-  
+  const [activeTab, setActiveTab] = useState('company-profile');
   const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
   const [partners, setPartners] = useState<any[]>([]);
   const [isLoadingPartners, setIsLoadingPartners] = useState(true);
 
+  const config = audienceConfig[audience];
+  
   const fetchPartnersForLogging = useCallback(async () => {
-    if (!Management) {
+    if (!config || !config.Management) {
       setIsLoadingPartners(false);
       setPartners([]);
       return;
@@ -220,6 +228,8 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         else if (audience === 'developers') apiType = 'developer';
         else if (audience === 'suppliers') apiType = 'supplier';
         else if (audience === 'transporters') apiType = 'transporter';
+        else if (audience === 'associates') apiType = 'associate';
+        else if (audience === 'finance') apiType = 'finance';
         
         const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
         setPartners(result.data || []);
@@ -229,12 +239,21 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     } finally {
         setIsLoadingPartners(false);
     }
-  }, [audience, Management, toast]);
+  }, [audience, config, toast]);
 
   useEffect(() => {
     fetchPartnersForLogging();
   }, [fetchPartnersForLogging]);
 
+  if (!config) {
+      return (
+          <div className="p-12 text-center text-muted-foreground bg-muted/10 rounded-2xl border-2 border-dashed">
+              Marketing library for "{audience}" is not configured in this portal.
+          </div>
+      );
+  }
+
+  const { Offer, Emails, Management } = config;
 
   const handleCopyContent = async () => {
     const contentId = `tab-content-${activeTab}`;
