@@ -1,3 +1,4 @@
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -115,8 +116,26 @@ export async function POST(req: NextRequest) {
         updatedAt: FieldValue.serverTimestamp(),
     };
     
-    if (referrerId || existingRecord?.referrerId) {
-        newCompanyData.referrerId = referrerId || existingRecord?.referrerId;
+    const finalReferrer = referrerId || existingRecord?.referrerId;
+    if (finalReferrer) {
+        newCompanyData.referrerId = finalReferrer;
+        
+        // 4. Log Handshake for Associate Yield
+        const auditRef = db.collection('auditLogs').doc();
+        batch.set(auditRef, {
+            action: 'associate_handshake',
+            details: `Referral Handshake: ${companyName} joined via node ${finalReferrer}.`,
+            companyId: finalReferrer, // Log against Associate
+            metadata: { newMemberId: companyIdToUse, source: recordSource },
+            timestamp: FieldValue.serverTimestamp()
+        });
+
+        // Increment Associate's referral count
+        const referrerRef = db.collection('companies').doc(finalReferrer);
+        batch.update(referrerRef, { 
+            referralCount: FieldValue.increment(1),
+            updatedAt: FieldValue.serverTimestamp()
+        });
     }
 
     const nameParts = (firebaseUser.displayName || '').split(' ');
@@ -139,10 +158,9 @@ export async function POST(req: NextRequest) {
             const signupPoints = loyaltyConfigDoc.data()?.userSignupPoints || 50;
             newCompanyData.rewardPoints = signupPoints;
             
-            const finalRefId = referrerId || existingRecord?.referrerId;
-            if (finalRefId) {
+            if (finalReferrer) {
                 const partnerReferralPoints = loyaltyConfigDoc.data()?.partnerReferralPoints || 200;
-                const referrerCompanyRef = db.collection('companies').doc(finalRefId);
+                const referrerCompanyRef = db.collection('companies').doc(finalReferrer);
                 batch.set(referrerCompanyRef, { rewardPoints: FieldValue.increment(partnerReferralPoints) }, { merge: true });
             }
         } catch (pointError) {

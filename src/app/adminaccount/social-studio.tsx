@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Facebook, Linkedin, Instagram, Music, Sparkles, Loader2, Copy, ExternalLink, 
-    ShieldCheck, BarChart3, ImageIcon, Video, Rocket, Link as LinkIcon, Users, Info, Search, Save
+    ShieldCheck, BarChart3, ImageIcon, Video, Rocket, Link as LinkIcon, Users, Info, Search, Save, MousePointer2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -129,13 +130,12 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
     const derived = useMemo(() => {
         if (!activePost) return { trackingLink: '', fullPostBody: '' };
         
-        // Use the user's company ID as the primary tracking seed if available
-        const trackingId = user?.companyId || user?.uid || 'ANONYMOUS';
+        const trackingId = user?.uid || 'ANONYMOUS';
         const campaignSeed = campaignName.replace(/\s/g, '_').toUpperCase() || 'GENERAL';
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
         
-        // Referral link structured for Associates: join?ref=ID&campaign=SEED
-        const trackingLink = `${baseUrl}/join?ref=${trackingId}&campaign=${platform.toUpperCase()}_${campaignSeed}`;
+        // FORENSIC YIELD REDIRECTOR: Uses the API to track the click before landing at /join
+        const trackingLink = `${baseUrl}/api/trackEmailOpen/${trackingId}?source=associate_click&campaign=${campaignSeed}&platform=${platform.toUpperCase()}&dest=/join?ref=${trackingId}`;
         
         const currentBody = editedContent[activeTab] || activePost.body || activePost.text || '';
         
@@ -328,7 +328,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                 <Card className="border-amber-200 bg-amber-50/20 text-left text-foreground">
                                     <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-amber-500" /> AI Creative Assistant</CardTitle></CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="space-y-2 text-left text-foreground"><Label>Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left text-foreground text-foreground"><Label>Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
                                         <div className="space-y-2 text-left text-foreground text-foreground"><Label>Key Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
                                         <Button className="w-full font-bold bg-amber-600" onClick={handleGenerateCustom} disabled={isGenerating}>
                                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate Copy
@@ -367,13 +367,13 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                                 </div>
                                             </div>
                                             <Button size="lg" className="bg-blue-600 hover:bg-blue-700 font-black uppercase text-xs gap-3 shadow-lg h-14 px-8" onClick={handleLogAndLaunch}>
-                                                <ExternalLink className="h-5 w-5" />
-                                                Log & Launch {config.label}
+                                                <MousePointer2 className="h-5 w-5" />
+                                                Log Yield & Launch {config.label}
                                             </Button>
                                         </CardFooter>
                                     </Card>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground text-foreground">
                                         <div className="bg-slate-900 text-white p-6 rounded-xl border-l-4 border-l-primary shadow-xl text-left">
                                             <div className="flex items-center justify-between mb-4">
                                                 <h4 className="font-bold uppercase text-[10px] tracking-widest text-primary flex items-center gap-2"><ImageIcon className="h-3 w-3"/> AI Image Prompt</h4>
@@ -390,7 +390,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left text-foreground">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left text-foreground text-foreground">
                                         <ImageGeneratorCard />
                                         <VideoGeneratorCard />
                                     </div>
@@ -403,4 +403,3 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
         </div>
     );
 }
-

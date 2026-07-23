@@ -5,7 +5,7 @@ import { getAdminApp } from '@/lib/firebase-admin';
 
 /**
  * INTERACTION TRACKING ENDPOINT
- * Handles Pixels (Email Opens), Pings (App Access), and Ad Metrics (Impressions/Clicks).
+ * Handles Pixels (Email Opens), Pings (App Access), Ad Metrics, and Associate Yield (Clicks).
  */
 export async function GET(req: NextRequest, { params }: { params: { partnerId: string } }) {
   const { partnerId: viewerId } = params;
@@ -13,6 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
   const source = searchParams.get('source') || 'email';
   const campaignId = searchParams.get('campaignId');
   const advertiserId = searchParams.get('advertiserId');
+  const dest = searchParams.get('dest'); // Support for redirect after tracking
   
   const { app } = getAdminApp();
 
@@ -21,7 +22,9 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
         const db = getFirestore(app);
         const batch = db.batch();
 
-        let entityName = 'Unknown Entity';
+        let entityName = 'Anonymous Entity';
+        
+        // 1. RESOLVE VIEWER IDENTITY (if possible)
         const userDoc = await db.collection('users').doc(viewerId).get();
         if (userDoc.exists) {
             const userData = userDoc.data();
@@ -29,20 +32,18 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
             entityName = companySnap.data()?.companyName || userData?.firstName || entityName;
         }
 
-        // 1. AD CAMPAIGN TRACKING
+        // 2. AD CAMPAIGN TRACKING
         if (campaignId && advertiserId) {
             const adRef = db.doc(`companies/${advertiserId}/adCampaigns/${campaignId}`);
             const actionLabel = source === 'ad_click' ? 'ad_click' : 'ad_impression';
             const metricField = source === 'ad_click' ? 'metrics.clicks' : 'metrics.impressions';
 
-            // Increment Metrics
             batch.update(adRef, {
                 [metricField]: FieldValue.increment(1),
                 remainingInstances: FieldValue.increment(-1),
                 updatedAt: FieldValue.serverTimestamp()
             });
 
-            // Log Interaction for Member Audit
             const auditRef = db.collection('auditLogs').doc();
             batch.set(auditRef, {
                 action: actionLabel,
@@ -53,7 +54,25 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
                 metadata: { source, campaignId, advertiserId }
             });
         } 
-        // 2. STANDARD EMAIL/APP TRACKING
+        // 3. ASSOCIATE YIELD TRACKING (Clicks)
+        else if (source === 'associate_click') {
+            const associateRef = db.collection('companies').doc(viewerId); // In this case viewerId is the Associate ID
+            
+            batch.update(associateRef, {
+                totalClicksGenerated: FieldValue.increment(1),
+                updatedAt: FieldValue.serverTimestamp()
+            });
+
+            const auditRef = db.collection('auditLogs').doc();
+            batch.set(auditRef, {
+                action: 'associate_click',
+                details: `Digital Associate generated a click from ${searchParams.get('platform') || 'Social'}.`,
+                companyId: viewerId,
+                timestamp: FieldValue.serverTimestamp(),
+                metadata: { campaign: searchParams.get('campaign'), platform: searchParams.get('platform') }
+            });
+        }
+        // 4. STANDARD EMAIL/APP TRACKING
         else {
             const fieldToUpdate = source === 'app' ? 'lastAccessedAt' : 'lastOpenedAt';
             const actionLabel = source === 'app' ? 'landing_page_accessed' : 'email_opened';
@@ -86,13 +105,17 @@ export async function GET(req: NextRequest, { params }: { params: { partnerId: s
     }
   }
 
-  // AD REDIRECT LOGIC
+  // REDIRECT LOGIC
+  if (dest) {
+      return NextResponse.redirect(new URL(dest, req.url));
+  }
+
   if (source === 'ad_click' && advertiserId) {
       const redirectUrl = `${process.env.NEXT_PUBLIC_BASE_URL || ''}/shops/${advertiserId}`;
       return NextResponse.redirect(redirectUrl);
   }
 
-  // Return a 1x1 transparent GIF for pixels
+  // Return pixel for email opens
   const pixel = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
   return new NextResponse(pixel, {
     headers: {
