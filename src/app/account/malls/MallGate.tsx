@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -61,7 +62,7 @@ const mallConfigs: Record<string, MallConfig> = {
         icon: Truck,
         resource: 'transporterMall',
         permission: 'view',
-        upgradePlan: 'loads_intelligence',
+        upgradePlan: 'transporter_intelligence',
         buyLabel: 'Source Capacity',
         buyDesc: 'Scan the forensic haulier registry.',
         sellLabel: 'Setup Fleet Node',
@@ -74,7 +75,7 @@ const mallConfigs: Record<string, MallConfig> = {
         icon: Building2,
         resource: 'supplierMall',
         permission: 'view',
-        upgradePlan: 'intelligence',
+        upgradePlan: 'supplier_intelligence',
         buyLabel: 'Search Suppliers',
         buyDesc: 'Find parts and services by category.',
         sellLabel: 'Setup Supplier Node',
@@ -87,7 +88,7 @@ const mallConfigs: Record<string, MallConfig> = {
         icon: Landmark,
         resource: 'financeMall',
         permission: 'view',
-        upgradePlan: 'intelligence',
+        upgradePlan: 'finance_intelligence',
         buyLabel: 'Search for Funding',
         buyDesc: 'Scan the capital registry for matched lenders.',
         sellLabel: 'Apply for Finance',

@@ -61,6 +61,51 @@ const defaultPlans = [
         description: 'The Storage Node. Manage community storage capacity and handling fees.',
         features: ["Map Excess Storage Capacity", "Calculate Daily Storage Fees", "Automated Inbound Uplift Fees", "Warehouse Facility Audit Trail", "Community Booking Portal"],
         isPopular: false
+    },
+    {
+        id: 'finance_intelligence',
+        name: 'Finance Intelligence',
+        price: 150,
+        type: 'earning',
+        description: 'The Capital Node. Access specialized lender products and direct matching.',
+        features: ["Detailed Funder Products", "Lending Criteria Disclosure", "Direct Origination Path", "Institutional Match Alerts", "Premium Financial Toolkit"],
+        isPopular: false
+    },
+    {
+        id: 'buy_sell_intelligence',
+        name: 'Buy & Sell Intelligence',
+        price: 150,
+        type: 'earning',
+        description: 'The Marketplace Node. Secure vehicle trading and document automation.',
+        features: ["Unlimited Vehicle Listings", "Automated Sales Documents", "Verified Escrow Integration", "Handshake Direct Chat", "Asset History Tracking"],
+        isPopular: false
+    },
+    {
+        id: 'distribution_intelligence',
+        name: 'Distribution Intelligence',
+        price: 75,
+        type: 'earning',
+        description: 'The Spoke Node. Manage local urban delivery capacity.',
+        features: ["Map Urban Spoke Networks", "Local Capacity Broadcasts", "Final Mile Handshakes", "Same-Day Delivery Yields", "Regional Hub Verification"],
+        isPopular: false
+    },
+    {
+        id: 'transporter_intelligence',
+        name: 'Transporter Intelligence',
+        price: 100,
+        type: 'earning',
+        description: 'The Fleet Node. Access granular haulier fleet specs and RC1 data.',
+        features: ["RC1 Fleet Verification", "Direct Driver Lines", "Service Lane Analytics", "Vetted Capacity Search", "Compliance Registry Access"],
+        isPopular: false
+    },
+    {
+        id: 'supplier_intelligence',
+        name: 'Supplier Intelligence',
+        price: 100,
+        type: 'earning',
+        description: 'The Product Node. Access detailed catalogs and community pricing.',
+        features: ["Detailed Product Catalogs", "Bulk Discount Tiers", "Direct RFQ Handshakes", "Inventory Search", "Supplier Trust Metrics"],
+        isPopular: false
     }
 ];
 

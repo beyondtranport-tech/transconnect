@@ -48,6 +48,7 @@ const permissionHierarchy: { [key in Action]: Action[] } = {
 
 /**
  * INTELLIGENCE NODE PERMISSIONS
+ * Enforces granular access control for specialized Mall Intelligence.
  */
 export function usePermissions() {
     const { user, isUserLoading } = useUser();
@@ -69,24 +70,54 @@ export function usePermissions() {
             return perms;
         }
         
-        const membershipId = user.companyData?.membershipId || 'free';
-        const isPaidIntelligence = membershipId !== 'free' && membershipId !== 'free_observer';
+        const companyData = user.companyData || {};
+        const membershipId = companyData.membershipId || 'free';
+        const isPaidFoundation = membershipId === 'intelligence' || membershipId === 'premium';
 
-        if (isPaidIntelligence) {
+        // 1. Foundation Permissions (Directory Access)
+        if (isPaidFoundation) {
+            perms.add('view:direct-contacts');
             perms.add('view:account');
             perms.add('view:wallet');
             perms.add('view:quotes');
             perms.add('create:quotes');
             perms.add('view:enquiries');
             perms.add('create:enquiries');
-            perms.add('create:shop');
+            perms.add('manage:staff');
+            perms.add('manage:ads');
+        }
+
+        // 2. Specialized Mall Intelligence Nodes
+        if (companyData.hasLoadsPlan) {
+            perms.add('view:loads');
+            perms.add('transact:loads');
+        }
+        if (companyData.hasWarehousePlan) {
+            perms.add('view:warehouseMall');
+            perms.add('transact:warehouseMall');
+        }
+        if (companyData.hasFinancePlan) {
+            perms.add('view:financeMall');
+        }
+        if (companyData.hasBuySellPlan) {
+            perms.add('view:buySellMall');
+            perms.add('transact:buySellMall');
+        }
+        if (companyData.hasDistributionPlan) {
+            perms.add('view:distributionMall');
+        }
+        if (companyData.hasTransporterPlan) {
+            perms.add('view:transporterMall');
+        }
+        if (companyData.hasSupplierPlan) {
+            perms.add('view:supplierMall');
+        }
+
+        // 3. Generic Role-Based Setup
+        if (companyData.shopId) {
             perms.add('edit:shop');
             perms.add('publish:shop');
             perms.add('manage:products');
-            perms.add('manage:staff');
-            perms.add('view:supplierMall');
-            perms.add('view:financeMall');
-            perms.add('manage:ads'); // Paid members can manage ads
         }
 
         return perms;

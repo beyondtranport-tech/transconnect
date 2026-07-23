@@ -111,14 +111,20 @@ async function processPlanPurchase(db: FirebaseFirestore.Firestore, adminUid: st
                     status: 'active', 
                 });
             } else if (planType === 'node' || planType === 'connect') {
-                let flag = '';
-                if (planId === 'loads_intelligence') flag = 'hasLoadsPlan';
-                else if (planId === 'warehouse_intelligence') flag = 'hasWarehousePlan';
-                else if (planId === 'buy_sell_intelligence') flag = 'hasBuySellPlan';
-                else if (planId === 'loyalty') flag = 'hasLoyaltyPlan';
-                else if (planId === 'rewards') flag = 'hasRewardsPlan';
-                else if (planId === 'actions') flag = 'hasActionsPlan';
+                const nodeMap: Record<string, string> = {
+                    'loads_intelligence': 'hasLoadsPlan',
+                    'warehouse_intelligence': 'hasWarehousePlan',
+                    'buy_sell_intelligence': 'hasBuySellPlan',
+                    'finance_intelligence': 'hasFinancePlan',
+                    'distribution_intelligence': 'hasDistributionPlan',
+                    'transporter_intelligence': 'hasTransporterPlan',
+                    'supplier_intelligence': 'hasSupplierPlan',
+                    'loyalty': 'hasLoyaltyPlan',
+                    'rewards': 'hasRewardsPlan',
+                    'actions': 'hasActionsPlan'
+                };
 
+                const flag = nodeMap[planId];
                 if (flag) {
                     transaction.update(companyRef, {
                         [flag]: true,
