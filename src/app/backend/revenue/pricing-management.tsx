@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -46,7 +45,7 @@ const defaultPlans = [
     },
     {
         id: 'basic',
-        name: 'Basic Global',
+        name: 'Basic Transactional',
         price: 250,
         type: 'global',
         description: 'Start transacting and operating your digital branch.',
@@ -55,7 +54,7 @@ const defaultPlans = [
     },
     {
         id: 'standard',
-        name: 'Standard Global',
+        name: 'Standard Transactional',
         price: 500,
         type: 'global',
         description: 'Enhanced tools for active industrial players.',
@@ -64,7 +63,7 @@ const defaultPlans = [
     },
     {
         id: 'premium',
-        name: 'Premium Global',
+        name: 'Premium Transactional',
         price: 1000,
         type: 'global',
         description: 'The ultimate operational tier for industrial leaders.',
@@ -163,7 +162,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
           <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Add New Plan</Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-3xl text-left text-foreground">
+      <DialogContent className="sm:max-w-[725px] text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{plan ? 'Edit' : 'Add New'} Membership Plan</DialogTitle>
           <DialogDescription>Define the role and economics for this ecosystem node.</DialogDescription>
@@ -183,7 +182,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                 <SelectItem value="foundation">1. Node Ownership (Foundation)</SelectItem>
                                 <SelectItem value="registry">2. Registry Intelligence (Data)</SelectItem>
                                 <SelectItem value="mall">3. Mall Intelligence (Deep Data)</SelectItem>
-                                <SelectItem value="global">4. Global Membership (Apps/Transactions)</SelectItem>
+                                <SelectItem value="global">4. Transactional Membership (Apps/Transactions)</SelectItem>
                             </SelectContent>
                         </Select>
                         <FormMessage />
@@ -192,7 +191,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             </div>
             
             <FormField name="name" control={form.control} render={({ field }) => (
-              <FormItem className="text-left text-foreground"><FormLabel>Public Plan Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Standard Global" /></FormControl><FormMessage /></FormItem>
+              <FormItem className="text-left text-foreground"><FormLabel>Public Plan Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Standard Transactional" /></FormControl><FormMessage /></FormItem>
             )} />
 
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
@@ -322,7 +321,7 @@ export default function PricingManagement() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
         <div className="text-left text-foreground">
             <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Layers className="h-6 w-6 text-primary"/> Membership & Node Ledger</CardTitle>
-            <CardDescription className="text-left text-foreground">Configure the 4 layers of the industrial grid: Ownership, Registry, Mall, and Global App access.</CardDescription>
+            <CardDescription className="text-left text-foreground">Configure the 4 layers of the industrial grid: Ownership, Registry, Mall, and Transactional App access.</CardDescription>
         </div>
         <div className="flex gap-2 text-left">
             <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-foreground">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,7 @@ import * as React from 'react';
  * 1. Node Ownership (Foundation) - R10/mo (Claiming identity)
  * 2. Registry Intelligence - R100/mo (Global Directory Contacts)
  * 3. Mall Intelligence - Specialized Earning Nodes (Deep Data)
- * 4. Global Membership - Transactional Tiers (App Access)
+ * 4. Transactional App Membership - Operational Tiers (App Access)
  */
 
 export default function MembershipPage() {
@@ -60,7 +59,7 @@ export default function MembershipPage() {
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Ecosystem Economics</Badge>
           <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-foreground">Intelligence that pays.</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground leading-relaxed text-center">
-            Logistics Flow is a modular ecosystem. Separate your <strong>Data Intelligence</strong> (Market Insight) from your <strong>Global Membership</strong> (Operational Tools).
+            Logistics Flow is a modular ecosystem. Establish your <strong>Foundation</strong> in the registry, or plug in a specialized <strong>Intelligence Node</strong> to scale your operations.
           </p>
         </div>
 
@@ -172,11 +171,11 @@ export default function MembershipPage() {
                     </div>
                 </div>
 
-                {/* 4. GLOBAL APP MEMBERSHIP */}
+                {/* 4. TRANSACTIONAL APP MEMBERSHIP */}
                 <div className="space-y-10">
                     <div className="flex items-center gap-4 border-l-4 border-blue-600 pl-6 text-left">
                         <div className="text-left">
-                            <h2 className="text-3xl font-black uppercase tracking-tight">4. Global App Membership</h2>
+                            <h2 className="text-3xl font-black uppercase tracking-tight">4. Transactional App Membership</h2>
                             <p className="text-muted-foreground text-sm font-medium">Transactional and operational tiers. The power to run your business on the app.</p>
                         </div>
                     </div>
