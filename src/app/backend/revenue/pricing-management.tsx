@@ -9,21 +9,60 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Trash2, Layers } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Trash2, Layers, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
-import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import featuresData from '@/lib/features.json';
 import { formatCurrency } from '@/lib/utils';
 
 const { featureSections } = featuresData;
+
+const defaultPlans = [
+    {
+        id: 'free',
+        name: 'Free Observer',
+        price: 0,
+        type: 'foundation',
+        description: 'Basic visibility into the community mall and registry.',
+        features: ["1 Search per day", "View up to 10 records", "Basic company names only", "Public Mall access"],
+        isPopular: false
+    },
+    {
+        id: 'intelligence',
+        name: 'Intelligence Access',
+        price: 100,
+        type: 'foundation',
+        description: 'The foundation for industrial growth. Unlock the map.',
+        features: ["Unlimited Registry Search", "Access to 22,000+ Records", "Reveal Direct MD/CEO Contacts", "Publish Your Digital Branch", "Apply for Direct Funding"],
+        isPopular: true
+    },
+    {
+        id: 'loads_intelligence',
+        name: 'Loads Intelligence',
+        price: 75,
+        type: 'earning',
+        description: 'The Brokerage Node. Post and take freight loads.',
+        features: ["Unlock Direct Haulier Contacts", "Post Unlimited Loads (Broker)", "Take Matching Loads (Haulier)", "Access Settlement Ledger", "Verified Driver Registry"],
+        isPopular: false
+    },
+    {
+        id: 'warehouse_intelligence',
+        name: 'Warehouse Intelligence',
+        price: 125,
+        type: 'earning',
+        description: 'The Storage Node. Manage community storage capacity and handling fees.',
+        features: ["Map Excess Storage Capacity", "Calculate Daily Storage Fees", "Automated Inbound Uplift Fees", "Warehouse Facility Audit Trail", "Community Booking Portal"],
+        isPopular: false
+    }
+];
 
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
@@ -209,6 +248,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 export default function PricingManagement() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -216,6 +256,31 @@ export default function PricingManagement() {
   }, [firestore]);
   
   const { data: plans, isLoading, forceRefresh } = useCollection(membershipsQuery);
+
+  const handleSeed = async () => {
+    setIsSeeding(true);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Auth failed.");
+
+        for (const plan of defaultPlans) {
+            await fetch('/api/updateConfigDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `memberships/${plan.id}`,
+                    data: { ...plan, updatedAt: { _methodName: 'serverTimestamp' } }
+                }),
+            });
+        }
+        toast({ title: "Core Plans Seeded", description: "Standard Foundation and Node plans are now live in the database." });
+        forceRefresh();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: "Seeding Failed", description: e.message });
+    } finally {
+        setIsSeeding(false);
+    }
+  };
 
   const handleDelete = async (planId: string) => {
     if (planId === 'free' || planId === 'intelligence') {
@@ -244,7 +309,13 @@ export default function PricingManagement() {
             <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left"><Layers className="h-6 w-6 text-primary"/> Membership & Node Ledger</CardTitle>
             <CardDescription className="text-left">Manage the modular building blocks of the industrial grid.</CardDescription>
         </div>
-        <PlanDialog onSave={forceRefresh} />
+        <div className="flex gap-2">
+            <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2">
+                {isSeeding ? <Loader2 className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4" />}
+                Seed Core Plans
+            </Button>
+            <PlanDialog onSave={forceRefresh} />
+        </div>
       </div>
 
       <Card className="text-left">
@@ -293,7 +364,14 @@ export default function PricingManagement() {
                     ))}
                     {(!plans || plans.length === 0) && (
                         <TableRow>
-                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">No plans defined in registry. Add a new plan above.</TableCell>
+                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic">
+                                <div className="space-y-4">
+                                    <p>No plans defined in registry.</p>
+                                    <Button variant="outline" onClick={handleSeed} disabled={isSeeding}>
+                                        Click here to seed standard platform plans
+                                    </Button>
+                                </div>
+                            </TableCell>
                         </TableRow>
                     )}
                 </TableBody>
