@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -31,79 +32,52 @@ const defaultPlans = [
         price: 0,
         type: 'foundation',
         description: 'Basic visibility into the community mall and registry.',
-        features: ["1 Search per day", "View up to 10 records", "Basic company names only", "Public Mall access"],
+        features: ["1 Search per day", "View up to 10 records", "Basic company names only"],
         isPopular: false
     },
     {
         id: 'intelligence',
         name: 'Intelligence Access',
         price: 100,
-        type: 'foundation',
+        type: 'registry',
         description: 'The foundation for industrial growth. Unlock the map.',
-        features: ["Unlimited Registry Search", "Access to 22,000+ Records", "Reveal Direct MD/CEO Contacts", "Publish Your Digital Branch", "Apply for Direct Funding"],
+        features: ["Unlimited Registry Search", "Access to 22,000+ Records", "Reveal Direct MD/CEO Contacts"],
         isPopular: true
+    },
+    {
+        id: 'basic',
+        name: 'Basic Global',
+        price: 250,
+        type: 'global',
+        description: 'Start transacting and operating your digital branch.',
+        features: ["Access all Malls", "Create 1 Digital Branch", "Standard Transaction Fees", "Mobile App Access"],
+        isPopular: false
+    },
+    {
+        id: 'standard',
+        name: 'Standard Global',
+        price: 500,
+        type: 'global',
+        description: 'Enhanced tools for active industrial players.',
+        features: ["Priority Listing Placement", "Advanced Shop Customization", "Bulk Product Imports", "Reward Point Multipliers"],
+        isPopular: false
+    },
+    {
+        id: 'premium',
+        name: 'Premium Global',
+        price: 1000,
+        type: 'global',
+        description: 'The ultimate operational tier for industrial leaders.',
+        features: ["Zero Transaction Fees", "Dedicated Manager", "Full AI Studio Access", "Unlimited Product Listings"],
+        isPopular: false
     },
     {
         id: 'loads_intelligence',
         name: 'Loads Intelligence',
         price: 75,
-        type: 'earning',
-        description: 'The Brokerage Node. Access deep freight intelligence and clearing tools.',
-        features: ["Unlock Direct Haulier Contacts", "Post Unlimited Loads (Broker)", "Take Matching Loads (Haulier)", "Access Settlement Ledger", "Verified Driver Registry"],
-        isPopular: false
-    },
-    {
-        id: 'warehouse_intelligence',
-        name: 'Warehouse Intelligence',
-        price: 125,
-        type: 'earning',
-        description: 'The Storage Node. Map community storage capacity and handling fees.',
-        features: ["Map Excess Storage Capacity", "Calculate Daily Storage Fees", "Automated Inbound Uplift Fees", "Warehouse Facility Audit Trail", "Community Booking Portal"],
-        isPopular: false
-    },
-    {
-        id: 'finance_intelligence',
-        name: 'Finance Intelligence',
-        price: 150,
-        type: 'earning',
-        description: 'The Capital Node. Access specialized lender products and institutional criteria.',
-        features: ["Detailed Funder Products", "Lending Criteria Disclosure", "Direct Origination Path", "Institutional Match Alerts", "Premium Financial Toolkit"],
-        isPopular: false
-    },
-    {
-        id: 'buy_sell_intelligence',
-        name: 'Buy & Sell Intelligence',
-        price: 150,
-        type: 'earning',
-        description: 'The Marketplace Node. Secure vehicle trading and automated docs.',
-        features: ["Unlimited Vehicle Listings", "Automated Sales Documents", "Verified Escrow Integration", "Handshake Direct Chat", "Asset History Tracking"],
-        isPopular: false
-    },
-    {
-        id: 'distribution_intelligence',
-        name: 'Distribution Intelligence',
-        price: 75,
-        type: 'earning',
-        description: 'The Spoke Node. Access urban delivery capacity and local spoke mapping.',
-        features: ["Map Urban Spoke Networks", "Local Capacity Broadcasts", "Final Mile Handshakes", "Same-Day Delivery Yields", "Regional Hub Verification"],
-        isPopular: false
-    },
-    {
-        id: 'transporter_intelligence',
-        name: 'Transporter Intelligence',
-        price: 100,
-        type: 'earning',
-        description: 'The Fleet Node. Access granular haulier technicals and RC1 verification.',
-        features: ["RC1 Fleet Verification", "Direct Driver Lines", "Service Lane Analytics", "Vetted Capacity Search", "Compliance Registry Access"],
-        isPopular: false
-    },
-    {
-        id: 'supplier_intelligence',
-        name: 'Supplier Intelligence',
-        price: 100,
-        type: 'earning',
-        description: 'The Product Node. Access detailed catalogs and trade-negotiated pricing.',
-        features: ["Detailed Product Catalogs", "Bulk Discount Tiers", "Direct RFQ Handshakes", "Inventory Search", "Supplier Trust Metrics"],
+        type: 'mall',
+        description: 'Access deep freight intelligence and clearing tools.',
+        features: ["Post Unlimited Loads", "Take Matching Loads", "Access Settlement Ledger"],
         isPopular: false
     }
 ];
@@ -111,7 +85,7 @@ const defaultPlans = [
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
   name: z.string().min(1, 'Plan name is required'),
-  type: z.enum(['foundation', 'earning']).default('foundation'),
+  type: z.enum(['foundation', 'registry', 'mall', 'global']).default('foundation'),
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().min(0, 'Price must be 0 or more'),
   annualDiscount: z.coerce.number().min(0, "Must be between 0-100").optional(),
@@ -153,7 +127,6 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 
   const onSubmit = async (values: PlanFormValues) => {
     setIsLoading(true);
-
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
@@ -193,22 +166,24 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       <DialogContent className="sm:max-w-3xl text-left text-foreground">
         <DialogHeader>
           <DialogTitle>{plan ? 'Edit' : 'Add New'} Membership Plan</DialogTitle>
-          <DialogDescription>Define the pricing, category, and features for this industrial node.</DialogDescription>
+          <DialogDescription>Define the role and economics for this ecosystem node.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4 max-h-[75vh] overflow-y-auto pr-4 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
                 <FormField name="id" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel>Plan ID (Lowercase)</FormLabel><FormControl><Input {...field} disabled={!!plan} placeholder="e.g. intelligence" className="font-mono"/></FormControl><FormMessage /></FormItem>
+                    <FormItem className="text-left"><FormLabel>Plan ID (Lowercase)</FormLabel><FormControl><Input {...field} disabled={!!plan} placeholder="e.g. basic" className="font-mono"/></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField name="type" control={form.control} render={({ field }) => (
                     <FormItem className="text-left text-foreground">
-                        <FormLabel>Plan Category</FormLabel>
+                        <FormLabel>Plan Architecture Layer</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select layer..." /></SelectTrigger></FormControl>
                             <SelectContent>
-                                <SelectItem value="foundation">Foundation (Registry Access)</SelectItem>
-                                <SelectItem value="earning">Earning Node (Mall Intelligence)</SelectItem>
+                                <SelectItem value="foundation">1. Node Ownership (Foundation)</SelectItem>
+                                <SelectItem value="registry">2. Registry Intelligence (Data)</SelectItem>
+                                <SelectItem value="mall">3. Mall Intelligence (Deep Data)</SelectItem>
+                                <SelectItem value="global">4. Global Membership (Apps/Transactions)</SelectItem>
                             </SelectContent>
                         </Select>
                         <FormMessage />
@@ -217,7 +192,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             </div>
             
             <FormField name="name" control={form.control} render={({ field }) => (
-              <FormItem className="text-left text-foreground"><FormLabel>Public Plan Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Intelligence Access" /></FormControl><FormMessage /></FormItem>
+              <FormItem className="text-left text-foreground"><FormLabel>Public Plan Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Standard Global" /></FormControl><FormMessage /></FormItem>
             )} />
 
             <div className="grid grid-cols-2 gap-4 text-left text-foreground">
@@ -317,7 +292,7 @@ export default function PricingManagement() {
                 }),
             });
         }
-        toast({ title: "Core Plans Seeded", description: "Standard Foundation and Mall Nodes are now live." });
+        toast({ title: "Core Plans Seeded", description: "All 4 layers of the platform are now defined." });
         forceRefresh();
     } catch (e: any) {
         toast({ variant: 'destructive', title: "Seeding Failed", description: e.message });
@@ -327,10 +302,6 @@ export default function PricingManagement() {
   };
 
   const handleDelete = async (planId: string) => {
-    if (planId === 'free' || planId === 'intelligence') {
-        toast({ variant: 'destructive', title: 'System Constraint', description: 'Core plans cannot be deleted.' });
-        return;
-    }
     try {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
@@ -351,12 +322,12 @@ export default function PricingManagement() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
         <div className="text-left text-foreground">
             <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Layers className="h-6 w-6 text-primary"/> Membership & Node Ledger</CardTitle>
-            <CardDescription className="text-left text-foreground">Manage the modular building blocks of the industrial grid intelligence.</CardDescription>
+            <CardDescription className="text-left text-foreground">Configure the 4 layers of the industrial grid: Ownership, Registry, Mall, and Global App access.</CardDescription>
         </div>
         <div className="flex gap-2 text-left">
             <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-foreground">
                 {isSeeding ? <Loader2 className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4" />}
-                Seed All 9 Nodes
+                Seed All Core Plans
             </Button>
             <PlanDialog onSave={forceRefresh} />
         </div>
@@ -371,9 +342,9 @@ export default function PricingManagement() {
                 <Table className="text-left text-foreground">
                 <TableHeader className="bg-slate-50 text-left text-foreground">
                     <TableRow className="text-left text-foreground">
-                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Plan / Category</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Plan / Layer</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Monthly Price</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Features</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Layer Logic</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Status</TableHead>
                     <TableHead className="text-right font-bold text-[10px] uppercase text-foreground">Actions</TableHead>
                     </TableRow>
@@ -384,35 +355,35 @@ export default function PricingManagement() {
                             <TableCell className="py-4 text-left text-foreground">
                                 <div className="flex flex-col text-left">
                                     <span className="font-black text-foreground">{plan.name}</span>
-                                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase border-primary/20 text-primary">
-                                        {plan.type === 'earning' ? 'Mall Node' : 'Foundation'}
-                                    </Badge>
+                                    <span className="text-[9px] text-muted-foreground font-mono uppercase">{plan.id}</span>
                                 </div>
                             </TableCell>
                             <TableCell className="font-mono font-bold text-primary text-left">
-                                {formatCurrency(typeof plan.price === 'number' ? plan.price : (plan.price?.monthly || 0))}
+                                {formatCurrency(plan.price)}
                             </TableCell>
                             <TableCell className="text-left text-foreground">
-                                <span className="text-xs font-medium">{plan.features?.length || 0} enabled</span>
+                                <Badge variant="outline" className="capitalize text-[10px] font-black border-primary/20 text-primary">
+                                    {plan.type === 'registry' ? 'Data Intelligence' : plan.type === 'mall' ? 'Deep Mall Data' : plan.type === 'global' ? 'App & Transactions' : 'Foundation'}
+                                </Badge>
                             </TableCell>
                             <TableCell className="text-left text-foreground">
-                                {plan.isPopular && <Badge className="bg-amber-100 text-amber-800 border-none text-[8px] h-4 font-black uppercase">Popular</Badge>}
+                                {plan.isPopular && <Badge className="bg-amber-100 text-amber-800 border-none text-[8px] h-4 font-black uppercase">Most Active</Badge>}
                             </TableCell>
                             <TableCell className="text-right text-foreground">
                                 <div className="flex justify-end gap-1 text-foreground">
                                     <PlanDialog plan={plan} onSave={forceRefresh} />
-                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(plan.id)} disabled={plan.id === 'free' || plan.id === 'intelligence'} className="text-foreground"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(plan.id)} className="text-foreground"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                                 </div>
                             </TableCell>
                         </TableRow>
                     ))}
                     {(!plans || plans.length === 0) && (
                         <TableRow className="text-left text-foreground">
-                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic text-foreground">
+                            <TableCell colSpan={5} className="text-center py-20 text-muted-foreground italic text-foreground text-center">
                                 <div className="space-y-4 text-center">
-                                    <p>No plans defined in registry.</p>
+                                    <p>No plans defined in the ecosystem ledger.</p>
                                     <Button variant="outline" onClick={handleSeed} disabled={isSeeding} className="text-foreground">
-                                        Click here to seed standard platform plans
+                                        Click here to seed standard platform layers
                                     </Button>
                                 </div>
                             </TableCell>
