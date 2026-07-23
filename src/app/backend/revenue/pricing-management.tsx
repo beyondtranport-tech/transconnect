@@ -19,7 +19,9 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import featuresData from '@/lib/features.json';
+import { formatCurrency } from '@/lib/utils';
 
 const { featureSections } = featuresData;
 
