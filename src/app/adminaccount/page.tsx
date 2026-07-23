@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -97,6 +98,7 @@ import PlatformStaffManagement from '@/app/adminaccount/platform-staff';
 import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import AdminGuides from '@/app/adminaccount/guides';
 import AdsOversight from '@/app/adminaccount/ads-oversight';
+import SocialStudio from '@/app/adminaccount/social-studio';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -149,8 +151,12 @@ function AdminAccountContent() {
   };
 
   const renderContent = useCallback(() => {
+    if (activeView.startsWith('social-')) {
+        const platform = activeView.split('-')[1] as any;
+        return <SocialStudio platform={platform} />;
+    }
     if (activeView.startsWith('marketing-')) {
-        const audience = activeView.replace('marketing-', '') as "transporters" | "suppliers" | "investors" | "partners" | "isa" | "developers";
+        const audience = activeView.replace('marketing-', '') as any;
         return <MarketingPage audience={audience} />;
     }
     switch (activeView) {
@@ -242,10 +248,16 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-transporters'} onClick={() => navigate('marketing-transporters')}>Transporters</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-finance'} onClick={() => navigate('marketing-finance')}>Finance Co</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-investors'} onClick={() => navigate('marketing-investors')}>Investors</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-warehouse'} onClick={() => navigate('marketing-warehouse')}><Warehouse className="h-3.5 w-3.5 mr-2" />Warehouse Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-distribution'} onClick={() => navigate('marketing-distribution')}><Network className="h-3.5 w-3.5 mr-2" />Distribution Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-loads'} onClick={() => navigate('marketing-loads')}><PackageSearch className="h-3.5 w-3.5 mr-2" />Loads Mall</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'marketing-buy-sell'} onClick={() => navigate('marketing-buy-sell')}><ShoppingCart className="h-3.5 w-3.5 mr-2" />Buy & Sell Mall</SidebarMenuSubButton></SidebarMenuSubItem>
+                  </SidebarMenuSub>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social Studio</span></SidebarMenuButton>
+                  <SidebarMenuSub>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-facebook'} onClick={() => navigate('social-facebook')}><Facebook className="h-4 w-4"/>Facebook</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-linkedin'} onClick={() => navigate('social-linkedin')}><Linkedin className="h-4 w-4"/>LinkedIn</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-instagram'} onClick={() => navigate('social-instagram')}><Instagram className="h-4 w-4"/>Instagram</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'social-tiktok'} onClick={() => navigate('social-tiktok')}><Music className="h-4 w-4"/>TikTok</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>
 

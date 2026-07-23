@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export const associateCategories = [
+    "Digital Influencer",
     "Content Creator",
     "Digital Marketer",
     "Brand Strategist",
@@ -24,18 +26,33 @@ export const associateCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
+    const isInfluencer = category === "Digital Influencer";
+    
+    let strategyMandate = `YOU MUST PERFORM A LIVE SEARCH FOR "${category} for logistics in South Africa" on LinkedIn, Facebook, Instagram, and TikTok.`;
+    
+    if (isInfluencer) {
+        strategyMandate = `ACT AS AN ELITE INDUSTRIAL SCOUT.
+        TASK: Discover exactly 30 UNIQUE "Micro-Influencers" in the South African transport/logistics space.
+        
+        STRICT FOLLOWER CONSTRAINT: 
+        TARGET ONLY INDIVIDUALS OR SMALL HUBS WITH UP TO 10,000 FOLLOWERS ON THEIR PRIMARY CHANNEL.
+        
+        CHANNEL SCAN: 
+        Check specifically for presence on Facebook, LinkedIn, Instagram, and TikTok. 
+        Focus on creators who talk about trucking, supply chain, harbor activity, or courier life.`;
+    }
+
     return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 NOISE SUPPRESSION PROTOCOL:
 1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
-2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
+2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES, SOCIAL PROFILES, AND BUSINESS DIRECTORIES.
 
 CRITICAL INTEGRITY SHIELD: 
 DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
-YOU MUST PERFORM A LIVE SEARCH FOR "${category} for logistics in South Africa" on LinkedIn and social platforms.
 
-TASK: Discover and extract exactly 30 UNIQUE, LIVE South African digital partners for the role: "${category}".
+${strategyMandate}
 
 PROTOCOL:
 1. PLATFORM SCAN: Identify the primary social or web presence.
@@ -48,12 +65,14 @@ REQUIRED JSON FIELDS:
   {
     "seq": ${startSeq},
     "record_id": "...",
-    "companyName": "CREATIVE HUB / AGENCY NAME",
+    "companyName": "CREATIVE HUB / INFLUENCER HANDLE",
     "industrial_category": "${category}",
     "contact_person": "VERIFIED HUMAN NAME",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL CHANNEL/URL",
+    "follower_count": "ESTIMATED (MUST BE < 10,000)",
+    "primary_channel": "Facebook/LinkedIn/Instagram/TikTok",
     "notes": "..."
   }
 ]`;
@@ -70,7 +89,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Noise suppression active." });
+        toast({ title: "Research Prompt Ready", description: "Noise suppression and 10k-follower limit active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -84,9 +103,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Noise Suppression Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Micro-Influencer Mandate Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is commanded to ignore job listings and policy news.
+                        The agent is commanded to target creators with **up to 10,000 followers** for high-engagement potential.
                     </AlertDescription>
                 </Alert>
 
@@ -120,7 +139,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 export default function AssociateDiscoveryEngine() {
     return (
         <Card className="shadow-none border-none text-left text-foreground">
-            <Tabs defaultValue="Industry Influencer" className="w-full text-left">
+            <Tabs defaultValue="Digital Influencer" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left text-foreground">
                     <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left">
                         <Database className="h-6 w-6 text-primary" />
@@ -137,7 +156,7 @@ export default function AssociateDiscoveryEngine() {
                         ))}
                     </TabsList>
                     {associateCategories.map(category => (
-                        <TabsContent key={category} value={category} className="mt-0 text-left">
+                        <TabsContent key={category} value={category} className="mt-8 text-left">
                             <DiscoveryTab category={category} currentCount={0} />
                         </TabsContent>
                     ))}
