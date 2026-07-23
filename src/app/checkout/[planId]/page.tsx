@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, ArrowLeft, Wallet, AlertCircle, CheckCircle, ShieldCheck, Zap, Heart, Gift, Truck, Landmark, Warehouse, ShoppingCart, Building2, Network } from 'lucide-react';
+import { Loader2, Wallet, AlertCircle, ShieldCheck, Zap, Heart, Gift, Truck, Landmark, Warehouse, ShoppingCart, Building2, Network } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMemoFirebase } from '@/firebase';
@@ -87,13 +88,10 @@ function CheckoutComponent() {
     }
     
     if (membershipPlan) {
-        const monthlyPrice = (typeof membershipPlan.price === 'object' && membershipPlan.price !== null)
-            ? membershipPlan.price.monthly || 0
-            : Number(membershipPlan.price) || 0;
+        const monthlyPrice = (typeof membershipPlan.price === 'number')
+            ? membershipPlan.price
+            : (membershipPlan.price?.monthly || 0);
             
-        const specialOfferDiscount = Number(membershipPlan.specialOfferDiscount) || 0;
-        const finalMonthlyPrice = monthlyPrice * (1 - (specialOfferDiscount / 100));
-
         let type = membershipPlan.type;
         if (!type) {
             type = planId === 'intelligence' ? 'membership' : 'node';
@@ -101,17 +99,16 @@ function CheckoutComponent() {
 
         if (cycle === 'annual') {
             const annualDiscount = Number(membershipPlan.annualDiscount) || 0;
-            const baseAnnualPrice = monthlyPrice * 12 * (1 - (annualDiscount / 100));
             return {
                 name: membershipPlan.name,
-                price: baseAnnualPrice * (1 - (specialOfferDiscount / 100)),
+                price: monthlyPrice * 12 * (1 - (annualDiscount / 100)),
                 description: membershipPlan.description,
                 type: type
             };
         }
         return {
             name: membershipPlan.name,
-            price: finalMonthlyPrice,
+            price: monthlyPrice,
             description: membershipPlan.description,
             type: type
         };
@@ -153,7 +150,7 @@ function CheckoutComponent() {
         });
 
         if (!response.ok) {
-            const result = await response.json().catch(() => ({ error: 'Communication error.' }));
+            const result = await response.json();
             throw new Error(result.error || 'Activation failed.');
         }
 
@@ -188,7 +185,7 @@ function CheckoutComponent() {
         <div className="container mx-auto max-w-md py-20 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-2xl font-bold">Node Metadata Missing</h2>
-            <p className="text-muted-foreground mt-2">We couldn't retrieve the configuration for this industrial node.</p>
+            <p className="text-muted-foreground mt-2 text-center">We couldn't retrieve the configuration for this industrial node.</p>
             <Button asChild className="mt-6" variant="outline"><Link href="/pricing">Return to Pricing</Link></Button>
         </div>
     );
@@ -200,8 +197,8 @@ function CheckoutComponent() {
     <div className="container mx-auto px-4 py-16 flex justify-center text-left text-foreground">
         <Card className="w-full max-w-xl shadow-2xl border-none overflow-hidden text-left bg-white">
             <CardHeader className="bg-slate-900 text-white p-10 text-left">
-                <div className="flex items-center gap-6 text-left text-white">
-                    <div className="bg-primary/20 p-4 rounded-2xl shadow-inner text-left">
+                <div className="flex items-center gap-6 text-left">
+                    <div className="bg-primary/20 p-4 rounded-2xl shadow-inner">
                         <PlanIcon className="h-10 w-10 text-primary" />
                     </div>
                     <div className="text-left text-white">
@@ -210,7 +207,7 @@ function CheckoutComponent() {
                                 {planDisplay.type === 'earning' || planDisplay.type === 'node' ? 'Industrial Earning Node' : (planDisplay.type === 'foundation' || planDisplay.type === 'membership' ? 'Ecosystem Foundation' : 'Ecosystem Add-on')}
                             </Badge>
                         </div>
-                        <CardTitle className="text-3xl font-black font-headline text-white text-left leading-tight">Activate intelligence</CardTitle>
+                        <CardTitle className="text-3xl font-black font-headline text-white text-left leading-tight">Activate Intelligence</CardTitle>
                     </div>
                 </div>
             </CardHeader>
@@ -227,10 +224,10 @@ function CheckoutComponent() {
 
                 <Separator />
 
-                <div className="space-y-4 text-left text-foreground">
+                <div className="space-y-4 text-left">
                     <div className="flex justify-between items-center text-left">
-                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground text-left">Account Available Balance</span>
-                        <span className="font-mono font-bold text-lg text-left">{formatCurrency(companyData?.availableBalance)}</span>
+                        <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Account Available Balance</span>
+                        <span className="font-mono font-bold text-lg">{formatCurrency(companyData?.availableBalance)}</span>
                     </div>
                     
                     {!hasSufficientFunds && (
@@ -244,12 +241,12 @@ function CheckoutComponent() {
                     )}
                 </div>
 
-                <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200 text-left">
-                    <h4 className="font-black text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2 text-left text-foreground">
+                <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200 text-left text-foreground">
+                    <h4 className="font-black text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2 text-left">
                         <ShieldCheck className="h-4 w-4 fill-current"/>
                         Handshake Verification
                     </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">
+                    <p className="text-xs text-muted-foreground leading-relaxed text-left">
                         By confirming, you authorize a direct wallet debit. This activation is final and grants immediate access to the setup terminal for this node.
                     </p>
                 </div>
@@ -259,14 +256,14 @@ function CheckoutComponent() {
                 <Button 
                     onClick={handlePurchase} 
                     disabled={isProcessing || !hasSufficientFunds} 
-                    className="w-full h-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white text-left"
+                    className="w-full h-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white"
                 >
                     {isProcessing ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Zap className="mr-2 h-6 w-6" />}
                     {hasSufficientFunds ? `Confirm & Activate Node` : 'Insufficient Funds'}
                 </Button>
                 
                 {!hasSufficientFunds ? (
-                    <Button asChild variant="outline" className="w-full h-12 font-bold text-left">
+                    <Button asChild variant="outline" className="w-full h-12 font-bold">
                         <Link href="/account?view=wallet">Go to Wallet & Top-up</Link>
                     </Button>
                 ) : (

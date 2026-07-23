@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Truck, Loader2, Zap, Gift } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Truck, Loader2, Zap, Gift, Landmark, Warehouse, ShoppingCart, Building2, Network } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, limit } from 'firebase/firestore';
@@ -12,6 +12,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from '@/components/ui/separator';
 import * as React from 'react';
 
+/**
+ * THE INDUSTRIAL GRID PRICING
+ * Grouped into "The Foundation" (Registry) and "Earning Nodes" (Mall Intelligence).
+ */
+
 const defaultPlans = [
     {
         id: 'free',
@@ -19,12 +24,7 @@ const defaultPlans = [
         price: 0,
         type: 'foundation',
         description: 'Basic visibility into the community mall and registry.',
-        features: [
-            "1 Search per day",
-            "View up to 10 records",
-            "Basic company names only",
-            "Public Mall access",
-        ],
+        features: ["1 Search per day", "View up to 10 records", "Basic company names only", "Public Mall access"],
         cta: "Start Free",
         variant: "outline" as const
     },
@@ -35,30 +35,8 @@ const defaultPlans = [
         type: 'foundation',
         isPopular: true,
         description: 'The foundation for industrial growth. Unlock the map.',
-        features: [
-            "Unlimited Registry Search",
-            "Access to 22,000+ Records",
-            "Reveal Direct MD/CEO Contacts",
-            "Publish Your Digital Branch",
-            "Apply for Direct Funding",
-        ],
+        features: ["Unlimited Registry Search", "Access to 22,000+ Records", "Reveal Direct MD/CEO Contacts", "Publish Your Digital Branch", "Apply for Direct Funding"],
         cta: "Activate Foundation",
-        variant: "default" as const
-    },
-    {
-        id: 'loads_intelligence',
-        name: 'Loads Intelligence',
-        price: 75,
-        type: 'earning',
-        description: 'The Brokerage Node. Post and take freight loads.',
-        features: [
-            "Unlock Direct Haulier Contacts",
-            "Post Unlimited Loads (Broker)",
-            "Take Matching Loads (Haulier)",
-            "Access Settlement Ledger",
-            "Verified Driver Registry",
-        ],
-        cta: "Activate Node",
         variant: "default" as const
     }
 ];
@@ -71,6 +49,7 @@ export default function MembershipPage() {
     if (!firestore) return null;
     return query(collection(firestore, 'memberships'));
   }, [firestore]);
+  
   const { data: dbPlans, isLoading } = useCollection(membershipsQuery);
 
   const incentivesQuery = useMemoFirebase(() => {
@@ -82,13 +61,9 @@ export default function MembershipPage() {
   const plans = React.useMemo(() => {
     if (isLoading && !dbPlans) return [];
     
-    // Fallback if DB is empty
-    if (dbPlans && dbPlans.length === 0) return defaultPlans;
-
     if (dbPlans && dbPlans.length > 0) {
         return dbPlans.map(p => {
             const planId = p.id?.toLowerCase() || '';
-            // ROBUST CATEGORY RESOLVER: Prioritize 'type' field, fallback to ID mapping
             let type = p.type;
             if (!type) {
                 type = (planId === 'free' || planId === 'intelligence') ? 'foundation' : 'earning';
@@ -118,6 +93,7 @@ export default function MembershipPage() {
     <div className="bg-background min-h-screen text-left text-foreground">
       <div className="container mx-auto px-4 py-16 md:py-24">
         
+        {/* ACTIVATION BUNDLE HOOK */}
         {incentives && incentives.length > 0 && (
             <div className="max-w-5xl mx-auto mb-20 animate-in fade-in slide-in-from-top-4 duration-1000">
                 <div className="bg-slate-900 rounded-[2.5rem] p-1 shadow-2xl">
@@ -126,10 +102,10 @@ export default function MembershipPage() {
                             <Gift className="h-40 w-40 text-primary" />
                         </div>
                         <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-                            <div className="flex-1 space-y-6 text-left">
+                            <div className="flex-1 space-y-6 text-left text-white">
                                 <Badge className="bg-primary/20 text-primary border-primary/30 py-1.5 px-6 font-black uppercase tracking-widest text-[10px]">Registry Activation Bonus</Badge>
                                 <h2 className="text-3xl md:text-5xl font-black font-headline text-white leading-tight">Join for R100,<br/><span className="text-primary">Get R500 in value.</span></h2>
-                                <p className="text-slate-400 text-lg leading-relaxed">
+                                <p className="text-slate-400 text-lg leading-relaxed text-left">
                                     Our Supplier Partners have allocated exclusive **Welcome Gifts** to help you lower your operating costs the moment you establish your handshake.
                                 </p>
                             </div>
@@ -166,28 +142,28 @@ export default function MembershipPage() {
         ) : (
             <div className="space-y-24 max-w-7xl mx-auto text-left">
                 
-                {foundationPlans.length > 0 && (
-                    <div className="space-y-10 text-left">
-                        <div className="flex items-center gap-4 border-l-4 border-primary pl-6 text-left">
-                            <div className="text-left text-foreground">
-                                <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">The Foundation</h2>
-                                <p className="text-muted-foreground text-sm font-medium">Establishing your standing in the national industrial registry.</p>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl text-left">
-                            {foundationPlans.map((plan) => (
-                                <PlanCard key={plan.id} plan={plan} user={user} />
-                            ))}
+                {/* 1. THE FOUNDATION LAYER */}
+                <div className="space-y-10 text-left">
+                    <div className="flex items-center gap-4 border-l-4 border-primary pl-6 text-left">
+                        <div className="text-left text-foreground">
+                            <h2 className="text-3xl font-black uppercase tracking-tight text-foreground">The Foundation</h2>
+                            <p className="text-muted-foreground text-sm font-medium">Establishing your standing and visibility in the national industrial registry.</p>
                         </div>
                     </div>
-                )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl text-left">
+                        {foundationPlans.map((plan) => (
+                            <PlanCard key={plan.id} plan={plan} user={user} />
+                        ))}
+                    </div>
+                </div>
 
+                {/* 2. THE EARNING NODE LAYER */}
                 {earningPlans.length > 0 && (
                     <div className="space-y-10 text-left text-foreground">
                         <div className="flex items-center gap-4 border-l-4 border-amber-500 pl-6 text-left text-foreground">
                             <div className="text-left">
                                 <h2 className="text-3xl font-black uppercase tracking-tight text-amber-600">Industrial Earning Nodes</h2>
-                                <p className="text-muted-foreground text-sm font-medium">Modular specialized functions. Requires Foundation activation.</p>
+                                <p className="text-muted-foreground text-sm font-medium">Modular specialized functions for deep mall intelligence. Requires Foundation standing.</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
@@ -195,15 +171,6 @@ export default function MembershipPage() {
                                 <PlanCard key={plan.id} plan={plan} user={user} />
                             ))}
                         </div>
-                    </div>
-                )}
-                
-                {/* FINAL FAILSAFE: If filters somehow resulted in empty lists but plans exist */}
-                {foundationPlans.length === 0 && earningPlans.length === 0 && plans.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {plans.map((plan) => (
-                            <PlanCard key={plan.id} plan={plan} user={user} />
-                        ))}
                     </div>
                 )}
             </div>
