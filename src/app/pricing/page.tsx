@@ -65,8 +65,11 @@ export default function MembershipPage() {
         return dbPlans.map(p => {
             const planId = p.id?.toLowerCase() || '';
             let type = p.type;
+            
+            // Forensic Type Inference for Legacy and Standard IDs
             if (!type) {
-                type = (planId === 'free' || planId === 'intelligence') ? 'foundation' : 'earning';
+                const foundationIds = ['free', 'intelligence', 'basic', 'standard', 'premium'];
+                type = foundationIds.includes(planId) ? 'foundation' : 'earning';
             }
             
             return {
