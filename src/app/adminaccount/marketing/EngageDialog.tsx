@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -11,6 +10,7 @@ import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { collection, query, where, limit } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
@@ -281,8 +281,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         ].map((tab) => (
                             <Button
                                 key={tab.id}
-                                variant={activeTab === tab.id ? "secondary" : "ghost"}
-                                className={cn("w-full justify-start text-xs h-10 px-3 transition-all", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
+                                variant={activeTab === id ? "secondary" : "ghost"}
+                                className={cn("w-full justify-start text-xs h-10 px-3 transition-all", activeTab === id && "bg-white shadow-sm ring-1 ring-primary/20")}
                                 onClick={() => setActiveTab(tab.id)}
                             >
                                 <tab.icon className="h-3.5 w-3.5 mr-2 text-primary" />
