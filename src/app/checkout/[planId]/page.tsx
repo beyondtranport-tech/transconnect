@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { doc } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Loader2, ArrowLeft, Wallet, AlertCircle, CheckCircle, ShieldCheck, Zap, Heart, Gift, Truck, Landmark, Warehouse, ShoppingCart } from 'lucide-react';
+import { Loader2, ArrowLeft, Wallet, AlertCircle, CheckCircle, ShieldCheck, Zap, Heart, Gift, Truck, Landmark, Warehouse, ShoppingCart, Building2, Network } from 'lucide-react';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useMemoFirebase } from '@/firebase';
@@ -26,43 +25,10 @@ const iconMap: Record<string, any> = {
     warehouse_intelligence: Warehouse,
     buy_sell_intelligence: ShoppingCart,
     finance_intelligence: Landmark,
+    distribution_intelligence: Network,
+    transporter_intelligence: Truck,
+    supplier_intelligence: Building2,
 };
-
-const defaultPlans = [
-    {
-        id: 'intelligence',
-        name: 'Intelligence Access',
-        price: 100,
-        type: 'foundation',
-        description: 'Foundational access to the forensic industrial registry and community discounts.',
-        icon: ShieldCheck
-    },
-    {
-        id: 'loads_intelligence',
-        name: 'Loads Intelligence',
-        price: 75,
-        type: 'earning',
-        description: 'The Brokerage Node. Enables posting, taking, and settling freight loads.',
-        icon: Truck
-    },
-    {
-        id: 'warehouse_intelligence',
-        name: 'Warehouse Intelligence',
-        price: 125,
-        type: 'earning',
-        description: 'The Storage Node. Manage community storage capacity and handling fees.',
-        icon: Warehouse
-    },
-    {
-        id: 'buy_sell_intelligence',
-        name: 'Buy & Sell Intelligence',
-        price: 150,
-        isPopular: true,
-        type: 'earning',
-        description: 'The Marketplace Node. Secure vehicle trading and document automation.',
-        icon: ShoppingCart
-    }
-];
 
 function CheckoutComponent() {
   const router = useRouter();
@@ -151,16 +117,6 @@ function CheckoutComponent() {
         };
     }
 
-    const fallback = defaultPlans.find(p => p.id === planId);
-    if (fallback) {
-        return {
-            name: fallback.name,
-            price: fallback.price,
-            description: fallback.description,
-            type: fallback.type
-        };
-    }
-
     return null;
   }, [planId, isConnectPlan, connectConfig, membershipPlan, cycle]);
 
@@ -185,7 +141,7 @@ function CheckoutComponent() {
             companyId: companyData.id,
             amount: planDisplay.price,
             description: `Plan Activation: ${planDisplay.name} (${cycle})`,
-            planType: planDisplay.type === 'earning' ? 'node' : (planDisplay.type === 'connect' ? 'connect' : 'membership'), 
+            planType: planDisplay.type === 'earning' || planDisplay.type === 'node' ? 'node' : (planDisplay.type === 'connect' ? 'connect' : 'membership'), 
             planId: planId,
             cycle: cycle,
         };
@@ -248,19 +204,19 @@ function CheckoutComponent() {
                     <div className="bg-primary/20 p-4 rounded-2xl shadow-inner text-left">
                         <PlanIcon className="h-10 w-10 text-primary" />
                     </div>
-                    <div className="text-left">
-                        <div className="flex items-center gap-2 mb-1 text-left">
+                    <div className="text-left text-white">
+                        <div className="flex items-center gap-2 mb-1 text-left text-white">
                             <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.2em] border-primary/50 text-primary px-3 h-5 text-left">
-                                {planDisplay.type === 'earning' ? 'Industrial Earning Node' : (planDisplay.type === 'foundation' || planDisplay.type === 'membership' ? 'Ecosystem Foundation' : 'Ecosystem Add-on')}
+                                {planDisplay.type === 'earning' || planDisplay.type === 'node' ? 'Industrial Earning Node' : (planDisplay.type === 'foundation' || planDisplay.type === 'membership' ? 'Ecosystem Foundation' : 'Ecosystem Add-on')}
                             </Badge>
                         </div>
-                        <CardTitle className="text-3xl font-black font-headline text-white text-left leading-tight">Activate Intelligence</CardTitle>
+                        <CardTitle className="text-3xl font-black font-headline text-white text-left leading-tight">Activate intelligence</CardTitle>
                     </div>
                 </div>
             </CardHeader>
             
             <CardContent className="p-10 space-y-8 text-left text-foreground">
-                <div className="space-y-4 text-left">
+                <div className="space-y-4 text-left text-foreground">
                     <div className="flex justify-between items-baseline text-left">
                         <h3 className="text-2xl font-black text-left">{planDisplay.name}</h3>
                         <p className="text-3xl font-black text-primary text-left">{formatCurrency(planDisplay.price)}</p>
@@ -271,7 +227,7 @@ function CheckoutComponent() {
 
                 <Separator />
 
-                <div className="space-y-4 text-left">
+                <div className="space-y-4 text-left text-foreground">
                     <div className="flex justify-between items-center text-left">
                         <span className="text-xs font-black uppercase tracking-widest text-muted-foreground text-left">Account Available Balance</span>
                         <span className="font-mono font-bold text-lg text-left">{formatCurrency(companyData?.availableBalance)}</span>
@@ -289,11 +245,11 @@ function CheckoutComponent() {
                 </div>
 
                 <div className="bg-slate-50 p-6 rounded-3xl border-2 border-dashed border-slate-200 text-left">
-                    <h4 className="font-black text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2 text-left">
+                    <h4 className="font-black text-xs uppercase tracking-widest text-primary mb-3 flex items-center gap-2 text-left text-foreground">
                         <ShieldCheck className="h-4 w-4 fill-current"/>
                         Handshake Verification
                     </h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed text-left">
+                    <p className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">
                         By confirming, you authorize a direct wallet debit. This activation is final and grants immediate access to the setup terminal for this node.
                     </p>
                 </div>
@@ -303,14 +259,14 @@ function CheckoutComponent() {
                 <Button 
                     onClick={handlePurchase} 
                     disabled={isProcessing || !hasSufficientFunds} 
-                    className="w-full h-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white"
+                    className="w-full h-16 text-lg font-black uppercase tracking-tight shadow-2xl bg-primary hover:bg-primary/90 text-white text-left"
                 >
                     {isProcessing ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Zap className="mr-2 h-6 w-6" />}
                     {hasSufficientFunds ? `Confirm & Activate Node` : 'Insufficient Funds'}
                 </Button>
                 
                 {!hasSufficientFunds ? (
-                    <Button asChild variant="outline" className="w-full h-12 font-bold">
+                    <Button asChild variant="outline" className="w-full h-12 font-bold text-left">
                         <Link href="/account?view=wallet">Go to Wallet & Top-up</Link>
                     </Button>
                 ) : (
