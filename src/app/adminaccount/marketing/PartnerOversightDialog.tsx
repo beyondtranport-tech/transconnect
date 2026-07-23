@@ -180,17 +180,17 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     <Clock className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 text-left text-foreground">
+            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 text-left text-foreground text-foreground">
                 <DialogHeader className="p-6 border-b bg-muted/30">
                     <div className="flex justify-between items-start text-left">
-                        <div className="text-left">
+                        <div className="text-left text-foreground">
                             <DialogTitle className="text-2xl font-black flex items-center gap-2 text-left">
                                 <Clock className="h-6 w-6 text-primary" />
-                                Oversight: {partner.companyName || `${partner.firstName} ${partner.lastName}`}
+                                Oversight: {partner.companyName || `${partner.firstName || ''} ${partner.lastName || ''}`.trim() || 'Record'}
                             </DialogTitle>
                             <div className="flex items-center gap-2 mt-1">
                                 <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">{parentCollection.slice(0,-1)} Registry</Badge>
-                                <span className="text-xs text-muted-foreground">• {partner.industrial_category || 'Industrial'}</span>
+                                <span className="text-xs text-muted-foreground text-left">• {partner.industrial_category || 'Industrial'}</span>
                             </div>
                         </div>
                         <div className="space-y-2 text-right">
@@ -209,8 +209,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-8 space-y-10 bg-slate-50/50 text-left">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                        <div className="space-y-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                        <div className="space-y-4 text-left text-foreground">
                             <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                                 <Users className="h-4 w-4 text-primary"/>
                                 Key Decision Makers
@@ -221,7 +221,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                             </div>
                         </div>
 
-                        <div className="space-y-4 text-left">
+                        <div className="space-y-4 text-left text-foreground">
                             <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                                 <Globe className="h-4 w-4 text-primary"/>
                                 Core Logistics
@@ -234,25 +234,25 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                             <a href={partner.website} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-primary hover:underline flex items-center gap-1.5 truncate">
                                                 <Globe className="h-3 w-3" /> {partner.website}
                                             </a>
-                                        ) : <p className="text-xs text-muted-foreground italic">No website URL recorded.</p>}
+                                        ) : <p className="text-xs text-muted-foreground italic text-left">No website URL recorded.</p>}
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                                         <div className="space-y-1 text-left">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Company Landline</p>
-                                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground text-left">
                                                 <Phone className="h-3 w-3" />
                                                 <span>{partner.phone || "N/A"}</span>
                                             </div>
                                         </div>
-                                        <div className="space-y-1 text-left">
+                                        <div className="space-y-1 text-left text-foreground">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Company Email</p>
-                                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                                            <div className="flex items-center gap-1.5 text-xs font-bold text-foreground text-left">
                                                 <Mail className="h-3 w-3" />
                                                 <span className="truncate">{partner.email || "N/A"}</span>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-1 text-left">
+                                    <div className="space-y-1 text-left text-foreground">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Physical Operational Node</p>
                                         <div className="flex items-start gap-1.5 text-xs text-foreground leading-tight text-left">
                                             <MapPin className="h-3 w-3 shrink-0 mt-0.5" />
@@ -264,19 +264,19 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         </div>
                     </div>
 
-                    <div className="space-y-4 text-left text-foreground">
+                    <div className="space-y-4 text-left text-foreground text-foreground">
                         <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                             <BookOpen className="h-4 w-4 text-primary"/>
                             Technical Intelligence Extraction
                         </h3>
                         <Card className="shadow-none border-primary/20 bg-white text-left">
-                            <CardHeader className="p-4 border-b bg-primary/5">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                            <CardHeader className="p-4 border-b bg-primary/5 text-left">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                                     <Sparkles className="h-3 w-3" /> Mined Site Content (First 300 Words)
                                 </p>
                             </CardHeader>
-                            <CardContent className="p-6 text-left">
-                                <ScrollArea className="h-40 w-full text-left">
+                            <CardContent className="p-6 text-left text-foreground">
+                                <ScrollArea className="h-40 w-full text-left text-foreground">
                                     <p className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap italic text-left">
                                         {partner.minedServiceWording || partner.notes || "No technical service wording has been mined for this record yet."}
                                     </p>
@@ -287,7 +287,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
 
                     <Separator />
 
-                    <div className="space-y-6 text-left text-foreground">
+                    <div className="space-y-6 text-left text-foreground text-foreground">
                         <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                             <Activity className="h-4 w-4 text-primary"/>
                             Relationship Timeline & Engagement
@@ -296,7 +296,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         {(isLoadingLogs || isLoadingTasks) ? (
                             <div className="flex justify-center p-12 text-foreground"><Loader2 className="animate-spin text-primary" /></div>
                         ) : timeline.length > 0 ? (
-                            <div className="relative space-y-4 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-muted text-left">
+                            <div className="relative space-y-4 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-0.5 before:bg-muted text-left text-foreground">
                                 {timeline.map((event, idx) => (
                                     <div key={event.id || idx} className="relative pl-10 text-left">
                                         <div className={cn(
@@ -304,7 +304,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                             event.type === 'task' ? (event.status === 'completed' ? "bg-green-500" : "bg-amber-500") : "bg-primary"
                                         )} />
                                         <Card className="shadow-none text-left border-none bg-white text-left">
-                                            <CardContent className="p-4 text-left">
+                                            <CardContent className="p-4 text-left text-foreground">
                                                 <div className="flex justify-between items-start text-left text-foreground">
                                                     <div className="space-y-1 text-left text-foreground">
                                                         <div className="flex items-center gap-2 text-left">
@@ -314,7 +314,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                                         </div>
                                                         <p className="text-xs text-muted-foreground leading-relaxed text-left">{event.notes || event.description || 'Action recorded.'}</p>
                                                     </div>
-                                                    <div className="text-right space-y-1">
+                                                    <div className="text-right space-y-1 text-foreground">
                                                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{formatDateSafe(event.date, "dd MMM, HH:mm")}</p>
                                                         {event.type === 'task' && (
                                                             <Button 
@@ -335,8 +335,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-20 border-2 border-dashed rounded-3xl text-foreground bg-white/50">
-                                <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
+                            <div className="text-center py-20 border-2 border-dashed rounded-3xl text-foreground bg-white/50 text-center">
+                                <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20 text-center" />
                                 <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Relationship Cold</p>
                             </div>
                         )}

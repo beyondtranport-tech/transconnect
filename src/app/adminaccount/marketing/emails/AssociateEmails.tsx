@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
@@ -9,7 +10,12 @@ import { useUser } from '@/firebase';
 const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: string, content: string, partner: any, referralLink: string }) => {
     const personalizedContent = React.useMemo(() => {
         let text = content;
-        const name = partner?.firstName || (partner?.contactPerson ? partner.contactPerson.split(' ')[0] : 'Creator');
+        
+        // RESILIENT NAME EXTRACTION
+        const name = partner?.firstName || 
+                     partner?.contactPerson?.split(' ')[0] || 
+                     partner?.contact_person?.split(' ')[0] || 
+                     'Creator';
         
         text = text.replace(/\[Associate Name\]/g, name);
         text = text.replace(/\[Referral Link\]/g, referralLink);
@@ -28,7 +34,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                     </div>
                     {partner && (
                          <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border border-green-200">
-                            <UserCheck className="h-3.5 w-3.5" /> Personalized for {partner.firstName || partner.contactPerson?.split(' ')[0]}
+                            <UserCheck className="h-3.5 w-3.5" /> Personalized for {partner.firstName || partner.contactPerson?.split(' ')[0] || partner.contact_person?.split(' ')[0]}
                         </div>
                     )}
                 </div>
@@ -111,9 +117,9 @@ export default function AssociateEmails({ partner }: { partner?: any }) {
     }, [partner, baseUrl]);
 
     return (
-        <div className="space-y-6 text-left">
-            <Tabs defaultValue="intro" className="w-full text-left text-foreground">
-                <TabsList className="h-auto flex-wrap justify-start bg-muted/30 text-left">
+        <div className="space-y-6 text-left text-foreground text-foreground">
+            <Tabs defaultValue="intro" className="w-full text-left">
+                <TabsList className="h-auto flex-wrap justify-start bg-muted/30 text-left text-foreground">
                    {tabs.map(tab => (
                        <TabsTrigger key={tab.value} value={tab.value} className="text-xs gap-2">
                            <tab.icon className="h-3 w-3" />

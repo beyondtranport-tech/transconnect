@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -78,7 +79,15 @@ function resolveContact(partner: any) {
     const emailKeys = ['email', 'email_address', 'contact_email', 'mail'];
     const phoneKeys = ['mobile', 'whatsapp', 'phone', 'cell'];
 
-    const name = clean(partner.marketingManager?.name || partner.ceo?.name || partner.contactPerson || partner.firstName || partner.companyName || 'Partner');
+    const name = clean(
+        partner.marketingManager?.name || 
+        partner.ceo?.name || 
+        partner.contactPerson || 
+        partner.contact_person || // Added resilience
+        partner.firstName || 
+        partner.companyName || 
+        'Partner'
+    );
     const email = searchObj(partner.marketingManager, emailKeys) || searchObj(partner.ceo, emailKeys) || searchObj(partner, emailKeys) || clean(partner.email);
     const mobile = searchObj(partner.marketingManager, phoneKeys) || searchObj(partner.ceo, phoneKeys) || searchObj(partner, phoneKeys) || clean(partner.mobile || partner.phone);
     const whatsapp = clean(partner.whatsapp) || mobile;
@@ -207,7 +216,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
+        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-center text-foreground">
                     <div className="text-left space-y-1">
@@ -294,7 +303,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
                     <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border min-h-full">
-                        <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+                        <Suspense fallback={<div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
                             {activeTab === 'incentive-handshake' && <IncentiveHandshake partner={currentPartner} incentive={activeIncentive} />}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from "react";
@@ -8,7 +9,9 @@ export default function CompanyProfile({ audience, partner }: { audience: string
     const resolvedName = useMemo(() => {
         if (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) return partner.marketingManager.name;
         if (partner?.ceo?.name && isValid(partner.ceo.name)) return partner.ceo.name;
-        return partner?.firstName || partner?.contactPerson || 'Member';
+        if (partner?.contactPerson && isValid(partner.contactPerson)) return partner.contactPerson;
+        if (partner?.contact_person && isValid(partner.contact_person)) return partner.contact_person;
+        return partner?.firstName || 'Member';
     }, [partner]);
 
     const firstName = resolvedName.split(' ')[0];

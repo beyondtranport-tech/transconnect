@@ -119,9 +119,24 @@ export async function POST(req: NextRequest) {
                 partners.forEach((p: any) => {
                     const id = p.record_id || p.id || db.collection('partners').doc().id;
                     const col = (type === 'lead' || p.source === 'Lead') ? 'leads' : 'partners';
+                    
+                    // NORMALIZATION LOGIC
+                    const contact = p.contact_person || p.contactPerson || p.contact_name || '';
+                    let firstName = p.firstName || '';
+                    let lastName = p.lastName || '';
+                    
+                    if (!firstName && contact) {
+                        const parts = contact.trim().split(/\s+/);
+                        firstName = parts[0];
+                        lastName = parts.slice(1).join(' ');
+                    }
+
                     batch.set(db.collection(col).doc(id), {
                         ...p,
                         id,
+                        contactPerson: contact,
+                        firstName,
+                        lastName,
                         type: type || p.type || 'partner',
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
