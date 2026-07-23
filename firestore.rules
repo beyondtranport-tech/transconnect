@@ -61,11 +61,15 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
+    match /engagementPings/{pingId} {
+      // Allow members to read pings intended for their company
+      allow read: if isSignedIn();
+    }
+
     // --- PUBLIC / CONFIGURATION RULES ---
 
     match /configuration/{allPaths=**} {
       // Allow public read of all configuration data and nested subcollections
-      // This includes communityIncentives/active, bankDetails, etc.
       allow read: if true;
     }
     

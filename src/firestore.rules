@@ -112,6 +112,10 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
+    match /engagementPings/{pingId} {
+      allow read: if isSignedIn();
+    }
+
     match /visitors/{visitorId} {
       allow read, write: if true;
     }
