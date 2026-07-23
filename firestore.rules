@@ -65,6 +65,10 @@ service cloud.firestore {
 
     match /configuration/{configId} {
       allow get, list: if true;
+      // Allow public read of all sub-data within configuration (e.g. communityIncentives/active)
+      match /{allSub=**} {
+        allow get, list: if true;
+      }
     }
     match /memberships/{membershipId} {
       allow get, list: if true;
