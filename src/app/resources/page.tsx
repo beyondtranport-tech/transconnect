@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -7,81 +6,58 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { BookUser, BrainCircuit, Handshake, Info } from "lucide-react";
+import { BookUser, BrainCircuit, Handshake, Info, Database, Zap, Fingerprint, Scale } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const resources = [
     {
-        icon: <BookUser className="h-5 w-5 mr-3 text-primary" />,
-        title: "Getting Started Guide",
+        icon: <Fingerprint className="h-5 w-5 mr-3 text-primary" />,
+        title: "Node Ownership (Foundation)",
         content: (
             <div className="space-y-4 text-muted-foreground">
-                <p>Welcome to Logistics Flow! Here’s how to get the most out of our ecosystem from day one.</p>
+                <p>The foundation of the grid is your digital identity. For R10/mo, you "claim" your record in the forensic registry.</p>
                 <div>
-                    <h4 className="font-semibold text-foreground">1. Create Your Free Account</h4>
-                    <p>Click the "Join Now" button on the homepage or navigation bar. The registration process is quick and easy. All you need is your name, company name, and contact details. Your account gives you immediate access to the member dashboard and marketplace.</p>
-                </div>
-                <div>
-                    <h4 className="font-semibold text-foreground">2. Explore the Divisions</h4>
-                    <p>Logistics Flow is built on four core divisions. Visit the "Divisions" page to understand how each one can help your business: Funding, the Mall, the Marketplace, and our cutting-edge Tech.</p>
-                </div>
-                 <div>
-                    <h4 className="font-semibold text-foreground">3. Visit Your Account Dashboard</h4>
-                    <p>Once you're logged in, your Account Dashboard is your personal mission control. From here, you can view your membership status, check your reward points, and access member-exclusive features like the Contribution Hub.</p>
+                    <h4 className="font-semibold text-foreground">Why own your node?</h4>
+                    <p>Owning your node allows you to verify your direct contacts, manage your community reputation, and receive direct RFQs from members matching your trade. It is the mandatory starting point for building forensic trust.</p>
                 </div>
             </div>
         )
     },
     {
-        icon: <Handshake className="h-5 w-5 mr-3 text-primary" />,
-        title: "The Contribution Hub Explained",
+        icon: <Database className="h-5 w-5 mr-3 text-primary" />,
+        title: "Registry Intelligence (The Map)",
         content: (
              <div className="space-y-4 text-muted-foreground">
-                <p>The Contribution Hub is a tool that empowers our community. By sharing anonymous data, you help us negotiate better group discounts on everything from parts to insurance.</p>
+                <p>Registry Intelligence is the "Map" of South African logistics. For R100/mo, you unlock absolute transparency.</p>
                 <div>
-                    <h4 className="font-semibold text-foreground">Why should I contribute?</h4>
-                    <p>The more data we have, the stronger our bargaining position with suppliers. When we can show a supplier that 500 of our members use their products, we can negotiate a bulk discount that benefits everyone. Your contribution directly leads to lower costs for the entire community.</p>
-                </div>
-                <div>
-                    <h4 className="font-semibold text-foreground">How do I contribute?</h4>
-                    <p>Navigate to your Account Dashboard and click on the "Contribute Data" button. This will take you to the Contribution Hub, where you'll find simple, secure forms to upload details about your trucks, trailers, and suppliers. Each form is designed to be quick and easy to complete.</p>
-                </div>
-                 <div>
-                    <h4 className="font-semibold text-foreground">Is my data safe and anonymous?</h4>
-                    <p>Absolutely. We are committed to your privacy. All data submitted is used anonymously and in aggregate. Your individual company's information will never be shared with third parties or other members. The data is used for one purpose only: to demonstrate collective buying power.</p>
+                    <h4 className="font-semibold text-foreground">What data is unlocked?</h4>
+                    <p>Access the direct MD/CEO names, emails, and mobile numbers for over 22,000 verified industrial records. Stop dealing with gatekeepers and speak directly to the leadership of your next partner or customer.</p>
                 </div>
             </div>
         )
     },
     {
-        icon: <BrainCircuit className="h-5 w-5 mr-3 text-primary" />,
-        title: "AI-Powered Tools",
+        icon: <Zap className="h-5 w-5 mr-3 text-primary" />,
+        title: "Mall Intelligence Nodes",
         content: (
             <div className="space-y-4 text-muted-foreground">
-                <p>Our technology division is dedicated to building smart tools that give you a competitive edge. Our flagship tool is the AI Freight Matcher.</p>
+                <p>Specialized nodes provide "Deep Data" access within specific industrial malls (Loads, Warehouse, Transport, etc.).</p>
                 <div>
-                    <h4 className="font-semibold text-foreground">How does the AI Freight Matcher work?</h4>
-                    <p>Visit the "Tech" page and enter your current location, vehicle type, and capacity. Our AI model instantly searches a vast database of available loads to find the most profitable and efficient matches for you. It helps reduce empty miles and ensures you're always carrying the best possible freight.</p>
-                </div>
-                 <div>
-                    <h4 className="font-semibold text-foreground">What information do I need?</h4>
-                    <p>The more specific you are, the better the matches. Providing your exact location, vehicle specifications (e.g., '53-foot reefer'), and any preferences (e.g., 'no-touch freight') will allow the AI to find the perfect load for your needs.</p>
+                    <h4 className="font-semibold text-foreground">How does it work?</h4>
+                    <p>While Registry access gives you contacts, Mall Intelligence gives you technicals. See specific fleet specs (RC1), detailed product catalogs, available warehouse pallet positions, or real-time load board matches.</p>
                 </div>
             </div>
         )
     },
     {
-        icon: <Info className="h-5 w-5 mr-3 text-primary" />,
-        title: "Understanding The 'Connect' Page",
+        icon: <Scale className="h-5 w-5 mr-3 text-primary" />,
+        title: "Transactional App Membership",
         content: (
              <div className="space-y-4 text-muted-foreground">
-                <p>The "Connect" page is where you can activate optional paid plans to unlock new ways to save money and earn revenue.</p>
+                <p>This is the "Engine." Transactional tiers (Basic, Standard, Premium) allow you to run your business operations on the platform.</p>
                 <div>
-                    <h4 className="font-semibold text-foreground">The Loyalty Plan & Savings Calculator</h4>
-                    <p>This plan gives you access to exclusive discounts we've negotiated with suppliers. The Savings Calculator is a powerful tool that demonstrates how it works. By adjusting the sliders for your monthly spend and the average discount, you can see your potential savings in real-time. The "Your Loyalty Tier" slider shows how sharing in the community's negotiated discounts can be passed back to you.</p>
-                </div>
-                <div>
-                    <h4 className="font-semibold text-foreground">The Rewards & Actions Plans</h4>
-                    <p>The Rewards Plan allows you to earn points on purchases made through the Logistics Flow Mall, which can be redeemed for valuable items like fuel vouchers. The Actions Plan allows you to earn direct commission by referring new members or sharing supplier discounts with your network.</p>
+                    <h4 className="font-semibold text-foreground">Commerce & Execution</h4>
+                    <p>Operational memberships allow you to create digital branches, process commercial handshakes, use the fulfillment ledger (PODs/Invoicing), and access AI-powered operational tools.</p>
                 </div>
             </div>
         )
@@ -90,30 +66,40 @@ const resources = [
 
 export default function ResourcesPage() {
   return (
-    <div className="container mx-auto px-4 py-16">
-      <div className="text-center max-w-3xl mx-auto mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold font-headline">Resource Center</h1>
-        <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-          Your central hub for guides, manuals, and tutorials. Find everything you need to know about navigating the Logistics Flow ecosystem.
+    <div className="container mx-auto px-4 py-16 text-left">
+      <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <Badge variant="outline" className="border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest px-4">Operator Manual</Badge>
+        <h1 className="text-4xl md:text-5xl font-black font-headline">Industrial Resource Center</h1>
+        <p className="mt-4 text-lg text-muted-foreground text-center">
+          Understand the 4-layer architecture of the grid. Learn how to bridge data gaps and execute transactional flow.
         </p>
       </div>
 
       <div className="max-w-4xl mx-auto">
         <Accordion type="single" collapsible className="w-full">
             {resources.map((resource, index) => (
-                <AccordionItem key={index} value={`item-${index}`}>
-                    <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-                        <div className="flex items-center">
+                <AccordionItem key={index} value={`item-${index}`} className="border rounded-xl mb-4 bg-white overflow-hidden shadow-sm">
+                    <AccordionTrigger className="text-lg font-bold hover:no-underline px-6 py-5">
+                        <div className="flex items-center text-left">
                             {resource.icon}
                             {resource.title}
                         </div>
                     </AccordionTrigger>
-                    <AccordionContent className="p-4 bg-card rounded-b-lg">
+                    <AccordionContent className="px-6 pb-6 pt-2 bg-slate-50/50 border-t">
                         {resource.content}
                     </AccordionContent>
                 </AccordionItem>
             ))}
         </Accordion>
+      </div>
+      
+      <div className="mt-20 max-w-2xl mx-auto p-8 border-2 border-dashed rounded-3xl bg-muted/10 text-center">
+          <Info className="h-10 w-10 text-primary mx-auto mb-4" />
+          <h3 className="text-xl font-black uppercase tracking-tight">Need technical support?</h3>
+          <p className="text-sm text-muted-foreground mt-2 mb-6">Our Engagement Division is available for direct handshake verification and node setup assistance.</p>
+          <Button asChild variant="outline" className="font-bold border-2">
+              <a href="/contact">Open Support Ticket</a>
+          </Button>
       </div>
     </div>
   );
