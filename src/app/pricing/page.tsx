@@ -209,8 +209,8 @@ export default function MembershipPage() {
                         <p className="text-slate-400 text-lg leading-relaxed">
                             Don't want to pay cash for Intelligence? Contribute your verified fleet data (RC1) or supplier lists to earn **Reward Points** used to pay for any node.
                         </p>
-                        <div className="flex flex-wrap gap-4 pt-4">
-                            <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest shadow-xl">
+                        <div className="flex flex-wrap gap-4 pt-4 text-left">
+                            <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest shadow-xl text-white">
                                 <Link href="/contribute">Start Contributing <ArrowRight className="ml-2 h-4 w-4"/></Link>
                             </Button>
                         </div>
@@ -237,11 +237,11 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
                 </div>
             )}
             <CardHeader className="p-8 pb-6">
-                <div className="bg-muted p-3 rounded-xl w-fit mb-4">
+                <div className="bg-muted p-3 rounded-xl w-fit mb-4 text-left">
                     <Icon className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-2xl font-black tracking-tight">{plan.name}</CardTitle>
-                <CardDescription className="mt-2 text-sm font-medium text-slate-500 leading-relaxed min-h-[40px]">{plan.description}</CardDescription>
+                <CardTitle className="text-2xl font-black tracking-tight text-left">{plan.name}</CardTitle>
+                <CardDescription className="mt-2 text-sm font-medium text-slate-500 leading-relaxed min-h-[40px] text-left">{plan.description}</CardDescription>
                 <div className="pt-8">
                     <div className="flex items-baseline gap-1.5">
                         <span className="text-4xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
@@ -249,19 +249,19 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="flex-grow p-8 pt-0 space-y-6">
+            <CardContent className="flex-grow p-8 pt-0 space-y-6 text-left">
                 <Separator />
-                <ul className="space-y-4">
-                    {(plan.features as string[]).map((feature, i) => (
-                        <li key={i} className="flex items-start gap-3">
+                <ul className="space-y-4 text-left">
+                    {(plan.features || []).map((feature: string, i: number) => (
+                        <li key={i} className="flex items-start gap-3 text-left">
                             <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
-                            <span className="text-xs font-bold text-slate-700 uppercase tracking-tight leading-tight">{feature}</span>
+                            <span className="text-xs font-bold text-slate-700 uppercase tracking-tight leading-tight text-left">{feature}</span>
                         </li>
                     ))}
                 </ul>
             </CardContent>
-            <CardFooter className="p-8 pt-0">
-                <Button asChild className="w-full h-12 text-xs font-black uppercase tracking-widest shadow-lg group" variant={plan.price === 0 ? "outline" : "default"}>
+            <CardFooter className="p-8 pt-0 text-left">
+                <Button asChild className="w-full h-12 text-xs font-black uppercase tracking-widest shadow-lg group text-white" variant={plan.price === 0 ? "outline" : "default"}>
                     <Link href={plan.price === 0 ? (user ? '/account' : '/join') : (plan.id === 'claim-node' ? '/account?view=unified-directory' : `/checkout/${plan.id}`)}>
                         {plan.price === 0 ? 'Explore Free' : (plan.id === 'claim-node' ? 'Claim My Node' : 'Activate Access')}
                         <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
