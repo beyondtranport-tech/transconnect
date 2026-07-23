@@ -7,10 +7,6 @@ import sgMail from '@sendgrid/mail';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * UTILITY: SERIALIZE DATA
- * Converts Firestore objects to JSON-serializable strings.
- */
 function serializeData(docData: any): any {
     if (docData === null || docData === undefined) return docData;
     if (docData instanceof Timestamp) return docData.toDate().toISOString();
@@ -26,10 +22,6 @@ function serializeData(docData: any): any {
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * MASTER ADMIN API ROUTER
- * High-fidelity oversight for registries, commercial agreements, and engagement.
- */
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -106,27 +98,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
-            case 'autoEnrichRecord': {
-                const { id, type } = payload;
-                const colName = type === 'lead' ? 'leads' : 'partners';
-                const docRef = db.collection(colName).doc(id);
-                const snap = await docRef.get();
-                if (!snap.exists) throw new Error("Record not found.");
-                
-                // MOCK ENRICHMENT FOR PROTOTYPE BRIDGE PIPELINE
-                // In production, this would call the Genkit 'enrichPartnerFlow'
-                const mockEnrichment = {
-                    website: 'https://vetted-industry-site.co.za',
-                    email: 'director@industry-partner.co.za',
-                    marketingManager: { name: 'Vetted Lead', email: 'vetted@site.co.za', mobile: '+27 82 000 1234' },
-                    enhancementMethod: 'Forensic Bridge V4',
-                    lastEnrichedAt: FieldValue.serverTimestamp()
-                };
-                
-                await docRef.update({ ...mockEnrichment, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true, data: mockEnrichment });
-            }
-
             case 'logCommunication': {
                 const { partnerId, type: commType, subject, notes, collection: colOverride } = payload;
                 const colName = colOverride || 'partners';
@@ -139,6 +110,11 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp()
                 });
                 return NextResponse.json({ success: true });
+            }
+
+            case 'getIncentives': {
+                const snap = await db.collection('configuration/communityIncentives/active').orderBy('createdAt', 'desc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getAudienceCommunications': {
@@ -154,12 +130,6 @@ export async function POST(req: NextRequest) {
             case 'getBrokerAgreements': {
                 const snap = await db.collectionGroup('brokerAgreements').get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, path: d.ref.path, ...d.data() }))) });
-            }
-
-            case 'updateBrokerAgreementStatus': {
-                const { path, status } = payload;
-                await db.doc(path).update({ status, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true });
             }
 
             case 'dispatchEngagement': {
@@ -209,11 +179,6 @@ export async function POST(req: NextRequest) {
 
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getGlobalLoads': {
-                const snap = await db.collectionGroup('loads').get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 

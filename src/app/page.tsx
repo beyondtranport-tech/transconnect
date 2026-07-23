@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowRight, SearchCode, CheckCircle2, ShieldCheck, Database, Truck, Landmark, Building2, Zap, MapPin, Users, Briefcase, UserPlus } from "lucide-react";
+import { ArrowRight, SearchCode, CheckCircle2, ShieldCheck, Database, Truck, Landmark, Building2, Zap, MapPin, Users, Briefcase, UserPlus, Gift, Rocket, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -20,122 +20,17 @@ import { Separator } from "@/components/ui/separator";
 const { placeholderImages } = data;
 const heroImage = placeholderImages.find(p => p.id === 'hero-home');
 
-const getCatCount = (cat: string, base: number) => {
-    const hash = cat.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return Math.floor(base * (0.5 + (hash % 100) / 100));
-};
-
-const supplierCategories = [
-    "Accessories", "Air", "Anti-Theft Devices", "Auto Electrical", "Batteries", 
-    "Brakes", "Cleaning Products", "Diesel", "Differential", "Engine Refurbish",
-    "Filters", "Injectors", "Lights", "Mechanical repairs", "Oils & Lubricants", 
-    "Parts", "Prop Shafts", "Second Hand Trailers", "Second Hand Trucks", "Transport", 
-    "Tarpaulins", "Tow in", "Trailer repairs", "Truck Accessories", "Truck Parts", 
-    "Truck repairs", "Turbo", "Tyres"
-];
-
 const transporterCategories = ["Long Haul", "Refrigerated", "Flatbed", "Tipper", "Hazmat", "LTL", "Cross-Border"];
-const financeCategories = ["Asset Finance", "Working Capital", "Debt Funders", "Niche Lenders", "Bridging", "Insurance"];
-const humanCapitalCategories = ["Code 14 Drivers", "Diesel Mechanics", "Logistics Managers", "Operations Leads", "Fleet Controllers", "Warehouse Ops"];
-
-const RegistryNode = ({ 
-    title, 
-    count, 
-    icon: Icon, 
-    categories, 
-    colorClass, 
-    lineColor,
-    baseDensity = 500,
-    radius = 180 
-}: { 
-    title: string, 
-    count: string, 
-    icon: any, 
-    categories: string[], 
-    colorClass: string, 
-    lineColor: string,
-    baseDensity?: number,
-    radius?: number 
-}) => {
-    const center = 250;
-    return (
-        <div className="relative group w-full h-[550px] flex items-center justify-center select-none overflow-visible">
-            <svg className={cn("absolute pointer-events-none overflow-visible", lineColor)} style={{ width: center * 2, height: center * 2 }}>
-                {categories.map((_, i) => {
-                    const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
-                    const x2 = center + Math.cos(angle) * radius;
-                    const y2 = center + Math.sin(angle) * radius;
-                    return (
-                        <line 
-                            key={i} 
-                            x1={center} y1={center} 
-                            x2={x2} y2={y2} 
-                            stroke="currentColor" 
-                            strokeWidth="1" 
-                            strokeDasharray="4 4"
-                            className="opacity-20 group-hover:opacity-40 transition-opacity duration-700"
-                        />
-                    );
-                })}
-            </svg>
-
-            <div className={cn(
-                "relative z-20 w-40 h-40 md:w-56 md:h-52 rounded-full flex flex-col items-center justify-center text-center shadow-2xl transition-all duration-500 group-hover:scale-105 border-4",
-                colorClass
-            )}>
-                <Icon className="h-8 w-8 md:h-12 md:w-12 mb-2" />
-                <p className="text-3xl md:text-5xl font-black tracking-tighter">{count}</p>
-                <p className="text-[10px] md:text-xs font-black uppercase tracking-widest opacity-80 px-4">{title}</p>
-            </div>
-
-            {categories.map((cat, i) => {
-                const angle = (i * (360 / categories.length) - 90) * (Math.PI / 180);
-                const x = center + Math.cos(angle) * radius;
-                const y = center + Math.sin(angle) * radius;
-                const catCount = getCatCount(cat, baseDensity);
-                
-                return (
-                    <div 
-                        key={cat}
-                        className="absolute z-30 transition-transform duration-500 group-hover:scale-110"
-                        style={{ 
-                            left: `calc(50% + ${x - center}px)`, 
-                            top: `calc(50% + ${y - center}px)`,
-                            transform: 'translate(-50%, -50%)',
-                        }}
-                    >
-                        <div className="flex items-center bg-slate-900/90 backdrop-blur-md border border-white/10 rounded-full pl-3 pr-1 py-0.5 shadow-xl group-hover:bg-primary transition-colors whitespace-nowrap">
-                            <span className="text-[9px] md:text-[10px] font-black uppercase text-white mr-2">{cat}</span>
-                            <Badge className="bg-white/20 text-white text-[8px] font-bold border-none h-4 px-1.5 min-w-[20px] justify-center">
-                                {catCount.toLocaleString()}
-                            </Badge>
-                        </div>
-                    </div>
-                );
-            })}
-        </div>
-    );
-};
+const supplierCategories = ["Brakes", "Tyres", "Oils", "Differential", "Engine Parts", "Turbo", "Auto Electrical"];
 
 export default function HomePage() {
   const { user } = useUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { data: statsData } = useConfig<any>('supplierDiscoveryStats');
-
-  const supplierCount = useMemo(() => {
-      if (!statsData?.counts) return 22140;
-      return Object.values(statsData.counts).reduce((a: any, b: any) => a + (Number(b) || 0), 0);
-  }, [statsData]);
 
   const handleJoinClick = (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     if (process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) {
-      gtag.event({
-        action: 'click_join_from_hero',
-        category: 'Engagement',
-        label: 'Homepage Hero CTA',
-        value: 1
-      });
+      gtag.event({ action: 'click_join_from_hero', category: 'Engagement', label: 'Homepage Hero CTA', value: 1 });
     }
     setIsModalOpen(true);
   };
@@ -146,241 +41,113 @@ export default function HomePage() {
     <div className="bg-background text-left">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
-      <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
+      {/* HERO SECTION */}
+      <section className="relative w-full h-[70vh] md:h-[80vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
         <div className="absolute inset-0 z-0 opacity-20">
-           {heroImage && (
-            <Image
-              src={heroImage.imageUrl}
-              alt="Logistics Background"
-              fill
-              className="object-cover"
-              priority
-              data-ai-hint="truck highway night"
-            />
-          )}
+           {heroImage && <Image src={heroImage.imageUrl} alt="Logistics Background" fill className="object-cover" priority data-ai-hint="truck highway night" />}
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-950" />
 
         <div className="container relative z-10 mx-auto px-4 text-center">
-            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-xs font-black uppercase tracking-[0.2em]">
-                The Transport Community Hub
-            </Badge>
-            <h1 className="text-4xl md:text-7xl font-black font-headline leading-tight mb-6">
-                Connecting People,<br/>Creating <span className="text-primary">Flow</span>
-            </h1>
-            <p className="text-lg md:text-2xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed text-center">
-                Logistics Flow is a unified digital ecosystem built to break the constraints of the transport industry through shared intelligence and collective power.
-            </p>
+            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-xs font-black uppercase tracking-[0.2em]">The Transport Community Hub</Badge>
+            <h1 className="text-5xl md:text-8xl font-black font-headline leading-tight mb-6 tracking-tighter">Connecting People,<br/>Creating <span className="text-primary">Flow</span></h1>
+            <p className="text-lg md:text-2xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed text-center">Logistics Flow is a unified digital ecosystem built to break industry constraints through shared intelligence and collective power.</p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Button asChild size="lg" className="h-14 px-10 text-lg font-black uppercase tracking-tight shadow-xl" onClick={handleJoinClick}>
-                    <Link href={ctaLink}>
-                        Join the Community <ArrowRight className="ml-2 h-5 w-5" />
-                    </Link>
+                <Button asChild size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl" onClick={handleJoinClick}>
+                    <Link href={ctaLink}>Establish Handshake <ArrowRight className="ml-2 h-5 w-5" /></Link>
                 </Button>
-                <Button asChild size="lg" variant="outline" className="h-14 px-10 text-lg font-black uppercase tracking-tight border-white/20 hover:bg-white/10">
-                    <Link href="/about">Our Mission</Link>
+                <Button asChild size="lg" variant="outline" className="h-16 px-12 text-lg font-black uppercase tracking-tight border-white/20 hover:bg-white/10">
+                    <Link href="/pricing">View Intelligence Nodes</Link>
                 </Button>
             </div>
         </div>
       </section>
 
-      <section className="py-24 bg-white border-b overflow-hidden">
-        <div className="container mx-auto px-4 text-left">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="space-y-6 text-left">
-                    <div className="bg-blue-100 p-3 rounded-xl w-fit"><Truck className="h-8 w-8 text-blue-600" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Transporter intelligence</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Access a massive database of verified South African hauliers. From long-haul refrigerated fleets to local distribution experts, we provide the map to your next reliable capacity partner.
-                    </p>
-                    <div className="space-y-4 pt-4">
-                        <div className="flex items-center gap-3 text-left"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Verified RC1 Compliance Data</span></div>
-                        <div className="flex items-center gap-3 text-left"><CheckCircle2 className="h-5 w-5 text-blue-600"/> <span className="font-bold">Direct Line to CEO/MD Leadership</span></div>
-                    </div>
-                    <Button asChild className="mt-6" size="lg" variant="outline"><Link href="/intelligence/transporter">Search Haulier Registry <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
-                </div>
-                <div className="relative">
-                    <RegistryNode 
-                        title="Verified Transporters"
-                        count="5 420+"
-                        icon={Truck}
-                        colorClass="bg-blue-600/5 text-blue-600 border-blue-500/20"
-                        lineColor="text-blue-500"
-                        categories={transporterCategories}
-                        baseDensity={800}
-                        radius={160}
-                    />
-                </div>
-            </div>
-        </div>
-      </section>
-
-      <section className="py-24 bg-slate-50 border-b overflow-hidden text-left">
-        <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="lg:order-2 space-y-6 text-left">
-                    <div className="bg-primary/10 p-3 rounded-xl w-fit"><SearchCode className="h-8 w-8 text-primary" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Supplier intelligence</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Our AI discovery engine has cataloged the entire independent supplier ecosystem. Every niche, from differentials to engine overrides, is represented in our forensic database.
-                    </p>
-                    <Card className="bg-white border-2 border-dashed border-primary/20 shadow-none text-left">
-                        <CardContent className="p-6">
-                            <p className="text-sm font-black mb-2 flex items-center gap-2 text-primary text-left"><Database className="h-4 w-4"/> {Number(supplierCount).toLocaleString()} Verified Records</p>
-                            <p className="text-xs text-muted-foreground leading-relaxed text-left">We provide direct access to the actual decision-makers at these businesses, enabling you to bypass generic call centers and secure the parts you need instantly.</p>
-                        </CardContent>
-                    </Card>
-                    <Button asChild size="lg" className="mt-4"><Link href="/intelligence/supplier">Search Supplier Registry <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
-                </div>
-                <div className="lg:order-1 relative">
-                    <RegistryNode 
-                        title="Industry Suppliers"
-                        count={`${Number(supplierCount).toLocaleString()}+`}
-                        icon={Building2}
-                        colorClass="bg-primary/5 text-primary border-primary/20"
-                        lineColor="text-primary"
-                        categories={supplierCategories}
-                        baseDensity={1200}
-                        radius={220}
-                    />
-                </div>
-            </div>
-        </div>
-      </section>
-
-      <section className="py-24 bg-white border-b overflow-hidden text-left">
+      {/* ACTIVATION BUNDLE HOOK */}
+      <section className="py-24 bg-white border-b relative overflow-hidden">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-6 text-left">
-                    <div className="bg-amber-100 p-3 rounded-xl w-fit"><Landmark className="h-8 w-8 text-amber-600" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Capital intelligence</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Stop applying to deaf ears. Our Capital Intelligence portal connects your operational performance data with specialized lenders who actually understand the trucking business.
+                    <Badge className="bg-amber-100 text-amber-700 border-none font-black text-[10px] uppercase tracking-widest px-4">Instant ROI</Badge>
+                    <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 leading-tight">The Activation Bundle</h2>
+                    <p className="text-xl text-muted-foreground leading-relaxed">
+                        Establish your Intelligence Access for **R100/mo** and instantly receive a **R500 Community Welcome Gift** from our verified Supplier Partners. 
                     </p>
-                    <div className="p-6 bg-amber-50 rounded-2xl border border-amber-200 text-left">
-                         <p className="text-xl font-black text-amber-800">85 Active Funding Partners</p>
-                         <p className="text-sm text-amber-700/80 mt-1">Unlock asset finance and working capital tailored for transport growth.</p>
+                    <p className="text-lg font-bold text-slate-800">Intelligence isn't a cost—it's a profit center.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 text-left">
+                        <div className="flex items-start gap-3">
+                            <div className="bg-primary/10 p-2 rounded-lg mt-1"><Gift className="h-5 w-5 text-primary" /></div>
+                            <div><p className="font-bold text-sm">Voucher Vault</p><p className="text-xs text-muted-foreground">Access immediate discounts on tires, parts, and fuel.</p></div>
+                        </div>
+                        <div className="flex items-start gap-3 text-left">
+                            <div className="bg-primary/10 p-2 rounded-lg mt-1"><Sparkles className="h-5 w-5 text-primary" /></div>
+                            <div><p className="font-bold text-sm">Forensic Access</p><p className="text-xs text-muted-foreground">Unlock 22,000+ verified MD/CEO contacts in the registry.</p></div>
+                        </div>
                     </div>
-                    <Button asChild size="lg" variant="outline" className="border-amber-200 hover:bg-amber-50"><Link href="/intelligence/finance">Explore Funding <ArrowRight className="ml-2 h-4 w-4"/></Link></Button>
-                </div>
-                <div className="relative">
-                    <RegistryNode 
-                        title="Finance Partners"
-                        count="85"
-                        icon={Landmark}
-                        colorClass="bg-amber-600/5 text-amber-600 border-amber-500/20"
-                        lineColor="text-amber-500"
-                        categories={financeCategories}
-                        baseDensity={15}
-                        radius={160}
-                    />
-                </div>
-            </div>
-        </div>
-      </section>
-
-      <section className="py-24 bg-slate-900 border-b overflow-hidden text-white text-left">
-        <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="lg:order-2 space-y-6 text-left">
-                    <div className="bg-primary/20 p-3 rounded-xl w-fit"><Users className="h-8 w-8 text-primary" /></div>
-                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Human Capital intelligence</h2>
-                    <p className="text-lg text-slate-300 leading-relaxed text-left">
-                        Breaking the recruitment constraint. Connect with verified talent across the South African logistics landscape. Our soon-to-launch jobs board will source roles directly from our community member base.
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                         <Card className="bg-white/5 border-white/10 shadow-none text-left">
-                            <CardContent className="p-4">
-                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase text-left"><Briefcase className="h-3 w-3"/> For Applicants</p>
-                                <p className="text-[10px] text-slate-400 leading-relaxed italic text-left">Access the premium jobs board and verified employer database for R100/month.</p>
-                            </CardContent>
-                        </Card>
-                         <Card className="bg-white/5 border-white/10 shadow-none text-left">
-                            <CardContent className="p-4">
-                                <p className="text-xs font-black mb-1 flex items-center gap-2 text-primary uppercase text-left"><UserPlus className="h-3 w-3"/> For Employers</p>
-                                <p className="text-[10px] text-slate-400 leading-relaxed italic text-left">Create vacancies from your dashboard. Fill roles via our vetted talent pool.</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <Button asChild size="lg" className="mt-4 h-14 px-10 text-lg font-black uppercase tracking-tight">
-                        <Link href="/intelligence/human-capital">Explore Human Capital <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                    <Button asChild size="lg" className="mt-8 h-14 px-10 font-black uppercase shadow-xl" onClick={handleJoinClick}>
+                        <Link href={ctaLink}>Claim Your Welcome Gift <ArrowRight className="ml-2 h-4 w-4"/></Link>
                     </Button>
                 </div>
-                <div className="lg:order-1 relative">
-                    <RegistryNode 
-                        title="Active Talent Pool"
-                        count="12 850+"
-                        icon={Users}
-                        colorClass="bg-primary/10 text-white border-primary/40"
-                        lineColor="text-primary"
-                        categories={humanCapitalCategories}
-                        baseDensity={2000}
-                        radius={200}
-                    />
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full opacity-30 animate-pulse" />
+                    <Card className="relative z-10 border-none shadow-2xl bg-slate-900 text-white p-10 rounded-[2.5rem] overflow-hidden">
+                        <div className="space-y-6 text-left text-white">
+                             <div className="flex items-center gap-3">
+                                <Zap className="h-8 w-8 text-primary fill-primary" />
+                                <h4 className="font-black uppercase tracking-widest text-sm">Activation Yield</h4>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Estimated Activation Value</p>
+                                <p className="text-6xl font-black text-white">R500+</p>
+                            </div>
+                            <Separator className="bg-white/10" />
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3 text-sm font-bold text-slate-300"><CheckCircle2 className="h-5 w-5 text-primary" /> Tier 1 Supplier Voucher</div>
+                                <div className="flex items-center gap-3 text-sm font-bold text-slate-300"><CheckCircle2 className="h-5 w-5 text-primary" /> Free Registry Snapshot</div>
+                                <div className="flex items-center gap-3 text-sm font-bold text-slate-300"><CheckCircle2 className="h-5 w-5 text-primary" /> Direct Funder Introduction</div>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
             </div>
         </div>
       </section>
 
-      <section className="py-24 bg-slate-950 text-white border-y border-white/5 text-left">
-        <div className="container mx-auto px-4">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="space-y-6 text-left">
-                    <h2 className="text-3xl md:text-5xl font-black font-headline text-left">Absolute Data Privacy</h2>
-                    <p className="text-lg text-slate-400 leading-relaxed text-left">
-                        While we give you the map to the industry, your own business data remains under your absolute control.
-                    </p>
-                    <div className="space-y-4 pt-4 text-left">
-                        {[
-                            { title: "Registry Access Shield", desc: "We verify every human identity before granting access to forensic contact data." },
-                            { title: "Zero Data Resale", desc: "We never sell member contact lists. Introduction is only via direct request." },
-                            { title: "POPI Compliant Ledger", desc: "Every interaction is logged on a secure, encrypted digital registry." }
-                        ].map((item, i) => (
-                            <div key={i} className="flex items-start gap-4 text-left">
-                                <div className="bg-primary/20 p-2 rounded-lg mt-1"><ShieldCheck className="h-5 w-5 text-primary" /></div>
-                                <div className="text-left">
-                                    <p className="font-bold text-white text-left">{item.title}</p>
-                                    <p className="text-sm text-slate-500 text-left">{item.desc}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <Card className="bg-slate-900 border-white/10 shadow-2xl p-8 text-slate-300 text-left">
-                    <div className="space-y-6 text-left">
-                         <div className="flex items-center gap-3 text-left">
-                            <Zap className="h-6 w-6 text-primary fill-primary" />
-                            <h4 className="font-black uppercase tracking-widest text-sm text-left">Intelligence Access Tier</h4>
-                        </div>
-                        <p className="text-4xl font-black text-white text-left">R100 <span className="text-sm font-normal text-slate-500">/ per month</span></p>
-                        <Separator className="bg-white/10" />
-                        <ul className="space-y-3 text-left">
-                            {["Unlimited Registry Search", "Direct CEO/MD Contacts", "Verified Mobile Numbers", "Publish Your Shop Profile", "Apply for Industry Funding"].map(f => (
-                                <li key={f} className="flex items-center gap-2 text-sm text-left">
-                                    <CheckCircle2 className="h-4 w-4 text-primary" /> {f}
-                                </li>
-                            ))}
-                        </ul>
-                        <Button asChild className="w-full h-14 font-black uppercase text-lg" onClick={handleJoinClick}>
-                            <Link href={ctaLink}>Unlock The Registry</Link>
-                        </Button>
-                    </div>
+      {/* CORE REGISTRIES PREVIEW */}
+      <section className="py-24 bg-slate-50 border-b">
+        <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl md:text-5xl font-black font-headline mb-12">The Map to the Grid</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left">
+                    <Truck className="h-10 w-10 text-blue-600 mb-6 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-2xl font-black mb-2">Transporter Registry</h3>
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed">Map over 5,420+ verified South African hauliers. Filter by RC1 compliance, vehicle class, and region.</p>
+                    <Button variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest" asChild><Link href="/intelligence/transporter">Enter Registry <ArrowRight className="ml-1 h-3 w-3"/></Link></Button>
+                </Card>
+                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left">
+                    <Building2 className="h-10 w-10 text-primary mb-6 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-2xl font-black mb-2">Supplier Registry</h3>
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed">22,000+ verified records across 28 industrial categories. Direct lines to CEO/MD leadership.</p>
+                    <Button variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest" asChild><Link href="/intelligence/supplier">Enter Registry <ArrowRight className="ml-1 h-3 w-3"/></Link></Button>
+                </Card>
+                <Card className="p-8 border-none shadow-xl bg-white hover:shadow-2xl transition-all group text-left">
+                    <Landmark className="h-10 w-10 text-amber-600 mb-6 group-hover:scale-110 transition-transform" />
+                    <h3 className="text-2xl font-black mb-2">Capital Registry</h3>
+                    <p className="text-muted-foreground text-sm mb-6 leading-relaxed">Connect with 85+ specialized lenders. Match your operational performance with target capital.</p>
+                    <Button variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest" asChild><Link href="/intelligence/finance">Enter Registry <ArrowRight className="ml-1 h-3 w-3"/></Link></Button>
                 </Card>
             </div>
         </div>
       </section>
-      
-       <section className="py-20 md:py-32 bg-background text-left">
+
+      {/* FINAL CTA */}
+      <section className="py-32 bg-background">
             <div className="container mx-auto px-4 text-center">
-                <h2 className="text-3xl md:text-5xl font-black font-headline text-center">Ready to Transform Your Business?</h2>
-                <p className="mt-6 text-xl max-w-2xl mx-auto text-muted-foreground text-center">
-                    Join a growing community of transport professionals who are building a more efficient and profitable future.
-                </p>
-                <div className="mt-10 flex justify-center gap-4">
-                     <Button asChild size="lg" className="h-14 px-12" onClick={handleJoinClick}>
-                        <Link href={ctaLink}>
-                            Start Free Account <ArrowRight className="ml-2 h-5 w-5" />
-                        </Link>
+                <h2 className="text-4xl md:text-6xl font-black font-headline">Ready to claim your node?</h2>
+                <p className="mt-6 text-xl max-w-2xl mx-auto text-muted-foreground leading-relaxed text-center">Join thousands of transport professionals who have bypassed fragmented systems for a unified digital ecosystem.</p>
+                <div className="mt-12 flex justify-center gap-6">
+                     <Button asChild size="lg" className="h-16 px-16 text-lg font-black uppercase shadow-2xl" onClick={handleJoinClick}>
+                        <Link href={ctaLink}>Join for Free <ArrowRight className="ml-2 h-5 w-5" /></Link>
                     </Button>
                 </div>
             </div>

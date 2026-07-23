@@ -61,29 +61,19 @@
       },
       "required": ["firstName", "lastName", "email", "type"]
     },
-    "AdCampaign": {
-      "title": "Industrial Ad Campaign",
+    "CommunityIncentive": {
+      "title": "Community Welcome Gift",
       "type": "object",
-      "description": "A paid promotion increasing visibility in specific malls.",
+      "description": "A voucher or gift offered by a supplier to new members.",
       "properties": {
         "id": { "type": "string" },
-        "companyId": { "type": "string" },
-        "title": { "type": "string" },
-        "format": { "type": "string", "enum": ["search_boost", "billboard_banner", "popup_flyer"], "description": "Visual style and placement of the ad." },
-        "targetAudience": { "type": "string", "enum": ["transporters", "suppliers", "finance", "all"] },
-        "creativeUrl": { "type": "string" },
-        "totalInstances": { "type": "number" },
-        "remainingInstances": { "type": "number" },
-        "status": { "type": "string", "enum": ["pending_approval", "active", "completed", "rejected"] },
-        "metrics": {
-          "type": "object",
-          "properties": {
-            "impressions": { "type": "number" },
-            "clicks": { "type": "number" }
-          }
-        },
-        "createdAt": { "type": "object" },
-        "updatedAt": { "type": "object" }
+        "supplierId": { "type": "string" },
+        "supplierName": { "type": "string" },
+        "title": { "type": "string", "description": "e.g. R500 Off First Set of Brakes" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "expired"] },
+        "terms": { "type": "string" },
+        "createdAt": { "type": "object" }
       }
     }
   },
@@ -101,8 +91,8 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       },
       {
-        "path": "/companies/{companyId}/adCampaigns/{adId}",
-        "definition": { "entityName": "AdCampaign", "schema": { "$ref": "#/entities/AdCampaign" }, "description": "Member-managed ad campaigns." }
+        "path": "/configuration/communityIncentives/{incentiveId}",
+        "definition": { "entityName": "CommunityIncentive", "schema": { "$ref": "#/entities/CommunityIncentive" }, "description": "Active member welcome gifts." }
       }
     ]
   }

@@ -1,15 +1,16 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift } from 'lucide-react';
+import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { collection, query, where, limit } from 'firebase/firestore';
 
 // Content components
 import DigitalHandshake from './content/DigitalHandshake';
@@ -19,6 +20,7 @@ import RevenueModel from './content/RevenueModel';
 import PitchDeck from './content/PitchDeck';
 import Framework from './content/Framework';
 import SalesIntelligence from './content/SalesIntelligence';
+import IncentiveHandshake from './content/IncentiveHandshake';
 
 // Tactical modules
 import TheWedge from './content/TheWedge';
@@ -86,10 +88,19 @@ function resolveContact(partner: any) {
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [activeTab, setActiveTab] = useState('digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
+
+  // FETCH ACTIVE INCENTIVE FOR ENAGEMENT
+  const incentivesQuery = useMemoFirebase(() => {
+      if (!firestore) return null;
+      return query(collection(firestore, 'configuration/communityIncentives/active'), limit(1));
+  }, [firestore]);
+  const { data: incentives } = useCollection(incentivesQuery);
+  const activeIncentive = incentives?.[0];
 
   useEffect(() => {
     if (open) setCurrentIndex(initialIndex);
@@ -237,11 +248,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         {[
                             { id: 'digital-handshake', label: '0. Digital Handshake' },
                             { id: 'company-profile', label: '1. Company Profile' },
-                            { id: 'tech-architecture', label: '2. Tech Architecture' },
-                            { id: 'revenue-model', label: '3. Revenue Model' },
-                            { id: 'offer', label: '4. The Offer' },
-                            { id: 'pitch', label: '5. The Pitch' },
-                            { id: 'framework', label: '6. The Framework' },
+                            { id: 'incentive-handshake', label: '2. Welcome Incentive', icon: Gift },
+                            { id: 'tech-architecture', label: '3. Tech Architecture' },
+                            { id: 'revenue-model', label: '4. Revenue Model' },
+                            { id: 'offer', label: '5. The Offer' },
+                            { id: 'pitch', label: '6. The Pitch' },
                             { id: 'sales-intelligence', label: '7. Sales Intelligence' },
                         ].map((tab) => (
                             <Button
@@ -250,6 +261,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                 className={cn("w-full justify-start text-xs h-10 px-3", activeTab === tab.id && "bg-white shadow-sm")}
                                 onClick={() => setActiveTab(tab.id)}
                             >
+                                {tab.icon && <tab.icon className="h-3.5 w-3.5 mr-2 text-primary" />}
                                 {tab.label}
                             </Button>
                         ))}
@@ -285,6 +297,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
+                            {activeTab === 'incentive-handshake' && <IncentiveHandshake partner={currentPartner} incentive={activeIncentive} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
                             {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
                             {activeTab === 'offer' && (

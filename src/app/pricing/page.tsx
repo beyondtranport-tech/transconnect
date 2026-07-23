@@ -1,11 +1,12 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart, Zap, Landmark, Warehouse, Info } from 'lucide-react';
+import { Check, Star, ShieldCheck, ArrowRight, Search, Truck, Handshake, Loader2, ShoppingCart, Zap, Landmark, Warehouse, Info, Gift, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where, limit } from 'firebase/firestore';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
@@ -14,7 +15,6 @@ import * as React from 'react';
 
 /**
  * DEFAULT PLANS (FALLBACK)
- * Used if the Firestore collection is empty.
  */
 const defaultPlans = [
     {
@@ -64,38 +64,6 @@ const defaultPlans = [
         ],
         cta: "Activate Node",
         variant: "default" as const
-    },
-    {
-        id: 'warehouse_intelligence',
-        name: 'Warehouse Intelligence',
-        price: 125,
-        type: 'earning',
-        description: 'The Storage Node. Monetize empty space.',
-        features: [
-            "Unlock Operator Contacts",
-            "List Warehouse Capacity",
-            "Calculate Handling & Storage Fees",
-            "Inbound/Outbound Flow Logic",
-            "Integrated VAS Billing",
-        ],
-        cta: "Activate Node",
-        variant: "default" as const
-    },
-    {
-        id: 'buy_sell_intelligence',
-        name: 'Buy & Sell Intelligence',
-        price: 150,
-        type: 'earning',
-        description: 'The Marketplace Node. Secure vehicle trading.',
-        features: [
-            "Unlock Dealer Contacts",
-            "List Assets for Sale",
-            "Start Secure Handshakes",
-            "Generate OTPs & Invoices",
-            "Direct Buyer-Seller Chat",
-        ],
-        cta: "Activate Node",
-        variant: "default" as const
     }
 ];
 
@@ -107,38 +75,71 @@ export default function MembershipPage() {
     if (!firestore) return null;
     return query(collection(firestore, 'memberships'));
   }, [firestore]);
-
   const { data: dbPlans, isLoading } = useCollection(membershipsQuery);
 
+  const incentivesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'configuration/communityIncentives/active'), limit(5));
+  }, [firestore]);
+  const { data: incentives } = useCollection(incentivesQuery);
+
   const plans = React.useMemo(() => {
-    // If we have data from Firestore, use it. Otherwise, use defaults.
     if (!dbPlans || dbPlans.length === 0) return defaultPlans;
-    
-    return dbPlans.map(p => {
-        const dPlan = defaultPlans.find(dp => dp.id === p.id);
-        return {
-            id: p.id,
-            name: p.name,
-            price: Number(p.price) || 0,
-            description: p.description,
-            features: p.features || [],
-            isPopular: p.isPopular,
-            // Logic: if price is low and it's a foundation ID, mark as foundation
-            type: (p.id === 'free' || p.id === 'intelligence') ? 'foundation' : 'earning',
-            cta: p.id === 'free' ? "Start Free" : (p.id === 'intelligence' ? "Activate Foundation" : "Activate Node"),
-            variant: p.id === 'free' ? "outline" : "default"
-        };
-    }).sort((a,b) => a.price - b.price);
+    return dbPlans.map(p => ({
+        id: p.id,
+        name: p.name,
+        price: Number(p.price) || 0,
+        description: p.description,
+        features: p.features || [],
+        isPopular: p.isPopular,
+        type: (p.id === 'free' || p.id === 'intelligence') ? 'foundation' : 'earning',
+        cta: p.id === 'free' ? "Start Free" : (p.id === 'intelligence' ? "Activate Foundation" : "Activate Node"),
+        variant: p.id === 'free' ? "outline" : "default"
+    })).sort((a,b) => a.price - b.price);
   }, [dbPlans]);
 
   return (
     <div className="bg-background min-h-screen text-left text-foreground">
       <div className="container mx-auto px-4 py-16 md:py-24">
+        
+        {/* INCENTIVE HOOK SECTION */}
+        {incentives && incentives.length > 0 && (
+            <div className="max-w-5xl mx-auto mb-20 animate-in fade-in slide-in-from-top-4 duration-1000">
+                <div className="bg-slate-900 rounded-[2.5rem] p-1 shadow-2xl">
+                    <div className="bg-slate-950 rounded-[2.4rem] p-8 md:p-12 overflow-hidden relative">
+                         <div className="absolute top-0 right-0 p-8 opacity-10">
+                            <Gift className="h-40 w-40 text-primary" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
+                            <div className="flex-1 space-y-6 text-left">
+                                <Badge className="bg-primary/20 text-primary border-primary/30 py-1.5 px-6 font-black uppercase tracking-widest text-[10px]">Registry Activation Bonus</Badge>
+                                <h2 className="text-3xl md:text-5xl font-black font-headline text-white leading-tight">Join for R100,<br/><span className="text-primary">Get R500 in value.</span></h2>
+                                <p className="text-slate-400 text-lg leading-relaxed">
+                                    Our Supplier Partners have allocated exclusive **Welcome Gifts** to help you lower your operating costs the moment you establish your handshake.
+                                </p>
+                            </div>
+                            <div className="w-full md:w-80 space-y-3">
+                                {incentives.map((inc) => (
+                                    <div key={inc.id} className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-4 hover:bg-white/10 transition-colors group">
+                                        <div className="bg-primary/20 p-2.5 rounded-lg group-hover:bg-primary transition-colors"><Gift className="h-5 w-5 text-primary group-hover:text-white" /></div>
+                                        <div className="text-left">
+                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{inc.supplierName}</p>
+                                            <p className="text-xs font-bold text-white leading-tight">{inc.title}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
         <div className="text-center max-w-3xl mx-auto mb-16">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Business Intelligence</Badge>
           <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-foreground">Intelligence that pays.</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground leading-relaxed">
-            Logistics Flow is a modular ecosystem. Activate the foundation for industrial transparency, or plug in a specialized earning node to scale your operations.
+            Logistics Flow is a modular ecosystem. Establish your foundation in the registry, or plug in a specialized earning node to scale your operations.
           </p>
         </div>
 
@@ -196,7 +197,7 @@ export default function MembershipPage() {
                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest">Rewards Integration</Badge>
                         <h3 className="text-3xl font-black font-headline leading-tight">Data as a Platform Currency</h3>
                         <p className="text-slate-400 text-lg leading-relaxed">
-                            Don't want to pay cash? Contribute your verified fleet data (RC1) or supplier lists to the community registry to earn **Reward Points**. These points can be redeemed to pay for any Intelligence Node or Connect Plan.
+                            Don't want to pay cash? Contribute your verified fleet data (RC1) or supplier lists to the community registry to earn **Reward Points**. These points can be redeemed to pay for any Intelligence Node.
                         </p>
                         <div className="flex flex-wrap gap-4 pt-4">
                             <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest shadow-xl">
