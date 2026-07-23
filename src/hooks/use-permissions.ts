@@ -72,9 +72,12 @@ export function usePermissions() {
         const companyData = user.companyData || {};
         const membershipId = companyData.membershipId || 'free';
         const isPaidFoundation = membershipId === 'intelligence' || membershipId === 'premium';
+        
+        // ASSOCIATE OVERRIDE: Associates get free Studio access to empower recruitment
+        const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
 
         // 1. Foundation Permissions (Directory Access)
-        if (isPaidFoundation) {
+        if (isPaidFoundation || isAssociate) {
             perms.add('view:direct-contacts');
             perms.add('view:account');
             perms.add('view:wallet');
@@ -84,6 +87,7 @@ export function usePermissions() {
             perms.add('create:enquiries');
             perms.add('manage:staff');
             perms.add('manage:ads');
+            perms.add('view:marketing-studio'); // Grant Studio access
         }
 
         // 2. Specialized Mall Intelligence Nodes

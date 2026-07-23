@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
-import { UserCheck, ShieldCheck, Zap, Share2, Video } from 'lucide-react';
+import { UserCheck, ShieldCheck, Zap, Share2, Video, MousePointer2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useUser } from '@/firebase';
@@ -34,12 +34,12 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
                 </div>
             </CardHeader>
             <CardContent className="px-0 text-left text-foreground">
-                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground">
+                <div className="p-6 bg-white border rounded-md whitespace-pre-wrap font-sans text-sm shadow-inner min-h-[300px] text-left text-foreground leading-relaxed">
                     {personalizedContent.trim()}
                 </div>
             </CardContent>
             {partner && (
-                <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-center">
+                <CardFooter className="px-0 pt-4 border-t mt-4 text-xs text-muted-foreground italic text-left">
                     Empower your creative audience with 4K AI industrial tools.
                 </CardFooter>
             )}
@@ -49,22 +49,22 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 
 const templates = {
     intro: {
-        subject: "Partnership Opportunity: Monetize Your Logistics Audience",
+        subject: "Monetize Your Audience: Unlock the 4K AI Logistics Studio",
         content: `
 Hi [Associate Name],
 
-The South African transport industry is undergoing a digital shift, and we want to equip your audience with the tools to lead it.
+The South African transport industry is shifting to the digital grid, and your audience is the most valuable asset in this transition.
 
-Logistics Flow is a Data-as-a-Service ecosystem built to optimize industrial capacity. We are launching an exclusive **Digital Associate** program for high-impact creators and marketers.
+We are inviting you to join Logistics Flow as an **Authorized Digital Associate**. Unlike standard memberships, your access to the platform is **100% Free**.
 
-Why partner with us?
-1. **Free AI Content Studio:** Get unlimited access to our 4K video and image generators to produce professional industrial content for your channels.
-2. **Recurring Revenue:** Earn a lifetime annuity from every member you refer. We pay recurring commissions on memberships and transactional splits on Mall activity.
-3. **Ecosystem Influence:** Position yourself at the center of the industrial digitalization trend.
+Why establish a handshake with us?
+1. **Free AI Content Studio:** Get unrestricted access to our 4K video and image generators. Produce professional cinematic industrial content for your channels for free.
+2. **Yield-Based Earnings:** We don't just pay for sales. We pay for the "Flow." Track every click you generate and earn a direct commission on every "Handshake" (registration) you facilitate.
+3. **Automated Tracking:** Use our **Social Studio** to generate your own tracking links and watch your engagement yield in real-time.
 
-We provide the tech and the tracking; you own the relationship.
+We provide the technical engine; you drive the audience flow.
 
-Establish your creative standing here:
+Establish your creative standing and unlock the Studio here:
 [Opt-in Link]
 
 Best regards,
@@ -72,18 +72,21 @@ Best regards,
 The Logistics Flow Team
         `
     },
-    tools: {
-        subject: "Unlock Your AI Creative Studio: 4K Industrial Assets",
+    yield: {
+        subject: "How it Pays: Clicks, Handshakes, and Recurring Annuity",
         content: `
 Hi [Associate Name],
 
-Content is the new currency in logistics. 
+Let's talk about the revenue model. As a Digital Associate, you are an owner of the flow.
 
-As a Logistics Flow Associate, you bypass the cost of high-end production. Our dashboard features a dedicated **AI Marketing Studio** that allows you to generate cinematic truck sequences and professional brand design from simple text prompts.
+How you earn:
+- **Click Dividend:** We track every unique lead that lands on the platform via your content.
+- **Handshake Bounty:** Earn R100 for every business that establishes their free digital node through your referral.
+- **Recurring Annuity:** Earn a 30% share of every monthly membership fee paid by your network for the lifetime of their account.
 
-Every asset you generate is ready for broadcast and includes your unique tracking node automatically. 
+By using our **AI Studio**, you can create high-converting visuals that drive this flow at zero production cost to you.
 
-Start building your recurring revenue stream today: [Opt-in Link]
+Establish your node and start building your annuity: [Opt-in Link]
 
 Best regards,
 
@@ -93,8 +96,8 @@ Best regards,
 };
 
 const tabs = [
-    { value: "intro", label: "0. Recruitment Pitch", icon: Share2 },
-    { value: "tools", label: "1. Creative Tech Pitch", icon: Video },
+    { value: "intro", label: "0. Creative Tech Pitch", icon: Video },
+    { value: "yield", label: "1. Revenue & Yield Pitch", icon: MousePointer2 },
 ];
 
 
@@ -109,7 +112,7 @@ export default function AssociateEmails({ partner }: { partner?: any }) {
 
     return (
         <div className="space-y-6 text-left">
-            <Tabs defaultValue="intro" className="w-full text-left">
+            <Tabs defaultValue="intro" className="w-full text-left text-foreground">
                 <TabsList className="h-auto flex-wrap justify-start bg-muted/30 text-left">
                    {tabs.map(tab => (
                        <TabsTrigger key={tab.value} value={tab.value} className="text-xs gap-2">
@@ -119,7 +122,7 @@ export default function AssociateEmails({ partner }: { partner?: any }) {
                    ))}
                 </TabsList>
                 {Object.entries(templates).map(([key, t]) => (
-                    <TabsContent key={key} value={key} className="mt-6 text-left">
+                    <TabsContent key={key} value={key} className="mt-6 text-left text-foreground">
                         <EmailTemplate 
                             subject={t.subject} 
                             content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'Logistics Flow Team')} 

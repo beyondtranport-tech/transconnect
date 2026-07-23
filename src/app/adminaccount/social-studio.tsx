@@ -258,7 +258,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 text-left text-foreground">
-                <div className="space-y-2 text-left">
+                <div className="space-y-2 text-left text-foreground">
                     <Label className="text-[10px] font-black uppercase text-primary tracking-[0.2em] flex items-center gap-2">
                         <LinkIcon className="h-3 w-3"/> Campaign Tracking Label
                     </Label>
@@ -312,7 +312,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                         </Button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground">
+                    <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left text-foreground text-foreground">
                         <div className="max-w-[800px] mx-auto space-y-8 text-left">
                              <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col gap-2 text-left">
                                 <div className="flex items-center justify-between text-left">
@@ -328,8 +328,8 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                 <Card className="border-amber-200 bg-amber-50/20 text-left text-foreground">
                                     <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Sparkles className="h-5 w-5 text-amber-500" /> AI Creative Assistant</CardTitle></CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="space-y-2 text-left"><Label>Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
-                                        <div className="space-y-2 text-left"><Label>Key Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left text-foreground"><Label>Topic</Label><Input placeholder="e.g. Scaling industrial capacity" value={creatorParams.topic} onChange={e => setCreatorParams({...creatorParams, topic: e.target.value})} /></div>
+                                        <div className="space-y-2 text-left text-foreground text-foreground"><Label>Key Points</Label><Textarea placeholder="Point 1&#10;Point 2..." value={creatorParams.criticalPoints} onChange={e => setCreatorParams({...creatorParams, criticalPoints: e.target.value})} /></div>
                                         <Button className="w-full font-bold bg-amber-600" onClick={handleGenerateCustom} disabled={isGenerating}>
                                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4" />} Generate Copy
                                         </Button>
@@ -339,16 +339,16 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
 
                             {activePost && (
                                 <>
-                                    <Card className="border-none shadow-xl border-l-4 border-l-primary bg-white text-left text-foreground">
+                                    <Card className="border-none shadow-xl border-l-4 border-l-primary bg-white text-left text-foreground text-foreground">
                                         <CardHeader>
                                             <CardTitle className="text-xl font-black">{activePost.headline}</CardTitle>
                                             <CardDescription>Review and finalize your {config.label} post.</CardDescription>
                                         </CardHeader>
-                                        <CardContent className="p-0 border-t">
+                                        <CardContent className="p-0 border-t text-left">
                                             <Textarea 
                                                 value={editedContent[activeTab] || activePost.body || activePost.text || ''}
                                                 onChange={e => setEditedContent({...editedContent, [activeTab]: e.target.value})}
-                                                className="min-h-[250px] border-none focus-visible:ring-0 p-8 italic font-sans leading-relaxed text-sm bg-transparent"
+                                                className="min-h-[250px] border-none focus-visible:ring-0 p-8 italic font-sans leading-relaxed text-sm bg-transparent text-left"
                                             />
                                         </CardContent>
                                         <CardFooter className="bg-muted/10 border-t flex flex-col md:flex-row justify-between items-center gap-4 p-6">
@@ -390,7 +390,7 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
                                         </div>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left text-foreground text-foreground">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 text-left text-foreground">
                                         <ImageGeneratorCard />
                                         <VideoGeneratorCard />
                                     </div>
@@ -403,3 +403,4 @@ export default function SocialStudio({ platform = 'facebook' }: { platform?: Pla
         </div>
     );
 }
+
