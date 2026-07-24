@@ -26,7 +26,9 @@ import {
   ShieldCheck,
   Banknote,
   Truck,
-  Building
+  Building,
+  Fingerprint,
+  Wrench
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -151,7 +153,7 @@ export default function AboutPage() {
                     <div className="bg-primary/10 p-4 rounded-2xl w-fit mx-auto shadow-inner"><Award className="h-10 w-10 text-primary"/></div>
                     <h3 className="text-4xl font-black font-headline text-foreground uppercase tracking-tight text-center">The Information Dividend</h3>
                     <p className="text-lg text-muted-foreground leading-relaxed text-center">
-                        Information is the oxygen of industrial growth. We reward contribution. By helping us map the "Registry of Truth", you unlock massive community-negotiated savings.
+                        Information is the oxygen of industrial growth. We reward contribution. By helping us map the "Registry of Truth", you unlock access to specialized tools and membership reductions.
                     </p>
                 </div>
 
@@ -165,15 +167,15 @@ export default function AboutPage() {
                         <Separator />
                         <div className="space-y-4 text-left">
                             <div className="flex items-center gap-3">
-                                <div className="bg-green-100 p-1.5 rounded-full"><TrendingDown className="h-4 w-4 text-green-600" /></div>
-                                <p className="text-sm font-bold">R500 Welcome Gift</p>
+                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
+                                <p className="text-sm font-bold">20% Reduction: intelligence Access</p>
                             </div>
                             <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
-                                <p className="text-sm font-bold">2.5% Syndicate Discount</p>
+                                <div className="bg-slate-200 p-1.5 rounded-full"><Fingerprint className="h-4 w-4 text-slate-600" /></div>
+                                <p className="text-sm font-bold">Unlock: Member Reputation Badge</p>
                             </div>
                         </div>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed uppercase font-black text-left">Unlock: Standard Marketplace Access</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed uppercase font-black text-left">Access: Regional Registry Scans</p>
                     </Card>
 
                     <Card className="border-primary border-2 bg-primary/5 p-8 space-y-6 shadow-2xl relative text-left">
@@ -182,21 +184,21 @@ export default function AboutPage() {
                         </div>
                         <div className="flex justify-between items-start text-left">
                             <Badge className="bg-slate-200 text-slate-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 02</Badge>
-                            <span className="text-sm font-bold text-muted-foreground">1,000+ pts</span>
+                            <span className="text-sm font-bold text-muted-foreground">1,000 - 4,999 pts</span>
                         </div>
                         <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Silver</h4>
                         <Separator />
                         <div className="space-y-4 text-left">
                             <div className="flex items-center gap-3">
-                                <div className="bg-green-100 p-1.5 rounded-full"><Banknote className="h-4 w-4 text-green-600" /></div>
-                                <p className="text-sm font-bold">R1,000 Payout Credit</p>
+                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
+                                <p className="text-sm font-bold">35% Reduction: Mall intelligence Node</p>
                             </div>
                             <div className="flex items-center gap-3 text-left">
-                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
-                                <p className="text-sm font-bold text-left">5.0% Syndicate Discount</p>
+                                <div className="bg-primary/10 p-1.5 rounded-full"><Sparkles className="h-4 w-4 text-primary" /></div>
+                                <p className="text-sm font-bold text-left">Unlock: AI Branding & Content Studio</p>
                             </div>
                         </div>
-                        <p className="text-[10px] text-primary leading-relaxed uppercase font-black text-left">Unlock: Premium Jobs Board Access</p>
+                        <p className="text-[10px] text-primary leading-relaxed uppercase font-black text-left">Access: Forensic Lead Signal Tracking</p>
                     </Card>
 
                     <Card className="border-none bg-slate-900 text-white p-8 space-y-6 shadow-xl text-left">
@@ -208,15 +210,15 @@ export default function AboutPage() {
                         <Separator className="bg-white/10" />
                         <div className="space-y-4 text-left text-white">
                             <div className="flex items-center gap-3 text-left text-white">
-                                <div className="bg-yellow-500/20 p-1.5 rounded-full text-white"><Coins className="h-4 w-4 text-yellow-500" /></div>
-                                <p className="text-sm font-bold text-left text-white">R2,500 Payout Credit</p>
+                                <div className="bg-primary/20 p-1.5 rounded-full text-white"><Percent className="h-4 w-4 text-primary" /></div>
+                                <p className="text-sm font-bold text-left text-white">50% Reduction: All intelligence Nodes</p>
                             </div>
                             <div className="flex items-center gap-3 text-left text-white">
-                                <div className="bg-primary/20 p-1.5 rounded-full text-white"><Percent className="h-4 w-4 text-primary" /></div>
-                                <p className="text-sm font-bold text-left text-white">10.0% Syndicate Discount</p>
+                                <div className="bg-yellow-500/20 p-1.5 rounded-full text-white"><Zap className="h-4 w-4 text-yellow-500 fill-current" /></div>
+                                <p className="text-sm font-bold text-left text-white">Unlock: 4K AI Video & Discovery Tools</p>
                             </div>
                         </div>
-                        <p className="text-[10px] text-yellow-500 leading-relaxed uppercase font-black text-left">Unlock: First Access to Liquidation Sales</p>
+                        <p className="text-[10px] text-yellow-500 leading-relaxed uppercase font-black text-left">Access: Priority Marketplace Ranking</p>
                     </Card>
                 </div>
 
@@ -224,7 +226,7 @@ export default function AboutPage() {
                     <div className="p-8 bg-slate-50 rounded-[2.5rem] border-2 border-dashed space-y-8 text-left">
                         <div className="text-left">
                             <p className="font-black uppercase text-xs tracking-[0.2em] text-primary mb-2">Build Your Balance:</p>
-                            <p className="text-sm text-muted-foreground font-medium text-left">Reward points can be applied directly to reduce the cost of Intelligence Access and earning node subscriptions.</p>
+                            <p className="text-sm text-muted-foreground font-medium text-left">Reward points are earned through registry contribution and platform engagement interaction.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                             <div className="flex items-center gap-3 font-bold text-sm text-slate-700 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-left">
