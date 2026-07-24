@@ -6,14 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { 
   CheckCircle, 
   ArrowRight, 
-  Fingerprint, 
   Database, 
   Zap, 
   Scale, 
-  ShieldCheck, 
-  Globe, 
-  Banknote, 
-  Landmark, 
   Store, 
   Handshake, 
   Award, 
@@ -23,7 +18,13 @@ import {
   Target,
   UserCheck,
   FileCheck,
-  Star
+  Star,
+  Trophy,
+  Coins,
+  Percent,
+  TrendingDown,
+  ShieldCheck,
+  Banknote
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +62,7 @@ export default function AboutPage() {
 
         {/* SECTION 1: THE INTELLIGENCE MECHANISM */}
         <section className="py-24 bg-white border-b">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 text-left">
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="space-y-6 text-left">
                         <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner text-left"><Activity className="h-10 w-10 text-primary"/></div>
@@ -104,7 +105,7 @@ export default function AboutPage() {
 
         {/* SECTION 2: THE DIGITAL BRANCH */}
         <section className="py-24 bg-slate-950 text-white border-b">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 text-left">
                 <div className="grid md:grid-cols-2 gap-16 items-center">
                     <div className="md:order-2 space-y-6 text-left">
                         <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner text-left"><Store className="h-10 w-10 text-primary"/></div>
@@ -119,10 +120,10 @@ export default function AboutPage() {
                                     <p className="font-bold uppercase text-xs tracking-widest">List fleet capacity, pallet positions, or technical spares catalogues.</p>
                                 </div>
                             </div>
-                            <div className="flex gap-4 items-start text-left">
+                            <div className="flex gap-4 items-start text-left text-foreground">
                                 <FileCheck className="h-6 w-6 text-primary shrink-0 mt-1" />
                                 <div className="text-left">
-                                    <p className="font-bold uppercase text-xs tracking-widest">Standardized handshake tools including OTPs and automated invoicing.</p>
+                                    <p className="font-bold uppercase text-xs tracking-widest text-white">Standardized handshake tools including OTPs and automated invoicing.</p>
                                 </div>
                             </div>
                         </div>
@@ -140,37 +141,118 @@ export default function AboutPage() {
             </div>
         </section>
 
-        {/* SECTION 3: DATA AS A CURRENCY */}
+        {/* SECTION 3: REWARDS & LOYALTY - THE INFORMATION DIVIDEND */}
         <section className="py-24 bg-white border-b">
             <div className="container mx-auto px-4 text-left">
-                <div className="grid md:grid-cols-2 gap-16 items-center">
-                    <div className="space-y-6 text-left">
-                        <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner text-left"><Award className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-4xl font-black font-headline text-foreground leading-tight text-left uppercase">Data as a Currency</h3>
-                        <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                            Information is the oxygen of industrial growth. We incentivize members to contribute to the "Registry of Truth" by awarding reward points for verified data uploads.
-                        </p>
-                        <div className="p-8 bg-slate-50 rounded-[2rem] border-2 border-dashed space-y-6">
-                            <p className="font-black uppercase text-xs tracking-[0.2em] text-primary">Earn Points For:</p>
-                            <div className="grid grid-cols-2 gap-y-4 gap-x-8">
-                                <div className="flex items-center gap-2 font-bold text-sm text-foreground"><CheckCircle className="h-4 w-4 text-primary"/> RC1 Fleet Details</div>
-                                <div className="flex items-center gap-2 font-bold text-sm text-foreground"><CheckCircle className="h-4 w-4 text-primary"/> Supplier Mapping</div>
-                                <div className="flex items-center gap-2 font-bold text-sm text-foreground"><CheckCircle className="h-4 w-4 text-primary"/> Trade References</div>
-                                <div className="flex items-center gap-2 font-bold text-sm text-foreground"><CheckCircle className="h-4 w-4 text-primary"/> Data Vouching</div>
+                <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+                    <div className="bg-primary/10 p-4 rounded-2xl w-fit mx-auto shadow-inner"><Award className="h-10 w-10 text-primary"/></div>
+                    <h3 className="text-4xl font-black font-headline text-foreground uppercase tracking-tight text-center">The Information Dividend</h3>
+                    <p className="text-lg text-muted-foreground leading-relaxed text-center">
+                        Information is the oxygen of industrial growth. We reward contribution. By helping us map the "Registry of Truth", you unlock massive community-negotiated savings.
+                    </p>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-8 mb-16 text-left">
+                    <Card className="border-none bg-slate-50 p-8 space-y-6 shadow-sm hover:shadow-xl transition-all text-left">
+                        <div className="flex justify-between items-start text-left">
+                            <Badge className="bg-orange-100 text-orange-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 01</Badge>
+                            <span className="text-sm font-bold text-muted-foreground">0 - 999 pts</span>
+                        </div>
+                        <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Bronze</h4>
+                        <Separator />
+                        <div className="space-y-4 text-left">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-green-100 p-1.5 rounded-full"><TrendingDown className="h-4 w-4 text-green-600" /></div>
+                                <p className="text-sm font-bold">R500 Welcome Gift</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
+                                <p className="text-sm font-bold">2.5% Syndicate Discount</p>
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground italic">
-                            Reward points can be applied directly to reduce the cost of Intelligence Access and specialized node subscriptions.
-                        </p>
-                        <Button asChild variant="outline" className="h-12 px-8 font-black uppercase text-xs tracking-widest border-2">
-                            <Link href="/contribute">Enter Rewards Engine</Link>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed uppercase font-black text-left">Unlock: Standard Marketplace Access</p>
+                    </Card>
+
+                    <Card className="border-primary border-2 bg-primary/5 p-8 space-y-6 shadow-2xl relative text-left">
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                            <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-4 py-1 shadow-lg">Target Status</Badge>
+                        </div>
+                        <div className="flex justify-between items-start text-left">
+                            <Badge className="bg-slate-200 text-slate-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 02</Badge>
+                            <span className="text-sm font-bold text-muted-foreground">1,000+ pts</span>
+                        </div>
+                        <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Silver</h4>
+                        <Separator />
+                        <div className="space-y-4 text-left">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-green-100 p-1.5 rounded-full"><Banknote className="h-4 w-4 text-green-600" /></div>
+                                <p className="text-sm font-bold">R1,000 Payout Credit</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-left">
+                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
+                                <p className="text-sm font-bold text-left">5.0% Syndicate Discount</p>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-primary leading-relaxed uppercase font-black text-left">Unlock: Premium Jobs Board Access</p>
+                    </Card>
+
+                    <Card className="border-none bg-slate-900 text-white p-8 space-y-6 shadow-xl text-left">
+                        <div className="flex justify-between items-start text-left text-white">
+                            <Badge className="bg-yellow-500/20 text-yellow-500 border-none uppercase font-black text-[10px] tracking-widest">Tier 03</Badge>
+                            <span className="text-sm font-bold text-slate-500">5,000+ pts</span>
+                        </div>
+                        <h4 className="text-3xl font-black text-white uppercase text-left text-white">Gold</h4>
+                        <Separator className="bg-white/10" />
+                        <div className="space-y-4 text-left text-white">
+                            <div className="flex items-center gap-3 text-left text-white">
+                                <div className="bg-yellow-500/20 p-1.5 rounded-full text-white"><Coins className="h-4 w-4 text-yellow-500" /></div>
+                                <p className="text-sm font-bold text-left text-white">R2,500 Payout Credit</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-left text-white">
+                                <div className="bg-primary/20 p-1.5 rounded-full text-white"><Percent className="h-4 w-4 text-primary" /></div>
+                                <p className="text-sm font-bold text-left text-white">10.0% Syndicate Discount</p>
+                            </div>
+                        </div>
+                        <p className="text-[10px] text-yellow-500 leading-relaxed uppercase font-black text-left">Unlock: First Access to Liquidation Sales</p>
+                    </Card>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-12 items-center text-left">
+                    <div className="p-8 bg-slate-50 rounded-[2.5rem] border-2 border-dashed space-y-8 text-left">
+                        <div className="text-left">
+                            <p className="font-black uppercase text-xs tracking-[0.2em] text-primary mb-2">Build Your Balance:</p>
+                            <p className="text-sm text-muted-foreground font-medium text-left">Reward points can be applied directly to reduce the cost of Intelligence Access and earning node subscriptions.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                            <div className="flex items-center gap-3 font-bold text-sm text-slate-700 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-left">
+                                <div className="bg-primary/10 p-2 rounded-lg text-left"><Truck className="h-4 w-4 text-primary" /></div>
+                                +50 pts (RC1 Fleet)
+                            </div>
+                            <div className="flex items-center gap-3 font-bold text-sm text-slate-700 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-left">
+                                <div className="bg-primary/10 p-2 rounded-lg text-left"><Building className="h-4 w-4 text-primary" /></div>
+                                +20 pts (Supplier Map)
+                            </div>
+                            <div className="flex items-center gap-3 font-bold text-sm text-slate-700 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-left">
+                                <div className="bg-primary/10 p-2 rounded-lg text-left"><FileCheck className="h-4 w-4 text-primary" /></div>
+                                +10 pts (References)
+                            </div>
+                            <div className="flex items-center gap-3 font-bold text-sm text-slate-700 bg-white p-4 rounded-2xl shadow-sm border border-slate-100 text-left">
+                                <div className="bg-primary/10 p-2 rounded-lg text-left"><UserCheck className="h-4 w-4 text-primary" /></div>
+                                +5 pts (Verification)
+                            </div>
+                        </div>
+                        <Button asChild size="lg" className="h-14 w-full font-black uppercase text-xs tracking-widest text-white shadow-xl">
+                            <Link href="/contribute">Enter Rewards Engine <ArrowRight className="ml-2 h-4 w-4"/></Link>
                         </Button>
                     </div>
-                    <div className="relative aspect-square max-w-sm mx-auto">
-                        <div className="absolute inset-0 bg-primary/10 rounded-full animate-pulse" />
-                        <div className="relative z-10 bg-white p-12 rounded-full shadow-2xl border flex items-center justify-center">
-                             <Star className="h-24 w-24 text-primary fill-primary" />
-                        </div>
+                    <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl">
+                         <Image
+                            src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=1000"
+                            alt="Financial growth"
+                            fill
+                            className="object-cover"
+                            data-ai-hint="accounting coins"
+                        />
                     </div>
                 </div>
             </div>
@@ -178,30 +260,30 @@ export default function AboutPage() {
 
         {/* SECTION 4: PASSIVE REVENUE & ISA PATHWAY */}
         <section className="py-24 bg-slate-950 text-white border-b">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 text-left">
                 <div className="grid lg:grid-cols-2 gap-16 items-center">
                     <div className="space-y-6 text-left">
-                        <div className="bg-primary/10 p-3 rounded-2xl w-fit"><Zap className="h-10 w-10 text-primary fill-current" /></div>
+                        <div className="bg-primary/10 p-3 rounded-2xl w-fit text-left"><Zap className="h-10 w-10 text-primary fill-current" /></div>
                         <h2 className="text-4xl font-black font-headline text-white leading-tight text-left uppercase">Passive Revenue & The ISA Pathway</h2>
                         <p className="text-lg text-slate-300 leading-relaxed text-left">
                             Your industry network is your most valuable digital asset. Our Independent Sales Agent (ISA) program allows you to monetize your influence by digitalizing your existing contacts.
                         </p>
-                        <div className="grid md:grid-cols-2 gap-6">
-                            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-3">
-                                <div className="flex items-center gap-2"><Banknote className="h-5 w-5 text-primary" /> <p className="font-bold text-sm">Residual Annuity</p></div>
+                        <div className="grid md:grid-cols-2 gap-6 text-left">
+                            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-3 text-left">
+                                <div className="flex items-center gap-2 text-left"><Banknote className="h-5 w-5 text-primary" /> <p className="font-bold text-sm text-white">Residual Annuity</p></div>
                                 <p className="text-xs text-slate-400 leading-relaxed">Earn a recurring percentage share of every membership fee and transaction commission generated by your referred node network.</p>
                             </div>
-                            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-3">
-                                <div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> <p className="font-bold text-sm">AI Marketing Studio</p></div>
+                            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-3 text-left">
+                                <div className="flex items-center gap-2 text-left"><Sparkles className="h-5 w-5 text-primary" /> <p className="font-bold text-sm text-white">AI Marketing Studio</p></div>
                                 <p className="text-xs text-slate-400 leading-relaxed">Get the keys to our 4K video and image generators. Produce professional marketing assets to recruit members with zero overhead.</p>
                             </div>
                         </div>
-                        <div className="pt-4 space-y-4">
-                            <p className="font-black uppercase text-[10px] tracking-widest text-primary">Turn industry connections into a perpetual yield engine.</p>
-                            <div className="flex flex-wrap gap-2">
-                                <Badge variant="outline" className="border-white/20 text-white text-[9px] uppercase font-bold">Residual Membership Splits</Badge>
-                                <Badge variant="outline" className="border-white/20 text-white text-[9px] uppercase font-bold">Transactional Mall Commissions</Badge>
-                                <Badge variant="outline" className="border-white/20 text-white text-[9px] uppercase font-bold">Performance Tier Bonuses</Badge>
+                        <div className="pt-4 space-y-4 text-left">
+                            <p className="font-black uppercase text-[10px] tracking-widest text-primary text-left">Turn industry connections into a perpetual yield engine.</p>
+                            <div className="flex flex-wrap gap-2 text-left">
+                                <Badge variant="outline" className="border-white/20 text-white text-[9px] uppercase font-bold text-left">Residual Membership Splits</Badge>
+                                <Badge variant="outline" className="border-white/20 text-white text-[9px] uppercase font-bold text-left">Transactional Mall Commissions</Badge>
+                                <Badge variant="outline" className="border-white/20 text-white text-[9px] uppercase font-bold text-left">Performance Tier Bonuses</Badge>
                             </div>
                         </div>
                         <Button asChild className="h-12 px-8 font-black uppercase text-xs tracking-widest text-white shadow-xl" variant="default">
@@ -222,38 +304,38 @@ export default function AboutPage() {
 
         {/* SECTION 5: THE EARNING PATHWAY */}
         <section className="py-24 bg-white text-center">
-            <div className="container mx-auto px-4">
+            <div className="container mx-auto px-4 text-center">
                 <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
                     <h2 className="text-4xl font-black font-headline text-foreground text-center uppercase">The Earning Pathway</h2>
                     <p className="text-lg text-muted-foreground text-center">
                         Our most successful members don't just use the data—they help build the registry and get paid in return.
                     </p>
                 </div>
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid md:grid-cols-3 gap-8 text-left">
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4">
+                        <CardContent className="p-8 space-y-4 text-left">
                             <Database className="h-10 w-10 text-primary group-hover:text-white" />
-                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight">Data as an Asset</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed">Contribute your verified fleet or supplier data to earn reward points and de-risk your business for funders.</p>
+                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Data as an Asset</h3>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">Contribute your verified fleet or supplier data to earn reward points and de-risk your business for funders.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4">
+                        <CardContent className="p-8 space-y-4 text-left">
                             <Zap className="h-10 w-10 text-primary group-hover:text-white fill-current" />
-                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight">High-Intent Matches</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed">We match your specific fleet capabilities with incoming freight requirements in the Loads Mall.</p>
+                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">High-Intent Matches</h3>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">We match your specific fleet capabilities with incoming freight requirements in the Loads Mall.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4">
+                        <CardContent className="p-8 space-y-4 text-left">
                             <UserCheck className="h-10 w-10 text-primary group-hover:text-white" />
-                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight">Trusted Handshake</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed">We verify identities to ensure you're transacting with real business owners, not middlemen.</p>
+                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Trusted Handshake</h3>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">We verify identities to ensure you're transacting with real business owners, not middlemen.</p>
                         </CardContent>
                     </Card>
                 </div>
                 <div className="mt-16 text-center">
-                    <Button asChild size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl text-white">
+                    <Button asChild size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl text-white text-center">
                         <Link href={ctaLink}>Establish My Digital standing <ArrowRight className="ml-2 h-5 w-5"/></Link>
                     </Button>
                 </div>
