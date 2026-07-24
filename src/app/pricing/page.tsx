@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -175,7 +174,7 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
     
     return (
         <Card className={cn(
-            "flex flex-col shadow-xl transition-all duration-300 relative border-none overflow-hidden h-full",
+            "flex flex-col shadow-xl transition-all duration-300 relative border-none overflow-hidden h-full text-left",
             plan.isPopular ? "ring-4 ring-primary ring-offset-4 scale-[1.02] z-10" : "bg-white",
         )}>
             {plan.isPopular && (
@@ -183,20 +182,20 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
                     Most Active
                 </div>
             )}
-            <CardHeader className="p-8 pb-6 text-left">
+            <CardHeader className="p-8 pb-6 text-left text-foreground">
                 <div className="bg-muted p-3 rounded-xl w-fit mb-4 text-left">
                     <Icon className="h-6 w-6 text-primary" />
                 </div>
                 <CardTitle className="text-2xl font-black tracking-tight text-left text-foreground">{plan.name}</CardTitle>
                 <CardDescription className="mt-2 text-sm font-medium text-slate-500 leading-relaxed min-h-[40px] text-left">{plan.description}</CardDescription>
                 <div className="pt-8">
-                    <div className="flex items-baseline gap-1.5 text-left">
+                    <div className="flex items-baseline gap-1.5 text-left text-foreground">
                         <span className="text-4xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
                         <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">/ month</span>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="flex-grow p-8 pt-0 space-y-6 text-left">
+            <CardContent className="flex-grow p-8 pt-0 space-y-6 text-left text-foreground">
                 <Separator />
                 <ul className="space-y-4 text-left">
                     {resolvedFeatures.map((feature: string, i: number) => (

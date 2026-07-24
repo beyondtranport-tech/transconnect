@@ -32,21 +32,47 @@ import {
   Users,
   Briefcase,
   UserCheck2,
-  BrainCircuit
+  BrainCircuit,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import React from "react";
-import { useUser } from "@/firebase";
+import React, { useMemo } from "react";
+import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import featuresData from '@/lib/features.json';
 
 const { placeholderImages } = data;
+const { featureSections } = featuresData;
 const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 
 export default function AboutPage() {
   const { user } = useUser();
+  const firestore = useFirestore();
   const ctaLink = user ? '/account' : '/join';
+
+  // FETCH PLANS TO SYNC DIVIDEND CARDS
+  const membershipsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'memberships'));
+  }, [firestore]);
+  const { data: plans, isLoading: isPlansLoading } = useCollection(membershipsQuery);
+
+  // RESOLVE LOYALTY FEATURES
+  const resolveLoyaltyFeatures = (planFeatures: string[] = []) => {
+    const allFlatFeatures = featureSections.flatMap(s => s.features);
+    return planFeatures
+        .filter(fKey => fKey.startsWith('loyalty:'))
+        .map(fKey => {
+            const found = allFlatFeatures.find(feat => feat.key === fKey);
+            return found ? found.name : fKey;
+        });
+  };
+
+  const bronzePlan = useMemo(() => plans?.find(p => p.id === 'foundation'), [plans]);
+  const silverPlan = useMemo(() => plans?.find(p => p.id === 'intelligence'), [plans]);
+  const goldPlan = useMemo(() => plans?.find(p => p.id === 'premium'), [plans]);
 
   return (
     <div className="bg-background text-left text-foreground">
@@ -150,7 +176,7 @@ export default function AboutPage() {
             </div>
         </section>
 
-        {/* SECTION 3: THE INFORMATION DIVIDEND */}
+        {/* SECTION 3: THE INFORMATION DIVIDEND (DYNAMIC) */}
         <section className="py-24 bg-white border-b">
             <div className="container mx-auto px-4 text-left">
                 <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -161,70 +187,77 @@ export default function AboutPage() {
                     </p>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8 mb-16 text-left">
-                    <Card className="border-none bg-slate-50 p-8 space-y-6 shadow-sm hover:shadow-xl transition-all text-left">
-                        <div className="flex justify-between items-start text-left">
-                            <Badge className="bg-orange-100 text-orange-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 01</Badge>
-                            <span className="text-sm font-bold text-muted-foreground">0 - 999 pts</span>
-                        </div>
-                        <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Bronze</h4>
-                        <Separator />
-                        <div className="space-y-4 text-left">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
-                                <p className="text-sm font-bold">20% Reduction: intelligence Access</p>
+                {isPlansLoading ? (
+                    <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>
+                ) : (
+                    <div className="grid lg:grid-cols-3 gap-8 mb-16 text-left">
+                        {/* BRONZE TIER */}
+                        <Card className="border-none bg-slate-50 p-8 space-y-6 shadow-sm hover:shadow-xl transition-all text-left">
+                            <div className="flex justify-between items-start text-left">
+                                <Badge className="bg-orange-100 text-orange-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 01</Badge>
+                                <span className="text-sm font-bold text-muted-foreground">0 - 999 pts</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <div className="bg-slate-200 p-1.5 rounded-full"><Fingerprint className="h-4 w-4 text-slate-600" /></div>
-                                <p className="text-sm font-bold">Unlock: Member Reputation Badge</p>
+                            <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Bronze</h4>
+                            <Separator />
+                            <div className="space-y-4 text-left">
+                                {resolveLoyaltyFeatures(bronzePlan?.features).map((feat, i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
+                                        <p className="text-xs font-bold uppercase tracking-tight leading-tight">{feat}</p>
+                                    </div>
+                                ))}
+                                {resolveLoyaltyFeatures(bronzePlan?.features).length === 0 && (
+                                    <p className="text-xs text-muted-foreground italic">Standard community access node.</p>
+                                )}
                             </div>
-                        </div>
-                        <p className="text-[10px] text-muted-foreground leading-relaxed uppercase font-black text-left">Access: Regional Registry Scans</p>
-                    </Card>
+                        </Card>
 
-                    <Card className="border-primary border-2 bg-primary/5 p-8 space-y-6 shadow-2xl relative text-left">
-                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                            <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-4 py-1 shadow-lg">Target Status</Badge>
-                        </div>
-                        <div className="flex justify-between items-start text-left">
-                            <Badge className="bg-slate-200 text-slate-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 02</Badge>
-                            <span className="text-sm font-bold text-muted-foreground">1,000 - 4,999 pts</span>
-                        </div>
-                        <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Silver</h4>
-                        <Separator />
-                        <div className="space-y-4 text-left">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
-                                <p className="text-sm font-bold">35% Reduction: Mall intelligence Node</p>
+                        {/* SILVER TIER */}
+                        <Card className="border-primary border-2 bg-primary/5 p-8 space-y-6 shadow-2xl relative text-left">
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                                <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-4 py-1 shadow-lg">Target Status</Badge>
                             </div>
-                            <div className="flex items-center gap-3 text-left">
-                                <div className="bg-primary/10 p-1.5 rounded-full"><Sparkles className="h-4 w-4 text-primary" /></div>
-                                <p className="text-sm font-bold text-left">Unlock: AI Branding & Content Studio</p>
+                            <div className="flex justify-between items-start text-left">
+                                <Badge className="bg-slate-200 text-slate-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 02</Badge>
+                                <span className="text-sm font-bold text-muted-foreground">1,000 - 4,999 pts</span>
                             </div>
-                        </div>
-                        <p className="text-[10px] text-primary leading-relaxed uppercase font-black text-left">Access: Forensic Lead Signal Tracking</p>
-                    </Card>
+                            <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Silver</h4>
+                            <Separator />
+                            <div className="space-y-4 text-left">
+                                {resolveLoyaltyFeatures(silverPlan?.features).map((feat, i) => (
+                                    <div key={i} className="flex items-center gap-3">
+                                        <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
+                                        <p className="text-xs font-bold uppercase tracking-tight leading-tight">{feat}</p>
+                                    </div>
+                                ))}
+                                {resolveLoyaltyFeatures(silverPlan?.features).length === 0 && (
+                                    <p className="text-xs text-muted-foreground italic">Advanced intelligence features.</p>
+                                )}
+                            </div>
+                        </Card>
 
-                    <Card className="border-none bg-slate-900 text-white p-8 space-y-6 shadow-xl text-left">
-                        <div className="flex justify-between items-start text-left text-white">
-                            <Badge className="bg-yellow-500/20 text-yellow-500 border-none uppercase font-black text-[10px] tracking-widest">Tier 03</Badge>
-                            <span className="text-sm font-bold text-slate-500">5,000+ pts</span>
-                        </div>
-                        <h4 className="text-3xl font-black text-white uppercase text-left text-white">Gold</h4>
-                        <Separator className="bg-white/10" />
-                        <div className="space-y-4 text-left text-white">
-                            <div className="flex items-center gap-3 text-left text-white">
-                                <div className="bg-primary/20 p-1.5 rounded-full text-white"><Percent className="h-4 w-4 text-primary" /></div>
-                                <p className="text-sm font-bold text-left text-white">50% Reduction: All intelligence Nodes</p>
+                        {/* GOLD TIER */}
+                        <Card className="border-none bg-slate-900 text-white p-8 space-y-6 shadow-xl text-left">
+                            <div className="flex justify-between items-start text-left text-white">
+                                <Badge className="bg-yellow-500/20 text-yellow-500 border-none uppercase font-black text-[10px] tracking-widest">Tier 03</Badge>
+                                <span className="text-sm font-bold text-slate-500">5,000+ pts</span>
                             </div>
-                            <div className="flex items-center gap-3 text-left text-white">
-                                <div className="bg-yellow-500/20 p-1.5 rounded-full text-white"><Zap className="h-4 w-4 text-yellow-500 fill-current" /></div>
-                                <p className="text-sm font-bold text-left text-white">Unlock: 4K AI Video & Discovery Tools</p>
+                            <h4 className="text-3xl font-black text-white uppercase text-left text-white">Gold</h4>
+                            <Separator className="bg-white/10" />
+                            <div className="space-y-4 text-left text-white">
+                                {resolveLoyaltyFeatures(goldPlan?.features).map((feat, i) => (
+                                    <div key={i} className="flex items-center gap-3 text-white">
+                                        <div className="bg-primary/20 p-1.5 rounded-full text-white"><Percent className="h-4 w-4 text-primary" /></div>
+                                        <p className="text-xs font-bold uppercase tracking-tight leading-tight text-white">{feat}</p>
+                                    </div>
+                                ))}
+                                {resolveLoyaltyFeatures(goldPlan?.features).length === 0 && (
+                                    <p className="text-xs text-slate-400 italic">Full industrial dominance access.</p>
+                                )}
                             </div>
-                        </div>
-                        <p className="text-[10px] text-yellow-500 leading-relaxed uppercase font-black text-left">Access: Priority Marketplace Ranking</p>
-                    </Card>
-                </div>
+                        </Card>
+                    </div>
+                )}
             </div>
         </section>
 
@@ -312,21 +345,21 @@ export default function AboutPage() {
                 </div>
                 <div className="grid md:grid-cols-3 gap-8 text-left">
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left">
+                        <CardContent className="p-8 space-y-4 text-left text-foreground text-foreground">
                             <Database className="h-10 w-10 text-primary group-hover:text-white" />
                             <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Data as an Asset</h3>
                             <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">Contribute your verified fleet or supplier data to earn reward points and de-risk your business for funders.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left">
+                        <CardContent className="p-8 space-y-4 text-left text-foreground text-foreground">
                             <Zap className="h-10 w-10 text-primary group-hover:text-white fill-current" />
                             <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">High-Intent Matches</h3>
                             <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">We match your specific fleet capabilities with incoming freight requirements in the Loads Mall.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left">
+                        <CardContent className="p-8 space-y-4 text-left text-foreground text-foreground">
                             <UserCheck className="h-10 w-10 text-primary group-hover:text-white" />
                             <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Trusted Handshake</h3>
                             <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">We verify identities to ensure you're transacting with real business owners, not middlemen.</p>
@@ -343,3 +376,5 @@ export default function AboutPage() {
     </div>
   );
 }
+
+import { collection, query } from 'firebase/firestore';
