@@ -64,7 +64,9 @@ const templates = {
         content: `
 Hi [Associate Name],
 
-My name is [Your Name], and I am reaching out to you from the Engagement Division of **Logistics Flow**.
+Good day,
+
+My name is Michael Koton, I am the owner of Logistics Flow. I am reaching out to form a strategic relationship with you.
 
 **Who we are:** We have built the "Industrial Brain" of South Africa's Logistics sector which includes a high-fidelity digital grid that maps over 22,000 suppliers, 5000 transporters and 4000 Financiers. Our app enables our members to transact with one another directly in a closed loop.
 
@@ -87,8 +89,8 @@ My name is [Your Name], and I am reaching out to you from the Engagement Divisio
 
 Best regards,
 
-[Your Name]
-Logistics Flow Engagement Division
+Michael Koton
+Owner, Logistics Flow
         `
     },
     'creative-tech': {
@@ -130,7 +132,7 @@ Establish your node and start building your annuity: [Opt-in Link]
 
 Best regards,
 
-[Your Name]
+Michael Koton
         `
     }
 };
@@ -166,7 +168,7 @@ export default function AssociateEmails({ partner }: { partner?: any }) {
                     <TabsContent key={key} value={key} className="mt-6 text-left">
                         <EmailTemplate 
                             subject={t.subject} 
-                            content={t.content.replace(/\[Your Name\]/g, user?.displayName || 'Logistics Flow Team')} 
+                            content={t.content} 
                             partner={partner} 
                             referralLink={referralLink}
                         />
