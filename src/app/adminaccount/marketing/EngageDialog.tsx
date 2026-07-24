@@ -1,16 +1,31 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, Handshake, ExternalLink } from 'lucide-react';
+import { Loader2, Mail, Zap, Send, ShieldCheck, MessageSquare, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, Handshake, ExternalLink, AtSign } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+
+// Import content components
+import CompanyProfile from './content/CompanyProfile';
+import TechArchitecture from './content/TechArchitecture';
+import RevenueModel from './content/RevenueModel';
+import PitchDeck from './content/PitchDeck';
+import Framework from './content/Framework';
+import SalesIntelligence from './content/SalesIntelligence';
+import DigitalHandshake from './content/DigitalHandshake';
+import IncentiveHandshake from './content/IncentiveHandshake';
+import TheWedge from './content/TheWedge';
+import TheSignal from './content/TheSignal';
+import TheEliteFilter from './content/TheEliteFilter';
+import TheBreakUp from './content/TheBreakUp';
 
 interface EngageDialogProps {
   open: boolean;
@@ -55,11 +70,11 @@ function resolveContact(partner: any) {
     const phoneKeys = ['mobile', 'whatsapp', 'phone', 'cell'];
 
     const name = clean(
+        partner.firstName || 
         partner.marketingManager?.name || 
         partner.ceo?.name || 
         partner.contactPerson || 
         partner.contact_person || 
-        partner.firstName || 
         partner.companyName || 
         'Partner'
     );
@@ -148,7 +163,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             await navigator.clipboard.writeText(rawText);
             const profileUrl = currentPartner.website || currentPartner.url || '';
             if (profileUrl) window.open(profileUrl, '_blank');
-            toast({ title: "DM Script Copied!", description: "Paste it into the platform DM." });
+            toast({ title: "DM Script Copied!", description: "Follow the user, then paste script into platform DM." });
         } else {
             const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt;">${contentElement.innerHTML}</div>`;
             await copyHtmlToClipboard(wrappedHtml);

@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardFooter, CardTitle } from '@/components/ui/card';
-import { UserCheck, ShieldCheck, Zap, Share2, Video, MousePointer2, Handshake, MessageSquare } from 'lucide-react';
+import { UserCheck, ShieldCheck, Zap, Share2, Video, MousePointer2, Handshake, MessageSquare, AtSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import React from 'react';
 import { useUser } from '@/firebase';
@@ -59,6 +60,17 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
 };
 
 const templates = {
+    'platform-dm': {
+        subject: "Curiosity Script: Plan B (Social DM)",
+        content: `
+Hi [Associate Name], Michael here, owner of Logistics Flow. 
+
+Love your content. We're launching a strategic partner program for SA transport creators—offering free 4K AI Studio access & 30% recurring splits. I've already established your node in our industrial registry.
+
+Interested in the details? Let's establish the handshake here:
+[Opt-in Link]
+        `
+    },
     'strategic-intro': {
         subject: "Strategic Partnership: [Associate Name] x Logistics Flow",
         content: `
@@ -68,14 +80,14 @@ My name is Michael Koton, I am the owner of Logistics Flow. I am reaching out to
 
 **Who we are:** We have built the "Industrial Brain" of South Africa's Logistics sector which includes a high-fidelity digital grid that maps over 22,000 suppliers, 5000 transporters and 4000 Financiers. Our app enables our members to transact with one another directly in a closed loop.
 
-**Why I am reaching out:** We have identified your audience and creative influence as a perfect match for our ecosystem. We are looking to establish a formal partnership with you to generate exposure for the platform among industrial stakeholders.
+**Why I am reaching out:** We have identified your creative influence as a perfect match for our ecosystem. We are looking to establish a formal partnership with you to generate exposure for the platform.
 
-**What you get by partnering:**
-1. **Free membership.** Valued at R6,000 p.a.
-2. **Content Studio:** Unrestricted access to our cinematic video generators.
-3. **Social Studio:** Enabling tracked posts to social networks.
-4. **My Network:** Tracking of your network growth and revenue generated.
-5. **The Annuity Layer:** Earn 30% recurring share on all membership fees directly into your wallet.
+**What you get:**
+- **Free membership.** Valued at R6,000 p.a.
+- **Content Studio:** Unrestricted access to our cinematic video generators.
+- **Social Studio:** Enabling tracked posts to social networks.
+- **My Network:** Tracking of your network growth and revenue generated.
+- **The Annuity Layer:** Earn 30% recurring share on all membership fees directly into your wallet.
 
 **Are you interested in exploring this?**
 
@@ -136,7 +148,8 @@ Michael Koton
 };
 
 const tabs = [
-    { value: "strategic-intro", label: "0. Strategic Intro (Yes/No)", icon: Handshake },
+    { value: "strategic-intro", label: "0. Strategic Intro", icon: Handshake },
+    { value: "platform-dm", label: "0. Platform DM Script", icon: MessageSquare },
     { value: "creative-tech", label: "1. Creative Tech Hook", icon: Video },
     { value: "revenue-yield", label: "2. Revenue & Yield", icon: MousePointer2 },
 ];
