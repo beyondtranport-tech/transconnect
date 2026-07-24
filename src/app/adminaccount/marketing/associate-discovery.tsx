@@ -3,7 +3,7 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, ClipboardCheck, Terminal, Database, ShieldCheck, Share2, Info, UserCheck, Zap, Target, Palette, Video, Star, AlertTriangle } from "lucide-react";
+import { Copy, ClipboardCheck, Terminal, Database, ShieldCheck, Share2, Info, UserCheck, Zap, Target, Palette, Video, Star, AlertTriangle, SearchCode } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -25,41 +25,21 @@ export const associateCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
-    const isInfluencer = category === "Digital Influencer";
-    
-    let strategyMandate = `YOU MUST PERFORM A DEEP LIVE SEARCH FOR "${category} for logistics in SOUTH AFRICA" across LinkedIn, Facebook, Instagram, and TikTok.`;
-    
-    if (isInfluencer) {
-        strategyMandate = `ACT AS AN ELITE INDUSTRIAL SCOUT.
-        TASK: Discover exactly 30 UNIQUE "Micro-Influencers" or "Content Creators" BASED IN SOUTH AFRICA within the transport/logistics space.
-        
-        STRICT REGIONAL LOCK: 
-        YOU MUST ONLY RETURN INDIVIDUALS OR HUBS OPERATING WITHIN SOUTH AFRICA. IGNORE ALL INTERNATIONAL RESULTS.
-        
-        TARGET AUDIENCE: 
-        Focus on creators who talk about South African trucking (e.g., N3/N1 corridors), local supply chains, Durban/Cape Town harbor activity, or courier life in RSA.
-        
-        CONTACT EXTRACTION MANDATE:
-        You are commanded to search "About" sections, Bio links, and contact buttons to find actual Email Addresses and Mobile Numbers.`;
-    }
-
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V5 - HIGH VELOCITY). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
-1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
-2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@). 
-3. EVIDENCE EXTRACTION: Search website metadata, social media bios, and linked contact forms to find ACTUAL contact details. If verified data is not found, return null.
+STRICT REGIONAL LOCK: 
+ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
-SOCIAL-FIRST IDENTITY MANDATE:
-1. PRIORITIZE SOCIAL PROFILES: Search LinkedIn, Facebook, and Instagram profiles FIRST to identify the actual owner/creator.
-2. VERIFIED INDIVIDUALS ONLY: Only provide a "contact_person" if you have found the specific human linked to the brand. 
-3. NO BEST-GUESS EDITORS: Do not extract names from general mastheads if their specific association with the social channel is unclear.
+TASK: Discover 30 UNIQUE "Micro-Influencers" or "Logistics Hubs" for: "${category}".
 
-${strategyMandate}
+SCAVENGER MANDATE (CRITICAL):
+1. MULTI-STEP INVESTIGATION: You MUST search the Official Website, LinkedIn, and Instagram for each entity.
+2. BRIDGE THE GAPS: If an email is not in the bio, you are COMMANDED to find it on the "Contact Us" or "About" sub-pages of their website.
+3. IDENTITY RESOLUTION: Find the ACTUAL NAME (First/Last) of the person behind the brand. Check "Team" pages or CIPC metadata if needed.
+4. ANTI-HALLUCINATION: Do NOT guess. If data is truly missing after checking all 3 sources, return null.
 
-PROTOCOL:
-1. RECORD KEY: Generate a unique "record_id" starting with "DISC_ASSOC_${category.toUpperCase().replace(/\s/g, '_')}_".
+RECORD KEY: Generate a unique "record_id" starting with "DISC_ASSOC_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED JSON FIELDS:
 [
@@ -69,13 +49,13 @@ REQUIRED JSON FIELDS:
     "companyName": "CREATIVE HUB / BRAND NAME",
     "social_handle": "@username",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME (OR NULL)",
-    "email": "ACTUAL EMAIL (IF DISCOVERED)",
-    "mobile": "ACTUAL MOBILE (IF DISCOVERED)",
+    "contact_person": "VERIFIED HUMAN NAME",
+    "email": "ACTUAL VERIFIED EMAIL",
+    "mobile": "ACTUAL VERIFIED MOBILE",
     "website": "OFFICIAL CHANNEL/URL",
-    "follower_count": "ESTIMATED",
-    "primary_channel": "Facebook/LinkedIn/Instagram/TikTok",
-    "notes": "Brief summary of their industrial influence."
+    "follower_count": "e.g. 10k",
+    "primary_channel": "TikTok/Instagram/LinkedIn",
+    "notes": "Brief summary of industrial influence."
   }
 ]`;
 }
@@ -91,7 +71,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Deep-crawling mandate for contact details active." });
+        toast({ title: "V5 Command Ready", description: "Multi-platform scavenger mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -99,15 +79,15 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
         <div className="grid md:grid-cols-2 gap-6 text-left text-foreground">
             <div className="space-y-4 text-left">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
-                    <Share2 className="h-6 w-6 text-primary" />
-                    Talent Scouting: {category}
+                    <SearchCode className="h-6 w-6 text-primary" />
+                    High-Velocity Scouting: {category}
                 </h2>
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Deep Contact Extraction Active</AlertTitle>
-                    <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is commanded to scan bios and about-pages for real emails and numbers. Mock data remains strictly forbidden.
+                    <AlertTitle className="text-left font-bold text-foreground">Multi-Step Scavenger Protocol</AlertTitle>
+                    <AlertDescription className="text-xs text-left text-muted-foreground leading-relaxed">
+                        This command instructs the AI to crawl sub-pages and cross-reference LinkedIn to find hidden contact data. Fictitious data remains forbidden.
                     </AlertDescription>
                 </Alert>
 
@@ -129,7 +109,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> AI Research Command</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> AI Research Command (V5)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -143,11 +123,11 @@ export default function AssociateDiscoveryEngine() {
         <Card className="shadow-none border-none text-left text-foreground">
             <Tabs defaultValue="Digital Influencer" className="w-full text-left">
                 <CardHeader className="px-0 pt-0 text-left text-foreground">
-                    <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left">
+                    <CardTitle className="flex items-center gap-2 text-foreground font-black font-headline text-left text-foreground">
                         <Database className="h-6 w-6 text-primary" />
-                        Associate Discovery Engine
+                        Associate Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Identify content and brand creators using deep-data discovery.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Map South African logistics creators using high-fidelity multi-source discovery.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left text-foreground">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left text-foreground">

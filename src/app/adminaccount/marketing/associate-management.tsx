@@ -108,6 +108,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
         <DialogContent className="sm:max-w-[700px] text-left text-foreground">
             <DialogHeader>
                 <DialogTitle>Edit Digital Partner</DialogTitle>
+                <DialogDescription>Synchronize social metrics and forensic contact data.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
@@ -116,14 +117,14 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                            <Share2 className="h-4 w-4" /> Identity & Branding
                         </Label>
                         <div className="grid grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Creative Hub / Brand Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="social_handle" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Social Handle</FormLabel><FormControl><Input placeholder="@username" {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Creative Hub / Brand Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="social_handle" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Social Handle</FormLabel><FormControl><Input placeholder="@username" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                             <FormField control={form.control} name="primary_channel" render={({ field }) => ( 
                                 <FormItem className="text-left">
                                     <FormLabel>Primary Distribution Channel</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl><SelectTrigger className="bg-white border-2 text-left"><SelectValue placeholder="Select platform..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="TikTok">TikTok</SelectItem>
@@ -135,7 +136,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                                     </Select>
                                 </FormItem> 
                             )} />
-                            <FormField control={form.control} name="follower_count" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Est. Followers</FormLabel><FormControl><Input placeholder="e.g. 5.4k" {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                            <FormField control={form.control} name="follower_count" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Est. Followers</FormLabel><FormControl><Input placeholder="e.g. 10k" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                         </div>
                     </div>
 
@@ -146,12 +147,12 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                            <UserCheck className="h-4 w-4" /> Direct Stakeholder
                         </Label>
                         <div className="grid grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         </div>
                         <div className="grid grid-cols-2 gap-4 text-left">
-                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                            <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="email" className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         </div>
                     </div>
 
@@ -173,7 +174,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                         </FormItem> 
                     )} />
                      <DialogFooter className="pt-4 border-t text-left">
-                        <Button type="submit" disabled={isLoading} className="w-full h-12 font-bold shadow-lg text-white">
+                        <Button type="submit" disabled={isLoading} size="lg" className="w-full h-12 font-bold shadow-lg text-white">
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
                     </DialogFooter>
@@ -248,7 +249,7 @@ export default function AssociateManagement() {
           header: 'Brand / Agency', 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
-                  <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
+                  <span className="font-bold text-left text-foreground">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                   <div className="flex items-center gap-2 mt-1 text-left">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source}</Badge>
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">Creator Node</Badge>
@@ -345,7 +346,7 @@ export default function AssociateManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+  }, [fetchData, handleEngage, visibleColumns, type]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
