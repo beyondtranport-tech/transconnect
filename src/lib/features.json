@@ -16,8 +16,12 @@
       "name": "Loyalty & Information Dividend",
       "features": [
         { "key": "loyalty:20_reduction_intelligence", "name": "20% Reduction: Intelligence Access" },
+        { "key": "loyalty:20_reduction_all_nodes", "name": "20% Reduction: All Intelligence Nodes" },
         { "key": "loyalty:35_reduction_mall", "name": "35% Reduction: Mall Intelligence Node" },
         { "key": "loyalty:50_reduction_all", "name": "50% Reduction: All Intelligence Nodes" },
+        { "key": "loyalty:branding_studio", "name": "Access: Branding Studio" },
+        { "key": "loyalty:discovery_ai", "name": "Access: Discovery AI" },
+        { "key": "loyalty:crm_sales", "name": "Access: CRM for Sales" },
         { "key": "loyalty:regional_scans", "name": "Access: Regional Registry Scans" },
         { "key": "loyalty:lead_signals", "name": "Access: Forensic Lead Signal Tracking" },
         { "key": "loyalty:priority_ranking", "name": "Access: Priority Marketplace Ranking" }
