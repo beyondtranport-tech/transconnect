@@ -95,6 +95,7 @@ function resolveContact(partner: any) {
 }
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
+  const { user: adminUser } = useUser();
   const { toast } = useToast();
   const firestore = useFirestore();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
