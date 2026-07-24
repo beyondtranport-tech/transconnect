@@ -1,51 +1,45 @@
+
 {
   "featureSections": [
     {
-      "name": "Online Shop & Storefront",
+      "name": "Node & Registry Foundation",
       "features": [
-        { "key": "shop:basic", "name": "Basic Shop with Core Features" },
-        { "key": "shop:advanced", "name": "Advanced Shop Customization" },
-        { "key": "shop:templates", "name": "Multiple Shop Templates" },
-        { "key": "shop:domain", "name": "Custom Domain Support" },
-        { "key": "shop:analytics", "name": "Shop Analytics Dashboard" }
+        { "key": "node:verified_identity", "name": "Verified Identity Badge" },
+        { "key": "node:reputation_management", "name": "Reputation Management" },
+        { "key": "node:direct_rfqs", "name": "Receive Direct RFQs" },
+        { "key": "registry:unlimited_search", "name": "Unlimited Registry Search" },
+        { "key": "registry:direct_contacts", "name": "Reveal Direct MD/CEO Contacts" },
+        { "key": "registry:mobile_verification", "name": "Verified Mobile Numbers" }
       ]
     },
     {
-      "name": "Product & Service Listings",
+      "name": "Loyalty & Information Dividend",
       "features": [
-        { "key": "listings:5", "name": "Up to 5 Listings" },
-        { "key": "listings:50", "name": "Up to 50 Listings" },
-        { "key": "listings:unlimited", "name": "Unlimited Listings" },
-        { "key": "listings:bulk_import", "name": "Bulk Product Import/Export" },
-        { "key": "listings:priority_delivery", "name": "Priority Delivery Options" }
+        { "key": "loyalty:20_reduction_intelligence", "name": "20% Reduction: Intelligence Access" },
+        { "key": "loyalty:35_reduction_mall", "name": "35% Reduction: Mall Intelligence Node" },
+        { "key": "loyalty:50_reduction_all", "name": "50% Reduction: All Intelligence Nodes" },
+        { "key": "loyalty:regional_scans", "name": "Access: Regional Registry Scans" },
+        { "key": "loyalty:lead_signals", "name": "Access: Forensic Lead Signal Tracking" },
+        { "key": "loyalty:priority_ranking", "name": "Access: Priority Marketplace Ranking" }
       ]
     },
     {
       "name": "AI Marketing & Content Studio",
       "features": [
+        { "key": "ai:branding_studio", "name": "AI Branding & Content Studio" },
+        { "key": "ai:discovery_tools", "name": "4K AI Video & Discovery Tools" },
         { "key": "ai:seo_booster", "name": "AI SEO Booster" },
-        { "key": "ai:image_generation", "name": "AI Image Generation" },
-        { "key": "ai:banner_generation", "name": "AI Banner & Flyer Creator" },
-        { "key": "ai:video_ads", "name": "AI Video Ad Generator" },
-        { "key": "campaigns:special", "name": "Access to Special Marketing Campaigns" }
+        { "key": "ai:image_generation", "name": "AI Image Generation" }
       ]
     },
     {
-      "name": "Ecosystem & Funding",
+      "name": "Ecosystem & Execution",
       "features": [
-        { "key": "ecosystem:access", "name": "Access to All Malls" },
-        { "key": "ecosystem:funding", "name": "Funding Division Access" },
-        { "key": "ecosystem:connect_plans", "name": "Ability to Activate Connect Plans" },
-        { "key": "loads:post", "name": "Ability to Post Loads" }
+        { "key": "ecosystem:access_all_malls", "name": "Access to All Malls" },
+        { "key": "ecosystem:funding_path", "name": "Verified Finance Introduction" },
+        { "key": "loads:post_unlimited", "name": "Ability to Post Unlimited Loads" },
+        { "key": "shop:digital_branch", "name": "Publish Your Shop Profile" }
       ]
-    },
-    {
-        "name": "Advanced Tools & Integrations",
-        "features": [
-            { "key": "tools:dashboards", "name": "Advanced Performance Dashboards" },
-            { "key": "tools:extensions", "name": "Access to App Extensions" },
-            { "key": "tools:api_access", "name": "Developer API Access" }
-        ]
     },
     {
       "name": "Support & Service",
@@ -57,5 +51,3 @@
     }
   ]
 }
-
-    

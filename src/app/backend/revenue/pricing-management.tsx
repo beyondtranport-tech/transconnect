@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -26,12 +27,12 @@ const { featureSections } = featuresData;
 
 const defaultPlans = [
     {
-        id: 'free',
-        name: 'Free Observer',
-        price: 0,
+        id: 'foundation',
+        name: 'Node Ownership',
+        price: 10,
         type: 'foundation',
-        description: 'Basic visibility into the community mall and registry.',
-        features: ["1 Search per day", "View up to 10 records", "Basic company names only"],
+        description: 'Secure your standing in the industrial registry.',
+        features: ["node:verified_identity", "node:reputation_management", "node:direct_rfqs"],
         isPopular: false
     },
     {
@@ -40,17 +41,8 @@ const defaultPlans = [
         price: 100,
         type: 'registry',
         description: 'The foundation for industrial growth. Unlock the map.',
-        features: ["Unlimited Registry Search", "Access to 22,000+ Records", "Reveal Direct MD/CEO Contacts"],
+        features: ["registry:unlimited_search", "registry:direct_contacts", "registry:mobile_verification", "loyalty:20_reduction_intelligence", "loyalty:regional_scans"],
         isPopular: true
-    },
-    {
-        id: 'basic',
-        name: 'Basic Transactional',
-        price: 250,
-        type: 'global',
-        description: 'Start transacting and operating your digital branch.',
-        features: ["Access all Malls", "Create 1 Digital Branch", "Standard Transaction Fees", "Mobile App Access"],
-        isPopular: false
     },
     {
         id: 'standard',
@@ -58,7 +50,7 @@ const defaultPlans = [
         price: 500,
         type: 'global',
         description: 'Enhanced tools for active industrial players.',
-        features: ["Priority Listing Placement", "Advanced Shop Customization", "Bulk Product Imports", "Reward Point Multipliers"],
+        features: ["ecosystem:access_all_malls", "shop:digital_branch", "ai:branding_studio", "loyalty:35_reduction_mall", "loyalty:lead_signals"],
         isPopular: false
     },
     {
@@ -67,16 +59,7 @@ const defaultPlans = [
         price: 1000,
         type: 'global',
         description: 'The ultimate operational tier for industrial leaders.',
-        features: ["Zero Transaction Fees", "Dedicated Manager", "Full AI Studio Access", "Unlimited Product Listings"],
-        isPopular: false
-    },
-    {
-        id: 'loads_intelligence',
-        name: 'Loads Intelligence',
-        price: 75,
-        type: 'mall',
-        description: 'Access deep freight intelligence and clearing tools.',
-        features: ["Post Unlimited Loads", "Take Matching Loads", "Access Settlement Ledger"],
+        features: ["ecosystem:access_all_malls", "shop:digital_branch", "ai:discovery_tools", "loyalty:50_reduction_all", "loyalty:priority_ranking", "support:dedicated_manager"],
         isPopular: false
     }
 ];

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,10 @@ import { collection, query } from 'firebase/firestore';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from '@/components/ui/separator';
+import featuresData from '@/lib/features.json';
 import * as React from 'react';
+
+const { featureSections } = featuresData;
 
 /**
  * THE INDUSTRIAL GRID ARCHITECTURE
@@ -30,12 +34,6 @@ export default function MembershipPage() {
   
   const { data: dbPlans, isLoading } = useCollection(membershipsQuery);
 
-  const incentivesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'configuration/communityIncentives/active'));
-  }, [firestore]);
-  const { data: incentives } = useCollection(incentivesQuery);
-
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
     return dbPlans.map(p => ({
@@ -46,9 +44,9 @@ export default function MembershipPage() {
 
   // CATEGORIZATION LOGIC
   const nodeOwnership = plans.filter(p => p.id === 'foundation' || p.price === 10);
-  const registryIntelligence = plans.filter(p => p.id === 'intelligence' || (p.price === 100 && p.type === 'registry'));
-  const mallIntelligence = plans.filter(p => p.type === 'earning' || p.type === 'mall');
-  const globalMemberships = plans.filter(p => ['basic', 'standard', 'premium', 'global'].includes(p.id?.toLowerCase()) || p.type === 'global');
+  const registryIntelligence = plans.filter(p => p.id === 'intelligence' || p.type === 'registry');
+  const mallIntelligence = plans.filter(p => p.type === 'mall');
+  const globalMemberships = plans.filter(p => p.type === 'global');
 
   return (
     <div className="bg-background min-h-screen text-left text-foreground">
@@ -59,42 +57,9 @@ export default function MembershipPage() {
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Ecosystem Economics</Badge>
           <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-foreground">Intelligence that pays.</h1>
           <p className="mt-4 text-lg md:text-xl text-muted-foreground leading-relaxed text-center">
-            Logistics Flow is a modular ecosystem. Establish your <strong>Foundation</strong> in the registry, or plug in a specialized <strong>Intelligence Node</strong> to scale your operations.
+            Logistics Flow is a modular ecosystem. Establish your <strong>Foundation</strong> in the registry, or activate specialized <strong>Intelligence Nodes</strong> to scale your operations.
           </p>
         </div>
-
-        {/* ACTIVATION BUNDLE HOOK */}
-        {incentives && incentives.length > 0 && (
-            <div className="max-w-5xl mx-auto mb-24 animate-in fade-in slide-in-from-top-4 duration-1000">
-                <div className="bg-slate-900 rounded-[2.5rem] p-1 shadow-2xl">
-                    <div className="bg-slate-950 rounded-[2.4rem] p-8 md:p-12 overflow-hidden relative">
-                         <div className="absolute top-0 right-0 p-8 opacity-10">
-                            <Gift className="h-40 w-40 text-primary" />
-                        </div>
-                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-                            <div className="flex-1 space-y-6 text-left text-white">
-                                <Badge className="bg-primary/20 text-primary border-primary/30 py-1.5 px-6 font-black uppercase tracking-widest text-[10px]">Activation Incentive</Badge>
-                                <h2 className="text-3xl md:text-5xl font-black font-headline text-white leading-tight">Join for R100,<br/><span className="text-primary">Get R500 in value.</span></h2>
-                                <p className="text-slate-400 text-lg leading-relaxed text-left">
-                                    Establish your Intelligence Handshake today and receive a **R500 Community Welcome Gift** to instantly lower your operating costs.
-                                </p>
-                            </div>
-                            <div className="w-full md:w-80 space-y-3">
-                                {incentives.slice(0, 3).map((inc) => (
-                                    <div key={inc.id} className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-4">
-                                        <div className="bg-primary/20 p-2.5 rounded-lg"><Gift className="h-5 w-5 text-primary" /></div>
-                                        <div className="text-left">
-                                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">{inc.supplierName}</p>
-                                            <p className="text-xs font-bold text-white leading-tight">{inc.title}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
 
         {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
@@ -113,17 +78,9 @@ export default function MembershipPage() {
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        <PlanCard 
-                            plan={{
-                                id: 'claim-node',
-                                name: 'Node Ownership',
-                                price: 10,
-                                description: 'Secure your standing in the industrial registry.',
-                                features: ["Verified Identity Badge", "Reputation Management", "Receive Direct RFQs", "Unlock Community Vouching"],
-                                icon: Fingerprint
-                            }} 
-                            user={user} 
-                        />
+                        {nodeOwnership.map((plan) => (
+                            <PlanCard key={plan.id} plan={{...plan, icon: Fingerprint}} user={user} />
+                        ))}
                     </div>
                 </div>
 
@@ -139,20 +96,6 @@ export default function MembershipPage() {
                         {registryIntelligence.map((plan) => (
                             <PlanCard key={plan.id} plan={{...plan, icon: Database}} user={user} />
                         ))}
-                        {registryIntelligence.length === 0 && (
-                             <PlanCard 
-                                plan={{
-                                    id: 'intelligence',
-                                    name: 'Intelligence Access',
-                                    price: 100,
-                                    description: 'Full transparency of the industrial map.',
-                                    features: ["Direct MD/CEO Contacts", "Unlimited Registry Search", "Verified Finance intro", "Community Savings Access"],
-                                    icon: Database,
-                                    isPopular: true
-                                }} 
-                                user={user} 
-                            />
-                        )}
                     </div>
                 </div>
 
@@ -183,11 +126,6 @@ export default function MembershipPage() {
                         {globalMemberships.map((plan) => (
                             <PlanCard key={plan.id} plan={{...plan, icon: LayoutDashboard}} user={user} />
                         ))}
-                        {globalMemberships.length === 0 && (
-                             <div className="col-span-full py-12 text-center bg-muted/20 rounded-3xl border-2 border-dashed">
-                                <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Global Membership Tiers (Basic/Standard/Premium) Awaiting Admin Seed</p>
-                             </div>
-                        )}
                     </div>
                 </div>
             </div>
@@ -203,7 +141,7 @@ export default function MembershipPage() {
                     <div className="bg-primary/20 p-6 rounded-3xl border border-primary/30 shrink-0">
                         <ShieldCheck className="h-12 w-12 text-primary" />
                     </div>
-                    <div className="space-y-4 text-left flex-1">
+                    <div className="space-y-4 text-left flex-1 text-white">
                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest">Rewards Integration</Badge>
                         <h3 className="text-3xl font-black font-headline leading-tight">Data as a Platform Currency</h3>
                         <p className="text-slate-400 text-lg leading-relaxed">
@@ -225,6 +163,15 @@ export default function MembershipPage() {
 
 function PlanCard({ plan, user }: { plan: any, user: any }) {
     const Icon = plan.icon || Zap;
+
+    // Resolve feature labels from the registry
+    const resolvedFeatures = React.useMemo(() => {
+        const allFlatFeatures = featureSections.flatMap(s => s.features);
+        return (plan.features || []).map((fKey: string) => {
+            const found = allFlatFeatures.find(feat => feat.key === fKey);
+            return found ? found.name : fKey;
+        });
+    }, [plan.features]);
     
     return (
         <Card className={cn(
@@ -236,14 +183,14 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
                     Most Active
                 </div>
             )}
-            <CardHeader className="p-8 pb-6">
+            <CardHeader className="p-8 pb-6 text-left">
                 <div className="bg-muted p-3 rounded-xl w-fit mb-4 text-left">
                     <Icon className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle className="text-2xl font-black tracking-tight text-left">{plan.name}</CardTitle>
+                <CardTitle className="text-2xl font-black tracking-tight text-left text-foreground">{plan.name}</CardTitle>
                 <CardDescription className="mt-2 text-sm font-medium text-slate-500 leading-relaxed min-h-[40px] text-left">{plan.description}</CardDescription>
                 <div className="pt-8">
-                    <div className="flex items-baseline gap-1.5">
+                    <div className="flex items-baseline gap-1.5 text-left">
                         <span className="text-4xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
                         <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">/ month</span>
                     </div>
@@ -252,7 +199,7 @@ function PlanCard({ plan, user }: { plan: any, user: any }) {
             <CardContent className="flex-grow p-8 pt-0 space-y-6 text-left">
                 <Separator />
                 <ul className="space-y-4 text-left">
-                    {(plan.features || []).map((feature: string, i: number) => (
+                    {resolvedFeatures.map((feature: string, i: number) => (
                         <li key={i} className="flex items-start gap-3 text-left">
                             <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
                             <span className="text-xs font-bold text-slate-700 uppercase tracking-tight leading-tight text-left">{feature}</span>
