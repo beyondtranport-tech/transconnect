@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -80,6 +79,7 @@ import MemberLoyaltyStatus from '@/app/backend/member-loyalty-status';
 import MemberSuccessEngine from '@/app/backend/member-success-engine';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 import ShopsList from '@/app/backend/shops-list';
+import DividendManagement from '@/app/adminaccount/dividend-management';
 
 // Admin oversight components
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -178,6 +178,7 @@ function BackendContent() {
       case 'loyalty-plan': return <TierBenefits />;
       case 'rewards-plan': return <RewardsManagement />;
       case 'pricing-memberships': return <PricingManagement />;
+      case 'pricing-dividend': return <DividendManagement />;
       case 'pricing-connect': return <ConnectPlanPricing />;
       case 'pricing-tech': return <TechPricing />;
       case 'pricing-ads': return <AdPricingSettings />;
@@ -197,11 +198,23 @@ function BackendContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
-  const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
+  }
   
+  const navigate = (view: string) => router.push(`/backend?view=${view}`, { scroll: false });
+
   const isOperationsActive = ['dashboard', 'activity', 'members', 'users', 'wallet', 'wallet-transactions', 'reconciliation', 'support-inbox'].includes(activeView);
   const isMallsActive = ['finance-mall', 'loads-oversight', 'supplier-mall', 'transport-oversight', 'distribution-oversight', 'warehouse-oversight', 'buy-sell-oversight', 'success-engine'].includes(activeView);
   const isSuccessActive = ['loyalty-overview', 'contributions', 'commercial-negotiations'].includes(activeView);
+  const isRevenueActive = [
+    'pricing-memberships', 'pricing-dividend', 'pricing-connect', 'pricing-tech', 'pricing-ads', 'pricing-marketplace',
+    'commissions-malls', 'commissions-isa', 'incentives-sales'
+  ].includes(activeView);
   const isPlatformSettingsActive = ['permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'].includes(activeView);
 
   return (
@@ -275,9 +288,10 @@ function BackendContent() {
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Revenue & Pricing" isActive={activeView.includes('pricing') || activeView.includes('commissions')}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
+                    <SidebarMenuButton tooltip="Revenue & Pricing" isActive={isRevenueActive}><DollarSign /><span>Revenue & Pricing</span></SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}>Membership Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-dividend'} onClick={() => navigate('pricing-dividend')}>Dividend Rewards</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-connect'} onClick={() => navigate('pricing-connect')}>Connect Plan Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-tech'} onClick={() => navigate('pricing-tech')}>Tech SaaS Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-ads'} onClick={() => navigate('pricing-ads')}>Ad Engine Pricing</SidebarMenuSubButton></SidebarMenuSubItem>
