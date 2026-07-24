@@ -27,22 +27,17 @@ function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-NOISE SUPPRESSION PROTOCOL:
-1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
-2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
-
-CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE): 
-1. REAL DATA ONLY: DO NOT RETURN MOCK OR PLACEHOLDER DATA.
-2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g., info@company.co.za). 
-3. VERIFICATION MANDATE: Only return an email if explicitly visible in search evidence. If not found, return null.
+CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
+1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
+2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@company.co.za). 
+3. NULL MANDATE: If data is not explicitly visible in search evidence, you MUST set the field to null.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
 DEEP-CRAWLING PROTOCOL:
 1. WEBSITE HIERARCHY SCAN: Find the primary Menu/Navigation. 
 2. SUB-PAGE EXTRACTION: Identify the "About Us" and "Products/Services" pages. 
-3. HERO CAPTURE: Scrape actual headlines and technical wording from these pages.
-4. HUMAN IDENTITY: MINE contact pages to find the ACTUAL NAME of the CEO, MD, or Owner.
+3. HUMAN IDENTITY: MINE the "Contact Us" or "About" pages to find the ACTUAL NAME of the CEO, MD, or Owner. Only provide a name if it is confirmed in the text.
 
 REQUIRED JSON FIELDS:
 [
@@ -51,7 +46,7 @@ REQUIRED JSON FIELDS:
     "record_id": "DISC_SUPP_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
     "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
-    "contactPerson": "VERIFIED HUMAN NAME",
+    "contactPerson": "VERIFIED HUMAN NAME (OR NULL)",
     "email": "...",
     "phone": "...",
     "website": "OFFICIAL VERIFIED URL",
@@ -73,7 +68,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Anti-guessing protocol and integrity shield active." });
+        toast({ title: "Research Prompt Ready", description: "Anti-hallucination protocol active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -86,9 +81,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Anti-Guessing Protocol</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Identity Integrity Protocol</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent will return null for missing emails instead of guessing common patterns to prevent bounces.
+                        The agent is forbidden from guessing names or emails. Records will return null for missing data to ensure registry accuracy.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">

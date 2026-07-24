@@ -24,22 +24,17 @@ function generateDiscoveryPrompt(category: string, startPage: number) {
     return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-NOISE SUPPRESSION PROTOCOL:
-1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
-2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
-
-CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE): 
-1. REAL DATA ONLY: DO NOT RETURN MOCK OR HALLUCINATED DATA.
-2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g., info@company.co.za). 
-3. VERIFICATION MANDATE: Only return an email if it is explicitly listed in search evidence. If not found, return null.
+CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
+1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
+2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@company.co.za). 
+3. NULL MANDATE: If data is not explicitly visible in search evidence, you MUST set the field to null.
 
 TASK: Discover and extract exactly 30 UNIQUE live transport companies in SOUTH AFRICA for: "${category}".
 
 STRICT PROTOCOL:
 1. DATA MINING: Find the OFFICIAL CORPORATE WEBSITE. Verify existence.
-2. TECHNICAL FOCUS: In the "notes" field, provide a 2-sentence summary of SPECIFIC fleet capabilities.
-3. IDENTITY: Find the ACTUAL NAME (First and Last) of the Managing Director, Owner, or CEO.
-4. RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
+2. IDENTITY VERIFICATION: Find the ACTUAL NAME (First and Last) of the Managing Director, Owner, or CEO. If not found on the site, check LinkedIn. If still not found, set to null.
+3. RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
 [
@@ -48,7 +43,7 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
     "record_id": "...",
     "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
-    "contactPerson": "VERIFIED HUMAN NAME",
+    "contactPerson": "VERIFIED HUMAN NAME (OR NULL)",
     "email": "Professional Email",
     "phone": "...",
     "website": "OFFICIAL VERIFIED URL",
@@ -70,22 +65,22 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Anti-guessing and bounce-prevention protocol active." });
+        toast({ title: "Research Prompt Ready", description: "Identity integrity mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4 text-left text-foreground">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left text-foreground text-left">
                     <Search className="h-6 w-6 text-primary" />
                     Haulier Mapping: {category}
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Integrity Shield Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Zero-Tolerance for Mock Data</AlertTitle>
                     <AlertDescription className="text-xs text-left text-foreground">
-                        Guessed or construction emails are prohibited. Registry records will prioritize accuracy over volume.
+                        The agent is forbidden from inventing names. Missing identity data must be returned as null.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">

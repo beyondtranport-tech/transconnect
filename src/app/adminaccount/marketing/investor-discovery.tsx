@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,21 +22,20 @@ export const investorClasses = [
 ];
 
 export function generateInvestorPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE VENTURE INTELLIGENCE AGENT AND FORENSIC INVESTIGATOR. 
+    return `ACT AS AN ELITE VENTURE INTELLIGENCE AGENT. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-CRITICAL INTEGRITY SHIELD: 
-DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
-YOU MUST PERFORM A LIVE SEARCH FOR "${category} investors in South Africa" on LinkedIn, Crunchbase, and VC directories.
-VERIFY THE FUND HAS AN ACTIVE INVESTMENT MANDATE.
+CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
+1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
+2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@). 
+3. NULL MANDATE: If data is not explicitly visible in search evidence, you MUST set the field to null.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African investment partners for the class: "${category}".
 
-FORENSIC PROTOCOL:
-1. MANDATE VERIFICATION: Ensure they invest in B2B SaaS, Logistics, Supply Chain, or Industrial Technology.
-2. HUMAN IDENTITY: Find the ACTUAL NAME (First and Last) of a Partner, Managing Director, or Investment Lead.
-3. CONTACT MAPPING: Identify professional email and direct mobile numbers (+27 format).
-4. RECORD KEY: Generate a unique "record_id" starting with "DISC_INV_${category.toUpperCase().replace(/\s/g, '_')}_".
+INVESTIGATIVE PROTOCOL:
+1. MANDATE VERIFICATION: Ensure they invest in B2B SaaS, Logistics, or Industrial Tech.
+2. HUMAN IDENTITY: Find the ACTUAL NAME (First and Last) of a Partner or Investment Lead via LinkedIn or their site. If not found, set to null.
+3. RECORD KEY: Generate a unique "record_id" starting with "DISC_INV_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED JSON FIELDS:
 [
@@ -44,11 +44,11 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "FUND / FIRM NAME",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME",
+    "contact_person": "VERIFIED HUMAN NAME (OR NULL)",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL CORPORATE URL",
-    "notes": "Detailed summary of their investment thesis, preferred cheque size, and why they fit Logistics Flow."
+    "notes": "Thesis and fit summary."
   }
 ]`;
 }
@@ -64,7 +64,7 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Investor Prompt Ready", description: `Targeted at ${category} class.` });
+        toast({ title: "Investor Prompt Ready", description: "Anti-hallucination mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 

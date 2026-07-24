@@ -35,7 +35,7 @@ function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
         TASK: Discover exactly 30 UNIQUE "Micro-Influencers" BASED IN SOUTH AFRICA within the transport/logistics space.
         
         STRICT REGIONAL LOCK: 
-        YOU MUST ONLY RETURN INDIVIDUALS OR HUBS OPERATING WITHIN SOUTH AFRICA. IGNORE ALL INTERNATIONAL RESULTS (e.g., USA, UK, Australia).
+        YOU MUST ONLY RETURN INDIVIDUALS OR HUBS OPERATING WITHIN SOUTH AFRICA. IGNORE ALL INTERNATIONAL RESULTS.
         
         STRICT FOLLOWER CONSTRAINT: 
         TARGET ONLY INDIVIDUALS OR SMALL HUBS WITH UP TO 10,000 FOLLOWERS ON THEIR PRIMARY CHANNEL.
@@ -48,22 +48,20 @@ function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-NOISE SUPPRESSION PROTOCOL:
-1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
-2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES, SOCIAL PROFILES, AND BUSINESS DIRECTORIES.
+CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
+1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
+2. NO PATTERN GUESSING: Never construct email addresses (e.g., info@). Only return data found in evidence.
+3. NULL MANDATE: If a piece of data (especially the Human Name or Email) is not explicitly visible in the search evidence, you MUST set the field to null.
 
-CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE): 
-1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
-2. NO GUESSING: NEVER construct or "guess" email addresses based on common patterns (e.g., info@companyname.co.za). 
-3. VERIFICATION MANDATE: Only return an email if it is EXPLICITLY listed in the search results or website metadata. If not found, set the field to null.
+SOCIAL-FIRST IDENTITY MANDATE:
+1. PRIORITIZE SOCIAL PROFILES: Search LinkedIn, Facebook, and Instagram profiles FIRST to identify the actual owner/creator.
+2. VERIFIED INDIVIDUALS ONLY: Only provide a "contact_person" if you have found the specific human linked to the brand. 
+3. NO BEST-GUESS EDITORS: Do not extract names from general mastheads or staff lists if their specific association with the social channel is unclear.
 
 ${strategyMandate}
 
 PROTOCOL:
-1. PLATFORM SCAN: Identify the primary social or web presence.
-2. HUMAN IDENTITY: Find the ACTUAL FULL NAME of the owner or principal creator.
-3. CONTACT MAPPING: Identify professional email and direct mobile numbers.
-4. RECORD KEY: Generate a unique "record_id" starting with "DISC_ASSOC_${category.toUpperCase().replace(/\s/g, '_')}_".
+1. RECORD KEY: Generate a unique "record_id" starting with "DISC_ASSOC_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED JSON FIELDS:
 [
@@ -72,11 +70,11 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "CREATIVE HUB / INFLUENCER HANDLE",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME",
+    "contact_person": "VERIFIED HUMAN NAME (OR NULL)",
     "email": "...",
     "mobile": "...",
     "website": "OFFICIAL CHANNEL/URL",
-    "follower_count": "ESTIMATED (MUST BE < 10,000)",
+    "follower_count": "ESTIMATED",
     "primary_channel": "Facebook/LinkedIn/Instagram/TikTok",
     "notes": "..."
   }
@@ -94,7 +92,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Strict integrity mandate and anti-guessing protocol active." });
+        toast({ title: "Research Prompt Ready", description: "Social-First identity mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -108,9 +106,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Integrity Shield Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Social-First Identity Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is forbidden from guessing emails. Records will return null for missing data to prevent outreach bounces.
+                        The agent is commanded to prioritize social profiles to identify the actual creator. Hallucinated names are strictly forbidden.
                     </AlertDescription>
                 </Alert>
 
