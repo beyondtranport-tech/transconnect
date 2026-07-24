@@ -65,7 +65,7 @@ import { signOut } from 'firebase/auth';
 import React from 'react';
 
 // Component Imports
-import AdminDashboardContent from '@/app/adminaccount/dashboard';
+import AdminDashboardContent from '@/app/backend/dashboard-content';
 import ActivityFeed from '@/app/backend/activity-feed';
 import LeadsAgent from '@/app/adminaccount/leads-agent';
 import LeadsDatabase from '@/app/adminaccount/leads-database';
@@ -84,6 +84,7 @@ import PricingManagement from '@/app/backend/revenue/pricing-management';
 import ConnectPlanPricing from '@/app/backend/revenue/connect-plan-pricing';
 import TechPricing from '@/app/backend/revenue/tech-pricing';
 import AdPricingSettings from '@/app/backend/revenue/ad-pricing-settings';
+import DividendManagement from '@/app/adminaccount/dividend-management';
 import MarketplaceFees from '@/app/backend/revenue/marketplace-fees';
 import MallCommissions from '@/app/backend/revenue/mall-commissions';
 import ISAPitchSettings from '@/app/backend/revenue/isa-pitch-settings';
@@ -182,6 +183,7 @@ function AdminAccountContent() {
       case 'pricing-connect': return <ConnectPlanPricing />;
       case 'pricing-tech': return <TechPricing />;
       case 'pricing-ads': return <AdPricingSettings />;
+      case 'pricing-dividend': return <DividendManagement />;
       case 'pricing-marketplace': return <MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'commissions-isa': return <ISAPitchSettings />;
@@ -265,6 +267,8 @@ function AdminAccountContent() {
                   <SidebarMenuButton tooltip="Revenue" isActive={activeView === 'ads-oversight' || activeView.includes('pricing')}><Zap /><span>Revenue Oversight</span></SidebarMenuButton>
                   <SidebarMenuSub>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'ads-oversight'} onClick={() => navigate('ads-oversight')}><Sparkles className="h-3.5 w-3.5 mr-2" />Visibility Campaigns</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-memberships'} onClick={() => navigate('pricing-memberships')}><Users className="h-3.5 w-3.5 mr-2" />Membership Plans</SidebarMenuSubButton></SidebarMenuSubItem>
+                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-dividend'} onClick={() => navigate('pricing-dividend')}><Gift className="h-3.5 w-3.5 mr-2" />Dividend Rewards</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'pricing-ads'} onClick={() => navigate('pricing-ads')}><DollarSign className="h-3.5 w-3.5 mr-2" />Ad Pricing Settings</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
               </SidebarMenuItem>

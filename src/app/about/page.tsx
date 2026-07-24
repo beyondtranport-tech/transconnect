@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from "next/image";
@@ -40,9 +41,10 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import React, { useMemo } from "react";
-import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import featuresData from '@/lib/features.json';
-import { collection, query } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { cn } from "@/lib/utils";
 
 const { placeholderImages } = data;
 const { featureSections } = featuresData;
@@ -53,40 +55,21 @@ export default function AboutPage() {
   const firestore = useFirestore();
   const ctaLink = user ? '/account' : '/join';
 
-  // FETCH LIVE PLANS TO SYNC DIVIDEND CARDS
-  const membershipsQuery = useMemoFirebase(() => {
+  // FETCH EXPLICIT DIVIDEND REWARDS CONFIG
+  const configRef = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'memberships'));
+    return doc(firestore, 'configuration', 'dividendTiers');
   }, [firestore]);
-  const { data: plans, isLoading: isPlansLoading } = useCollection(membershipsQuery);
+  const { data: dividendConfig, isLoading: isConfigLoading } = useDoc<any>(configRef);
 
-  // RESOLVE LOYALTY FEATURES (Filtering for items ticked in the Dividend section)
-  const resolveLoyaltyFeatures = (planFeatures: string[] = []) => {
+  // RESOLVE LOYALTY FEATURES FROM THE REGISTRY
+  const resolveFeatureNames = (featureKeys: string[] = []) => {
     const allFlatFeatures = featureSections.flatMap(s => s.features);
-    return planFeatures
-        .filter(fKey => fKey.startsWith('loyalty:'))
-        .map(fKey => {
-            const found = allFlatFeatures.find(feat => feat.key === fKey);
-            return found ? found.name : fKey;
-        });
+    return featureKeys.map(fKey => {
+        const found = allFlatFeatures.find(feat => feat.key === fKey);
+        return found ? found.name : fKey;
+    });
   };
-
-  /**
-   * DYNAMIC TIER MAPPING
-   * Sorts plans by price to find the Bronze, Silver, and Gold archetypes.
-   * This is more resilient than hardcoded IDs.
-   */
-  const sortedPlans = useMemo(() => {
-    if (!plans) return [];
-    return [...plans].sort((a, b) => (a.price || 0) - (b.price || 0));
-  }, [plans]);
-
-  const bronzePlan = useMemo(() => sortedPlans[0], [sortedPlans]);
-  const silverPlan = useMemo(() => {
-      // Find intelligence specifically, or fallback to the second plan
-      return sortedPlans.find(p => p.id === 'intelligence') || sortedPlans[1];
-  }, [sortedPlans]);
-  const goldPlan = useMemo(() => sortedPlans[sortedPlans.length - 1], [sortedPlans]);
 
   return (
     <div className="bg-background text-left text-foreground">
@@ -190,7 +173,7 @@ export default function AboutPage() {
             </div>
         </section>
 
-        {/* SECTION 3: THE INFORMATION DIVIDEND (DYNAMIC LOYALTY) */}
+        {/* SECTION 3: THE INFORMATION DIVIDEND (SYNCED REWARDS) */}
         <section className="py-24 bg-white border-b">
             <div className="container mx-auto px-4 text-left">
                 <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -201,78 +184,41 @@ export default function AboutPage() {
                     </p>
                 </div>
 
-                {isPlansLoading ? (
+                {isConfigLoading ? (
                     <div className="flex flex-col items-center justify-center p-20 gap-4">
                         <Loader2 className="animate-spin h-10 w-10 text-primary" />
                         <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Syncing Rewards Ledger...</p>
                     </div>
                 ) : (
                     <div className="grid lg:grid-cols-3 gap-8 mb-16 text-left">
-                        {/* BRONZE TIER (Foundation) */}
-                        <Card className="border-none bg-slate-50 p-8 space-y-6 shadow-sm hover:shadow-xl transition-all text-left">
-                            <div className="flex justify-between items-start text-left">
-                                <Badge className="bg-orange-100 text-orange-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 01</Badge>
-                                <span className="text-sm font-bold text-muted-foreground">0 - 999 pts</span>
-                            </div>
-                            <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Bronze</h4>
-                            <Separator />
-                            <div className="space-y-4 text-left">
-                                {resolveLoyaltyFeatures(bronzePlan?.features).map((feat, i) => (
-                                    <div key={i} className="flex items-center gap-3">
-                                        <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
-                                        <p className="text-xs font-bold uppercase tracking-tight leading-tight">{feat}</p>
-                                    </div>
-                                ))}
-                                {resolveLoyaltyFeatures(bronzePlan?.features).length === 0 && (
-                                    <p className="text-xs text-muted-foreground italic">Establish your node foundation to start earning rewards.</p>
-                                )}
-                            </div>
-                        </Card>
+                        {/* BRONZE TIER */}
+                        <TierCard 
+                            title="Bronze" 
+                            points="0 - 999 pts" 
+                            tier="01" 
+                            color="orange"
+                            features={resolveFeatureNames(dividendConfig?.bronze)} 
+                        />
 
-                        {/* SILVER TIER (Intelligence) */}
-                        <Card className="border-primary border-2 bg-primary/5 p-8 space-y-6 shadow-2xl relative text-left">
-                            <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                                <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-4 py-1 shadow-lg">Target Status</Badge>
-                            </div>
-                            <div className="flex justify-between items-start text-left">
-                                <Badge className="bg-slate-200 text-slate-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 02</Badge>
-                                <span className="text-sm font-bold text-muted-foreground">1,000 - 4,999 pts</span>
-                            </div>
-                            <h4 className="text-3xl font-black text-slate-900 uppercase text-left">Silver</h4>
-                            <Separator />
-                            <div className="space-y-4 text-left">
-                                {resolveLoyaltyFeatures(silverPlan?.features).map((feat, i) => (
-                                    <div key={i} className="flex items-center gap-3">
-                                        <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
-                                        <p className="text-xs font-bold uppercase tracking-tight leading-tight">{feat}</p>
-                                    </div>
-                                ))}
-                                {resolveLoyaltyFeatures(silverPlan?.features).length === 0 && (
-                                    <p className="text-xs text-muted-foreground italic">Advanced intelligence features pending activation.</p>
-                                )}
-                            </div>
-                        </Card>
+                        {/* SILVER TIER */}
+                        <TierCard 
+                            title="Silver" 
+                            points="1,000 - 4,999 pts" 
+                            tier="02" 
+                            color="slate"
+                            features={resolveFeatureNames(dividendConfig?.silver)}
+                            isTarget
+                        />
 
-                        {/* GOLD TIER (Premium) */}
-                        <Card className="border-none bg-slate-900 text-white p-8 space-y-6 shadow-xl text-left">
-                            <div className="flex justify-between items-start text-left text-white">
-                                <Badge className="bg-yellow-500/20 text-yellow-500 border-none uppercase font-black text-[10px] tracking-widest">Tier 03</Badge>
-                                <span className="text-sm font-bold text-slate-500">5,000+ pts</span>
-                            </div>
-                            <h4 className="text-3xl font-black text-white uppercase text-left text-white">Gold</h4>
-                            <Separator className="bg-white/10" />
-                            <div className="space-y-4 text-left text-white">
-                                {resolveLoyaltyFeatures(goldPlan?.features).map((feat, i) => (
-                                    <div key={i} className="flex items-center gap-3 text-white">
-                                        <div className="bg-primary/20 p-1.5 rounded-full text-white"><Percent className="h-4 w-4 text-primary" /></div>
-                                        <p className="text-xs font-bold uppercase tracking-tight leading-tight text-white">{feat}</p>
-                                    </div>
-                                ))}
-                                {resolveLoyaltyFeatures(goldPlan?.features).length === 0 && (
-                                    <p className="text-xs text-slate-400 italic">Full industrial dominance access node.</p>
-                                )}
-                            </div>
-                        </Card>
+                        {/* GOLD TIER */}
+                        <TierCard 
+                            title="Gold" 
+                            points="5,000+ pts" 
+                            tier="03" 
+                            color="yellow"
+                            features={resolveFeatureNames(dividendConfig?.gold)}
+                            isPremium
+                        />
                     </div>
                 )}
             </div>
@@ -392,4 +338,42 @@ export default function AboutPage() {
         </section>
     </div>
   );
+}
+
+function TierCard({ title, points, tier, color, features = [], isTarget = false, isPremium = false }: any) {
+    return (
+        <Card className={cn(
+            "p-8 space-y-6 transition-all text-left",
+            isPremium ? "border-none bg-slate-900 text-white shadow-xl" : 
+            isTarget ? "border-primary border-2 bg-primary/5 shadow-2xl relative" :
+            "border-none bg-slate-50 shadow-sm hover:shadow-xl"
+        )}>
+            {isTarget && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-4 py-1 shadow-lg text-white">Target Status</Badge>
+                </div>
+            )}
+            <div className="flex justify-between items-start text-left">
+                <Badge className={cn(
+                    "border-none uppercase font-black text-[10px] tracking-widest",
+                    color === 'orange' ? 'bg-orange-100 text-orange-800' :
+                    color === 'yellow' ? 'bg-yellow-500/20 text-yellow-500' :
+                    'bg-slate-200 text-slate-800'
+                )}>Tier {tier}</Badge>
+                <span className={cn("text-sm font-bold", isPremium ? "text-slate-500" : "text-muted-foreground")}>{points}</span>
+            </div>
+            <h4 className={cn("text-3xl font-black uppercase text-left", isPremium ? "text-white" : "text-slate-900")}>{title}</h4>
+            <Separator className={isPremium ? "bg-white/10" : ""} />
+            <div className="space-y-4 text-left">
+                {features.length > 0 ? features.map((feat: string, i: number) => (
+                    <div key={i} className="flex items-center gap-3">
+                        <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
+                        <p className={cn("text-xs font-bold uppercase tracking-tight leading-tight", isPremium ? "text-white" : "")}>{feat}</p>
+                    </div>
+                )) : (
+                    <p className="text-xs text-muted-foreground italic text-left">Rewards pending activation.</p>
+                )}
+            </div>
+        </Card>
+    );
 }
