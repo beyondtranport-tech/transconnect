@@ -18,7 +18,7 @@ git add .
 ### Step 2: Save Your Changes
 Commit your changes with a descriptive message.
 ```bash
-git commit -m "Forensic V7: Monetization Engine & Build Stabilization"
+git commit -m "Forensic V8: Information Dividend Sync & Backend Management"
 ```
 
 ### Step 3: Push Your Backup to GitHub
@@ -31,14 +31,13 @@ git push
 
 ---
 
-## Recent Updates: Forensic V7 (The Monetization Build)
-- **Build Stabilization**: Resolved critical TypeScript errors and import mismating in the Intelligence and Marketing hubs to ensure 100% production build compatibility.
-- **Node Ownership Workflow**: Implemented R10/mo node claiming and community vouching to "heal" the industrial registry.
-- **Inbound Interest Ledger**: Activated dual-logging for high-intent engagements, creating "Blind Lead" triggers for members.
-- **Tactical Engagement Hub**: Added psychological triggers (Wedge, Signal, Elite Filter, Break-Up) to the Outreach Wizard.
-- **Live Membership Engine**: Re-engineered the public pricing page to be fully synchronized with Firestore backend tiers.
+## Recent Updates: Forensic V8 (The Information Dividend)
+- **Dividend Rewards Terminal**: Implemented a dedicated management view in the Revenue section of the Admin Portal to explicitly configure Bronze, Silver, and Gold rewards.
+- **Dynamic About Page**: Synchronized the "Information Dividend" cards on the public /about page with the live backend configurations.
+- **Feature Registry Expansion**: Added "20% Reduction", "Branding Studio", and "CRM Access" to the backend feature list for granular tiering.
+- **Partnership Ecosystem Redesign**: Distinguished between Digital Associates (ISA) for individuals and Strategic Business Partners for corporate entities.
 
-## Forensic V6
-- **Proper HTML Rendering**: Converted intro text to JSX to ensure `<strong>` tags correctly bold the company name.
-- **"Free Registration" Mandate**: Overhauled all outreach sequences to emphasize zero-cost activation.
-- **Channel Personalization**: Implemented dynamic value propositions for Suppliers vs Transporters vs Partners.
+## Forensic V7
+- **Build Stabilization**: Resolved critical TypeScript errors and import mismating in the Intelligence and Marketing hubs.
+- **Node Ownership Workflow**: Implemented R10/mo node claiming and community vouching.
+- **Tactical Engagement Hub**: Added psychological triggers (Wedge, Signal, Elite Filter, Break-Up) to the Outreach Wizard.
