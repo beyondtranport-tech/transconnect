@@ -4,37 +4,13 @@ import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, Handshake } from 'lucide-react';
+import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, Handshake, ExternalLink } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { collection, query, where, limit } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-
-// Content components
-import DigitalHandshake from './content/DigitalHandshake';
-import CompanyProfile from './content/CompanyProfile';
-import TechArchitecture from './content/TechArchitecture';
-import RevenueModel from './content/RevenueModel';
-import PitchDeck from './content/PitchDeck';
-import Framework from './content/Framework';
-import SalesIntelligence from './content/SalesIntelligence';
-import IncentiveHandshake from './content/IncentiveHandshake';
-
-// Tactical modules
-import TheWedge from './content/TheWedge';
-import TheSignal from './content/TheSignal';
-import TheEliteFilter from './content/TheEliteFilter';
-import { default as TheBreakUp } from './content/TheBreakUp';
-
-// Offers
-import PartnerOffer from './offers/PartnerOffer';
-import InvestorOffer from './offers/InvestorOffer';
-import DeveloperOffer from './offers/DeveloperOffer';
-import SupplierOffer from './offers/SupplierOffer';
-import TransporterOffer from './offers/TransporterOffer';
-import AssociateOffer from './offers/AssociateOffer';
 
 interface EngageDialogProps {
   open: boolean;
@@ -144,7 +120,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
       return `Logistics Flow: ${label} for ${company}`;
   }
 
-  const handleLogAndLaunch = async (channel: 'outlook' | 'whatsapp') => {
+  const handleLogAndLaunch = async (channel: 'outlook' | 'whatsapp' | 'social-dm') => {
     if (!currentPartner) return;
     const contentId = `engage-content-wrapper-${activeTab}`;
     const contentElement = document.getElementById(contentId);
@@ -157,16 +133,22 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
-            type: channel === 'whatsapp' ? 'WhatsApp' : 'Email',
+            type: channel === 'whatsapp' ? 'WhatsApp' : (channel === 'social-dm' ? 'Social DM' : 'Email'),
             subject: activeTab.split('-').join(' ').toUpperCase(),
             notes: `Manual engagement launched via ${channel}.`,
             collection: targetCollection
         });
 
+        const rawText = contentElement.innerText || contentElement.textContent || '';
+
         if (channel === 'whatsapp') {
-            const rawText = contentElement.innerText || contentElement.textContent || '';
             const cleanNumber = contact.whatsapp.replace(/\s/g, '').replace(/^\+/, '').replace(/^0/, '27');
             window.open(`https://wa.me/${cleanNumber}?text=${encodeURIComponent(rawText)}`, '_blank');
+        } else if (channel === 'social-dm') {
+            await navigator.clipboard.writeText(rawText);
+            const profileUrl = currentPartner.website || currentPartner.url || '';
+            if (profileUrl) window.open(profileUrl, '_blank');
+            toast({ title: "DM Script Copied!", description: "Paste it into the platform DM." });
         } else {
             const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt;">${contentElement.innerHTML}</div>`;
             await copyHtmlToClipboard(wrappedHtml);
@@ -229,17 +211,25 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         </DialogTitle>
                         <div className="flex items-center gap-3 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
-                           <div className="flex items-center gap-2 text-muted-foreground">
+                           {currentPartner.social_handle && (
+                               <div className="flex items-center gap-1.5 font-bold text-primary text-xs">
+                                   <AtSign className="h-3 w-3" /> {currentPartner.social_handle}
+                               </div>
+                           )}
+                           <div className="flex items-center gap-2 text-muted-foreground border-l pl-3">
                                <Mail className={cn("h-3.5 w-3.5", hasEmail && "text-blue-600")} />
-                               <span className={cn("font-medium", !hasEmail && "text-destructive italic")}>{contact.email || 'Address Missing'}</span>
+                               <span className={cn("font-medium", !hasEmail && "text-destructive italic")}>{contact.email || 'No Email'}</span>
                            </div>
                            <div className="flex items-center gap-2 text-muted-foreground border-l pl-3">
                                <Smartphone className={cn("h-3.5 w-3.5", hasPhone && "text-green-600")} />
-                               <span className={cn("font-bold", hasPhone && "text-green-600")}>{contact.whatsapp || 'Number Missing'}</span>
+                               <span className={cn("font-bold", hasPhone && "text-green-600")}>{contact.whatsapp || 'No Phone'}</span>
                            </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <Button variant="outline" className="font-bold border-primary/20 text-primary" onClick={() => handleLogAndLaunch('social-dm')} disabled={isProcessing}>
+                            <AtSign className="mr-2 h-4 w-4" /> Platform DM
+                        </Button>
                         <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
@@ -259,6 +249,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Standard Narrative</Label>
                         {[
                             { id: 'strategic-intro', label: '0. Strategic Intro', icon: Handshake, hideFor: ['supplier', 'transporter', 'investor'] },
+                            { id: 'platform-dm', label: '0. Platform DM Script', icon: MessageSquare, hideFor: ['supplier', 'transporter', 'investor'] },
                             { id: 'digital-handshake', label: '0. Digital Handshake', icon: ShieldCheck, hideFor: ['associate'] },
                             { id: 'company-profile', label: '1. Company Profile' },
                             { id: 'incentive-handshake', label: '2. Welcome Incentive', icon: Gift },
@@ -308,6 +299,15 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
                     <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border min-h-full text-left">
                         <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+                            {activeTab === 'platform-dm' && (
+                                <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
+                                    <p>Hi {contact.name.split(' ')[0]}, I'm Michael, owner of **Logistics Flow**. </p>
+                                    <p style={{ margin: '10pt 0' }}>I've been following your content here and think your creative influence is a perfect match for a strategic partnership we're launching for the South African transport industry.</p>
+                                    <p>We're offering influencers **Free 4K AI Studio access** and a **30% recurring annuity** on all referrals. We've already cataloged your business in our industrial registry.</p>
+                                    <p style={{ marginTop: '10pt' }}>Are you interested in the details? Let's establish the handshake here:</p>
+                                    <p><a href={`${window.location.origin}/opt-in/${currentPartner.id}?role=associate`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a></p>
+                                </div>
+                            )}
                             {activeTab === 'strategic-intro' && (
                                 <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
                                     <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt', marginBottom: '15pt' }}>
@@ -327,7 +327,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     </ul>
                                     <p style={{ margin: '15pt 0' }}><strong>Are you interested in exploring this?</strong></p>
                                     <p>[   ] <strong>YES</strong>, I am interested. Let's establish the handshake:<br/>
-                                       <a href={`${window.location.origin}/opt-in/${currentPartner.id}`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a>
+                                       <a href={`${window.location.origin}/opt-in/${currentPartner.id}?role=associate`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a>
                                     </p>
                                     <p>[   ] <strong>NO</strong>, I am not interested at this time:<br/>
                                        <a href={`${window.location.origin}/api/recordConsent?partnerId=${currentPartner.id}&status=declined`} style={{ color: '#475569', fontSize: '10pt' }}>Click here to decline</a>

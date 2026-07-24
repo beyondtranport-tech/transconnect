@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Share2, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Clock, AtSign, BarChart
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Clock, AtSign, BarChart, ExternalLink
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -264,7 +264,17 @@ export default function AssociateManagement() {
               <div className="flex flex-col text-left">
                   <div className="flex items-center gap-2 font-bold text-primary text-xs">
                     <AtSign className="h-3 w-3" />
-                    {row.original.social_handle || 'Not Linked'}
+                    {row.original.social_handle ? (
+                        <a 
+                            href={row.original.website || `https://${row.original.primary_channel?.toLowerCase()}.com/${row.original.social_handle.replace('@','')}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="hover:underline flex items-center gap-1"
+                        >
+                            {row.original.social_handle}
+                            <ExternalLink className="h-2 w-2" />
+                        </a>
+                    ) : 'Not Linked'}
                   </div>
                   <div className="flex items-center gap-1.5 mt-1">
                       <span className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{row.original.primary_channel}</span>
@@ -346,7 +356,7 @@ export default function AssociateManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns, type]);
+  }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
