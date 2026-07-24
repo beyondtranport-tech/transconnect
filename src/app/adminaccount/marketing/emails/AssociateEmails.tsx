@@ -62,9 +62,7 @@ const templates = {
     'strategic-intro': {
         subject: "Strategic Partnership: [Associate Name] x Logistics Flow",
         content: `
-Hi [Associate Name],
-
-Good day,
+Good day [Associate Name],
 
 My name is Michael Koton, I am the owner of Logistics Flow. I am reaching out to form a strategic relationship with you.
 
