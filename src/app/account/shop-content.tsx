@@ -44,7 +44,7 @@ function DemandPulseModule({ category }: { category: string }) {
     if (isLoading) return <div className="p-8 text-center"><Loader2 className="animate-spin h-6 w-6 text-primary mx-auto" /></div>;
 
     return (
-        <Card className="border-none shadow-2xl bg-slate-900 text-white overflow-hidden text-left text-foreground">
+        <Card className="border-none shadow-2xl bg-slate-900 text-white overflow-hidden text-left">
             <CardHeader className="bg-slate-950 p-6 border-b border-white/5">
                 <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-white">
                     <TrendingUp className="h-5 w-5 text-primary" />
@@ -54,13 +54,13 @@ function DemandPulseModule({ category }: { category: string }) {
             </CardHeader>
             <CardContent className="p-8 space-y-6 text-left text-white">
                 <div className="grid grid-cols-2 gap-4 text-left">
-                    <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-left">
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-left text-white">
                         <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Grid-Wide Requests</p>
                         <p className="text-3xl font-black text-white">{stats.categorySpecific || 142}</p>
                         <p className="text-[9px] font-bold text-primary mt-1 uppercase text-left">Active Search Term</p>
                     </div>
-                    <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-left">
-                        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1 text-left">Hot Region</p>
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-left text-white">
+                        <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-1">Hot Region</p>
                         <p className="text-xl font-bold text-white flex items-center gap-1.5"><MapPin className="h-4 w-4 text-primary" /> {stats.topRegion}</p>
                     </div>
                 </div>
@@ -175,7 +175,7 @@ export default function ShopContent() {
                 <p className="text-muted-foreground text-left">{config.description}</p>
             </div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full text-left">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full text-left text-foreground">
                 <TabsList className="bg-muted/50 p-1 h-auto mb-8 flex-wrap justify-start text-left text-foreground">
                     <TabsTrigger value="terminal" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                         <config.icon className="h-3.5 w-3.5" /> Node Management
@@ -189,11 +189,11 @@ export default function ShopContent() {
                 </TabsList>
 
                 <TabsContent value="terminal" className="space-y-8 text-left text-foreground">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                        <Card className="shadow-xl border-none text-left bg-white text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                        <Card className="shadow-xl border-none text-left bg-white">
                             <CardHeader className="bg-slate-50 border-b p-6 text-left">
-                                <div className="flex justify-between items-center text-left text-foreground">
-                                    <div className="text-left text-foreground">
+                                <div className="flex justify-between items-center text-left">
+                                    <div className="text-left">
                                         <CardTitle className="text-lg font-bold text-left">Profile Overview</CardTitle>
                                         <CardDescription className="text-left">Management of your community-facing presence.</CardDescription>
                                     </div>
@@ -202,24 +202,24 @@ export default function ShopContent() {
                                     </Badge>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-8 space-y-6 text-left text-foreground">
-                                <div className="space-y-4 text-left">
+                            <CardContent className="p-8 space-y-6 text-left">
+                                <div className="space-y-4 text-left text-foreground">
                                     <div className="flex items-center gap-3 text-left">
-                                        <div className="bg-muted p-2 rounded-lg text-left"><Store className="h-5 w-5 text-primary" /></div>
+                                        <div className="bg-muted p-2 rounded-lg"><Store className="h-5 w-5 text-primary" /></div>
                                         <div className="text-left">
                                             <p className="text-xs font-black uppercase text-muted-foreground tracking-widest text-left">Public Label</p>
                                             <p className="font-bold text-lg text-left">{userShop?.shopName || 'Unnamed Node'}</p>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3 text-left">
-                                        <div className="bg-muted p-2 rounded-lg text-left"><Clock className="h-5 w-5 text-primary" /></div>
+                                        <div className="bg-muted p-2 rounded-lg"><Clock className="h-5 w-5 text-primary" /></div>
                                         <div className="text-left">
                                             <p className="text-xs font-black uppercase text-muted-foreground tracking-widest text-left">Last Synced</p>
                                             <p className="font-bold text-left">{formatDateSafe(userShop?.updatedAt, "dd MMM yyyy, HH:mm")}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="pt-4 flex flex-col gap-3 text-left">
+                                <div className="pt-4 flex flex-col gap-3 text-left text-foreground">
                                     <Button className="h-14 text-lg font-black uppercase tracking-tight shadow-lg gap-2 text-white" onClick={() => setIsEditing(true)}>
                                         <Edit className="h-5 w-5" />
                                         Enter Edit Terminal
@@ -234,14 +234,14 @@ export default function ShopContent() {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-primary/5 border-2 border-dashed border-primary/20 text-left">
-                            <CardHeader className="text-left text-foreground">
+                        <Card className="bg-primary/5 border-2 border-dashed border-primary/20 text-left text-foreground">
+                            <CardHeader className="text-left">
                                 <div className="bg-primary/10 p-3 rounded-xl w-fit mb-4 text-left"><Zap className="h-6 w-6 text-primary" /></div>
-                                <CardTitle className="text-xl font-bold text-left text-foreground">Terminal Directives</CardTitle>
+                                <CardTitle className="text-xl font-bold text-left">Terminal Directives</CardTitle>
                                 <CardDescription className="text-left text-foreground">Recommendations for maximizing your node's performance.</CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4 text-left text-foreground">
-                                <ul className="space-y-3 text-sm text-left text-foreground">
+                            <CardContent className="space-y-4 text-left">
+                                <ul className="space-y-3 text-sm text-left">
                                     <li className="flex items-start gap-2 text-left">
                                         <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                         <span>Update your **Handshake Incentive** to increase conversion on the Membership Page.</span>
@@ -265,11 +265,11 @@ export default function ShopContent() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="pulse" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
+                <TabsContent value="pulse" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
                     <DemandPulseModule category={userShop?.category || 'Industrial'} />
                 </TabsContent>
 
-                <TabsContent value="promote" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
+                <TabsContent value="promote" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground">
                     <PromoteNodeContent />
                 </TabsContent>
             </Tabs>
@@ -278,13 +278,13 @@ export default function ShopContent() {
   }
 
   return (
-    <div className="text-center py-24 border-4 border-dashed rounded-3xl bg-muted/10 animate-in fade-in zoom-in duration-700">
-        <div className="bg-white p-6 rounded-full w-fit mx-auto mb-6 shadow-sm">
-            <config.icon className="h-12 w-12 text-muted-foreground opacity-30" />
+    <div className="text-center py-24 border-4 border-dashed rounded-3xl bg-muted/10 animate-in fade-in zoom-in duration-700 text-left text-foreground text-center">
+        <div className="bg-white p-6 rounded-full w-fit mx-auto mb-6 shadow-sm text-center">
+            <config.icon className="h-12 w-12 text-muted-foreground opacity-30 mx-auto" />
         </div>
-        <h3 className="text-2xl font-black uppercase tracking-tight">Initialize {config.title}</h3>
-        <p className="mt-2 text-muted-foreground max-w-sm mx-auto font-medium">Connect your business to the digital grid. This initiates the handshake required to list deals and capacity.</p>
-        <div className="mt-10">
+        <h3 className="text-2xl font-black uppercase tracking-tight text-center">Initialize {config.title}</h3>
+        <p className="mt-2 text-muted-foreground max-w-sm mx-auto font-medium text-center">Connect your business to the digital grid. This initiates the handshake required to list deals and capacity.</p>
+        <div className="mt-10 text-center">
             <Button size="lg" className="h-16 px-16 text-lg font-black uppercase tracking-tight shadow-xl text-white" onClick={handleCreateShop} disabled={isCreating || !can('create', 'shop')}>
                 {isCreating ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <PlusCircle className="mr-2 h-6 w-6" />}
                 Activate {config.title}
