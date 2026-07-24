@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift } from 'lucide-react';
+import { Loader2, Mail, Zap, Send, ShieldCheck, MessageCircle, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, Handshake } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -83,7 +82,7 @@ function resolveContact(partner: any) {
         partner.marketingManager?.name || 
         partner.ceo?.name || 
         partner.contactPerson || 
-        partner.contact_person || // Added resilience
+        partner.contact_person || 
         partner.firstName || 
         partner.companyName || 
         'Partner'
@@ -99,7 +98,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const { toast } = useToast();
   const firestore = useFirestore();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const [activeTab, setActiveTab] = useState('digital-handshake');
+  const [activeTab, setActiveTab] = useState(audience === 'associates' ? 'strategic-intro' : 'digital-handshake');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
 
@@ -112,8 +111,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const activeIncentive = incentives?.[0];
 
   useEffect(() => {
-    if (open) setCurrentIndex(initialIndex);
-  }, [open, initialIndex]);
+    if (open) {
+        setCurrentIndex(initialIndex);
+        setActiveTab(audience === 'associates' ? 'strategic-intro' : 'digital-handshake');
+    }
+  }, [open, initialIndex, audience]);
 
   const currentPartner = useMemo(() => {
     if (!partners || partners.length === 0) return null;
@@ -216,15 +218,15 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground text-foreground">
+        <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0 text-left overflow-hidden text-foreground">
             <DialogHeader className="p-6 border-b bg-muted/50">
-                <div className="flex justify-between items-center text-foreground">
+                <div className="flex justify-between items-center">
                     <div className="text-left space-y-1">
                         <DialogTitle className="text-2xl font-bold flex items-center gap-2">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
-                        <div className="flex items-center gap-3 text-sm text-foreground text-left">
+                        <div className="flex items-center gap-3 text-sm">
                            <Badge variant="secondary" className="uppercase font-black text-[10px] tracking-widest">{normalizedAudience}</Badge>
                            <div className="flex items-center gap-2 text-muted-foreground">
                                <Mail className={cn("h-3.5 w-3.5", hasEmail && "text-blue-600")} />
@@ -251,11 +253,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             </DialogHeader>
 
             <div className="flex-1 flex overflow-hidden">
-                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto">
-                    <div className="space-y-1">
+                <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
+                    <div className="space-y-1 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Standard Narrative</Label>
                         {[
-                            { id: 'digital-handshake', label: '0. Digital Handshake' },
+                            { id: 'strategic-intro', label: '0. Strategic Intro', icon: Handshake, hideFor: ['supplier', 'transporter', 'investor'] },
+                            { id: 'digital-handshake', label: '0. Digital Handshake', icon: ShieldCheck, hideFor: ['associate'] },
                             { id: 'company-profile', label: '1. Company Profile' },
                             { id: 'incentive-handshake', label: '2. Welcome Incentive', icon: Gift },
                             { id: 'tech-architecture', label: '3. Tech Architecture' },
@@ -263,7 +266,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             { id: 'offer', label: '5. The Offer' },
                             { id: 'pitch', label: '6. The Pitch' },
                             { id: 'sales-intelligence', label: '7. Sales Intelligence' },
-                        ].map((tab) => (
+                        ].filter(t => !t.hideFor || !t.hideFor.includes(normalizedAudience)).map((tab) => (
                             <Button
                                 key={tab.id}
                                 variant={activeTab === tab.id ? "secondary" : "ghost"}
@@ -278,7 +281,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
 
                     <Separator />
 
-                    <div className="space-y-1">
+                    <div className="space-y-1 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary px-2 mb-2 block flex items-center gap-2">
                             <Zap className="h-3 w-3" /> Tactical Sequences
                         </Label>
@@ -301,9 +304,32 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto bg-slate-50 p-8">
-                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border min-h-full">
-                        <Suspense fallback={<div className="flex justify-center items-center py-20 text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+                <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
+                    <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border min-h-full text-left">
+                        <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+                            {activeTab === 'strategic-intro' && (
+                                <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
+                                    <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt', marginBottom: '15pt' }}>
+                                        STRATEGIC PARTNERSHIP: {currentPartner?.companyName?.toUpperCase() || 'CREATIVE'} X LOGISTICS FLOW
+                                    </p>
+                                    <p>Good day,</p>
+                                    <p>My name is {adminUser?.displayName || 'Admin'}, and I am reaching out from the Engagement Division of **Logistics Flow**.</p>
+                                    <p style={{ margin: '15pt 0' }}>We have built the "Industrial Brain" of South Africa—a high-fidelity digital grid that maps over 22,000 transport and supply entities. We provide the map to find work, and the engine to fund it.</p>
+                                    <p><strong>Why I am reaching out:</strong> We have identified your creative influence as a perfect match for our ecosystem. We are looking to establish a formal partnership with you to generate exposure for the platform.</p>
+                                    <p style={{ marginTop: '15pt', fontWeight: 'bold' }}>What you get:</p>
+                                    <ul style={{ paddingLeft: '20pt' }}>
+                                        <li><strong>Free 4K AI Studio:</strong> Unrestricted access to our cinematic video generators.</li>
+                                        <li><strong>The Annuity Layer:</strong> Earn 30% recurring share on all membership fees.</li>
+                                    </ul>
+                                    <p style={{ margin: '15pt 0' }}><strong>Are you interested in exploring this?</strong></p>
+                                    <p>[   ] <strong>YES</strong>, I am interested. Let's establish the handshake:<br/>
+                                       <a href={`${window.location.origin}/opt-in/${currentPartner.id}`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a>
+                                    </p>
+                                    <p>[   ] <strong>NO</strong>, I am not interested at this time:<br/>
+                                       <a href={`${window.location.origin}/api/recordConsent?partnerId=${currentPartner.id}&status=declined`} style={{ color: '#475569', fontSize: '10pt' }}>Click here to decline</a>
+                                    </p>
+                                </div>
+                            )}
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'company-profile' && <CompanyProfile audience={normalizedAudience} partner={currentPartner} />}
                             {activeTab === 'incentive-handshake' && <IncentiveHandshake partner={currentPartner} incentive={activeIncentive} />}
@@ -318,7 +344,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             {activeTab === 'framework' && <Framework partner={currentPartner} />}
                             {activeTab === 'sales-intelligence' && <SalesIntelligence partner={currentPartner} />}
                             
-                            {/* Tactical Renderers */}
                             {activeTab === 'the-wedge' && <TheWedge partner={currentPartner} audience={normalizedAudience} />}
                             {activeTab === 'the-signal' && <TheSignal partner={currentPartner} />}
                             {activeTab === 'the-elite-filter' && <TheEliteFilter partner={currentPartner} />}
