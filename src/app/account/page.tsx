@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -40,6 +39,11 @@ import {
   Truck,
   Box,
   Fingerprint,
+  Video,
+  Share2,
+  Mic,
+  Palette,
+  Target
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -68,6 +72,7 @@ import MarketingStudio from './marketing-studio';
 import MyFacilitiesContent from './facilities-content';
 import ShopContent from './shop-content';
 import TrustIdentityContent from './trust-identity-content';
+import HumanCapitalContent from './human-capital-content';
 
 // Mall Gate Components
 import { MallGate } from './malls/MallGate';
@@ -115,6 +120,8 @@ function AccountPageContent() {
     );
   }
 
+  const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
+
   const renderContent = () => {
     if (activeView === 'mall-loads' || activeView === 'mall-warehouse' || activeView === 'mall-transporter' || activeView === 'mall-supplier' || activeView === 'mall-finance' || activeView === 'mall-buy-sell') {
         const mallId = activeView.replace('mall-', '');
@@ -136,6 +143,7 @@ function AccountPageContent() {
       case 'my-facilities': return <MyFacilitiesContent />;
       case 'search-history': return <IntelligenceHistory />;
       case 'trust-identity': return <TrustIdentityContent />;
+      case 'human-capital': return <HumanCapitalContent />;
       case 'connect-loyalty': return <LoyaltyPlanPage />;
       case 'connect-rewards': return <RewardsPlanPage />;
       case 'connect-actions': return <ActionsPlanPage />;
@@ -160,56 +168,76 @@ function AccountPageContent() {
               </SidebarMenuItem>
           </SidebarGroup>
 
-          <SidebarGroup>
-              <SidebarGroupLabel>Commercial Flows</SidebarGroupLabel>
-              <SidebarMenu>
-                  {/* LOADS FLOW */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Loads" isActive={activeView.includes('loads') || (activeView === 'shop' && nodeType === 'loads')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-loads'} onClick={() => navigate('mall-loads')}>Search Loads</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'loads'} onClick={() => navigate('shop', 'loads')}>My Brokerage Hub</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+          {/* ASSOCIATE / CREATOR TOOLS SECTION */}
+          {isAssociate && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Creator Studio</SidebarGroupLabel>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="AI Studio" isActive={activeView === 'marketing-studio'} onClick={() => navigate('marketing-studio')}><Palette /><span>AI Marketing Studio</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="My Network" isActive={activeView === 'network'} onClick={() => navigate('network')}><Handshake /><span>My Network</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Human Capital" isActive={activeView === 'human-capital'} onClick={() => navigate('human-capital')}><Users /><span>Human Capital logs</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroup>
+          )}
 
-                  {/* WAREHOUSE FLOW */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Warehouse" isActive={activeView.includes('warehouse') || (activeView === 'shop' && nodeType === 'warehouse')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-warehouse'} onClick={() => navigate('mall-warehouse')}>Source Storage</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'warehouse'} onClick={() => navigate('shop', 'warehouse')}>My Warehouse Hub</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+          {!isAssociate && (
+              <SidebarGroup>
+                <SidebarGroupLabel>Commercial Flows</SidebarGroupLabel>
+                <SidebarMenu>
+                    {/* LOADS FLOW */}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Loads" isActive={activeView.includes('loads') || (activeView === 'shop' && nodeType === 'loads')}><PackageSearch /><span>Loads Mall</span></SidebarMenuButton>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-loads'} onClick={() => navigate('mall-loads')}>Search Loads</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'loads'} onClick={() => navigate('shop', 'loads')}>My Brokerage Hub</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuItem>
 
-                  {/* TRANSPORT FLOW */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Transport" isActive={activeView.includes('transporter') || (activeView === 'shop' && nodeType === 'transport')}><Truck /><span>Transport Mall</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-transporter'} onClick={() => navigate('mall-transporter')}>Source Capacity</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'transport'} onClick={() => navigate('shop', 'transport')}>My Fleet Node</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+                    {/* WAREHOUSE FLOW */}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Warehouse" isActive={activeView.includes('warehouse') || (activeView === 'shop' && nodeType === 'warehouse')}><Warehouse /><span>Warehouse Mall</span></SidebarMenuButton>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-warehouse'} onClick={() => navigate('mall-warehouse')}>Source Storage</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'warehouse'} onClick={() => navigate('shop', 'warehouse')}>My Warehouse Hub</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuItem>
 
-                  {/* SUPPLIER FLOW */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Suppliers" isActive={activeView.includes('supplier') || (activeView === 'shop' && nodeType === 'supplier')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-supplier'} onClick={() => navigate('mall-supplier')}>Registry Search</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'supplier'} onClick={() => navigate('shop', 'supplier')}>My Shop Profile</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                  </SidebarMenuItem>
+                    {/* TRANSPORT FLOW */}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Transport" isActive={activeView.includes('transporter') || (activeView === 'shop' && nodeType === 'transport')}><Truck /><span>Transport Mall</span></SidebarMenuButton>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-transporter'} onClick={() => navigate('mall-transporter')}>Source Capacity</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'transport'} onClick={() => navigate('shop', 'transport')}>My Fleet Node</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuItem>
 
-                  {/* FINANCE FLOW */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Finance Mall" isActive={activeView === 'mall-finance'} onClick={() => navigate('mall-finance')}><Landmark /><span>Finance Mall</span></SidebarMenuButton>
-                  </SidebarMenuItem>
+                    {/* SUPPLIER FLOW */}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Suppliers" isActive={activeView.includes('supplier') || (activeView === 'shop' && nodeType === 'supplier')}><Building /><span>Supplier Mall</span></SidebarMenuButton>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'mall-supplier'} onClick={() => navigate('mall-supplier')}>Registry Search</SidebarMenuSubButton></SidebarMenuSubItem>
+                            <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'shop' && nodeType === 'supplier'} onClick={() => navigate('shop', 'supplier')}>My Shop Profile</SidebarMenuSubButton></SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </SidebarMenuItem>
 
-                  {/* MARKETPLACE */}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Marketplace" isActive={activeView === 'mall-buy-sell'} onClick={() => navigate('mall-buy-sell')}><ShoppingCart /><span>Buy & Sell Mall</span></SidebarMenuButton>
-                  </SidebarMenuItem>
-              </SidebarMenu>
-          </SidebarGroup>
+                    {/* FINANCE FLOW */}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Finance Mall" isActive={activeView === 'mall-finance'} onClick={() => navigate('mall-finance')}><Landmark /><span>Finance Mall</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+
+                    {/* MARKETPLACE */}
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Marketplace" isActive={activeView === 'mall-buy-sell'} onClick={() => navigate('mall-buy-sell')}><ShoppingCart /><span>Buy & Sell Mall</span></SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroup>
+          )}
 
           <SidebarGroup>
               <SidebarGroupLabel>Administrative Terminal</SidebarGroupLabel>

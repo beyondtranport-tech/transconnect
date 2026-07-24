@@ -18,8 +18,13 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
         
         text = text.replace(/\[Associate Name\]/g, name);
         text = text.replace(/\[Referral Link\]/g, referralLink);
-        text = text.replace(/\[Opt-in Link\]/g, `${window.location.origin}/opt-in/${partner?.id || 'TEST'}`);
-        text = text.replace(/\[Decline Link\]/g, `${window.location.origin}/api/recordConsent?partnerId=${partner?.id || 'TEST'}&status=declined`);
+        
+        // Ensure the opt-in link carries the associate role for automated tagging
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
+        const optInUrl = `${baseUrl}/opt-in/${partner?.id || 'TEST'}?role=associate`;
+        
+        text = text.replace(/\[Opt-in Link\]/g, optInUrl);
+        text = text.replace(/\[Decline Link\]/g, `${baseUrl}/api/recordConsent?partnerId=${partner?.id || 'TEST'}&status=declined`);
 
         return text;
     }, [content, partner, referralLink]);
@@ -46,7 +51,7 @@ const EmailTemplate = ({ subject, content, partner, referralLink }: { subject: s
             </CardContent>
             {partner && (
                 <CardFooter className="px-0 pt-4 border-t mt-4 text-[10px] text-muted-foreground italic text-left uppercase font-black tracking-widest">
-                    FORENSIC PARTNERSHIP HANDSHAKE: BINARY INTENT MODEL
+                    FORENSIC PARTNERSHIP HANDSHAKE: BINARY INTENT MODEL (ROLE: ASSOCIATE)
                 </CardFooter>
             )}
         </Card>
@@ -140,7 +145,7 @@ export default function AssociateEmails({ partner }: { partner?: any }) {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
 
     const referralLink = React.useMemo(() => {
-        if (!partner) return `${baseUrl}/join`;
+        if (!partner) return `${baseUrl}/join?role=associate`;
         return `${baseUrl}/join?ref=${partner.id}&role=associate`;
     }, [partner, baseUrl]);
 

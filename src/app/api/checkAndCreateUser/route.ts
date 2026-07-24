@@ -1,4 +1,3 @@
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -96,14 +95,15 @@ export async function POST(req: NextRequest) {
 
     const displayName = firebaseUser.displayName.trim();
     const companyName = existingRecord?.companyName || (displayName ? `${displayName}'s Company` : 'My Company');
+    const isAssociate = declaredPosition === 'associate';
     const shopType = declaredPosition === 'transporter' ? 'transporter' : 'vendor';
 
     const newCompanyData: any = {
         id: companyIdToUse,
         ownerId: firebaseUser.uid,
         companyName: companyName,
-        membershipId: 'free',
-        isBillable: false,
+        membershipId: isAssociate ? 'free' : 'free', // Both start free, but associate is non-billable
+        isBillable: !isAssociate, // Associates are not charged
         walletBalance: 0,
         pendingBalance: 0,
         availableBalance: 0,

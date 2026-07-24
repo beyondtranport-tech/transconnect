@@ -33,7 +33,8 @@ export type Resource =
     'lending-focus' |
     'account' |
     'direct-contacts' |
-    'ads';
+    'ads' |
+    'human-capital';
 
 const permissionHierarchy: { [key in Action]: Action[] } = {
     manage: ['create', 'view', 'edit', 'delete', 'publish', 'transact'],
@@ -73,8 +74,8 @@ export function usePermissions() {
         const membershipId = companyData.membershipId || 'free';
         const isPaidFoundation = membershipId === 'intelligence' || membershipId === 'premium';
         
-        // ASSOCIATE OVERRIDE: Associates get free Studio access to empower recruitment
-        const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate';
+        // ASSOCIATE OVERRIDE: Associates get free Studio and Registry access to empower recruitment
+        const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate' || companyData.declaredRole === 'associate';
 
         // 1. Foundation Permissions (Directory Access)
         if (isPaidFoundation || isAssociate) {
@@ -88,6 +89,8 @@ export function usePermissions() {
             perms.add('manage:staff');
             perms.add('manage:ads');
             perms.add('view:marketing-studio'); // Grant Studio access
+            perms.add('view:human-capital');
+            perms.add('create:human-capital');
         }
 
         // 2. Specialized Mall Intelligence Nodes
@@ -116,8 +119,8 @@ export function usePermissions() {
             perms.add('view:supplierMall');
         }
 
-        // 3. Generic Role-Based Setup
-        if (companyData.shopId) {
+        // 3. Generic Role-Based Setup (Prevent shop creation for associates)
+        if (companyData.shopId && !isAssociate) {
             perms.add('edit:shop');
             perms.add('publish:shop');
             perms.add('manage:products');
