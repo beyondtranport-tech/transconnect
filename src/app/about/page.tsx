@@ -71,10 +71,22 @@ export default function AboutPage() {
         });
   };
 
-  // Map backend IDs to the visual tiers on the About page
-  const bronzePlan = useMemo(() => plans?.find(p => p.id === 'foundation'), [plans]);
-  const silverPlan = useMemo(() => plans?.find(p => p.id === 'intelligence'), [plans]);
-  const goldPlan = useMemo(() => plans?.find(p => p.id === 'premium'), [plans]);
+  /**
+   * DYNAMIC TIER MAPPING
+   * Sorts plans by price to find the Bronze, Silver, and Gold archetypes.
+   * This is more resilient than hardcoded IDs.
+   */
+  const sortedPlans = useMemo(() => {
+    if (!plans) return [];
+    return [...plans].sort((a, b) => (a.price || 0) - (b.price || 0));
+  }, [plans]);
+
+  const bronzePlan = useMemo(() => sortedPlans[0], [sortedPlans]);
+  const silverPlan = useMemo(() => {
+      // Find intelligence specifically, or fallback to the second plan
+      return sortedPlans.find(p => p.id === 'intelligence') || sortedPlans[1];
+  }, [sortedPlans]);
+  const goldPlan = useMemo(() => sortedPlans[sortedPlans.length - 1], [sortedPlans]);
 
   return (
     <div className="bg-background text-left text-foreground">
@@ -154,7 +166,7 @@ export default function AboutPage() {
                             <div className="flex gap-4 items-start text-left">
                                 <Database className="h-6 w-6 text-primary shrink-0 mt-1" />
                                 <div className="text-left">
-                                    <p className="font-bold uppercase text-xs tracking-widest">List fleet capacity, pallet positions, or technical spares catalogues.</p>
+                                    <p className="font-bold uppercase text-xs tracking-widest text-white">List fleet capacity, pallet positions, or technical spares catalogues.</p>
                                 </div>
                             </div>
                             <div className="flex gap-4 items-start text-left text-foreground">
