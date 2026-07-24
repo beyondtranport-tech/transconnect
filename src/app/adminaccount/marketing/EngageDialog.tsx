@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -162,7 +161,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         } else if (channel === 'social-dm') {
             await navigator.clipboard.writeText(rawText);
             const profileUrl = currentPartner.website || currentPartner.url || '';
-            if (profileUrl) window.open(profileUrl, '_blank');
+            if (profileUrl) window.open(profileUrl.startsWith('http') ? profileUrl : `https://${profileUrl}`, '_blank');
             toast({ title: "DM Script Copied!", description: "Follow the user, then paste script into platform DM." });
         } else {
             const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt;">${contentElement.innerHTML}</div>`;
@@ -374,4 +373,47 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         </DialogContent>
     </Dialog>
   );
+}
+
+function TransporterOffer() {
+    return (
+        <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
+            <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
+                TRANSPORTER PARTNERSHIP OFFER
+            </p>
+            <p>Our offering to transporters is designed to minimize operational friction and maximize haulier profitability.</p>
+            <ul style={{ paddingLeft: '20pt', marginTop: '10pt' }}>
+                <li>Direct matches for verified freight instructions.</li>
+                <li>Group-negotiated spare parts and tires.</li>
+                <li>In-house finance for asset growth.</li>
+            </ul>
+        </div>
+    );
+}
+
+function SupplierOffer() {
+    return (
+        <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
+            <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
+                SUPPLIER PARTNERSHIP OFFER
+            </p>
+            <p>Connect your parts inventory directly to the haulier grid.</p>
+            <ul style={{ paddingLeft: '20pt', marginTop: '10pt' }}>
+                <li>Digital shopfront in the Supplier Mall.</li>
+                <li>Direct RFQs from verified decision makers.</li>
+                <li>Payment protection through integrated escrow.</li>
+            </ul>
+        </div>
+    );
+}
+
+function PartnerOffer() {
+    return (
+        <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
+            <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
+                STRATEGIC PARTNERSHIP OFFER
+            </p>
+            <p>Joint growth through data intelligence and shared transactional revenue.</p>
+        </div>
+    );
 }

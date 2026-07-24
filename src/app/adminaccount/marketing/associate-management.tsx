@@ -260,28 +260,51 @@ export default function AssociateManagement() {
       {
           accessorKey: 'social_handle',
           header: 'Social Hub',
-          cell: ({ row }) => (
-              <div className="flex flex-col text-left">
-                  <div className="flex items-center gap-2 font-bold text-primary text-xs">
-                    <AtSign className="h-3 w-3" />
-                    {row.original.social_handle ? (
-                        <a 
-                            href={row.original.website || `https://${row.original.primary_channel?.toLowerCase()}.com/${row.original.social_handle.replace('@','')}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="hover:underline flex items-center gap-1"
-                        >
-                            {row.original.social_handle}
-                            <ExternalLink className="h-2 w-2" />
-                        </a>
-                    ) : 'Not Linked'}
+          cell: ({ row }) => {
+              const p = row.original;
+              const handle = p.social_handle;
+              const channel = p.primary_channel?.toLowerCase();
+              const site = p.website;
+              
+              // Robust Absolute URL construction
+              let finalHref = "";
+              if (site && site.includes('.') && !site.includes(' ')) {
+                  finalHref = site.startsWith('http') ? site : `https://${site}`;
+              } else if (handle && channel) {
+                  const clean = handle.replace('@', '');
+                  if (channel.includes('tiktok')) finalHref = `https://www.tiktok.com/@${clean}`;
+                  else if (channel.includes('instagram')) finalHref = `https://www.instagram.com/${clean}`;
+                  else if (channel.includes('linkedin')) finalHref = `https://www.linkedin.com/in/${clean}`;
+                  else if (channel.includes('facebook')) finalHref = `https://www.facebook.com/${clean}`;
+                  else if (channel.includes('twitter') || channel.includes('x')) finalHref = `https://x.com/${clean}`;
+                  else if (channel.includes('youtube')) finalHref = `https://www.youtube.com/@${clean}`;
+              }
+
+              return (
+                  <div className="flex flex-col text-left">
+                      <div className="flex items-center gap-2 font-bold text-primary text-xs text-left">
+                        <AtSign className="h-3 w-3" />
+                        {handle ? (
+                            finalHref ? (
+                                <a 
+                                    href={finalHref} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="hover:underline flex items-center gap-1 text-left"
+                                >
+                                    {handle}
+                                    <ExternalLink className="h-2 w-2" />
+                                </a>
+                            ) : <span>{handle}</span>
+                        ) : 'Not Linked'}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-left">
+                          <span className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{p.primary_channel}</span>
+                          {p.follower_count && <Badge variant="secondary" className="text-[8px] h-3.5 px-1 font-black bg-slate-100">{p.follower_count} Followers</Badge>}
+                      </div>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{row.original.primary_channel}</span>
-                      {row.original.follower_count && <Badge variant="secondary" className="text-[8px] h-3.5 px-1 font-black bg-slate-100">{row.original.follower_count} Followers</Badge>}
-                  </div>
-              </div>
-          )
+              )
+          }
       },
       { 
           accessorKey: 'mobile', 
@@ -356,7 +379,7 @@ export default function AssociateManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+  }, [allRecords, fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
