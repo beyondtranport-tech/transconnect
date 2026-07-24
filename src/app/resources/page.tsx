@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/accordion"
 import { BookUser, BrainCircuit, Handshake, Info, Database, Zap, Fingerprint, Scale } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const resources = [
     {
