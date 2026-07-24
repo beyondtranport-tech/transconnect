@@ -315,11 +315,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     </p>
                                     <p>Good day,</p>
                                     <p>My name is {adminUser?.displayName || 'Admin'}, and I am reaching out from the Engagement Division of **Logistics Flow**.</p>
-                                    <p style={{ margin: '15pt 0' }}>We have built the "Industrial Brain" of South Africa—a high-fidelity digital grid that maps over 22,000 transport and supply entities. We provide the map to find work, and the engine to fund it.</p>
+                                    <p style={{ margin: '15pt 0' }}>We have built the "Industrial Brain" of South Africa's Logistics sector which includes a high-fidelity digital grid that maps over 22,000 suppliers, 5000 transporters and 4000 Financiers. Our app enables our members to transact with one another directly in a closed loop.</p>
                                     <p><strong>Why I am reaching out:</strong> We have identified your creative influence as a perfect match for our ecosystem. We are looking to establish a formal partnership with you to generate exposure for the platform.</p>
                                     <p style={{ marginTop: '15pt', fontWeight: 'bold' }}>What you get:</p>
                                     <ul style={{ paddingLeft: '20pt' }}>
-                                        <li><strong>Free 4K AI Studio:</strong> Unrestricted access to our cinematic video generators.</li>
+                                        <li><strong>Free membership. AI Studio:</strong> Unrestricted access to our cinematic video generators.</li>
                                         <li><strong>The Annuity Layer:</strong> Earn 30% recurring share on all membership fees.</li>
                                     </ul>
                                     <p style={{ margin: '15pt 0' }}><strong>Are you interested in exploring this?</strong></p>
