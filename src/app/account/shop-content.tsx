@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Loader2, Store, PlusCircle, ShieldAlert, Edit, ArrowLeft, Warehouse, Truck, ShieldCheck, Landmark, PackageSearch, ShoppingCart, Zap, Eye, Clock, ExternalLink, ArrowRight, CheckCircle, BarChart3, TrendingUp, Info, MapPin } from 'lucide-react';
 import { useUser, useFirestore, getClientSideAuthToken, useDoc, useMemoFirebase, useCollection } from '@/firebase';
-import { doc, query, collection, orderBy, limit } from 'firebase/firestore';
+import { doc, query, collection, orderBy, limit, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { ShopWizard } from './shop-wizard';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -16,6 +15,7 @@ import PromoteNodeContent from './promote-node-content';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn, formatDateSafe, formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 /**
  * DEMAND PULSE MODULE
@@ -202,24 +202,24 @@ export default function ShopContent() {
                                     </Badge>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-8 space-y-6 text-left text-foreground text-foreground text-foreground">
+                            <CardContent className="p-8 space-y-6 text-left text-foreground">
                                 <div className="space-y-4 text-left">
                                     <div className="flex items-center gap-3 text-left">
-                                        <div className="bg-muted p-2 rounded-lg text-left text-foreground text-foreground"><Store className="h-5 w-5 text-primary" /></div>
-                                        <div className="text-left text-foreground text-foreground">
+                                        <div className="bg-muted p-2 rounded-lg text-left"><Store className="h-5 w-5 text-primary" /></div>
+                                        <div className="text-left">
                                             <p className="text-xs font-black uppercase text-muted-foreground tracking-widest text-left">Public Label</p>
                                             <p className="font-bold text-lg text-left">{userShop?.shopName || 'Unnamed Node'}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3 text-left text-foreground text-foreground">
-                                        <div className="bg-muted p-2 rounded-lg text-left text-foreground text-foreground text-foreground"><Clock className="h-5 w-5 text-primary" /></div>
-                                        <div className="text-left text-foreground text-foreground text-foreground">
-                                            <p className="text-xs font-black uppercase text-muted-foreground tracking-widest text-left text-foreground text-foreground text-foreground">Last Synced</p>
+                                    <div className="flex items-center gap-3 text-left">
+                                        <div className="bg-muted p-2 rounded-lg text-left"><Clock className="h-5 w-5 text-primary" /></div>
+                                        <div className="text-left">
+                                            <p className="text-xs font-black uppercase text-muted-foreground tracking-widest text-left">Last Synced</p>
                                             <p className="font-bold text-left">{formatDateSafe(userShop?.updatedAt, "dd MMM yyyy, HH:mm")}</p>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="pt-4 flex flex-col gap-3 text-left text-foreground text-foreground">
+                                <div className="pt-4 flex flex-col gap-3 text-left">
                                     <Button className="h-14 text-lg font-black uppercase tracking-tight shadow-lg gap-2 text-white" onClick={() => setIsEditing(true)}>
                                         <Edit className="h-5 w-5" />
                                         Enter Edit Terminal
@@ -250,7 +250,7 @@ export default function ShopContent() {
                                         <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                         <span>Complete the **Technical Summary** to improve AI matching accuracy.</span>
                                     </li>
-                                    <li className="flex items-start gap-2 text-left text-foreground text-foreground">
+                                    <li className="flex items-start gap-2 text-left">
                                         <CheckCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                                         <span>Use the **Visibility Boost** tab to reach more transporters.</span>
                                     </li>
@@ -265,11 +265,11 @@ export default function ShopContent() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="pulse" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
+                <TabsContent value="pulse" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
                     <DemandPulseModule category={userShop?.category || 'Industrial'} />
                 </TabsContent>
 
-                <TabsContent value="promote" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
+                <TabsContent value="promote" className="animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
                     <PromoteNodeContent />
                 </TabsContent>
             </Tabs>
