@@ -42,6 +42,7 @@ import Link from "next/link";
 import React, { useMemo } from "react";
 import { useUser, useFirestore, useCollection, useMemoFirebase } from "@/firebase";
 import featuresData from '@/lib/features.json';
+import { collection, query } from 'firebase/firestore';
 
 const { placeholderImages } = data;
 const { featureSections } = featuresData;
@@ -52,14 +53,14 @@ export default function AboutPage() {
   const firestore = useFirestore();
   const ctaLink = user ? '/account' : '/join';
 
-  // FETCH PLANS TO SYNC DIVIDEND CARDS
+  // FETCH LIVE PLANS TO SYNC DIVIDEND CARDS
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'memberships'));
   }, [firestore]);
   const { data: plans, isLoading: isPlansLoading } = useCollection(membershipsQuery);
 
-  // RESOLVE LOYALTY FEATURES
+  // RESOLVE LOYALTY FEATURES (Filtering for items ticked in the Dividend section)
   const resolveLoyaltyFeatures = (planFeatures: string[] = []) => {
     const allFlatFeatures = featureSections.flatMap(s => s.features);
     return planFeatures
@@ -70,6 +71,7 @@ export default function AboutPage() {
         });
   };
 
+  // Map backend IDs to the visual tiers on the About page
   const bronzePlan = useMemo(() => plans?.find(p => p.id === 'foundation'), [plans]);
   const silverPlan = useMemo(() => plans?.find(p => p.id === 'intelligence'), [plans]);
   const goldPlan = useMemo(() => plans?.find(p => p.id === 'premium'), [plans]);
@@ -176,7 +178,7 @@ export default function AboutPage() {
             </div>
         </section>
 
-        {/* SECTION 3: THE INFORMATION DIVIDEND (DYNAMIC) */}
+        {/* SECTION 3: THE INFORMATION DIVIDEND (DYNAMIC LOYALTY) */}
         <section className="py-24 bg-white border-b">
             <div className="container mx-auto px-4 text-left">
                 <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -188,10 +190,13 @@ export default function AboutPage() {
                 </div>
 
                 {isPlansLoading ? (
-                    <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>
+                    <div className="flex flex-col items-center justify-center p-20 gap-4">
+                        <Loader2 className="animate-spin h-10 w-10 text-primary" />
+                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Syncing Rewards Ledger...</p>
+                    </div>
                 ) : (
                     <div className="grid lg:grid-cols-3 gap-8 mb-16 text-left">
-                        {/* BRONZE TIER */}
+                        {/* BRONZE TIER (Foundation) */}
                         <Card className="border-none bg-slate-50 p-8 space-y-6 shadow-sm hover:shadow-xl transition-all text-left">
                             <div className="flex justify-between items-start text-left">
                                 <Badge className="bg-orange-100 text-orange-800 border-none uppercase font-black text-[10px] tracking-widest">Tier 01</Badge>
@@ -207,12 +212,12 @@ export default function AboutPage() {
                                     </div>
                                 ))}
                                 {resolveLoyaltyFeatures(bronzePlan?.features).length === 0 && (
-                                    <p className="text-xs text-muted-foreground italic">Standard community access node.</p>
+                                    <p className="text-xs text-muted-foreground italic">Establish your node foundation to start earning rewards.</p>
                                 )}
                             </div>
                         </Card>
 
-                        {/* SILVER TIER */}
+                        {/* SILVER TIER (Intelligence) */}
                         <Card className="border-primary border-2 bg-primary/5 p-8 space-y-6 shadow-2xl relative text-left">
                             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                                 <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-4 py-1 shadow-lg">Target Status</Badge>
@@ -231,12 +236,12 @@ export default function AboutPage() {
                                     </div>
                                 ))}
                                 {resolveLoyaltyFeatures(silverPlan?.features).length === 0 && (
-                                    <p className="text-xs text-muted-foreground italic">Advanced intelligence features.</p>
+                                    <p className="text-xs text-muted-foreground italic">Advanced intelligence features pending activation.</p>
                                 )}
                             </div>
                         </Card>
 
-                        {/* GOLD TIER */}
+                        {/* GOLD TIER (Premium) */}
                         <Card className="border-none bg-slate-900 text-white p-8 space-y-6 shadow-xl text-left">
                             <div className="flex justify-between items-start text-left text-white">
                                 <Badge className="bg-yellow-500/20 text-yellow-500 border-none uppercase font-black text-[10px] tracking-widest">Tier 03</Badge>
@@ -252,7 +257,7 @@ export default function AboutPage() {
                                     </div>
                                 ))}
                                 {resolveLoyaltyFeatures(goldPlan?.features).length === 0 && (
-                                    <p className="text-xs text-slate-400 italic">Full industrial dominance access.</p>
+                                    <p className="text-xs text-slate-400 italic">Full industrial dominance access node.</p>
                                 )}
                             </div>
                         </Card>
@@ -326,7 +331,7 @@ export default function AboutPage() {
                                 </div>
                             </div>
                         </div>
-                        <Button asChild className="mt-8 h-12 w-full font-black uppercase text-[10px] tracking-widest shadow-lg">
+                        <Button asChild className="mt-8 h-12 w-full font-black uppercase text-[10px] tracking-widest shadow-lg text-white">
                             <Link href="/incentives">Apply for Partnership</Link>
                         </Button>
                     </Card>
@@ -345,24 +350,24 @@ export default function AboutPage() {
                 </div>
                 <div className="grid md:grid-cols-3 gap-8 text-left">
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left text-foreground text-foreground">
+                        <CardContent className="p-8 space-y-4 text-left text-foreground">
                             <Database className="h-10 w-10 text-primary group-hover:text-white" />
                             <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Data as an Asset</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">Contribute your verified fleet or supplier data to earn reward points and de-risk your business for funders.</p>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">Contribute your verified fleet or supplier data to earn reward points and de-risk your business for funders.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left text-foreground text-foreground">
+                        <CardContent className="p-8 space-y-4 text-left text-foreground">
                             <Zap className="h-10 w-10 text-primary group-hover:text-white fill-current" />
                             <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">High-Intent Matches</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">We match your specific fleet capabilities with incoming freight requirements in the Loads Mall.</p>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">We match your specific fleet capabilities with incoming freight requirements in the Loads Mall.</p>
                         </CardContent>
                     </Card>
                     <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left text-foreground text-foreground">
+                        <CardContent className="p-8 space-y-4 text-left text-foreground">
                             <UserCheck className="h-10 w-10 text-primary group-hover:text-white" />
                             <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Trusted Handshake</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left text-foreground">We verify identities to ensure you're transacting with real business owners, not middlemen.</p>
+                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">We verify identities to ensure you're transacting with real business owners, not middlemen.</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -376,5 +381,3 @@ export default function AboutPage() {
     </div>
   );
 }
-
-import { collection, query } from 'firebase/firestore';
