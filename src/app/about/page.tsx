@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from "next/image";
@@ -55,7 +56,7 @@ export default function AboutPage() {
                     fill
                     className="object-cover opacity-40"
                     priority
-                    data-ai-hint="industrial logistics"
+                    data-ai-hint="freight trucks"
                 />
             )}
             <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
