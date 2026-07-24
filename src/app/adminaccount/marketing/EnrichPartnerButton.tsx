@@ -36,9 +36,14 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
         
 TASK: Discover and bridge ALL data gaps for the business: "${companyName}".
 
+CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
+1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
+2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g. info@company.co.za).
+3. VERIFICATION MANDATE: Only return emails explicitly visible in search evidence or metadata. If not found, return null.
+
 REQUIRED PROTOCOL:
-1. SEARCH: Perform a live search for "${companyName}" corporate website and LinkedIn.
-2. IDENTITY: Identify the Marketing Manager and CEO/Owner.
+1. SEARCH: Perform a live search for "${companyName}" corporate website and LinkedIn in South Africa.
+2. IDENTITY: Identify the actual name, email, and mobile for the Marketing Manager and CEO/Owner.
 3. EXTRACTION: Provide a 300-word verbatim profile of their technical services.
 
 RETURN ONLY A RAW JSON OBJECT IN THIS FORMAT:
@@ -102,7 +107,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black text-left">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Industrial Gap-Analysis V3
+                            Industrial Gap-Analysis V4
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
                             Generate a forensic research command for <strong>{companyName}</strong>.
@@ -114,7 +119,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                             <Zap className="h-4 w-4 text-primary" />
                             <AlertTitle className="text-left font-bold text-foreground">Gap Bridging Mode</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                Use this prompt in Google AI Studio to discover direct contact emails and mobile numbers from live web data.
+                                Use this prompt in Google AI Studio. The "Anti-Bounce" protocol is now hard-coded to prevent fictitious emails.
                             </AlertDescription>
                         </Alert>
 
