@@ -79,24 +79,77 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
-            case 'getPendingAgreements': {
-                const snap = await db.collectionGroup('agreements').where('status', '==', 'proposed').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const col = isLead ? 'leads' : 'partners';
+                await db.collection(col).doc(partnerId).update({
+                    status: 'contacted',
+                    enhancementMethod: 'V4-PROMPT',
+                    lastEnrichedAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
             }
 
-            case 'getLendingData': {
-                const { collectionName } = payload;
-                if (!['lendingClients', 'agreements', 'lendingAssets', 'facilities', 'securities', 'payments', 'transactions', 'lendingPartners'].includes(collectionName)) {
-                    throw new Error("Invalid lending collection requested.");
-                }
-                const isGroup = ['agreements', 'facilities', 'securities', 'payments', 'transactions'].includes(collectionName);
-                const snap = isGroup ? await db.collectionGroup(collectionName).get() : await db.collection(collectionName).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const col = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection(col).doc(id), {
+                        status: 'contacted',
+                        enhancementMethod: 'V4-BATCH',
+                        lastEnrichedAt: FieldValue.serverTimestamp(),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
             }
 
-            case 'getGlobalSales': {
-                const snap = await db.collection('sales').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            case 'autoEnrichRecord': {
+                const { id, type: pType } = payload;
+                const col = pType === 'lead' ? 'leads' : 'partners';
+                const docRef = db.collection(col).doc(id);
+                const snap = await docRef.get();
+                const data = snap.data();
+                if (!data) throw new Error("Record not found.");
+
+                const { enrichPartner } = await import('@/ai/flows/enrich-partner-flow');
+                const enriched = await enrichPartner({ 
+                    companyName: data.companyName || data.trading_name || `${data.firstName} ${data.lastName}` 
+                });
+                
+                const update = {
+                    ...enriched,
+                    status: 'contacted',
+                    enhancementMethod: 'V4-BRIDGE',
+                    lastEnrichedAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+                
+                await docRef.update(update);
+                return NextResponse.json({ success: true, data: serializeData(update) });
+            }
+
+            case 'getAudienceCommunications': {
+                const { type: targetType } = payload;
+                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
+                
+                const logs = snap.docs.map(d => ({ 
+                    id: d.id, 
+                    ...d.data(), 
+                    path: d.ref.path,
+                    partnerId: d.ref.path.split('/')[1]
+                }));
+                
+                return NextResponse.json({ success: true, data: serializeData(logs) });
+            }
+
+            case 'getAudienceTasks': {
+                const { type: targetType } = payload;
+                const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'savePartner': {
@@ -114,13 +167,12 @@ export async function POST(req: NextRequest) {
             }
 
             case 'bulkSavePartners': {
-                const { partners, type } = payload;
+                const { partners, type: pType } = payload;
                 const batch = db.batch();
                 partners.forEach((p: any) => {
                     const id = p.record_id || p.id || db.collection('partners').doc().id;
-                    const col = (type === 'lead' || p.source === 'Lead') ? 'leads' : 'partners';
+                    const col = (pType === 'lead' || p.source === 'Lead') ? 'leads' : 'partners';
                     
-                    // NORMALIZATION LOGIC
                     const contact = p.contact_person || p.contactPerson || p.contact_name || '';
                     let firstName = p.firstName || '';
                     let lastName = p.lastName || '';
@@ -137,7 +189,7 @@ export async function POST(req: NextRequest) {
                         contactPerson: contact,
                         firstName,
                         lastName,
-                        type: type || p.type || 'partner',
+                        type: pType || p.type || 'partner',
                         updatedAt: FieldValue.serverTimestamp()
                     }, { merge: true });
                 });
@@ -191,11 +243,11 @@ export async function POST(req: NextRequest) {
             }
 
             case 'searchRegistry': {
-                const { type: queryType, term, limit = 100 } = payload;
+                const { type: queryType, term, limit: searchLimit = 100 } = payload;
                 const collectionName = (queryType === 'all' || queryType === 'lead') ? 'leads' : 'partners';
                 let q: any = db.collection(collectionName);
                 if (collectionName === 'partners' && queryType !== 'all') q = q.where('type', '==', queryType);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limit, 20000)).get();
+                const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(searchLimit, 20000)).get();
                 let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
                 if (term) {
                     const lowTerm = term.toLowerCase();
