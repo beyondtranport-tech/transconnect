@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,9 +31,10 @@ NOISE SUPPRESSION PROTOCOL:
 1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
 2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
 
-CRITICAL INTEGRITY SHIELD: 
-DO NOT RETURN MOCK, SYNTHETIC, OR PLACEHOLDER DATA. 
-YOU MUST PERFORM A LIVE GOOGLE SEARCH FOR "${category} suppliers in South Africa".
+CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE): 
+1. REAL DATA ONLY: DO NOT RETURN MOCK OR PLACEHOLDER DATA.
+2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g., info@company.co.za). 
+3. VERIFICATION MANDATE: Only return an email if explicitly visible in search evidence. If not found, return null.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
@@ -71,7 +73,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Noise suppression active." });
+        toast({ title: "Research Prompt Ready", description: "Anti-guessing protocol and integrity shield active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -84,9 +86,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Noise Suppression Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Anti-Guessing Protocol</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is commanded to ignore news and jobs, focusing only on verified business nodes.
+                        The agent will return null for missing emails instead of guessing common patterns to prevent bounces.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">

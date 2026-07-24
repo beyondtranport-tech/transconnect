@@ -52,8 +52,10 @@ NOISE SUPPRESSION PROTOCOL:
 1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
 2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES, SOCIAL PROFILES, AND BUSINESS DIRECTORIES.
 
-CRITICAL INTEGRITY SHIELD: 
-DO NOT RETURN MOCK OR PLACEHOLDER DATA. 
+CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE): 
+1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
+2. NO GUESSING: NEVER construct or "guess" email addresses based on common patterns (e.g., info@companyname.co.za). 
+3. VERIFICATION MANDATE: Only return an email if it is EXPLICITLY listed in the search results or website metadata. If not found, set the field to null.
 
 ${strategyMandate}
 
@@ -92,7 +94,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Strict South African regional lock and 10k-follower limit active." });
+        toast({ title: "Research Prompt Ready", description: "Strict integrity mandate and anti-guessing protocol active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -106,9 +108,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Regional Lock: South Africa</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Integrity Shield Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is commanded to target creators based **exclusively in South Africa** with up to 10,000 followers.
+                        The agent is forbidden from guessing emails. Records will return null for missing data to prevent outreach bounces.
                     </AlertDescription>
                 </Alert>
 

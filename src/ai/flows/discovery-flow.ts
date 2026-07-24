@@ -1,8 +1,10 @@
+
 'use server';
 /**
  * @fileOverview Automated industrial discovery agent V4.
  * Performs high-fidelity extraction of commercial records with mandatory leadership mapping.
  * Optimized for South African regional accuracy and noise suppression.
+ * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -60,9 +62,11 @@ const discoveryFlow = ai.defineFlow(
         1. IGNORE ALL "FORENSIC DATA ANALYST" JOBS, POLICY NEWS, OR NEWS ARTICLES.
         2. FOCUS ONLY ON LIVE SOUTH AFRICAN COMPANIES WITH OPERATIONAL FOOTPRINTS.
         
-        CRITICAL INTEGRITY SHIELD:
+        CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
         1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
-        2. DUAL-IDENTITY PROTOCOL: YOU MUST FIND THE ACTUAL NAME, EMAIL, AND MOBILE FOR THE MARKETING MANAGER AND THE CEO/OWNER.
+        2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g. info@company.co.za).
+        3. VERIFICATION MANDATE: Only return emails explicitly visible in search evidence. If not found, return null.
+        4. DUAL-IDENTITY PROTOCOL: YOU MUST FIND THE ACTUAL NAME, EMAIL, AND MOBILE FOR THE MARKETING MANAGER AND THE CEO/OWNER.
         
         SCAVENGER MANDATE:
         - SEARCH FACEBOOK, LINKEDIN, AND LOCAL DIRECTORIES (YELLOSA, INFOISINFO) TO BRIDGE CONTACT GAPS.

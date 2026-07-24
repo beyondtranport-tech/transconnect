@@ -1,7 +1,9 @@
+
 'use server';
 /**
  * @fileOverview High-fidelity Industrial Research Agent V3.
  * REINSTATED: Proven search strategy and extraction mandate to resolve null returns.
+ * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -73,6 +75,11 @@ const enrichPartnerFlow = ai.defineFlow(
         system: `ACT AS AN EXPERT SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
         
         GOAL: Extract specific corporate nodes for "${company}".
+        
+        CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
+        1. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g. info@company.co.za).
+        2. VERIFICATION MANDATE: Only return emails explicitly visible in search evidence. If not found, return null.
+        
         PROTOCOL:
         1. WEBSITE: Find the primary corporate URL.
         2. CONTACTS: Identify general and direct (MD/CEO) email and mobile numbers.

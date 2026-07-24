@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -27,9 +28,10 @@ NOISE SUPPRESSION PROTOCOL:
 1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
 2. FOCUS ONLY ON LIVE CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
 
-CRITICAL INTEGRITY SHIELD: 
-DO NOT RETURN MOCK OR HALLUCINATED DATA. 
-YOU MUST PERFORM A LIVE GOOGLE SEARCH FOR "${category} transport companies South Africa".
+CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE): 
+1. REAL DATA ONLY: DO NOT RETURN MOCK OR HALLUCINATED DATA.
+2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g., info@company.co.za). 
+3. VERIFICATION MANDATE: Only return an email if it is explicitly listed in search evidence. If not found, return null.
 
 TASK: Discover and extract exactly 30 UNIQUE live transport companies in SOUTH AFRICA for: "${category}".
 
@@ -68,7 +70,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Noise suppression active." });
+        toast({ title: "Research Prompt Ready", description: "Anti-guessing and bounce-prevention protocol active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -81,9 +83,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Noise Suppression Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Integrity Shield Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-foreground">
-                        The agent is commanded to ignore job listings and policy news.
+                        Guessed or construction emails are prohibited. Registry records will prioritize accuracy over volume.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
