@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,21 +27,20 @@ export const associateCategories = [
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
     const isInfluencer = category === "Digital Influencer";
     
-    let strategyMandate = `YOU MUST PERFORM A LIVE SEARCH FOR "${category} for logistics in SOUTH AFRICA" on LinkedIn, Facebook, Instagram, and TikTok.`;
+    let strategyMandate = `YOU MUST PERFORM A DEEP LIVE SEARCH FOR "${category} for logistics in SOUTH AFRICA" across LinkedIn, Facebook, Instagram, and TikTok.`;
     
     if (isInfluencer) {
         strategyMandate = `ACT AS AN ELITE INDUSTRIAL SCOUT.
-        TASK: Discover exactly 30 UNIQUE "Micro-Influencers" BASED IN SOUTH AFRICA within the transport/logistics space.
+        TASK: Discover exactly 30 UNIQUE "Micro-Influencers" or "Content Creators" BASED IN SOUTH AFRICA within the transport/logistics space.
         
         STRICT REGIONAL LOCK: 
         YOU MUST ONLY RETURN INDIVIDUALS OR HUBS OPERATING WITHIN SOUTH AFRICA. IGNORE ALL INTERNATIONAL RESULTS.
         
-        STRICT FOLLOWER CONSTRAINT: 
-        TARGET ONLY INDIVIDUALS OR SMALL HUBS WITH UP TO 10,000 FOLLOWERS ON THEIR PRIMARY CHANNEL.
+        TARGET AUDIENCE: 
+        Focus on creators who talk about South African trucking (e.g., N3/N1 corridors), local supply chains, Durban/Cape Town harbor activity, or courier life in RSA.
         
-        CHANNEL SCAN: 
-        Check specifically for presence on Facebook, LinkedIn, Instagram, and TikTok. 
-        Focus on creators who talk about South African trucking (e.g., N3/N1 corridors), local supply chains, Durban/Cape Town harbor activity, or courier life in RSA.`;
+        CONTACT EXTRACTION MANDATE:
+        You are commanded to search "About" sections, Bio links, and contact buttons to find actual Email Addresses and Mobile Numbers.`;
     }
 
     return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
@@ -50,13 +48,13 @@ RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
 1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
-2. NO PATTERN GUESSING: Never construct email addresses (e.g., info@). Only return data found in evidence.
-3. NULL MANDATE: If a piece of data (especially the Human Name or Email) is not explicitly visible in the search evidence, you MUST set the field to null.
+2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@). 
+3. EVIDENCE EXTRACTION: Search website metadata, social media bios, and linked contact forms to find ACTUAL contact details. If verified data is not found, return null.
 
 SOCIAL-FIRST IDENTITY MANDATE:
 1. PRIORITIZE SOCIAL PROFILES: Search LinkedIn, Facebook, and Instagram profiles FIRST to identify the actual owner/creator.
 2. VERIFIED INDIVIDUALS ONLY: Only provide a "contact_person" if you have found the specific human linked to the brand. 
-3. NO BEST-GUESS EDITORS: Do not extract names from general mastheads or staff lists if their specific association with the social channel is unclear.
+3. NO BEST-GUESS EDITORS: Do not extract names from general mastheads if their specific association with the social channel is unclear.
 
 ${strategyMandate}
 
@@ -68,15 +66,16 @@ REQUIRED JSON FIELDS:
   {
     "seq": ${startSeq},
     "record_id": "...",
-    "companyName": "CREATIVE HUB / INFLUENCER HANDLE",
+    "companyName": "CREATIVE HUB / BRAND NAME",
+    "social_handle": "@username",
     "industrial_category": "${category}",
     "contact_person": "VERIFIED HUMAN NAME (OR NULL)",
-    "email": "...",
-    "mobile": "...",
+    "email": "ACTUAL EMAIL (IF DISCOVERED)",
+    "mobile": "ACTUAL MOBILE (IF DISCOVERED)",
     "website": "OFFICIAL CHANNEL/URL",
     "follower_count": "ESTIMATED",
     "primary_channel": "Facebook/LinkedIn/Instagram/TikTok",
-    "notes": "..."
+    "notes": "Brief summary of their industrial influence."
   }
 ]`;
 }
@@ -92,7 +91,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Social-First identity mandate active." });
+        toast({ title: "Research Prompt Ready", description: "Deep-crawling mandate for contact details active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -106,14 +105,14 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Social-First Identity Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Deep Contact Extraction Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is commanded to prioritize social profiles to identify the actual creator. Hallucinated names are strictly forbidden.
+                        The agent is commanded to scan bios and about-pages for real emails and numbers. Mock data remains strictly forbidden.
                     </AlertDescription>
                 </Alert>
 
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Sequence Sync</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left text-foreground">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left text-foreground">
                         <Label className="text-xs font-bold text-left text-foreground">Start Sequence #</Label>
                         <Input 
@@ -130,7 +129,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> AI Research Command</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> AI Research Command</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -148,7 +147,7 @@ export default function AssociateDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Associate Discovery Engine
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Identify content and brand creators using noise-suppressed discovery.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Identify content and brand creators using deep-data discovery.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left text-foreground">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left text-foreground">

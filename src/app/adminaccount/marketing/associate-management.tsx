@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Share2, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Clock 
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Clock, AtSign, BarChart
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -54,6 +54,9 @@ const partnerSchema = z.object({
   mobile: z.string().optional(),
   contactPerson: z.string().optional(),
   companyName: z.string().optional(),
+  social_handle: z.string().optional(),
+  follower_count: z.string().optional(),
+  primary_channel: z.string().optional(),
   status: z.enum(['active', 'inactive', 'contacted', 'new', 'qualified', 'invited']),
   type: z.literal('associate'),
   source: z.string().optional(),
@@ -74,7 +77,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'associate', website: '', notes: '', address: '' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', social_handle: '', follower_count: '', primary_channel: '', status: 'new', type: 'associate', website: '', notes: '', address: '' });
     }
   }, [open, partner, form]);
 
@@ -107,21 +110,58 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                 <DialogTitle>Edit Digital Partner</DialogTitle>
             </DialogHeader>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+                <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
+                    <div className="space-y-4">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                           <Share2 className="h-4 w-4" /> Identity & Branding
+                        </Label>
+                        <div className="grid grid-cols-2 gap-4 text-left">
+                            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Creative Hub / Brand Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="social_handle" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Social Handle</FormLabel><FormControl><Input placeholder="@username" {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                            <FormField control={form.control} name="primary_channel" render={({ field }) => ( 
+                                <FormItem className="text-left">
+                                    <FormLabel>Primary Distribution Channel</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl><SelectTrigger className="bg-white border-2 text-left"><SelectValue placeholder="Select platform..." /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="TikTok">TikTok</SelectItem>
+                                            <SelectItem value="Instagram">Instagram</SelectItem>
+                                            <SelectItem value="Facebook">Facebook</SelectItem>
+                                            <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                                            <SelectItem value="YouTube">YouTube</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem> 
+                            )} />
+                            <FormField control={form.control} name="follower_count" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Est. Followers</FormLabel><FormControl><Input placeholder="e.g. 5.4k" {...field} className="bg-white border-2" /></FormControl></FormItem> )} />
+                        </div>
                     </div>
-                    <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Handle / Business Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+
+                    <Separator />
+
+                    <div className="space-y-4">
+                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                           <UserCheck className="h-4 w-4" /> Direct Stakeholder
+                        </Label>
+                        <div className="grid grid-cols-2 gap-4 text-left">
+                            <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 text-left">
+                            <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                            <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        </div>
                     </div>
+
+                    <Separator />
+
                     <FormField control={form.control} name="status" render={({ field }) => ( 
                         <FormItem className="text-left">
                             <FormLabel>Pipeline Status</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl><SelectTrigger className="bg-white border-2 text-left"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="new">New Lead</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
@@ -133,7 +173,7 @@ function AssociateDialog({ open, onOpenChange, partner, onSave }: { open: boolea
                         </FormItem> 
                     )} />
                      <DialogFooter className="pt-4 border-t text-left">
-                        <Button type="submit" disabled={isLoading}>
+                        <Button type="submit" disabled={isLoading} className="w-full h-12 font-bold shadow-lg text-white">
                             {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
                         </Button>
                     </DialogFooter>
@@ -159,7 +199,7 @@ export default function AssociateManagement() {
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
-    contactPerson: true,
+    social_handle: true,
     mobile: true,
     email: true,
     outreach: true,
@@ -205,34 +245,46 @@ export default function AssociateManagement() {
     const cols: ColumnDef<any>[] = [
       { 
           accessorKey: 'companyName',
-          header: 'Partner Identity', 
+          header: 'Brand / Agency', 
           cell: ({row}) => (
               <div className="flex flex-col text-left">
                   <span className="font-bold text-left">{row.original.companyName || `${row.original.firstName} ${row.original.lastName}`}</span>
                   <div className="flex items-center gap-2 mt-1 text-left">
                       <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source}</Badge>
-                      {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold">Creator Node</Badge>
                   </div>
               </div>
           )
       },
-      { 
-          accessorKey: 'contactPerson',
-          header: 'Account Holder',
-          cell: ({ row }) => <div className="text-sm font-medium text-left">{row.original.contactPerson || `${row.original.firstName} ${row.original.lastName}`}</div>
-      },
-      { 
-          accessorKey: 'mobile', 
-          header: 'Mobile / Phone',
-          cell: ({row}) => (
-              <div className="flex items-center gap-2 text-xs font-mono text-left">
-                  <Phone className="h-3 w-3 text-muted-foreground" />
-                  {row.original.mobile || row.original.phone || 'N/A'}
+      {
+          accessorKey: 'social_handle',
+          header: 'Social Hub',
+          cell: ({ row }) => (
+              <div className="flex flex-col text-left">
+                  <div className="flex items-center gap-2 font-bold text-primary text-xs">
+                    <AtSign className="h-3 w-3" />
+                    {row.original.social_handle || 'Not Linked'}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                      <span className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">{row.original.primary_channel}</span>
+                      {row.original.follower_count && <Badge variant="secondary" className="text-[8px] h-3.5 px-1 font-black bg-slate-100">{row.original.follower_count} Followers</Badge>}
+                  </div>
               </div>
           )
       },
-      { accessorKey: 'email', header: 'Email' },
+      { 
+          accessorKey: 'mobile', 
+          header: 'Direct Line',
+          cell: ({row}) => (
+              <div className="flex flex-col text-left">
+                  <div className="flex items-center gap-2 text-xs font-bold text-foreground text-left">
+                      <Phone className="h-3 w-3 text-muted-foreground" />
+                      {row.original.mobile || row.original.phone || 'N/A'}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{row.original.email || 'No email discovered'}</span>
+              </div>
+          )
+      },
       { 
           header: 'Outreach Stage',
           id: 'outreach',
@@ -325,7 +377,7 @@ export default function AssociateManagement() {
 
       <div className="space-y-6 text-left">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Share2 /> Digital Partners</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Share2 /> Digital Partners</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left text-foreground">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="gap-2 text-left text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
                   {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold text-left animate-in fade-in zoom-in text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
@@ -352,7 +404,7 @@ export default function AssociateManagement() {
               </div>
           </CardHeader>
           <Card className="text-left">
-              <CardContent className="pt-6 text-left">
+              <CardContent className="pt-6 text-left text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                       <div className="space-y-1 text-left text-foreground">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
@@ -392,7 +444,7 @@ export default function AssociateManagement() {
                       </div>
                   </div>
                   {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                      <div className="space-y-6 text-left">
+                      <div className="space-y-6 text-left text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
                                 <div className="flex justify-center pt-4 text-left">
