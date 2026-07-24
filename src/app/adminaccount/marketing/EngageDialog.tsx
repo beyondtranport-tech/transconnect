@@ -26,7 +26,7 @@ import IncentiveHandshake from './content/IncentiveHandshake';
 import TheWedge from './content/TheWedge';
 import TheSignal from './content/TheSignal';
 import TheEliteFilter from './content/TheEliteFilter';
-import TheBreakUp from './content/TheBreakUp';
+import { default as TheBreakUp } from './content/TheBreakUp';
 
 // Offers
 import PartnerOffer from './offers/PartnerOffer';
@@ -243,7 +243,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Button variant="outline" className="font-bold border-green-200 text-green-600 hover:bg-green-50" onClick={() => handleLogAndLaunch('whatsapp')} disabled={isProcessing || !hasPhone}>
                             <Smartphone className="mr-2 h-4 w-4" /> WhatsApp
                         </Button>
-                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-blue-50" onClick={() => handleLogAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
+                        <Button variant="outline" className="font-bold border-blue-200 text-blue-600 hover:bg-green-50" onClick={() => handleLogAndLaunch('outlook')} disabled={isProcessing || !hasEmail}>
                             <Mail className="mr-2 h-4 w-4" /> Outlook
                         </Button>
                         <Button className="font-bold shadow-lg text-white" onClick={handleAutomatedDispatch} disabled={isDispatching || !hasEmail}>
@@ -319,8 +319,11 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     <p><strong>Why I am reaching out:</strong> We have identified your creative influence as a perfect match for our ecosystem. We are looking to establish a formal partnership with you to generate exposure for the platform.</p>
                                     <p style={{ marginTop: '15pt', fontWeight: 'bold' }}>What you get:</p>
                                     <ul style={{ paddingLeft: '20pt' }}>
-                                        <li><strong>Free membership. AI Studio:</strong> Unrestricted access to our cinematic video generators.</li>
-                                        <li><strong>The Annuity Layer:</strong> Earn 30% recurring share on all membership fees.</li>
+                                        <li><strong>Free membership.</strong> Valued at R6,000 p.a.</li>
+                                        <li><strong>Content Studio:</strong> Unrestricted access to our cinematic video generators.</li>
+                                        <li><strong>Social Studio:</strong> Enabling tracked posts to social networks.</li>
+                                        <li><strong>My Network:</strong> Tracking of your network growth and revenue generated.</li>
+                                        <li><strong>The Annuity Layer:</strong> Earn 30% recurring share on all membership fees directly into your wallet.</li>
                                     </ul>
                                     <p style={{ margin: '15pt 0' }}><strong>Are you interested in exploring this?</strong></p>
                                     <p>[   ] <strong>YES</strong>, I am interested. Let's establish the handshake:<br/>
