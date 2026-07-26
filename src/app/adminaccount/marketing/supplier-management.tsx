@@ -72,7 +72,7 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; targetType: string; }) {
+function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
@@ -109,7 +109,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
         });
       }
     }
-  }, [open, partner, form, targetType]);
+  }, [open, partner, form]);
 
   const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -142,19 +142,19 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
                     <Building className="h-4 w-4" /> Core Entity Details
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="https://..." className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="https://..." className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <FormField control={form.control} name="status" render={({ field }) => (
-                        <FormItem className="text-left">
+                        <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                             <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ''}>
-                                <FormControl><SelectTrigger className="bg-white border-2 text-left"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="bg-white border-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="new">New Lead</SelectItem>
                                     <SelectItem value="contacted">Researching</SelectItem>
@@ -171,32 +171,32 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
-                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <UserCircle className="h-4 w-4" /> CEO / Principal
                     </h4>
-                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
             </div>
 
             <Separator />
 
             <div className="space-y-4 text-left">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                     <Sparkles className="h-4 w-4" /> Technical Profile
                 </h4>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <FormControl><Textarea className="min-h-[150px] bg-white border-2 leading-relaxed" {...field} value={field.value || ''} /></FormControl>
                         <FormMessage />
                     </FormItem>
@@ -205,7 +205,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
 
             <DialogFooter className="pt-4 border-t sticky bottom-0 bg-white z-10 text-left">
               <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg text-white">
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>
           </form>
@@ -276,7 +276,7 @@ export default function SupplierManagement() {
       { 
           accessorKey: 'companyName', 
           header: 'Supplier Entity', 
-          cell: ({ row }) => (
+          cell: ({ row }: any) => (
               <div className="flex flex-col text-left text-foreground">
                   <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed'}</span>
                   <div className="flex items-center gap-1.5 mt-1 text-left text-foreground">
@@ -289,7 +289,7 @@ export default function SupplierManagement() {
       { 
           id: 'contactPerson',
           header: 'Account Lead', 
-          cell: ({row}) => (
+          cell: ({row}: any) => (
               <div className="flex flex-col text-left text-foreground">
                   <span className="font-bold text-sm text-left">{row.original.marketingManager?.name || row.original.contactPerson || 'N/A'}</span>
                   <span className="text-[10px] text-muted-foreground text-left">{row.original.marketingManager?.email || row.original.email || 'No email discovered'}</span>
@@ -299,7 +299,7 @@ export default function SupplierManagement() {
       { 
           id: 'mobile',
           header: 'Direct Line', 
-          cell: ({row}) => (
+          cell: ({row}: any) => (
               <div className="flex items-center gap-2 text-xs font-bold text-foreground text-foreground">
                   <Phone className="h-3 w-3 text-muted-foreground" />
                   {row.original.marketingManager?.mobile || row.original.mobile || row.original.phone || 'N/A'}
@@ -309,7 +309,7 @@ export default function SupplierManagement() {
       { 
           id: 'outreach', 
           header: 'Outreach Stage', 
-          cell: ({row}) => {
+          cell: ({row}: any) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
@@ -320,7 +320,7 @@ export default function SupplierManagement() {
                             {row.original.lastOpenedAt && (
                                 <Tooltip>
                                     <TooltipTrigger>
-                                        <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                        <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                                     </TooltipTrigger>
                                     <TooltipContent className="text-[10px] font-bold">Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}</TooltipContent>
                                 </Tooltip>
@@ -328,7 +328,7 @@ export default function SupplierManagement() {
                             {row.original.lastAccessedAt && (
                                 <Tooltip>
                                     <TooltipTrigger>
-                                        <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                        <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                                     </TooltipTrigger>
                                     <TooltipContent className="text-[10px] font-bold">Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM")}</TooltipContent>
                                 </Tooltip>
@@ -339,8 +339,8 @@ export default function SupplierManagement() {
               );
           }
       },
-      { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
-      { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+      { accessorKey: 'status', header: 'Status', cell: ({ row }: any) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
+      { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }: any) => (
           <div className="flex justify-end gap-1 text-foreground">
             <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
             <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
@@ -376,7 +376,7 @@ export default function SupplierManagement() {
   return (
     <div className="space-y-6 text-left">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="suppliers" onEngageSuccess={() => fetchData()} />
-      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType="supplier" />
+      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">Delete record?</AlertDialogDescription></AlertDialogHeader>
@@ -388,7 +388,7 @@ export default function SupplierManagement() {
       </AlertDialog>
 
       <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
-          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row items-center justify-between gap-4 text-left">
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row items-center justify-between gap-4 text-left text-foreground">
               <div className="text-left text-foreground text-foreground">
                 <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
                 <CardDescription className="text-left text-muted-foreground text-foreground">Unified database view ({filteredRecords.length} records).</CardDescription>
@@ -397,10 +397,10 @@ export default function SupplierManagement() {
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
                   <Popover>
                       <PopoverTrigger asChild>
-                          <Button variant="outline" className="gap-2 text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
+                          <Button variant="outline" className="gap-2 text-foreground text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left">
-                          <div className="space-y-1 text-left">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground">
+                          <div className="space-y-1 text-left text-foreground">
                               {Object.keys(visibleColumns).map(col => (
                                   <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                       <span>{col.replace(/([A-Z])/g, ' $1')}</span>
@@ -410,17 +410,17 @@ export default function SupplierManagement() {
                           </div>
                       </PopoverContent>
                   </Popover>
-                  <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                  <Button onClick={() => setDialog({ type: 'add' })} className="text-white text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
+                  <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                  <Button onClick={() => setDialog({ type: 'add' })} className="text-white text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
               </div>
           </CardHeader>
-          <Card className="text-left text-foreground text-foreground">
-              <CardContent className="pt-6 text-left text-foreground text-foreground">
+          <Card className="text-left text-foreground text-foreground text-foreground">
+              <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
-                    <div className="space-y-1 text-left text-foreground text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status Filter</Label>
+                    <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Filter className="h-3 w-3"/> Status Filter</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -430,10 +430,10 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-1 text-left text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                    <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -441,14 +441,14 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground text-foreground">
-                        <div className="flex-1 space-y-1 text-left">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Registry</Label>
+                    <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground text-foreground text-foreground">
+                        <div className="flex-1 space-y-1 text-left text-foreground text-foreground">
+                            <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground"><Search className="h-3 w-3"/> Search Registry</Label>
                             <Input placeholder="Filter registry by name or tag..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
                         </div>
                     </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center py-20 text-left"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
+                  {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div> : <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />}
               </CardContent>
           </Card>
       </div>
