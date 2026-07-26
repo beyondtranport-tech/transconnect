@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V6.
- * DEEP SCAVENGER PROTOCOL: Implements sitemap-to-social identity resolution.
+ * @fileOverview High-fidelity Industrial Research Agent V7.
+ * FORENSIC HUNT PROTOCOL: Implements sitemap-to-social identity resolution.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
@@ -49,18 +49,23 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V6: DEEP SCAVENGER
-    // Search 1: Website, Sitemap & Team Exploration
+    // SEARCH STRATEGY V7: FORENSIC HUNT
+    // Search 1: Primary Discovery (Broad for domain identification)
     const siteResults = await googleSearchTool({ 
-        query: `"${company}" South Africa official website sitemap "our team" "contact us"` 
+        query: `${company} South Africa official website sitemap contact` 
     });
     
-    // Search 2: Identity Resolution for CEO & Marketing Manager
+    // Search 2: Identity Resolution (Targeted for leadership names)
     const identityResults = await googleSearchTool({ 
-        query: `"${company}" South Africa CEO Managing Director Marketing Manager LinkedIn Facebook` 
+        query: `${company} South Africa CEO Managing Director Marketing Manager LinkedIn Facebook` 
+    });
+
+    // Search 3: Aggregator Cross-Reference (For missing contacts)
+    const directoryResults = await googleSearchTool({
+        query: `${company} South Africa phone email Brabys Yellosa Infoisinfo`
     });
     
-    const allContent = [...(siteResults || []), ...(identityResults || [])]
+    const allContent = [...(siteResults || []), ...(identityResults || []), ...(directoryResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
@@ -70,19 +75,19 @@ const enrichPartnerFlow = ai.defineFlow(
 
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN EXPERT SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER).
+        system: `ACT AS AN EXPERT SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V7 - FORENSIC HUNT).
         
-        PROTOCOL:
-        1. WEBSITE & SITEMAP: Locate official domain. Crawl Sitemap for Team/Contact pages to extract names of CEO and Marketing Lead.
-        2. IDENTITY RESOLUTION: Use names to perform targeted social search (LinkedIn/Facebook) to resolve direct emails and mobile numbers.
-        3. AGGREGATOR CHECK: Use directories (Yellosa, Brabys) for remaining landlines.
+        INVESTIGATION PROTOCOL:
+        1. WEBSITE & SITEMAP: First, identify the official website. CRAWL THE SITEMAP metadata (About Us, Our Team, Contact) to extract names of the CEO/Owner and Marketing Lead.
+        2. IDENTITY RESOLUTION: Use identified names to pivot to LinkedIn/Facebook/Instagram to resolve direct emails and mobile numbers.
+        3. AGGREGATOR SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) to find landlines or general company emails if missing.
         
-        CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
-        1. NO GUESSING: NEVER construct email addresses based on patterns.
-        2. VERIFICATION MANDATE: Only return data explicitly visible in search evidence. If not found, return null.
+        CRITICAL INTEGRITY SHIELD:
+        - NO GUESSING: Never construct email addresses based on patterns.
+        - EVIDENCE ONLY: Only return data explicitly visible in search evidence or metadata. If not found, return null.
         
         MANDATE: Return RAW JSON only.`,
-        prompt: `EXTRACT THE FORENSIC DATA PACK FOR "${company}" FROM THIS EVIDENCE:\n\n${allContent}`,
+        prompt: `PERFORM THE V7 FORENSIC HUNT FOR "${company}" USING THIS EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }

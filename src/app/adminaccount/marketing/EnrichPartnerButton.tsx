@@ -32,18 +32,18 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
-        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER).
+        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V7 - FORENSIC HUNT).
         
-TASK: Perform a high-velocity investigation to bridge ALL data gaps for: "${companyName}".
+TASK: Perform an aggressive investigation to bridge ALL data gaps for: "${companyName}".
 
-REQUIRED INVESTIGATION PROTOCOL:
-1. WEBSITE & SITEMAP: Locate the official website. Scan the Sitemap, "Meet the Team", and "Contact" sub-pages to extract names of the CEO, MD, and Marketing Manager.
-2. IDENTITY RESOLUTION: Use the extracted names to perform targeted SECONDARY searches on LinkedIn, Facebook, and Instagram for those specific individuals to resolve their direct professional email and mobile numbers.
-3. AGGREGATOR SCAN: Use SA Directories (Brabys, Yellosa, Infoisinfo) to find landlines and general company emails if still missing.
+INVESTIGATION PROTOCOL:
+1. WEBSITE & SITEMAP: Locate the official website. SEARCH AND CRAWL THE SITEMAP sub-pages ("Meet the Team", "Our Management", "Contact", "About Us") to extract the ACTUAL NAMES of the CEO, MD, and Marketing Manager.
+2. IDENTITY RESOLUTION: Use the extracted names to perform a targeted SECONDARY search on LinkedIn, Facebook, and Instagram for those specific individuals to resolve their direct professional email and mobile numbers.
+3. AGGREGATOR SCAN: Cross-reference SA Directories (Brabys, Yellosa, Infoisinfo) to find landlines and general company emails if still missing.
 
-DATA FIDELITY (ANTI-BOUNCE):
-- REAL DATA ONLY: Do not invent names or guess emails based on patterns.
-- NULL MANDATE: If after checking ALL sources and performing secondary identity lookups data is still missing, return null.
+DATA INTEGRITY (ANTI-BOUNCE):
+- NO FICTITIOUS DATA: Do not invent names or guess email patterns (e.g. info@...).
+- NULL MANDATE: If data is not explicitly visible in search evidence after sitemap-to-social lookup, return null.
 
 RETURN ONLY A RAW JSON OBJECT:
 {
@@ -64,7 +64,7 @@ RETURN ONLY A RAW JSON OBJECT:
       "email": "VERIFIED DIRECT EMAIL", 
       "mobile": "VERIFIED MOBILE" 
   },
-  "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS) - MINE THE PRODUCT/SERVICE PAGES."
+  "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SUB-PAGES (300 WORDS) - MINE THE PRODUCT/SERVICE PAGES."
 }
 
 NO MARKDOWN. NO PREAMBLE.`;
@@ -84,7 +84,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Scavenger Prompt Ready", description: "V6 Mandate copied. Paste into AI Studio." });
+            toast({ title: "V7 Hunt Prompt Ready", description: "Sitemap and Identity protocol active. Paste into AI Studio." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -114,19 +114,19 @@ NO MARKDOWN. NO PREAMBLE.`;
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Industrial Gap-Analysis V6
+                            Industrial Gap-Analysis V7
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
-                            Generate a deep scavenger command for <strong>{companyName}</strong> using sitemap and identity resolution.
+                            Generate an aggressive scavenger command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground text-left">V6 Sitemap Protocol Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground">V7 Hunt Protocol Active</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                This command instructs the AI to mine the sitemap for employee lists, then pivot to social platforms to resolve their direct contact details.
+                                This command instructs the AI to mine sitemaps for staff names, then pivot to social platforms to resolve direct contact details. Broader search terms are used to ensure domains like ".co.za" are identified.
                             </AlertDescription>
                         </Alert>
 
@@ -145,7 +145,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                             className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
                         >
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            {isCopied ? 'Command Ready!' : 'Copy V6 Scavenger Prompt'}
+                            {isCopied ? 'V7 Command Ready!' : 'Copy V7 Scavenger Prompt'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

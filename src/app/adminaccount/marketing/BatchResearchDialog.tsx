@@ -38,14 +38,18 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const companyList = selectedLeads.map(l => `[KEY: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     const validCategories = transporterCategories.join(', ');
 
-    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER). 
+    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V7 - FORENSIC HUNT). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-1. WEBSITE & SITEMAP: Find the official website. You MUST crawl the Sitemap, 'About Us', 'Meet the Team', and 'Contact' sub-pages to extract names of the CEO, MD, and Marketing Manager.
-2. IDENTITY RESOLUTION: Use extracted names to perform targeted SECONDARY searches on LinkedIn, Facebook, and Instagram for those specific individuals to resolve their direct professional email and mobile numbers.
+1. WEBSITE & SITEMAP: First, identify the official domain. You MUST CRAWL THE SITEMAP (About, Meet the Team, Management) to identify the names of the CEO, MD, and Marketing Lead.
+2. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn, Facebook, and Instagram for that specific individual to resolve their direct professional email and direct mobile numbers.
 3. AGGREGATOR CROSS-REFERENCE: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps in landlines or general emails.
-4. ZERO TOLERANCE FOR MOCK DATA: If data is not discovered after iterative checks, return null.
+4. SEARCH SCOPING: Ensure you search for common variants of the company name to find the website.
+
+CRITICAL INTEGRITY SHIELD: 
+- REAL DATA ONLY: Do not invent names or guess email patterns.
+- NULL MANDATE: If data is not explicitly visible in search evidence after sitemap and identity lookups, set the field to null.
 
 LIST TO INVESTIGATE (RSA ENTITIES ONLY):
 ${companyList}
@@ -79,7 +83,7 @@ JSON OUTPUT REQUIREMENTS:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "V6 Batch Mandate Ready", description: "Sitemap and Identity protocol active. Paste into AI Studio." });
+            toast({ title: "V7 Batch Mandate Ready", description: "Sitemap and Identity protocol active. Paste into AI Studio." });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -99,9 +103,9 @@ JSON OUTPUT REQUIREMENTS:
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-left font-black">
                         <SearchCode className="h-5 w-5 text-primary" />
-                        Batch Scavenger V6
+                        Batch Scavenger V7
                     </DialogTitle>
-                    <DialogDescription className="text-left text-foreground">
+                    <DialogDescription className="text-left text-foreground text-foreground">
                         High-velocity batch research using the sitemap and identity resolution mandate.
                     </DialogDescription>
                 </DialogHeader>
@@ -111,7 +115,7 @@ JSON OUTPUT REQUIREMENTS:
                         <ShieldCheck className="h-4 w-4 text-primary" />
                         <AlertTitle className="font-bold text-foreground text-left">Deep Investigation Mandated</AlertTitle>
                         <AlertDescription className="text-xs text-left text-foreground">
-                            The agent is commanded to mine website sitemaps for staff names, then pivot to social platforms to find direct contact paths.
+                            The agent is commanded to mine website sitemaps for employee lists, then pivot to social platforms to resolve their direct contact details.
                         </AlertDescription>
                     </Alert>
 
@@ -126,7 +130,7 @@ JSON OUTPUT REQUIREMENTS:
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'V6 Batch Ready!' : 'Copy Batch Scavenger'}
+                        {isCopied ? 'V7 Batch Ready!' : 'Copy Batch Scavenger'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

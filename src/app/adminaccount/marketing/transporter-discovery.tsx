@@ -20,21 +20,22 @@ export const transporterCategories = [
 function generateDiscoveryPrompt(category: string, startPage: number) {
     const startSeq = (startPage - 1) * 30 + 1;
 
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER).
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V7 - FORENSIC HUNT).
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African transport companies for: "${category}".
 
-SCAVENGER PROTOCOL:
-1. WEBSITE & SITEMAP: Find the official website. You MUST crawl the Sitemap, 'About Us', 'Meet the Team', and 'Contact' sub-pages to identify the names of the CEO, MD, and Marketing Manager.
-2. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve their direct professional email and direct mobile numbers.
-3. SOCIAL CROSS-REFERENCE: Specially mine Facebook and Instagram bios for hidden WhatsApp/Mobile numbers.
+HUNT PROTOCOL:
+1. WEBSITE & SITEMAP: Identify the official website. You MUST CRAWL THE SITEMAP sub-pages ('About Us', 'Meet the Team', 'Contact') to identify the names of the CEO, MD, and Marketing Manager.
+2. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve their direct professional email and direct mobile numbers (+27 format).
+3. BROAD SEARCHING: Do not use restrictive quotes. Search for variants of the name to ensure you find the domain (e.g. jhtrucking.co.za).
+4. AGGREGATOR CROSS-REFERENCE: Use local SA directories (Brabys, Yellosa, Infoisinfo) to bridge contact gaps for landlines.
 
 CRITICAL INTEGRITY SHIELD: 
-- REAL DATA ONLY: Do not invent names or guess emails based on patterns.
-- NULL MANDATE: If data is not explicitly visible in search evidence after deep sitemap and secondary checks, set the field to null.
+- REAL DATA ONLY: Do not invent names or guess email patterns.
+- NULL MANDATE: If data is not explicitly found after deep sitemap and secondary checks, set the field to null.
 
 RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -70,7 +71,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V6 Scavenger Ready", description: "Deep sitemap and identity mandate active." });
+        toast({ title: "V7 Scavenger Ready", description: "Broad search and sitemap mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -83,14 +84,14 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol V6 Active</AlertTitle>
-                    <AlertDescription className="text-xs text-left text-foreground leading-relaxed">
-                        The agent is commanded to mine website sitemaps for staff names, then pivot to social platforms to resolve their direct contact details.
+                    <AlertTitle className="text-left font-bold text-foreground text-left text-foreground">Scavenger Protocol V7 Active</AlertTitle>
+                    <AlertDescription className="text-xs text-left text-foreground text-foreground leading-relaxed">
+                        The agent is commanded to mine website sitemaps for employee lists, then pivot to social platforms to resolve their direct contact details. Broadened search parameters ensure domain identification.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Pagination Sync</Label>
-                    <div className="space-y-1.5 text-left">
+                    <div className="space-y-1.5 text-left text-foreground text-foreground">
                         <Label className="text-xs font-bold text-left text-foreground">Start from Batch #</Label>
                         <Input 
                             type="number" 
@@ -103,12 +104,12 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V6 Haulier Prompt
+                    Copy V7 Haulier Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V6)</Label>
-                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left">
+            <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> Industrial Command (V7)</Label>
+                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left text-foreground">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
             </div>
@@ -118,17 +119,17 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
 export default function TransporterDiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none text-left text-foreground">
-            <Tabs defaultValue="Long Haul" className="w-full text-left">
-                <CardHeader className="px-0 pt-0 text-left">
-                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline text-left text-foreground">
+        <Card className="shadow-none border-none text-left text-foreground text-foreground">
+            <Tabs defaultValue="Long Haul" className="w-full text-left text-foreground text-foreground">
+                <CardHeader className="px-0 pt-0 text-left text-foreground text-foreground">
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline text-left">
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Haulier Scavenger
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground text-foreground">Map unique transport entities using high-fidelity V6 sitemap resolution.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground text-foreground text-foreground">Map unique transport entities using high-fidelity V7 sitemap resolution.</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
+                <CardContent className="px-0 text-left text-foreground text-foreground text-foreground">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground text-foreground">
                         {transporterCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
                         ))}
