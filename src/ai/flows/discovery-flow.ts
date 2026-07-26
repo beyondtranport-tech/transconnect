@@ -58,9 +58,9 @@ const discoveryFlow = ai.defineFlow(
         RETURN ONLY RAW JSON. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
         
         REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-        1. BROAD DISCOVERY: Use broad queries to identify official domains and directory listings. Try name variants.
+        1. BROAD DISCOVERY: Use broad queries to identify official domains and directory listings. Try name variants and acronym expansions.
         2. FLAT-SITE ANALYSIS: Many sites are one-page with "Contact Us" cards. Analyze the root snippets for these specific blocks and anchors.
-        3. TEAM MINING: Identify the CEO and Marketing Manager by name from "About Us", "Team", or "Contact" sections.
+        3. TEAM MINING: Identify the CEO and Marketing Manager by name from "About Us", "Team", or "Contact" sections/cards.
         4. IDENTITY RESOLUTION: Perform secondary targeted searches on LinkedIn and Facebook for identified names to resolve direct professional emails and mobile numbers.
         5. AGGREGATOR SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps.
         

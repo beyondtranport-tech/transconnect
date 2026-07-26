@@ -37,11 +37,11 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 TASK: Perform an aggressive, multi-step investigation to bridge ALL data gaps for: "${companyName}".
 
 INVESTIGATION PROTOCOL (FLAT-SITE RESILIENT):
-1. IDENTITY EXPANSION: If the name is an acronym, identify the full legal trading name.
+1. IDENTITY EXPANSION: If the name is an acronym (e.g. "JH"), identify the full legal name ("Junior H").
 2. DOMAIN IDENTIFICATION: Search for "${companyName} South Africa official website". Find the .co.za or .com domain.
-3. FLAT-SITE ANALYSIS: Many industrial sites are one-page. You MUST analyze the main page for "Contact Cards" or "Section Blocks" to identify CEO/Marketing names, emails, and phone numbers.
-4. IDENTITY RESOLUTION: For each name found, perform a targeted search on LinkedIn: "[NAME] [COMPANY_NAME] South Africa". Resolve their current role and direct contact evidence.
-5. AGGREGATOR SCAVENGE: Search SA directories (Brabys, Yellosa, Infoisinfo) to bridge remaining gaps.
+3. FLAT-SITE ANALYSIS: Many industrial sites are one-page. You MUST analyze the main page sections for "Contact Cards" or "Footer Blocks" to identify names, emails, and phone numbers.
+4. IDENTITY RESOLUTION: Find the names of the CEO, MD, and Marketing Lead. Pivot to LinkedIn/Facebook to resolve their direct professional email and mobile numbers.
+5. AGGREGATOR SCAVENGE: Cross-reference SA directories (Brabys, Yellosa, Infoisinfo) to bridge remaining gaps.
 
 DATA INTEGRITY SHIELD:
 - EVIDENCE-ONLY: If a field is not found after this multi-query search, return null.
@@ -66,10 +66,10 @@ RETURN ONLY A RAW JSON OBJECT:
       "email": "VERIFIED EMAIL", 
       "mobile": "VERIFIED MOBILE" 
   },
-  "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SERVICE PAGES (300 WORDS)."
+  "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SECTIONS (300 WORDS)."
 }
 
-NO MARKDOWN. NO PREAMBLE.`;
+NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.`;
     };
 
     const handleCopyAndLog = async () => {
@@ -118,7 +118,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                             <Sparkles className="h-5 w-5 text-primary" />
                             Industrial Gap-Analysis V11
                         </DialogTitle>
-                        <DialogDescription className="text-left text-foreground">
+                        <DialogDescription className="text-left text-foreground text-foreground">
                             Generate an aggressive flat-site resilient command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
@@ -126,16 +126,16 @@ NO MARKDOWN. NO PREAMBLE.`;
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left text-foreground">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold">V11 Flat-Site Logic Active</AlertTitle>
-                            <AlertDescription className="text-xs text-left">
-                                This command forces the AI to analyze root page sections for contact cards and expand acronyms before pivoting to social identity resolution.
+                            <AlertTitle className="text-left font-bold text-foreground text-left">V11 Flat-Site Logic Active</AlertTitle>
+                            <AlertDescription className="text-xs text-left text-foreground">
+                                Optimized for single-page industrial sites. Forces sectional block analysis and acronym expansion to find hidden contact detail.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2 text-left text-foreground">
                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Research Command</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground">
-                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{getPrompt()}</pre>
+                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-foreground">{getPrompt()}</pre>
                             </ScrollArea>
                         </div>
                     </div>
