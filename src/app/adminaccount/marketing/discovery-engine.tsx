@@ -23,22 +23,22 @@ export const supplierCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V7 - FORENSIC HUNT). 
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V9 - FORENSIC HUNT). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
-HUNT PROTOCOL:
-1. WEBSITE & SITEMAP: Identify the official website. You MUST crawl the Sitemap, 'About Us', 'Meet the Team', and 'Contact' sub-pages to identify the names of the CEO, MD, and Marketing Manager.
-2. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve their direct professional email and direct mobile numbers (+27 format).
-3. AGGREGATOR CROSS-REFERENCE: Use local SA directories (Brabys, Yellosa, Infoisinfo) to bridge contact gaps for landlines.
-4. BROAD SEARCHING: Do not use restrictive quotes. Search for variants like "JH Trucking" and "Jh Trucking South Africa" to find the domain.
+HUNT PROTOCOL (MANDATORY STEPS):
+1. DOMAIN IDENTIFICATION: Identify the official website. Find the .co.za or .com domain.
+2. TEAM DISCOVERY: Search specifically for "site:[OFFICIAL_DOMAIN] about us" or "site:[OFFICIAL_DOMAIN] management". Identify the names of the CEO/MD and the Marketing/Sales Lead.
+3. IDENTITY RESOLUTION: For each name found, perform a targeted search on LinkedIn: "[NAME] [COMPANY_NAME] South Africa". Resolve their direct professional contact details.
+4. AGGREGATOR CROSS-REFERENCE: Use local SA directories (Brabys, Yellosa, Infoisinfo) to bridge contact gaps.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
-- NULL MANDATE: If data is not explicitly visible in search evidence after deep sitemap and secondary checks, set the field to null.
+- NULL MANDATE: If data is not explicitly visible in search evidence after multi-query checks, return null for that field.
 
 REQUIRED JSON FIELDS:
 [
@@ -71,7 +71,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V7 Command Ready", description: "Broad search and sitemap protocol active." });
+        toast({ title: "V9 Command Ready", description: "Multi-query identity resolution active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -84,9 +84,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground text-left">Hunt Protocol V7 Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground text-left">Hunt Protocol V9 Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground text-foreground leading-relaxed">
-                        Commands the agent to crawl sitemaps for employee lists and pivot to social platforms for direct contact resolution. Search logic is broadened to ensure domain discovery.
+                        Forces an iterative multi-query approach to identify domains, mine team pages, and resolve identities on social platforms.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
@@ -103,11 +103,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V7 Discovery Prompt
+                    Copy V9 Discovery Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> Command Preview (V7)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> Command Preview (V9)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left text-foreground">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -125,7 +125,7 @@ export default function DiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Build a high-fidelity registry using the broadened V7 scavenger protocol.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Build a high-fidelity registry using the multi-query V9 scavenger protocol.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">

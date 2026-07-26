@@ -20,23 +20,22 @@ export const transporterCategories = [
 function generateDiscoveryPrompt(category: string, startPage: number) {
     const startSeq = (startPage - 1) * 30 + 1;
 
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V8 - FORENSIC SCAVENGER).
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V9 - FORENSIC SCAVENGER).
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African transport companies for: "${category}".
 
-SCAVENGER PROTOCOL:
-1. BROAD DISCOVERY: Search for "${category} transport companies South Africa". Do not use restrictive quotes.
-2. DOMAIN SEARCH: First, identify the official .co.za or .com website for each entity.
-3. SITEMAP CRAWL: For each site found, you MUST search the Sitemap and sub-pages ('About Us', 'Management', 'Contact') to identify the names of the CEO, MD, and Marketing Manager.
-4. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve direct professional emails and direct mobile numbers (+27 format).
-5. DIRECTORY FALLBACK: Cross-reference local SA directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps.
+INVESTIGATION PROTOCOL (MANDATORY):
+1. BROAD DISCOVERY: Search for "${category} transport companies South Africa". Identify official domains.
+2. SITEMAP DEEP-DIVE: For each domain found, you MUST identify the names of the CEO, MD, and Marketing Lead. Search specifically for "site:[DOMAIN] about" or "site:[DOMAIN] management".
+3. IDENTITY RESOLUTION: Use identified names to perform targeted secondary searches on LinkedIn and Facebook to resolve direct professional emails and direct mobile numbers (+27 format).
+4. DIRECTORY SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge landline gaps.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
-- NULL MANDATE: If data is not explicitly found after deep sitemap and identity checks, set the field to null.
+- NULL MANDATE: If data is not explicitly found after deep sitemap and identity lookups, return null for that specific field.
 
 RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -72,7 +71,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V8 Scavenger Ready", description: "Broad search and sitemap mandate active." });
+        toast({ title: "V9 Scavenger Ready", description: "Multi-query identity resolution active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -85,9 +84,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol V8 Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol V9 Active</AlertTitle>
                     <AlertDescription className="text-xs text-left leading-relaxed">
-                        The agent uses broad search queries to identify the domain first, then enforces a deep crawl of sitemap sub-pages for employee lists before resolving identities on social platforms.
+                        Forces an iterative multi-query approach: Domain discovery -> Sitemap mining -> Social identity resolution -> Directory sync.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
@@ -105,11 +104,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V8 Haulier Prompt
+                    Copy V9 Haulier Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V8)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V9)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -127,7 +126,7 @@ export default function TransporterDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Haulier Scavenger
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Map unique transport entities using broad V8 sitemap resolution.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Map unique transport entities using multi-query V9 resolution.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">

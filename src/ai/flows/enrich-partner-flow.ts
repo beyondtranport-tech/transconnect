@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V8.
- * FORENSIC SCAVENGER PROTOCOL: Implements sitemap-to-social identity resolution.
+ * @fileOverview High-fidelity Industrial Research Agent V9.
+ * FORENSIC SCAVENGER PROTOCOL: Implements iterative multi-query identity resolution.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
@@ -49,21 +49,28 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V8: BROAD DISCOVERY
-    // We use broad terms to ensure Google finds the official .co.za domain first.
+    // SEARCH STRATEGY V9: ITERATIVE INVESTIGATION
+    // Step 1: Find the official domain and general details
     const siteResults = await googleSearchTool({ 
         query: `${company} South Africa official website` 
     });
     
-    const identityResults = await googleSearchTool({ 
-        query: `${company} South Africa CEO Managing Director Marketing Manager` 
+    // Step 2: Specifically hunt for the management team names
+    const teamResults = await googleSearchTool({ 
+        query: `${company} South Africa "Management" OR "Meet the team" OR "About us" CEO MD Marketing Manager` 
     });
 
+    // Step 3: Resolve identities on social platforms
+    const identityResults = await googleSearchTool({ 
+        query: `${company} South Africa CEO MD LinkedIn` 
+    });
+
+    // Step 4: Fallback to business directories
     const directoryResults = await googleSearchTool({
-        query: `${company} South Africa phone email address Brabys Yellosa`
+        query: `${company} South Africa phone email address Brabys Yellosa Infoisinfo`
     });
     
-    const allContent = [...(siteResults || []), ...(identityResults || []), ...(directoryResults || [])]
+    const allContent = [...(siteResults || []), ...(teamResults || []), ...(identityResults || []), ...(directoryResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
@@ -73,21 +80,21 @@ const enrichPartnerFlow = ai.defineFlow(
 
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V8 - FORENSIC SCAVENGER).
+        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V9 - FORENSIC SCAVENGER).
         
         INVESTIGATION PROTOCOL:
-        1. DOMAIN IDENTIFICATION: Identify the official website from the search evidence. Look for .co.za or .com domains first.
-        2. SITEMAP CRAWL: If the evidence describes "Meet the Team", "Management", or "Contact" pages, extract the specific names of the CEO and Marketing Lead.
-        3. IDENTITY RESOLUTION: Use those names to resolve direct emails and mobile numbers from LinkedIn/Facebook/Instagram snippets in the evidence.
-        4. DIRECTORY SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) as a fallback for general contacts.
+        1. DOMAIN IDENTIFICATION: Identify the official website. Prioritize .co.za or .com domains.
+        2. TEAM MINING: You MUST analyze the search snippets to identify the ACTUAL NAMES of the CEO, MD, and Marketing Manager. 
+        3. IDENTITY RESOLUTION: Use those names to identify direct professional emails and mobile numbers from LinkedIn or directory snippets.
+        4. DIRECTORY SYNC: Use SA directories as a fallback for missing landlines.
         
         CRITICAL INTEGRITY SHIELD:
-        - NO GUESSING: Never construct email addresses based on patterns.
-        - EVIDENCE ONLY: Only return data explicitly visible in search evidence or metadata.
-        - NULL FALLBACK: If a field is not found, return null.
+        - NO GUESSING: Never construct email addresses based on common patterns.
+        - EVIDENCE ONLY: Only return data explicitly visible in the snippets or metadata.
+        - NULL FALLBACK: If a field is not confirmed by evidence, return null.
         
         MANDATE: Return RAW JSON only.`,
-        prompt: `PERFORM THE V8 FORENSIC HUNT FOR "${company}" USING THIS EVIDENCE:\n\n${allContent}`,
+        prompt: `PERFORM THE V9 FORENSIC HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }
