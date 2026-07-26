@@ -32,16 +32,16 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
-        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V12 - FORENSIC SCAVENGER).
+        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - INDUCTIVE SCAVENGER).
         
-TASK: Bridge ALL data gaps for: "${companyName}". Use an aggressive, inductive reconstruction approach.
+TASK: Complete a forensic gap-analysis for: "${companyName}". Use an aggressive, inductive reconstruction approach to eliminate all null fields.
 
-INVESTIGATION MANDATE:
-1. ACRONYM EXPANSION: If the name is initials (e.g. "JH"), you MUST first determine what it stands for (e.g. "Junior H").
-2. FRAGMENT STITCHING: You are expected to combine fragments from different snippets. Take the address from a directory, the email from a LinkedIn bio, and the phone from a Facebook page.
-3. FLAT-SITE RESILIENCY: Industrial sites like "jhtrucking.co.za" are often one-page. Analyze snippets for "Contact Cards", "Sections", and "Footer blocks" instead of sub-URLs.
-4. IDENTITY RESOLUTION: Find the CEO and Marketing Lead. Pivot to social platforms (LinkedIn/Facebook) to resolve direct professional contact detail.
-5. AGGREGATOR TRUST: Use SA directories (Yellosa, Brabys, Infoisinfo) to populate fields if the official site is sparse.
+INVESTIGATION MANDATE (V13 PROTOCOL):
+1. IDENTITY EXPANSION: If the name is an acronym or short-hand (e.g. "JH"), you MUST first determine the full legal identity (e.g. "Junior H").
+2. FRAGMENT STITCHING: You MUST combine data fragments from multiple sources. Take the address from a directory, the email from a social bio, and human names from a LinkedIn snippet.
+3. FLAT-SITE RESILIENCY: Industrial sites are often one-page. Analyze snippets for "Contact Cards", "Footer Sections", and "Meet our staff" cards specifically if sub-URLs are missing.
+4. IDENTITY RESOLUTION: Find the names of the CEO and Marketing Lead. Pivot to targeted searches on LinkedIn and Facebook to resolve their direct professional contact detail.
+5. AGGREGATOR SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) to populate fields if the official site is unreachable.
 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
 
@@ -81,7 +81,7 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "V12 Scavenger Prompt Ready", description: "Inductive reconstruction protocol active. Paste into AI Studio." });
+            toast({ title: "V13 Scavenger Prompt Ready", description: "Inductive reconstruction and acronym expansion active." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -101,7 +101,7 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                 variant="ghost" 
                 size="icon" 
                 onClick={() => { setIsCopied(false); setIsOpen(true); }} 
-                title="Industrial Gap Analysis"
+                title="Forensic Gap Analysis"
             >
                 <Search className="h-4 w-4 text-primary" />
             </Button>
@@ -111,25 +111,25 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Industrial Gap-Analysis V12
+                            Industrial Gap-Analysis V13
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground text-foreground text-foreground text-foreground">
-                            Generate an aggressive V12 scavenger command for <strong>{companyName}</strong>.
+                            Generate an aggressive V13 scavenger command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4 text-left text-foreground text-foreground text-foreground">
+                    <div className="space-y-4 py-4 text-left text-foreground text-foreground text-foreground text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-foreground text-foreground">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground text-left text-foreground text-foreground">Inductive Reconstruction Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground text-left text-foreground text-foreground">Inductive Reconstruction Protocol</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground text-foreground">
-                                V12 protocol: Commands the AI to stitch together data fragments from across the web, specifically targeting "flat" industrial sites and acronyms.
+                                V13 Protocol: Explicitly handles acronyms (JH -> Junior H) and flat-site card mining to resolve human contacts across multiple sources.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-foreground">AI Research Command</label>
-                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground">
+                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-foreground text-foreground">{getPrompt()}</pre>
                             </ScrollArea>
                         </div>
@@ -142,7 +142,7 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                             className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
                         >
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            {isCopied ? 'V12 Command Ready!' : 'Copy V12 Scavenger Prompt'}
+                            {isCopied ? 'V13 Command Ready!' : 'Copy V13 Scavenger Prompt'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
