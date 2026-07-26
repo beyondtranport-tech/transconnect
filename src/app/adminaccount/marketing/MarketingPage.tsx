@@ -92,7 +92,7 @@ interface MarketingPageProps {
   audience: keyof typeof audienceConfig;
 }
 
-type ApiPartnerType = 'partner' | 'isa' | 'investor' | 'developer' | 'supplier' | 'transporter' | 'associate' | 'finance';
+type ApiPartnerType = 'partner' | 'isa' | 'investor' | 'developer' | 'supplier' | 'transporter' | 'associate' | 'finance' | 'lead';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -103,6 +103,10 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
     if (!response.ok) {
         const text = await response.text();
+        // Handle 504 Gateway Timeout or other HTML error pages gracefully
+        if (text.includes('<html>')) {
+            throw new Error(`Server Error: ${response.status} - The request timed out. Try refreshing.`);
+        }
         throw new Error(text.startsWith('{') ? JSON.parse(text).error : `Server Error: ${response.status}`);
     }
 
@@ -162,7 +166,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Log against {singularAudience}</FormLabel>
@@ -171,7 +175,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                                         <SelectValue placeholder={isLoadingPartners ? "Loading..." : `Select a ${singularAudience.toLowerCase()}...`} />
                                     </SelectTrigger></FormControl>
                                     <SelectContent>
-                                        {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.firstName} {p.lastName} ({p.companyName || 'N/A'})</SelectItem>)}
+                                        {partners.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.companyName || `${p.firstName} ${p.lastName}`}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -228,7 +232,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
   const config = audienceConfig[audience];
   
   const fetchPartnersForLogging = useCallback(async () => {
-    if (!config || (!config.CRM && !config.Discovery)) {
+    if (!config) {
       setIsLoadingPartners(false);
       setPartners([]);
       return;
@@ -239,6 +243,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Not authenticated");
 
+        // Use a capped fetch for the dropdown to avoid 504 timeouts on large datasets
         let apiType: ApiPartnerType = 'partner';
         if (audience === 'isa') apiType = 'isa';
         else if (audience === 'investors') apiType = 'investor';
@@ -248,7 +253,8 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         else if (audience === 'associates') apiType = 'associate';
         else if (audience === 'finance') apiType = 'finance';
         
-        const result = await performAdminAction(token, 'getPartnersByType', { type: apiType });
+        // Pass a small limit (100) specifically for the dropdown to avoid 504
+        const result = await performAdminAction(token, 'getPartnersByType', { type: apiType, limit: 100 });
         setPartners(result.data || []);
         
     } catch (e: any) {

@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getShops': {
-                const snap = await db.collectionGroup('shops').get();
+                const snap = await db.collectionGroup('shops').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -62,19 +62,25 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getStaff': {
-                const snap = await db.collectionGroup('staff').get();
+                const snap = await db.collectionGroup('staff').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').get();
+                // ADDED LIMIT: Prevents 504 timeout on large datasets (9000+ records)
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getPartnersByType': {
-                const { type: pType } = payload;
+                const { type: pType, limit: pLimit = 200 } = payload;
                 if (!pType) throw new Error("Partner type is required.");
-                const snap = await db.collection('partners').where('type', '==', pType).get();
+                
+                // Optimized search for dropdowns/logging: 
+                // Uses updatedAt to ensure relevant records are returned first.
+                let q: any = db.collection('partners').where('type', '==', pType);
+                const snap = await q.orderBy('updatedAt', 'desc').limit(pLimit).get();
+                
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -87,22 +93,6 @@ export async function POST(req: NextRequest) {
                     lastEnrichedAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const col = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.update(db.collection(col).doc(id), {
-                        status: 'contacted',
-                        enhancementMethod: 'V4-BATCH',
-                        lastEnrichedAt: FieldValue.serverTimestamp(),
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                });
-                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -146,7 +136,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceTasks': {
-                const { type: targetType } = payload;
                 const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
@@ -163,37 +152,6 @@ export async function POST(req: NextRequest) {
                 const col = source === 'Lead' ? 'leads' : 'partners';
                 await db.collection(col).doc(partnerId).delete();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'bulkSavePartners': {
-                const { partners, type: pType } = payload;
-                const batch = db.batch();
-                partners.forEach((p: any) => {
-                    const id = p.record_id || p.id || db.collection('partners').doc().id;
-                    const col = (pType === 'lead' || p.source === 'Lead') ? 'leads' : 'partners';
-                    
-                    const contact = p.contact_person || p.contactPerson || p.contact_name || '';
-                    let firstName = p.firstName || '';
-                    let lastName = p.lastName || '';
-                    
-                    if (!firstName && contact) {
-                        const parts = contact.trim().split(/\s+/);
-                        firstName = parts[0];
-                        lastName = parts.slice(1).join(' ');
-                    }
-
-                    batch.set(db.collection(col).doc(id), {
-                        ...p,
-                        id,
-                        contactPerson: contact,
-                        firstName,
-                        lastName,
-                        type: pType || p.type || 'partner',
-                        updatedAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
             }
 
             case 'logCommunication': {
@@ -246,17 +204,25 @@ export async function POST(req: NextRequest) {
                 const collectionName = (queryType === 'all' || queryType === 'lead') ? 'leads' : 'partners';
                 let q: any = db.collection(collectionName);
                 if (collectionName === 'partners' && queryType !== 'all') q = q.where('type', '==', queryType);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(searchLimit, 20000)).get();
+                
+                // Hard limit safety to prevent 504 timeouts on massive datasets
+                const finalLimit = Math.min(searchLimit, 1000);
+                const snap = await q.orderBy('updatedAt', 'desc').limit(finalLimit).get();
+                
                 let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
                 if (term) {
                     const lowTerm = term.toLowerCase();
-                    results = results.filter((r: any) => (r.companyName || '').toLowerCase().includes(lowTerm) || (r.email || '').toLowerCase().includes(lowTerm));
+                    results = results.filter((r: any) => 
+                        (r.companyName || '').toLowerCase().includes(lowTerm) || 
+                        (r.email || '').toLowerCase().includes(lowTerm)
+                    );
                 }
                 return NextResponse.json({ success: true, data: serializeData(results) });
             }
 
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').get();
+                // ADDED LIMIT: Prevents 504 on large member lists
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
