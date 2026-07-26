@@ -1,9 +1,9 @@
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V10.
+ * @fileOverview High-fidelity Industrial Research Agent V11.
  * FORENSIC SCAVENGER PROTOCOL: Implements iterative multi-query identity resolution.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
- * FLAT-SITE RESILIENCE: Handles one-page websites and anchor-based navigation.
+ * FLAT-SITE RESILIENCE: Handles one-page websites and section-based navigation.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -50,28 +50,33 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V10: FORENSIC SCAVENGER (FLAT-SITE AWARE)
-    // Phase 1: Robust Domain Discovery (Trying variants)
+    // SEARCH STRATEGY V11: FORENSIC SCAVENGER (ACRONYM & FLAT-SITE AWARE)
+    // Phase 1: Robust Domain & Acronym Expansion
     const siteResults = await googleSearchTool({ 
-        query: `${company} South Africa official website business info` 
+        query: `${company} South Africa official website full name contact` 
     });
     
-    // Phase 2: Sitemap & Section Mining (Looking for names/cards)
+    // Phase 2: Sectional & Sitemap Mining (Looking for names/cards/anchors)
     const teamResults = await googleSearchTool({ 
-        query: `${company} South Africa "Meet the team" OR "Contact Us" OR "About us" CEO MD Owner` 
+        query: `${company} South Africa "Meet the team" OR "Contact Cards" OR "About us" CEO MD Owner` 
     });
 
-    // Phase 3: Identity Resolution (LinkedIn/Facebook Pivot)
+    // Phase 3: Identity Resolution (LinkedIn/Facebook Pivot for identified human names)
     const identityResults = await googleSearchTool({ 
-        query: `${company} South Africa CEO MD Marketing LinkedIn profile` 
+        query: `${company} South Africa LinkedIn profile employees management` 
     });
 
-    // Phase 4: Aggregator Scavenge (Local Directories)
+    // Phase 4: Aggregator Scavenge (Local SA Directories)
     const directoryResults = await googleSearchTool({
-        query: `${company} South Africa phone email address Brabys Yellosa infoisinfo`
+        query: `${company} South Africa Brabys Yellosa infoisinfo address phone`
+    });
+
+    // Phase 5: Direct contact resolve for the company name
+    const contactResults = await googleSearchTool({
+        query: `${company} South Africa "email" "mobile" "+27"`
     });
     
-    const allContent = [...(siteResults || []), ...(teamResults || []), ...(identityResults || []), ...(directoryResults || [])]
+    const allContent = [...(siteResults || []), ...(teamResults || []), ...(identityResults || []), ...(directoryResults || []), ...(contactResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
@@ -81,22 +86,22 @@ const enrichPartnerFlow = ai.defineFlow(
 
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V10 - FORENSIC SCAVENGER).
+        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V11 - FORENSIC SCAVENGER).
         
-        INVESTIGATION MANDATE:
-        1. DOMAIN IDENTIFICATION: Locate the official .co.za or .com domain. 
-        2. FLAT-SITE RESILIENCE: Many sites are one-page (flat). You MUST analyze the main page snippets for sections like "Contact", "About", or "Staff Cards" to extract data. Look for anchors (e.g. #contact).
+        INVESTIGATION MANDATE (FLAT-SITE AWARE):
+        1. DOMAIN IDENTIFICATION: Locate the official .co.za or .com domain. If the name is an acronym (e.g. JH), find the full name (e.g. Junior H).
+        2. SECTION-BASED EXTRACTION: Many industrial sites are "Flat" (one-page). You MUST analyze the snippets for data usually found in "Contact Cards" or "Section Blocks" on the root page. Look for anchors (e.g. #contact).
         3. TEAM MINING: Identify the ACTUAL NAMES of the CEO, MD, and Marketing Lead. 
         4. IDENTITY RESOLUTION: Use the identified names to resolve direct professional emails and mobile numbers from LinkedIn or directory snippets.
         5. DIRECTORY SYNC: If the official website is minimal, you MUST use data from Brabys, Yellosa, or LinkedIn to populate the fields.
         
         CRITICAL INTEGRITY SHIELD:
-        - NO GUESSING: Never construct email addresses based on common patterns.
+        - NO GUESSING: Never construct email addresses based on patterns.
         - EVIDENCE ONLY: Only return data explicitly visible in the snippets or metadata.
         - RESOLUTION: If a human name is found, prioritize their specific contact info for the manager/ceo fields.
         
         MANDATE: Return RAW JSON only.`,
-        prompt: `PERFORM THE V10 FORENSIC HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
+        prompt: `PERFORM THE V11 FORENSIC HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }

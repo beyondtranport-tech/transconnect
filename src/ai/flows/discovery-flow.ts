@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview Automated industrial discovery agent V10.
- * Performs high-fidelity extraction of commercial records with mandatory sitemap-to-social leadership mapping.
- * Optimized for South African regional accuracy and flat-site resilience.
+ * @fileOverview Automated industrial discovery agent V11.
+ * Performs high-fidelity extraction with mandatory sitemap-to-social leadership mapping.
+ * FLAT-SITE RESILIENT: Specifically optimized for one-page industrial websites.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
@@ -54,12 +54,12 @@ const discoveryFlow = ai.defineFlow(
     try {
         const { category, type, batchSize } = input;
         
-        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V10 - FORENSIC HUNT).
+        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V11 - FORENSIC HUNT).
         RETURN ONLY RAW JSON. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
         
         REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-        1. ROBUST DISCOVERY: Use broad search queries to identify official domains and directory listings.
-        2. FLAT-SITE ANALYSIS: Some sites are one-page with "Contact Us" cards on the main page. Analyze the root content for these specific blocks.
+        1. BROAD DISCOVERY: Use broad queries to identify official domains and directory listings. Try name variants.
+        2. FLAT-SITE ANALYSIS: Many sites are one-page with "Contact Us" cards. Analyze the root snippets for these specific blocks and anchors.
         3. TEAM MINING: Identify the CEO and Marketing Manager by name from "About Us", "Team", or "Contact" sections.
         4. IDENTITY RESOLUTION: Perform secondary targeted searches on LinkedIn and Facebook for identified names to resolve direct professional emails and mobile numbers.
         5. AGGREGATOR SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps.
@@ -75,7 +75,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `EXTRACT ${batchSize} VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FOLLOW V10 FORENSIC HUNT PROTOCOL.`,
+            prompt: `EXTRACT ${batchSize} VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FOLLOW V11 FLAT-SITE RESILIENT PROTOCOL.`,
             output: {
                 schema: DiscoveryOutputSchema
             }
@@ -84,7 +84,7 @@ const discoveryFlow = ai.defineFlow(
         return response.output || { results: [] };
 
     } catch (e: any) {
-        console.error("[DISCOVERY_V10] Error:", e);
+        console.error("[DISCOVERY_V11] Error:", e);
         throw e;
     }
   }

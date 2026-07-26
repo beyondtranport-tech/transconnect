@@ -23,22 +23,22 @@ export const supplierCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V10 - FORENSIC HUNT). 
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V11 - FLAT-SITE RESILIENT). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
-HUNT PROTOCOL (MANDATORY STEPS):
-1. BROAD DISCOVERY: Identify official domains and local directory listings (Brabys, Yellosa, etc.).
-2. TEAM DISCOVERY: Search specifically for "site:[OFFICIAL_DOMAIN] about us" or "site:[OFFICIAL_DOMAIN] management". Identify the names of the CEO/MD and the Marketing/Sales Lead.
-3. IDENTITY RESOLUTION: Once a human name is found, perform a targeted secondary search on LinkedIn: "[NAME] [COMPANY_NAME] South Africa". Resolve their direct professional contact evidence.
-4. CONTACT MAPPING: Identify professional email and direct mobile numbers from social bios or directory snippets.
+HUNT PROTOCOL (FLAT-SITE AWARE):
+1. BROAD DISCOVERY: Identify official domains and local directory listings. Try acronym variants.
+2. SECTION-BASED MINING: Many sites are one-page. Analyze root snippets for "Contact Cards" or sectional data (Address, Email, Phone).
+3. TEAM DISCOVERY: Search for "site:[OFFICIAL_DOMAIN] management" or "site:[OFFICIAL_DOMAIN] team" to find CEO/Marketing names.
+4. IDENTITY RESOLUTION: Perform targeted secondary searches on LinkedIn for identified names to resolve direct professional contact evidence.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
-- NULL MANDATE: If data is not explicitly visible in search evidence after these multi-query checks, return null for that specific field.
+- NULL MANDATE: If data is not explicitly visible in search evidence after these multi-query checks, return null.
 
 REQUIRED JSON FIELDS:
 [
@@ -54,7 +54,7 @@ REQUIRED JSON FIELDS:
     "address": "...",
     "marketingManager": { "name": "...", "email": "...", "mobile": "..." },
     "ceo": { "name": "...", "email": "...", "mobile": "..." },
-    "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SUB-PAGES (300 WORDS)"
+    "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SECTIONS (300 WORDS)"
   }
 ]`;
 }
@@ -70,28 +70,28 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V10 Command Ready", description: "Iterative multi-query identity resolution active." });
+        toast({ title: "V11 Command Ready", description: "Flat-site and acronym expansion logic active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
-        <div className="grid md:grid-cols-2 gap-6 text-left">
-            <div className="space-y-4 text-left text-foreground">
+        <div className="grid md:grid-cols-2 gap-6 text-left text-foreground">
+            <div className="space-y-4 text-left">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
                     <SearchCode className="h-6 w-6 text-primary" />
                     Forensic Sourcing: {category}
                 </h2>
-                <Alert className="bg-primary/5 border-primary/20 text-left">
+                <Alert className="bg-primary/5 border-primary/20 text-left text-foreground">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground text-left">Hunt Protocol V10 Active</AlertTitle>
-                    <AlertDescription className="text-xs text-left text-muted-foreground text-foreground leading-relaxed">
-                        Forces an iterative multi-query approach to identify domains, mine team pages, and resolve identities on social platforms.
+                    <AlertTitle className="text-left font-bold">Hunt Protocol V11 Active</AlertTitle>
+                    <AlertDescription className="text-xs text-left leading-relaxed">
+                        Optimized for single-page industrial sites. Forces sectional block analysis and acronym expansion to find the map.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Sequence Sync</Label>
                     <div className="space-y-1.5 text-left">
-                        <Label className="text-xs font-bold text-foreground text-left">Start Sequence #</Label>
+                        <Label className="text-xs font-bold text-left">Start Sequence #</Label>
                         <Input 
                             type="number" 
                             value={seqOverride}
@@ -100,14 +100,14 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                         />
                     </div>
                 </div>
-                <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
+                <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white text-left">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V10 Discovery Prompt
+                    Copy V11 Discovery Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left text-foreground text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> Command Preview (V10)</Label>
-                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left text-foreground">
+            <div className="space-y-2 text-left text-foreground">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview (V11)</Label>
+                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
             </div>
@@ -119,15 +119,15 @@ export default function DiscoveryEngine() {
     return (
         <Card className="shadow-none border-none text-left text-foreground">
             <Tabs defaultValue="Accessories" className="w-full text-left">
-                <CardHeader className="px-0 pt-0 text-left">
-                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline">
+                <CardHeader className="px-0 pt-0 text-left text-foreground">
+                    <CardTitle className="flex items-center gap-2 text-left font-black font-headline">
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Build a high-fidelity registry using the multi-query V10 forensic scavenger protocol.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Build a high-fidelity registry using the V11 flat-site resilient scavenger protocol.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground">
                         {supplierCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
                         ))}

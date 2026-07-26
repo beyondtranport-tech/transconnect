@@ -32,20 +32,20 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
-        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V9 - FORENSIC SCAVENGER).
+        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V11 - FORENSIC SCAVENGER).
         
 TASK: Perform an aggressive, multi-step investigation to bridge ALL data gaps for: "${companyName}".
 
-INVESTIGATION PROTOCOL (MANDATORY STEPS):
-1. DOMAIN IDENTIFICATION: Search for "${companyName} South Africa official website". Find the .co.za or .com domain.
-2. TEAM DISCOVERY: Search specifically for "site:[OFFICIAL_DOMAIN] about us" or "site:[OFFICIAL_DOMAIN] management" or "site:[OFFICIAL_DOMAIN] team". Identify the names of the CEO/MD and the Marketing/Sales Lead.
-3. IDENTITY RESOLUTION: For each name found, perform a targeted search on LinkedIn: "[NAME] [COMPANY_NAME] South Africa". Resolve their current role and look for direct professional contact evidence.
-4. AGGREGATOR SCAVENGE: Search South African directories (Brabys, Yellosa, EasyInfo, Infoisinfo) for "${companyName} [REGION]" to bridge any remaining landline or general email gaps.
+INVESTIGATION PROTOCOL (FLAT-SITE RESILIENT):
+1. IDENTITY EXPANSION: If the name is an acronym, identify the full legal trading name.
+2. DOMAIN IDENTIFICATION: Search for "${companyName} South Africa official website". Find the .co.za or .com domain.
+3. FLAT-SITE ANALYSIS: Many industrial sites are one-page. You MUST analyze the main page for "Contact Cards" or "Section Blocks" to identify CEO/Marketing names, emails, and phone numbers.
+4. IDENTITY RESOLUTION: For each name found, perform a targeted search on LinkedIn: "[NAME] [COMPANY_NAME] South Africa". Resolve their current role and direct contact evidence.
+5. AGGREGATOR SCAVENGE: Search SA directories (Brabys, Yellosa, Infoisinfo) to bridge remaining gaps.
 
 DATA INTEGRITY SHIELD:
 - EVIDENCE-ONLY: If a field is not found after this multi-query search, return null.
-- NO GUESSING: Do not construct emails based on common patterns.
-- RSA LOCK: Only return data for the South African entity.
+- NO GUESSING: Do not construct emails based on patterns.
 
 RETURN ONLY A RAW JSON OBJECT:
 {
@@ -57,13 +57,13 @@ RETURN ONLY A RAW JSON OBJECT:
   "phone": "RSA LANDLINE",
   "address": "VERIFIED PHYSICAL ADDRESS",
   "marketingManager": { 
-      "name": "VERIFIED HUMAN NAME", 
-      "email": "VERIFIED DIRECT EMAIL", 
+      "name": "VERIFIED NAME", 
+      "email": "VERIFIED EMAIL", 
       "mobile": "VERIFIED MOBILE" 
   },
   "ceo": { 
-      "name": "VERIFIED OWNER/MD NAME", 
-      "email": "VERIFIED DIRECT EMAIL", 
+      "name": "VERIFIED NAME", 
+      "email": "VERIFIED EMAIL", 
       "mobile": "VERIFIED MOBILE" 
   },
   "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SERVICE PAGES (300 WORDS)."
@@ -86,7 +86,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "V9 Scavenger Prompt Ready", description: "Multi-query identity resolution active. Paste into AI Studio." });
+            toast({ title: "V11 Scavenger Prompt Ready", description: "Flat-site resiliency protocol active. Paste into AI Studio." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -116,26 +116,26 @@ NO MARKDOWN. NO PREAMBLE.`;
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Industrial Gap-Analysis V9
+                            Industrial Gap-Analysis V11
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
-                            Generate an aggressive multi-query scavenger command for <strong>{companyName}</strong>.
+                            Generate an aggressive flat-site resilient command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4 text-left text-foreground">
-                        <Alert className="bg-primary/5 border-primary/20 text-left">
+                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground">V9 Multi-Query Logic Active</AlertTitle>
-                            <AlertDescription className="text-xs text-left text-foreground">
-                                This command forces the AI to perform at least 4 distinct searches to identify the domain, mine the team pages, resolve identities on LinkedIn, and bridge gaps via SA directories.
+                            <AlertTitle className="text-left font-bold">V11 Flat-Site Logic Active</AlertTitle>
+                            <AlertDescription className="text-xs text-left">
+                                This command forces the AI to analyze root page sections for contact cards and expand acronyms before pivoting to social identity resolution.
                             </AlertDescription>
                         </Alert>
 
-                        <div className="space-y-2 text-left">
+                        <div className="space-y-2 text-left text-foreground">
                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Research Command</label>
                             <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground">
-                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-foreground">{getPrompt()}</pre>
+                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{getPrompt()}</pre>
                             </ScrollArea>
                         </div>
                     </div>
@@ -147,7 +147,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                             className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
                         >
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            {isCopied ? 'V9 Command Ready!' : 'Copy V9 Scavenger Prompt'}
+                            {isCopied ? 'V11 Command Ready!' : 'Copy V11 Scavenger Prompt'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
