@@ -2,7 +2,7 @@
 /**
  * @fileOverview Automated industrial discovery agent V10.
  * Performs high-fidelity extraction of commercial records with mandatory sitemap-to-social leadership mapping.
- * Optimized for South African regional accuracy and broad domain discovery.
+ * Optimized for South African regional accuracy and flat-site resilience.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
@@ -59,9 +59,10 @@ const discoveryFlow = ai.defineFlow(
         
         REQUIRED INVESTIGATION PROTOCOL PER RECORD:
         1. ROBUST DISCOVERY: Use broad search queries to identify official domains and directory listings.
-        2. SITEMAP DEEP-DIVE: Crawl the Sitemap, 'About Us', and 'Contact' sub-pages to extract names of the CEO, MD, and Marketing Manager.
-        3. IDENTITY RESOLUTION: Perform secondary targeted searches on LinkedIn and Facebook for identified names to resolve direct professional emails and mobile numbers.
-        4. AGGREGATOR SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps.
+        2. FLAT-SITE ANALYSIS: Some sites are one-page with "Contact Us" cards on the main page. Analyze the root content for these specific blocks.
+        3. TEAM MINING: Identify the CEO and Marketing Manager by name from "About Us", "Team", or "Contact" sections.
+        4. IDENTITY RESOLUTION: Perform secondary targeted searches on LinkedIn and Facebook for identified names to resolve direct professional emails and mobile numbers.
+        5. AGGREGATOR SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps.
         
         CRITICAL INTEGRITY SHIELD:
         1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.

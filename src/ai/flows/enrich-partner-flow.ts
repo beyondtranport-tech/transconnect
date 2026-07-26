@@ -3,6 +3,7 @@
  * @fileOverview High-fidelity Industrial Research Agent V10.
  * FORENSIC SCAVENGER PROTOCOL: Implements iterative multi-query identity resolution.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
+ * FLAT-SITE RESILIENCE: Handles one-page websites and anchor-based navigation.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -49,15 +50,15 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V10: FORENSIC SCAVENGER
-    // Phase 1: Robust Domain Discovery (No strict quotes)
+    // SEARCH STRATEGY V10: FORENSIC SCAVENGER (FLAT-SITE AWARE)
+    // Phase 1: Robust Domain Discovery (Trying variants)
     const siteResults = await googleSearchTool({ 
         query: `${company} South Africa official website business info` 
     });
     
-    // Phase 2: Sitemap & Team Mining (Looking for names)
+    // Phase 2: Sitemap & Section Mining (Looking for names/cards)
     const teamResults = await googleSearchTool({ 
-        query: `${company} South Africa "Meet the team" OR "Management" OR "About us" CEO MD Director` 
+        query: `${company} South Africa "Meet the team" OR "Contact Us" OR "About us" CEO MD Owner` 
     });
 
     // Phase 3: Identity Resolution (LinkedIn/Facebook Pivot)
@@ -84,9 +85,10 @@ const enrichPartnerFlow = ai.defineFlow(
         
         INVESTIGATION MANDATE:
         1. DOMAIN IDENTIFICATION: Locate the official .co.za or .com domain. 
-        2. TEAM MINING: Analyze snippets to identify the ACTUAL NAMES of the CEO, MD, and Marketing Manager. 
-        3. IDENTITY RESOLUTION: Use the identified names to resolve direct professional emails and mobile numbers from LinkedIn or directory snippets.
-        4. DIRECTORY SYNC: If the official website is down, you MUST use data from Brabys, Yellosa, or LinkedIn to populate the fields.
+        2. FLAT-SITE RESILIENCE: Many sites are one-page (flat). You MUST analyze the main page snippets for sections like "Contact", "About", or "Staff Cards" to extract data. Look for anchors (e.g. #contact).
+        3. TEAM MINING: Identify the ACTUAL NAMES of the CEO, MD, and Marketing Lead. 
+        4. IDENTITY RESOLUTION: Use the identified names to resolve direct professional emails and mobile numbers from LinkedIn or directory snippets.
+        5. DIRECTORY SYNC: If the official website is minimal, you MUST use data from Brabys, Yellosa, or LinkedIn to populate the fields.
         
         CRITICAL INTEGRITY SHIELD:
         - NO GUESSING: Never construct email addresses based on common patterns.
