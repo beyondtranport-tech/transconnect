@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -11,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone, UserCircle
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone, UserCircle, Smartphone
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -132,7 +131,10 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl text-left text-foreground">
-        <DialogHeader><DialogTitle>{partner ? 'Edit' : 'Add'} Supplier Profile</DialogTitle></DialogHeader>
+        <DialogHeader>
+            <DialogTitle>{partner ? 'Edit' : 'Add'} Supplier Profile</DialogTitle>
+            <DialogDescription>Manage high-fidelity contacts and industrial profile data.</DialogDescription>
+        </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left">
             <div className="space-y-4">
@@ -270,14 +272,14 @@ export default function SupplierManagement() {
   }, [allRecords, statusFilter, assigneeFilter]);
 
   const columns: ColumnDef<any>[] = useMemo(() => {
-    const cols: ColumnDef<any>[] = [
+    return [
       { 
           accessorKey: 'companyName', 
           header: 'Supplier Entity', 
           cell: ({ row }) => (
-              <div className="flex flex-col text-left">
+              <div className="flex flex-col text-left text-foreground">
                   <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed'}</span>
-                  <div className="flex items-center gap-1.5 mt-1">
+                  <div className="flex items-center gap-1.5 mt-1 text-left text-foreground">
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.source || 'Registry'}</span>
                   </div>
@@ -298,7 +300,7 @@ export default function SupplierManagement() {
           id: 'mobile',
           header: 'Direct Line', 
           cell: ({row}) => (
-              <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+              <div className="flex items-center gap-2 text-xs font-bold text-foreground text-foreground">
                   <Phone className="h-3 w-3 text-muted-foreground" />
                   {row.original.marketingManager?.mobile || row.original.mobile || row.original.phone || 'N/A'}
               </div>
@@ -306,23 +308,39 @@ export default function SupplierManagement() {
       },
       { 
           id: 'outreach', 
-          header: 'Outreach', 
+          header: 'Outreach Stage', 
           cell: ({row}) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+              const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
-                  <div className="flex flex-col text-left">
-                      <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
-                      {row.original.lastOpenedAt && (
-                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
-                              <UserCheck className="h-2.5 w-2.5" /> Read
-                          </div>
-                      )}
+                  <div className="flex flex-col text-left text-foreground text-foreground">
+                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
+                      <TooltipProvider>
+                        <div className="flex items-center gap-1 mt-1 text-left text-foreground">
+                            {row.original.lastOpenedAt && (
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="text-[10px] font-bold">Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}</TooltipContent>
+                                </Tooltip>
+                            )}
+                            {row.original.lastAccessedAt && (
+                                <Tooltip>
+                                    <TooltipTrigger>
+                                        <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                    </TooltipTrigger>
+                                    <TooltipContent className="text-[10px] font-bold">Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM")}</TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
+                      </TooltipProvider>
                   </div>
               );
           }
       },
       { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
+      { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
           <div className="flex justify-end gap-1 text-foreground">
             <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
             <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
@@ -338,8 +356,7 @@ export default function SupplierManagement() {
             <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
           </div>
         )},
-    ];
-    return cols.filter(c => visibleColumns[c.id || c.accessorKey as string]);
+    ].filter(c => visibleColumns[c.id || c.accessorKey as string]);
   }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
@@ -370,25 +387,40 @@ export default function SupplierManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground">
+      <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row items-center justify-between gap-4 text-left">
-              <div className="text-left text-foreground">
+              <div className="text-left text-foreground text-foreground">
                 <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
-                <CardDescription className="text-left text-muted-foreground">Unified database view ({filteredRecords.length} records).</CardDescription>
+                <CardDescription className="text-left text-muted-foreground text-foreground">Unified database view ({filteredRecords.length} records).</CardDescription>
               </div>
-              <div className="flex gap-2 text-left text-foreground">
-                  <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
-                  <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+              <div className="flex gap-2 text-left text-foreground text-foreground">
+                  <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
+                  <Popover>
+                      <PopoverTrigger asChild>
+                          <Button variant="outline" className="gap-2 text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-56 p-2 text-left">
+                          <div className="space-y-1 text-left">
+                              {Object.keys(visibleColumns).map(col => (
+                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                      <span>{col.replace(/([A-Z])/g, ' $1')}</span>
+                                      {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
+                                  </div>
+                              ))}
+                          </div>
+                      </PopoverContent>
+                  </Popover>
+                  <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                   <Button onClick={() => setDialog({ type: 'add' })} className="text-white text-foreground"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
               </div>
           </CardHeader>
-          <Card className="text-left text-foreground">
+          <Card className="text-left text-foreground text-foreground">
               <CardContent className="pt-6 text-left text-foreground text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="space-y-1 text-left text-foreground text-foreground">
-                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                        <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status Filter</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -401,7 +433,7 @@ export default function SupplierManagement() {
                     <div className="space-y-1 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -409,9 +441,9 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground">
+                    <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground text-foreground">
                         <div className="flex-1 space-y-1 text-left">
-                            <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Criteria</Label>
+                            <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Registry</Label>
                             <Input placeholder="Filter registry by name or tag..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
                         </div>
                     </div>
