@@ -1,8 +1,7 @@
-
 'use server';
 /**
- * @fileOverview Automated industrial discovery agent V4.
- * Performs high-fidelity extraction of commercial records with mandatory leadership mapping.
+ * @fileOverview Automated industrial discovery agent V6.
+ * Performs high-fidelity extraction of commercial records with mandatory sitemap-to-social leadership mapping.
  * Optimized for South African regional accuracy and noise suppression.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
@@ -55,22 +54,18 @@ const discoveryFlow = ai.defineFlow(
     try {
         const { category, type, batchSize } = input;
         
-        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
+        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER).
         RETURN ONLY RAW JSON. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
         
-        NOISE SUPPRESSION PROTOCOL:
-        1. IGNORE ALL "FORENSIC DATA ANALYST" JOBS, POLICY NEWS, OR NEWS ARTICLES.
-        2. FOCUS ONLY ON LIVE SOUTH AFRICAN COMPANIES WITH OPERATIONAL FOOTPRINTS.
+        REQUIRED INVESTIGATION PROTOCOL PER RECORD:
+        1. WEBSITE & SITEMAP: Find the official website. You MUST crawl the Sitemap, 'About Us', 'Meet the Team', and 'Contact' sub-pages to extract names of the CEO, MD, and Marketing Manager.
+        2. IDENTITY RESOLUTION: Use extracted names to perform a targeted SECONDARY search on LinkedIn, Facebook, and Instagram for that specific individual to resolve their direct professional email and mobile numbers.
+        3. AGGREGATOR CROSS-REFERENCE: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps in landlines or general emails.
         
         CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
         1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
         2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g. info@company.co.za).
         3. VERIFICATION MANDATE: Only return emails explicitly visible in search evidence. If not found, return null.
-        4. DUAL-IDENTITY PROTOCOL: YOU MUST FIND THE ACTUAL NAME, EMAIL, AND MOBILE FOR THE MARKETING MANAGER AND THE CEO/OWNER.
-        
-        SCAVENGER MANDATE:
-        - SEARCH FACEBOOK, LINKEDIN, AND LOCAL DIRECTORIES (YELLOSA, INFOISINFO) TO BRIDGE CONTACT GAPS.
-        - SCRAPE PRIMARY HEADLINES TO CREATE A 300-WORD TECHNICAL PROFILE.
         
         ID: GENERATE A UNIQUE ID STARTING WITH 'DISC_${type.toUpperCase()}_'.`;
 
@@ -78,7 +73,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `EXTRACT ${batchSize} VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. RETURN RAW JSON ARRAY ONLY.`,
+            prompt: `EXTRACT ${batchSize} VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FOLLOW V6 DEEP SCAVENGER PROTOCOL.`,
             output: {
                 schema: DiscoveryOutputSchema
             }
@@ -87,7 +82,7 @@ const discoveryFlow = ai.defineFlow(
         return response.output || { results: [] };
 
     } catch (e: any) {
-        console.error("[DISCOVERY_V4] Error:", e);
+        console.error("[DISCOVERY_V6] Error:", e);
         throw e;
     }
   }

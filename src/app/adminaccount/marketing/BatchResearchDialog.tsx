@@ -42,11 +42,9 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-1. GO DEEP: For each company below, find the official website. Check "About", "Team", "Contact", and "Services".
-2. ITERATIVE IDENTITY RESOLUTION: 
-   - Identify the ACTUAL NAMES of the CEO, MD, or Owner via LinkedIn or Company Site. 
-   - If a name is found, perform a SECONDARY search to resolve their direct professional email and mobile.
-3. SOCIAL CROSS-REFERENCE: Use Facebook and Instagram bios to find hidden WhatsApp/Mobile numbers.
+1. WEBSITE & SITEMAP: Find the official website. You MUST crawl the Sitemap, 'About Us', 'Meet the Team', and 'Contact' sub-pages to extract names of the CEO, MD, and Marketing Manager.
+2. IDENTITY RESOLUTION: Use extracted names to perform targeted SECONDARY searches on LinkedIn, Facebook, and Instagram for those specific individuals to resolve their direct professional email and mobile numbers.
+3. AGGREGATOR CROSS-REFERENCE: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps in landlines or general emails.
 4. ZERO TOLERANCE FOR MOCK DATA: If data is not discovered after iterative checks, return null.
 
 LIST TO INVESTIGATE (RSA ENTITIES ONLY):
@@ -81,7 +79,7 @@ JSON OUTPUT REQUIREMENTS:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "V6 Batch Mandate Ready", description: "Paste into AI Studio to resolve human nodes." });
+            toast({ title: "V6 Batch Mandate Ready", description: "Sitemap and Identity protocol active. Paste into AI Studio." });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -104,7 +102,7 @@ JSON OUTPUT REQUIREMENTS:
                         Batch Scavenger V6
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
-                        High-velocity batch research mandate for South African industrial entities.
+                        High-velocity batch research using the sitemap and identity resolution mandate.
                     </DialogDescription>
                 </DialogHeader>
                 
@@ -113,7 +111,7 @@ JSON OUTPUT REQUIREMENTS:
                         <ShieldCheck className="h-4 w-4 text-primary" />
                         <AlertTitle className="font-bold text-foreground text-left">Deep Investigation Mandated</AlertTitle>
                         <AlertDescription className="text-xs text-left text-foreground">
-                            The agent is commanded to resolve human identities through secondary targeted searches.
+                            The agent is commanded to mine website sitemaps for staff names, then pivot to social platforms to find direct contact paths.
                         </AlertDescription>
                     </Alert>
 

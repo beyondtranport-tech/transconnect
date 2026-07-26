@@ -37,18 +37,13 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 TASK: Perform a high-velocity investigation to bridge ALL data gaps for: "${companyName}".
 
 REQUIRED INVESTIGATION PROTOCOL:
-1. MULTI-PLATFORM SCAN: You MUST perform a live search for "${companyName}" across:
-   - Official Corporate Website (check "About", "Team", "Contact", and "Services").
-   - LinkedIn & Facebook (Look for the MD, CEO, and Marketing Manager).
-   - SA Directories: Brabys, Yellosa, Infoisinfo, and Easyinfo.co.za.
+1. WEBSITE & SITEMAP: Locate the official website. Scan the Sitemap, "Meet the Team", and "Contact" sub-pages to extract names of the CEO, MD, and Marketing Manager.
+2. IDENTITY RESOLUTION: Use the extracted names to perform targeted SECONDARY searches on LinkedIn, Facebook, and Instagram for those specific individuals to resolve their direct professional email and mobile numbers.
+3. AGGREGATOR SCAN: Use SA Directories (Brabys, Yellosa, Infoisinfo) to find landlines and general company emails if still missing.
 
-2. ITERATIVE IDENTITY RESOLUTION:
-   - If you identify a name (e.g. CEO Kyle Gounden), you are COMMANDED to do a SECONDARY search for that specific person (e.g. "Kyle Gounden [CompanyName] email mobile") to find their direct contact path.
-   - Do not stop at the company level. Resolve the human nodes.
-
-3. DATA FIDELITY (ANTI-BOUNCE):
-   - REAL DATA ONLY: Do not invent names or guess emails based on patterns.
-   - NULL MANDATE: If after searching ALL sources and performing secondary identity lookups data is still missing, return null.
+DATA FIDELITY (ANTI-BOUNCE):
+- REAL DATA ONLY: Do not invent names or guess emails based on patterns.
+- NULL MANDATE: If after checking ALL sources and performing secondary identity lookups data is still missing, return null.
 
 RETURN ONLY A RAW JSON OBJECT:
 {
@@ -122,16 +117,16 @@ NO MARKDOWN. NO PREAMBLE.`;
                             Industrial Gap-Analysis V6
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
-                            Generate a high-velocity scavenger command for <strong>{companyName}</strong>.
+                            Generate a deep scavenger command for <strong>{companyName}</strong> using sitemap and identity resolution.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground text-left">Scavenger Mandate Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground text-left">V6 Sitemap Protocol Active</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                This V6 prompt commands the AI to perform **Iterative Identity Resolution**—it will search for the specific person once found to find their direct contacts.
+                                This command instructs the AI to mine the sitemap for employee lists, then pivot to social platforms to resolve their direct contact details.
                             </AlertDescription>
                         </Alert>
 
@@ -150,7 +145,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                             className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
                         >
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            {isCopied ? 'Command Ready!' : 'Copy Scavenger Prompt'}
+                            {isCopied ? 'Command Ready!' : 'Copy V6 Scavenger Prompt'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

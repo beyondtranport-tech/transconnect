@@ -25,19 +25,21 @@ export const associateCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V5 - HIGH VELOCITY). 
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-STRICT REGIONAL LOCK: 
-ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
+STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover 30 UNIQUE "Micro-Influencers" or "Logistics Hubs" for: "${category}".
 
-SCAVENGER MANDATE (CRITICAL):
-1. MULTI-STEP INVESTIGATION: You MUST search the Official Website, LinkedIn, and Instagram for each entity.
-2. BRIDGE THE GAPS: If an email is not in the bio, you are COMMANDED to find it on the "Contact Us" or "About" sub-pages of their website.
-3. IDENTITY RESOLUTION: Find the ACTUAL NAME (First/Last) of the person behind the brand. Check "Team" pages or CIPC metadata if needed.
-4. ANTI-HALLUCINATION: Do NOT guess. If data is truly missing after checking all 3 sources, return null.
+SCAVENGER PROTOCOL:
+1. WEBSITE & SITEMAP: Find the official website. You MUST crawl the Sitemap, 'About Us', and 'Contact' pages to extract the names of the CEO and Marketing Manager.
+2. IDENTITY RESOLUTION: Use extracted names to perform targeted SECONDARY search on LinkedIn, Facebook, and Instagram for that specific individual to resolve their direct professional email and mobile numbers.
+3. SOCIAL CROSS-REFERENCE: Specially mine Facebook and Instagram bios for hidden WhatsApp/Mobile numbers.
+
+CRITICAL INTEGRITY SHIELD: 
+- REAL DATA ONLY: Do not invent names or guess emails based on patterns.
+- NULL MANDATE: If data is not explicitly visible in search evidence after multi-platform checks, set the field to null.
 
 RECORD KEY: Generate a unique "record_id" starting with "DISC_ASSOC_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -71,7 +73,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V5 Command Ready", description: "Multi-platform scavenger mandate active." });
+        toast({ title: "V6 Command Ready", description: "Deep sitemap and identity resolution protocol active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -85,9 +87,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Multi-Step Scavenger Protocol</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Sitemap & Identity Resolve</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground leading-relaxed">
-                        This command instructs the AI to crawl sub-pages and cross-reference LinkedIn to find hidden contact data. Fictitious data remains forbidden.
+                        This V6 command instructs the AI to mine employee lists from the sitemap, then pivot to social platforms to resolve their direct contact details.
                     </AlertDescription>
                 </Alert>
 
@@ -105,11 +107,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy Research Prompt
+                    Copy V6 Research Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> AI Research Command (V5)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> AI Research Command (V6)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -127,7 +129,7 @@ export default function AssociateDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Associate Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Map South African logistics creators using high-fidelity multi-source discovery.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Map South African logistics creators using high-fidelity V6 sitemap discovery.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left text-foreground">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 p-1 text-left text-foreground">

@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, ClipboardCheck, Terminal, Database, ShieldCheck, Info, UserCheck, Zap, Target, Landmark, Briefcase, Banknote, Sparkles } from "lucide-react";
+import { Copy, ClipboardCheck, Terminal, Database, ShieldCheck, Info, UserCheck, Zap, Target, Landmark, Briefcase, Banknote, Sparkles, SearchCode } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -22,20 +21,21 @@ export const investorClasses = [
 ];
 
 export function generateInvestorPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE VENTURE INTELLIGENCE AGENT. 
+    return `ACT AS AN ELITE VENTURE INTELLIGENCE AGENT (V6 - DEEP SCAVENGER). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
-1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
-2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@). 
-3. NULL MANDATE: If data is not explicitly visible in search evidence, you MUST set the field to null.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African investment partners for the class: "${category}".
 
-INVESTIGATIVE PROTOCOL:
-1. MANDATE VERIFICATION: Ensure they invest in B2B SaaS, Logistics, or Industrial Tech.
-2. HUMAN IDENTITY: Find the ACTUAL NAME (First and Last) of a Partner or Investment Lead via LinkedIn or their site. If not found, set to null.
-3. RECORD KEY: Generate a unique "record_id" starting with "DISC_INV_${category.toUpperCase().replace(/\s/g, '_')}_".
+SCAVENGER PROTOCOL:
+1. WEBSITE & SITEMAP: Locate the official domain. Crawl the Sitemap for 'Team', 'Partners', or 'About' pages to extract the names of the Managing Partners and Investment Leads.
+2. IDENTITY RESOLUTION: Use extracted names to perform targeted SECONDARY searches on LinkedIn to resolve their direct professional email and direct mobile numbers.
+3. MANDATE VERIFICATION: Ensure they invest in B2B SaaS, Logistics, or Industrial Tech.
+
+CRITICAL INTEGRITY SHIELD: 
+- ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names or guess emails.
+- NULL MANDATE: If data is not explicitly visible in search evidence after sitemap and identity checks, set the field to null.
+
+RECORD KEY: Generate a unique "record_id" starting with "DISC_INV_${category.toUpperCase().replace(/\s/g, '_')}_".
 
 REQUIRED JSON FIELDS:
 [
@@ -44,9 +44,9 @@ REQUIRED JSON FIELDS:
     "record_id": "...",
     "companyName": "FUND / FIRM NAME",
     "industrial_category": "${category}",
-    "contact_person": "VERIFIED HUMAN NAME (OR NULL)",
-    "email": "...",
-    "mobile": "...",
+    "contact_person": "VERIFIED HUMAN NAME",
+    "email": "ACTUAL VERIFIED EMAIL",
+    "mobile": "ACTUAL VERIFIED MOBILE",
     "website": "OFFICIAL CORPORATE URL",
     "notes": "Thesis and fit summary."
   }
@@ -64,7 +64,7 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Investor Prompt Ready", description: "Anti-hallucination mandate active." });
+        toast({ title: "V6 Investor Prompt Ready", description: "Deep scavenger protocol active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -72,14 +72,14 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
         <div className="grid md:grid-cols-2 gap-6 text-left text-foreground">
             <div className="space-y-4 text-left">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-foreground text-left">
-                    <Database className="h-6 w-6 text-primary" />
+                    <SearchCode className="h-6 w-6 text-primary" />
                     Capital Scouting: {category}
                 </h2>
 
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <Info className="h-4 w-4 text-primary" />
                     <AlertTitle className="font-bold text-left text-foreground">Target Mandate</AlertTitle>
-                    <AlertDescription className="text-xs text-left text-muted-foreground">
+                    <AlertDescription className="text-xs text-left text-muted-foreground leading-relaxed">
                         {focus}
                     </AlertDescription>
                 </Alert>
@@ -98,7 +98,7 @@ const DiscoveryTab = ({ category, focus, currentCount = 0 }: { category: string,
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy Discovery Prompt
+                    Copy V6 Investor Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground text-foreground">
@@ -120,7 +120,7 @@ export default function InvestorDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         App Launch Investor Discovery
                     </CardTitle>
-                    <CardDescription className="text-muted-foreground text-left text-muted-foreground text-foreground text-left">Identify foundational partners for the platform equity launch.</CardDescription>
+                    <CardDescription className="text-muted-foreground text-left text-muted-foreground text-foreground text-left">Identify foundational partners using the deep V6 sitemap protocol.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">

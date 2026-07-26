@@ -1,8 +1,7 @@
-
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V3.
- * REINSTATED: Proven search strategy and extraction mandate to resolve null returns.
+ * @fileOverview High-fidelity Industrial Research Agent V6.
+ * DEEP SCAVENGER PROTOCOL: Implements sitemap-to-social identity resolution.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
@@ -50,18 +49,18 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // STABLE SEARCH STRATEGY V3
-    // Search 1: Deep Corporate & MD Identification
-    const corporateResults = await googleSearchTool({ 
-        query: `"${company}" South Africa official website CEO Managing Director email` 
+    // SEARCH STRATEGY V6: DEEP SCAVENGER
+    // Search 1: Website, Sitemap & Team Exploration
+    const siteResults = await googleSearchTool({ 
+        query: `"${company}" South Africa official website sitemap "our team" "contact us"` 
     });
     
-    // Search 2: Directory & Social Proof
-    const directoryResults = await googleSearchTool({ 
-        query: `"${company}" South Africa (LinkedIn OR Yellosa OR Infoisinfo) contact details` 
+    // Search 2: Identity Resolution for CEO & Marketing Manager
+    const identityResults = await googleSearchTool({ 
+        query: `"${company}" South Africa CEO Managing Director Marketing Manager LinkedIn Facebook` 
     });
     
-    const allContent = [...(corporateResults || []), ...(directoryResults || [])]
+    const allContent = [...(siteResults || []), ...(identityResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
@@ -69,24 +68,21 @@ const enrichPartnerFlow = ai.defineFlow(
         return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
     }
 
-    // EXTRACTION MANDATE V3: Prioritizing data capture over safety defensiveness
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN EXPERT SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
-        
-        GOAL: Extract specific corporate nodes for "${company}".
-        
-        CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
-        1. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g. info@company.co.za).
-        2. VERIFICATION MANDATE: Only return emails explicitly visible in search evidence. If not found, return null.
+        system: `ACT AS AN EXPERT SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER).
         
         PROTOCOL:
-        1. WEBSITE: Find the primary corporate URL.
-        2. CONTACTS: Identify general and direct (MD/CEO) email and mobile numbers.
-        3. PROFILE: Create a 300-word technical summary based on the services described in the snippets.
+        1. WEBSITE & SITEMAP: Locate official domain. Crawl Sitemap for Team/Contact pages to extract names of CEO and Marketing Lead.
+        2. IDENTITY RESOLUTION: Use names to perform targeted social search (LinkedIn/Facebook) to resolve direct emails and mobile numbers.
+        3. AGGREGATOR CHECK: Use directories (Yellosa, Brabys) for remaining landlines.
         
-        MANDATE: If data is missing in the evidence, set the field to null. Return RAW JSON only.`,
-        prompt: `EXTRACT THE CORPORATE DATA PACK FOR "${company}" FROM THIS EVIDENCE:\n\n${allContent}`,
+        CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
+        1. NO GUESSING: NEVER construct email addresses based on patterns.
+        2. VERIFICATION MANDATE: Only return data explicitly visible in search evidence. If not found, return null.
+        
+        MANDATE: Return RAW JSON only.`,
+        prompt: `EXTRACT THE FORENSIC DATA PACK FOR "${company}" FROM THIS EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }

@@ -31,15 +31,13 @@ STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all int
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
 SCAVENGER PROTOCOL:
-1. SUB-PAGE EXTRACTION: Identify the "About Us", "Team", and "Contact" pages of the official website. 
-2. ITERATIVE IDENTITY RESOLUTION: 
-   - You are COMMANDED to find the ACTUAL NAMES of the CEO, MD, or Owner. 
-   - If a name is identified, perform a SECONDARY search to find that individual's professional email and direct mobile.
-3. SOCIAL CROSS-REFERENCE: Use LinkedIn and Facebook to bridge contact gaps.
+1. WEBSITE & SITEMAP: Find the official website. You MUST crawl the Sitemap, 'About Us', 'Meet the Team', and 'Contact' sub-pages to identify the names of the CEO, MD, and Marketing Manager.
+2. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve their direct professional email and direct mobile numbers.
+3. AGGREGATOR CROSS-REFERENCE: Use local SA directories (Brabys, Yellosa, Infoisinfo) to bridge contact gaps for landlines.
 
 CRITICAL INTEGRITY SHIELD: 
-- ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names or guess emails.
-- NULL MANDATE: If data is not explicitly visible in search evidence after multi-platform checks, set the field to null.
+- REAL DATA ONLY: Do not invent names or guess emails based on patterns.
+- NULL MANDATE: If data is not explicitly visible in search evidence after deep sitemap and secondary checks, set the field to null.
 
 REQUIRED JSON FIELDS:
 [
@@ -72,7 +70,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V6 Command Ready", description: "Identity integrity mandate active." });
+        toast({ title: "V6 Command Ready", description: "Sitemap and Identity resolution protocol active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -85,9 +83,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Iterative Identity Resolution</AlertTitle>
-                    <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is commanded to perform secondary searches for discovered names to find direct contact details. Fictitious data remains forbidden.
+                    <AlertTitle className="text-left font-bold text-foreground">Deep Scavenger Mandate</AlertTitle>
+                    <AlertDescription className="text-xs text-left text-muted-foreground leading-relaxed">
+                        The agent is commanded to mine website sitemaps for employee lists, then pivot to social platforms to resolve their direct contact details. Fictitious data remains forbidden.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
@@ -104,7 +102,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy Discovery Prompt
+                    Copy V6 Discovery Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
@@ -126,7 +124,7 @@ export default function DiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground text-foreground">Build a high-fidelity registry using noise-suppressed V6 batches.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground text-foreground">Build a high-fidelity registry using noise-suppressed V6 sitemap resolution.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">

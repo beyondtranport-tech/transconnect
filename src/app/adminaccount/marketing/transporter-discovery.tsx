@@ -28,12 +28,13 @@ STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all int
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African transport companies for: "${category}".
 
 SCAVENGER PROTOCOL:
-1. MULTI-STEP INVESTIGATION: You MUST search the Official Website, LinkedIn, and Facebook for each entity.
-2. SUB-PAGE MINING: Search the "About Us", "Team", and "Contact" sub-pages for actual decision-maker names.
-3. ITERATIVE IDENTITY RESOLUTION: 
-   - Identify the ACTUAL NAME (First/Last) of the MD, CEO, or Owner. 
-   - If a name is found, perform a SECONDARY search to find that individual's professional email and direct mobile number.
-4. ANTI-HALLUCINATION: Do NOT guess. If data is truly missing after checking multiple sources and cross-referencing LinkedIn, return null.
+1. WEBSITE & SITEMAP: Find the official website. You MUST crawl the Sitemap, 'About Us', 'Meet the Team', and 'Contact' sub-pages to identify the names of the CEO, MD, and Marketing Manager.
+2. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve their direct professional email and direct mobile numbers.
+3. SOCIAL CROSS-REFERENCE: Specially mine Facebook and Instagram bios for hidden WhatsApp/Mobile numbers.
+
+CRITICAL INTEGRITY SHIELD: 
+- REAL DATA ONLY: Do not invent names or guess emails based on patterns.
+- NULL MANDATE: If data is not explicitly visible in search evidence after deep sitemap and secondary checks, set the field to null.
 
 RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -69,7 +70,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V6 Scavenger Ready", description: "Identity integrity mandate active." });
+        toast({ title: "V6 Scavenger Ready", description: "Deep sitemap and identity mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -83,14 +84,14 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
                     <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol V6 Active</AlertTitle>
-                    <AlertDescription className="text-xs text-left text-foreground">
-                        The agent is commanded to perform iterative secondary searches for human contact details. Zero-tolerance for mock data.
+                    <AlertDescription className="text-xs text-left text-foreground leading-relaxed">
+                        The agent is commanded to mine website sitemaps for staff names, then pivot to social platforms to resolve their direct contact details.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Pagination Sync</Label>
                     <div className="space-y-1.5 text-left">
-                        <Label className="text-xs font-bold text-left">Start from Batch #</Label>
+                        <Label className="text-xs font-bold text-left text-foreground">Start from Batch #</Label>
                         <Input 
                             type="number" 
                             placeholder={String(suggestedPage)}
@@ -102,7 +103,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V6 Prompt
+                    Copy V6 Haulier Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
@@ -124,7 +125,7 @@ export default function TransporterDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Haulier Scavenger
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground text-foreground">Map unique transport entities using high-fidelity V6 multi-source discovery.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground text-foreground">Map unique transport entities using high-fidelity V6 sitemap resolution.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
