@@ -1,6 +1,6 @@
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V12.
+ * @fileOverview High-fidelity Industrial Research Agent V13.
  * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches together fragments from multiple sources.
  * FLAT-SITE RESILIENCE: Specifically optimized for one-page industrial sites.
  * ACRONYM RESOLUTION: Expands initials (e.g. JH) to find official identities.
@@ -50,31 +50,31 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V12: INDUCTIVE RECONSTRUCTION (ACRONYM & FLAT-SITE AWARE)
+    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION (ACRONYM & FLAT-SITE AWARE)
     
     // Phase 1: Identity & Acronym Expansion
     const expansionResults = await googleSearchTool({ 
-        query: `What does ${company} stand for in South Africa transport? Full legal name` 
+        query: `What does ${company} stand for in South Africa transport? Full legal name contact` 
     });
 
     // Phase 2: Robust Domain Discovery
     const siteResults = await googleSearchTool({ 
-        query: `${company} South Africa official website full name contact` 
+        query: `${company} South Africa official website full name address email` 
     });
     
-    // Phase 3: Sectional & Sitemap Mining
+    // Phase 3: Sectional & Sitemap Mining (Cards, Footer, Team)
     const teamResults = await googleSearchTool({ 
         query: `${company} South Africa "Meet the team" OR "Contact Cards" OR "About us" CEO MD Owner` 
     });
 
     // Phase 4: Identity Resolution (LinkedIn/Facebook Pivot)
     const identityResults = await googleSearchTool({ 
-        query: `${company} South Africa LinkedIn profile employees management` 
+        query: `${company} South Africa LinkedIn profile employees management mobile` 
     });
 
-    // Phase 5: Aggregator Scavenge (Local SA Directories - Trustworthy for landlines)
+    // Phase 5: Aggregator Scavenge (Local SA Directories)
     const directoryResults = await googleSearchTool({
-        query: `${company} South Africa Brabys Yellosa infoisinfo address phone`
+        query: `${company} South Africa Brabys Yellosa infoisinfo contact details`
     });
     
     const allContent = [...(expansionResults || []), ...(siteResults || []), ...(teamResults || []), ...(identityResults || []), ...(directoryResults || [])]
@@ -87,20 +87,20 @@ const enrichPartnerFlow = ai.defineFlow(
 
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V12 - INDUCTIVE RECONSTRUCTION).
+        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - INDUCTIVE RECONSTRUCTION).
         
         INVESTIGATION MANDATE (FLAT-SITE & ACRONYM AWARE):
         1. ACRONYM RESOLUTION: You MUST determine if the input name is an acronym (e.g. JH) and identify the full name (e.g. Junior H).
         2. INDUCTIVE STITCHING: You MUST combine data fragments from different snippets. If a phone is in a directory and an email is in a bio, combine them.
-        3. FLAT-SITE MINING: Many sites like "jhtrucking.co.za" are one-page. Analyze the snippets for "Contact Cards" and "Footer Blocks" rather than giving up if sub-pages are missing.
-        4. IDENTITY RESOLUTION: Find the human names of the CEO and Marketing Lead. Pivot to LinkedIn evidence in the snippets to resolve their direct professional contact.
+        3. FLAT-SITE MINING: Industrial sites often contain data in "Contact Cards" or "Footer Sections" rather than sub-pages. Analyze root snippets carefully.
+        4. IDENTITY RESOLUTION: Find the names of the CEO and Marketing Lead. Pivot to social evidence in the snippets to resolve their direct professional contact.
         
         CRITICAL INTEGRITY SHIELD:
         - EVIDENCE ONLY: Only return data explicitly visible in the snippets.
         - NO GUESSING: Do not construct emails based on patterns.
         
         MANDATE: Return RAW JSON only.`,
-        prompt: `PERFORM THE V12 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
+        prompt: `PERFORM THE V13 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }

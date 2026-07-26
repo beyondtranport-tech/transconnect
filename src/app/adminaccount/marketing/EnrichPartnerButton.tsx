@@ -113,24 +113,24 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                             <Sparkles className="h-5 w-5 text-primary" />
                             Industrial Gap-Analysis V13
                         </DialogTitle>
-                        <DialogDescription className="text-left text-foreground text-foreground text-foreground text-foreground">
+                        <DialogDescription className="text-left text-foreground">
                             Generate an aggressive V13 scavenger command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4 text-left text-foreground text-foreground text-foreground text-foreground">
-                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-foreground text-foreground">
+                    <div className="space-y-4 py-4 text-left">
+                        <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground text-left text-foreground text-foreground">Inductive Reconstruction Protocol</AlertTitle>
-                            <AlertDescription className="text-xs text-left text-foreground text-foreground">
-                                V13 Protocol: Explicitly handles acronyms (JH -> Junior H) and flat-site card mining to resolve human contacts across multiple sources.
+                            <AlertTitle className="text-left font-bold">Inductive Reconstruction Protocol</AlertTitle>
+                            <AlertDescription className="text-xs text-left">
+                                V13 Protocol: Explicitly handles acronyms (JH &rarr; Junior H) and flat-site card mining to resolve human contacts across multiple sources.
                             </AlertDescription>
                         </Alert>
 
-                        <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
-                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-foreground">AI Research Command</label>
-                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground text-foreground">
-                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-foreground text-foreground">{getPrompt()}</pre>
+                        <div className="space-y-2 text-left">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Research Command</label>
+                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left">
+                                <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed">{getPrompt()}</pre>
                             </ScrollArea>
                         </div>
                     </div>
