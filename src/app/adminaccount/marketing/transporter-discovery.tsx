@@ -20,7 +20,7 @@ export const transporterCategories = [
 function generateDiscoveryPrompt(category: string, startPage: number) {
     const startSeq = (startPage - 1) * 30 + 1;
 
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V9 - FORENSIC SCAVENGER).
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V10 - FORENSIC SCAVENGER).
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
@@ -28,10 +28,10 @@ STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all int
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African transport companies for: "${category}".
 
 INVESTIGATION PROTOCOL (MANDATORY):
-1. BROAD DISCOVERY: Search for "${category} transport companies South Africa". Identify official domains.
+1. BROAD DISCOVERY: Identify official domains and local directory listings (Brabys, Yellosa, etc.).
 2. SITEMAP DEEP-DIVE: For each domain found, you MUST identify the names of the CEO, MD, and Marketing Lead. Search specifically for "site:[DOMAIN] about" or "site:[DOMAIN] management".
 3. IDENTITY RESOLUTION: Use identified names to perform targeted secondary searches on LinkedIn and Facebook to resolve direct professional emails and direct mobile numbers (+27 format).
-4. DIRECTORY SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge landline gaps.
+4. DIRECTORY SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge contact gaps.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
@@ -71,7 +71,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V9 Scavenger Ready", description: "Multi-query identity resolution active." });
+        toast({ title: "V10 Scavenger Ready", description: "Multi-query identity resolution active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -84,7 +84,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol V9 Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol V10 Active</AlertTitle>
                     <AlertDescription className="text-xs text-left leading-relaxed">
                         Forces an iterative multi-query approach: Domain discovery -> Sitemap mining -> Social identity resolution -> Directory sync.
                     </AlertDescription>
@@ -104,11 +104,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V9 Haulier Prompt
+                    Copy V10 Haulier Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V9)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V10)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -126,7 +126,7 @@ export default function TransporterDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Haulier Scavenger
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Map unique transport entities using multi-query V9 resolution.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Map unique transport entities using multi-query V10 resolution.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
