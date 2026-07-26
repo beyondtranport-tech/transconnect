@@ -23,18 +23,18 @@ export const supplierCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V11 - FLAT-SITE RESILIENT). 
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V12 - INDUCTIVE RECONSTRUCTION). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
-HUNT PROTOCOL (FLAT-SITE AWARE):
-1. BROAD DISCOVERY: Identify official domains and local directory listings. Try acronym variants.
-2. SECTION-BASED MINING: Many sites are one-page. Analyze root snippets for "Contact Cards" or sectional data (Address, Email, Phone).
-3. TEAM DISCOVERY: Search for "site:[OFFICIAL_DOMAIN] management" or "site:[OFFICIAL_DOMAIN] team" to find CEO/Marketing names.
-4. IDENTITY RESOLUTION: Perform targeted secondary searches on LinkedIn for identified names to resolve direct professional contact evidence.
+HUNT PROTOCOL (V12 INDUCTIVE):
+1. IDENTITY EXPANSION: Resolve acronyms and identify full legal names.
+2. INDUCTIVE STITCHING: Combine data fragments from multiple snippets. Directory data + Social bio data = High fidelity record.
+3. FLAT-SITE MINING: Analyze root domain snippets for "Contact Cards" and "Sections" (Address, Email, Phone).
+4. IDENTITY RESOLUTION: Extract names of CEO and Marketing Lead. Pivot to LinkedIn metadata in snippets to resolve direct professional contact.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
@@ -70,7 +70,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V11 Command Ready", description: "Flat-site and acronym expansion logic active." });
+        toast({ title: "V12 Command Ready", description: "Inductive reconstruction and flat-site logic active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -83,9 +83,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left text-foreground">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold">Hunt Protocol V11 Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold">Hunt Protocol V12 Active</AlertTitle>
                     <AlertDescription className="text-xs text-left leading-relaxed">
-                        Optimized for single-page industrial sites. Forces sectional block analysis and acronym expansion to find the map.
+                        Optimized for inductive reconstruction. Commands the AI to stitch together data fragments from multiple sources to eliminate null records.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
@@ -102,11 +102,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white text-left">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V11 Discovery Prompt
+                    Copy V12 Discovery Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview (V11)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview (V12)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -124,7 +124,7 @@ export default function DiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Build a high-fidelity registry using the V11 flat-site resilient scavenger protocol.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Build a high-fidelity registry using the V12 inductive reconstruction protocol.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground">

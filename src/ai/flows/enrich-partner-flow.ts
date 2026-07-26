@@ -1,9 +1,9 @@
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V11.
- * FORENSIC SCAVENGER PROTOCOL: Implements iterative multi-query identity resolution.
- * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
- * FLAT-SITE RESILIENCE: Handles one-page websites and section-based navigation.
+ * @fileOverview High-fidelity Industrial Research Agent V12.
+ * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches together fragments from multiple sources.
+ * FLAT-SITE RESILIENCE: Specifically optimized for one-page industrial sites.
+ * ACRONYM RESOLUTION: Expands initials (e.g. JH) to find official identities.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -50,33 +50,34 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V11: FORENSIC SCAVENGER (ACRONYM & FLAT-SITE AWARE)
-    // Phase 1: Robust Domain & Acronym Expansion
+    // SEARCH STRATEGY V12: INDUCTIVE RECONSTRUCTION (ACRONYM & FLAT-SITE AWARE)
+    
+    // Phase 1: Identity & Acronym Expansion
+    const expansionResults = await googleSearchTool({ 
+        query: `What does ${company} stand for in South Africa transport? Full legal name` 
+    });
+
+    // Phase 2: Robust Domain Discovery
     const siteResults = await googleSearchTool({ 
         query: `${company} South Africa official website full name contact` 
     });
     
-    // Phase 2: Sectional & Sitemap Mining (Looking for names/cards/anchors)
+    // Phase 3: Sectional & Sitemap Mining
     const teamResults = await googleSearchTool({ 
         query: `${company} South Africa "Meet the team" OR "Contact Cards" OR "About us" CEO MD Owner` 
     });
 
-    // Phase 3: Identity Resolution (LinkedIn/Facebook Pivot for identified human names)
+    // Phase 4: Identity Resolution (LinkedIn/Facebook Pivot)
     const identityResults = await googleSearchTool({ 
         query: `${company} South Africa LinkedIn profile employees management` 
     });
 
-    // Phase 4: Aggregator Scavenge (Local SA Directories)
+    // Phase 5: Aggregator Scavenge (Local SA Directories - Trustworthy for landlines)
     const directoryResults = await googleSearchTool({
         query: `${company} South Africa Brabys Yellosa infoisinfo address phone`
     });
-
-    // Phase 5: Direct contact resolve for the company name
-    const contactResults = await googleSearchTool({
-        query: `${company} South Africa "email" "mobile" "+27"`
-    });
     
-    const allContent = [...(siteResults || []), ...(teamResults || []), ...(identityResults || []), ...(directoryResults || []), ...(contactResults || [])]
+    const allContent = [...(expansionResults || []), ...(siteResults || []), ...(teamResults || []), ...(identityResults || []), ...(directoryResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
@@ -86,22 +87,20 @@ const enrichPartnerFlow = ai.defineFlow(
 
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V11 - FORENSIC SCAVENGER).
+        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V12 - INDUCTIVE RECONSTRUCTION).
         
-        INVESTIGATION MANDATE (FLAT-SITE AWARE):
-        1. DOMAIN IDENTIFICATION: Locate the official .co.za or .com domain. If the name is an acronym (e.g. JH), find the full name (e.g. Junior H).
-        2. SECTION-BASED EXTRACTION: Many industrial sites are "Flat" (one-page). You MUST analyze the snippets for data usually found in "Contact Cards" or "Section Blocks" on the root page. Look for anchors (e.g. #contact).
-        3. TEAM MINING: Identify the ACTUAL NAMES of the CEO, MD, and Marketing Lead. 
-        4. IDENTITY RESOLUTION: Use the identified names to resolve direct professional emails and mobile numbers from LinkedIn or directory snippets.
-        5. DIRECTORY SYNC: If the official website is minimal, you MUST use data from Brabys, Yellosa, or LinkedIn to populate the fields.
+        INVESTIGATION MANDATE (FLAT-SITE & ACRONYM AWARE):
+        1. ACRONYM RESOLUTION: You MUST determine if the input name is an acronym (e.g. JH) and identify the full name (e.g. Junior H).
+        2. INDUCTIVE STITCHING: You MUST combine data fragments from different snippets. If a phone is in a directory and an email is in a bio, combine them.
+        3. FLAT-SITE MINING: Many sites like "jhtrucking.co.za" are one-page. Analyze the snippets for "Contact Cards" and "Footer Blocks" rather than giving up if sub-pages are missing.
+        4. IDENTITY RESOLUTION: Find the human names of the CEO and Marketing Lead. Pivot to LinkedIn evidence in the snippets to resolve their direct professional contact.
         
         CRITICAL INTEGRITY SHIELD:
-        - NO GUESSING: Never construct email addresses based on patterns.
-        - EVIDENCE ONLY: Only return data explicitly visible in the snippets or metadata.
-        - RESOLUTION: If a human name is found, prioritize their specific contact info for the manager/ceo fields.
+        - EVIDENCE ONLY: Only return data explicitly visible in the snippets.
+        - NO GUESSING: Do not construct emails based on patterns.
         
         MANDATE: Return RAW JSON only.`,
-        prompt: `PERFORM THE V11 FORENSIC HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
+        prompt: `PERFORM THE V12 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }

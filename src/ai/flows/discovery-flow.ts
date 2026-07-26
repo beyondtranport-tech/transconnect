@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview Automated industrial discovery agent V11.
- * Performs high-fidelity extraction with mandatory sitemap-to-social leadership mapping.
+ * @fileOverview Automated industrial discovery agent V12.
+ * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches fragments from multiple sources.
  * FLAT-SITE RESILIENT: Specifically optimized for one-page industrial websites.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
@@ -54,20 +54,18 @@ const discoveryFlow = ai.defineFlow(
     try {
         const { category, type, batchSize } = input;
         
-        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V11 - FORENSIC HUNT).
+        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V12 - INDUCTIVE RECONSTRUCTION).
         RETURN ONLY RAW JSON. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
         
         REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-        1. BROAD DISCOVERY: Use broad queries to identify official domains and directory listings. Try name variants and acronym expansions.
-        2. FLAT-SITE ANALYSIS: Many sites are one-page with "Contact Us" cards. Analyze the root snippets for these specific blocks and anchors.
-        3. TEAM MINING: Identify the CEO and Marketing Manager by name from "About Us", "Team", or "Contact" sections/cards.
-        4. IDENTITY RESOLUTION: Perform secondary targeted searches on LinkedIn and Facebook for identified names to resolve direct professional emails and mobile numbers.
-        5. AGGREGATOR SYNC: Use local directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps.
+        1. ACRONYM EXPANSION: Identify full legal names from initials.
+        2. INDUCTIVE STITCHING: Combine data fragments from multiple sources. Stitch directory landlines with social bio emails and human names.
+        3. FLAT-SITE ANALYSIS: Many haulier sites are one-page. Analyze root domain snippets for "Contact Cards" and "Sections".
+        4. IDENTITY RESOLUTION: Identify the CEO and Marketing Manager by name. Pivot to LinkedIn/Facebook snippets to resolve their direct contact details.
         
         CRITICAL INTEGRITY SHIELD:
         1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
-        2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns.
-        3. EVIDENCE MANDATE: Every field must be derived from actual snippet evidence.
+        2. EVIDENCE MANDATE: Every field must be derived from actual snippet evidence.
         
         ID: GENERATE A UNIQUE ID STARTING WITH 'DISC_${type.toUpperCase()}_'.`;
 
@@ -75,7 +73,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `EXTRACT ${batchSize} VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FOLLOW V11 FLAT-SITE RESILIENT PROTOCOL.`,
+            prompt: `EXTRACT ${batchSize} UNIQUE VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FOLLOW V12 INDUCTIVE PROTOCOL.`,
             output: {
                 schema: DiscoveryOutputSchema
             }
@@ -84,7 +82,7 @@ const discoveryFlow = ai.defineFlow(
         return response.output || { results: [] };
 
     } catch (e: any) {
-        console.error("[DISCOVERY_V11] Error:", e);
+        console.error("[DISCOVERY_V12] Error:", e);
         throw e;
     }
   }
