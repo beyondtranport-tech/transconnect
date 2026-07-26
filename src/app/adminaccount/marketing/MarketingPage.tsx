@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -68,7 +67,6 @@ const AssociateDiscoveryEngine = dynamic(() => import('@/app/adminaccount/market
 const SupplierDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/discovery-engine'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/transporter-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/investor-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
-const DeveloperDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/developer-management'), { loading: () => <Loader2 className="animate-spin" /> }); // Placeholder if not specialized
 const FinanceDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/finance-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 const WarehouseDiscovery = dynamic(() => import('@/app/adminaccount/marketing/warehouse-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 const DistributionDiscovery = dynamic(() => import('@/app/adminaccount/marketing/distribution-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -102,8 +100,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
     });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text.startsWith('{') ? JSON.parse(text).error : `Server Error: ${response.status}`);
+    }
+
     const result = await response.json();
-    if (!response.ok || !result.success) {
+    if (!result.success) {
         throw new Error(result.error || `API Error for action: ${action}`);
     }
     return result;
@@ -328,7 +332,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             audienceTitle={config.title}
         />
         <div className="space-y-6 text-left">
-            <div className="text-left">
+            <div className="text-left text-foreground">
                 <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
                 <p className="text-muted-foreground">Tailored content and engagement tools for {config.title.toLowerCase()}.</p>
             </div>

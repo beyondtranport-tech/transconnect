@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone 
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone, UserCircle
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -178,7 +178,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
-                        <UserCheck className="h-4 w-4" /> CEO / Principal
+                        <UserCircle className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                     <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -283,11 +283,45 @@ export default function SupplierManagement() {
               </div>
           )
       },
-      { accessorKey: 'contactPerson', header: 'Key Contact' },
-      { accessorKey: 'email', header: 'Email' },
-      { id: 'outreach', header: 'Outreach', cell: ({row}) => <div className="text-[10px] uppercase font-bold text-muted-foreground text-left">{row.original.lastOutreachSubject || 'None'}</div> },
+      { 
+          id: 'contactPerson',
+          header: 'Account Lead', 
+          cell: ({row}) => (
+              <div className="flex flex-col text-left text-foreground">
+                  <span className="font-bold text-sm text-left">{row.original.marketingManager?.name || row.original.contactPerson || 'N/A'}</span>
+                  <span className="text-[10px] text-muted-foreground text-left">{row.original.marketingManager?.email || row.original.email || 'No email discovered'}</span>
+              </div>
+          )
+      },
+      { 
+          id: 'mobile',
+          header: 'Direct Line', 
+          cell: ({row}) => (
+              <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                  <Phone className="h-3 w-3 text-muted-foreground" />
+                  {row.original.marketingManager?.mobile || row.original.mobile || row.original.phone || 'N/A'}
+              </div>
+          )
+      },
+      { 
+          id: 'outreach', 
+          header: 'Outreach', 
+          cell: ({row}) => {
+              if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+              return (
+                  <div className="flex flex-col text-left">
+                      <Badge variant="outline" className="text-[9px] h-4 uppercase font-bold truncate max-w-[100px] border-primary/20 text-primary">{row.original.lastOutreachSubject}</Badge>
+                      {row.original.lastOpenedAt && (
+                          <div className="flex items-center gap-1 text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 mt-1 w-fit">
+                              <UserCheck className="h-2.5 w-2.5" /> Read
+                          </div>
+                      )}
+                  </div>
+              );
+          }
+      },
       { accessorKey: 'status', header: 'Status', cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> },
-      { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+      { id: 'actions', header: 'Actions', cell: ({ row }) => (
           <div className="flex justify-end gap-1 text-foreground">
             <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
             <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
@@ -304,7 +338,7 @@ export default function SupplierManagement() {
           </div>
         )},
     ];
-    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
+    return cols.filter(c => visibleColumns[c.id || c.accessorKey as string]);
   }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
