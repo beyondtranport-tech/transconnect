@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -44,6 +45,12 @@ async function performAdminAction(token: string, action: string, payload: any) {
     if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
     return result;
 }
+
+const contactSchema = z.object({
+  name: z.string().nullable().optional(),
+  email: z.string().nullable().optional(),
+  mobile: z.string().nullable().optional(),
+});
 
 const partnerSchema = z.object({
   firstName: z.string().optional().or(z.literal('')),
@@ -58,6 +65,9 @@ const partnerSchema = z.object({
   website: z.string().url("Invalid URL").optional().or(z.literal('')),
   notes: z.string().optional(),
   address: z.string().optional(),
+  marketingManager: contactSchema.nullable().optional(),
+  ceo: contactSchema.nullable().optional(),
+  minedServiceWording: z.string().nullable().optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -72,7 +82,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   useEffect(() => {
     if (open) {
       if (partner) form.reset(partner);
-      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'transporter', website: '', notes: '', address: '' });
+      else form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', contactPerson: '', companyName: '', status: 'new', type: 'transporter', website: '', notes: '', address: '', marketingManager: { name: '', email: '', mobile: '' }, ceo: { name: '', email: '', mobile: '' } });
     }
   }, [open, partner, form]);
 
@@ -81,7 +91,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
-        await performAdminAction(token, 'savePartner', { partner: { id: partner?.id, ...values, type: 'transporter' } });
+        const collection = partner?.source === 'Lead' ? 'leads' : 'partners';
+        await performAdminAction(token, 'savePartner', { collection, partner: { id: partner?.id, ...values, type: 'transporter' } });
         toast({ title: 'Transporter Saved' });
         onSave();
         onOpenChange(false);
@@ -94,38 +105,79 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] text-left text-foreground">
+      <DialogContent className="sm:max-w-4xl text-left text-foreground">
         <DialogHeader>
-            <DialogTitle>{partner ? 'Edit' : 'Add'} Transporter</DialogTitle>
+            <DialogTitle>Edit Transporter Profile</DialogTitle>
+            <DialogDescription>Manage high-fidelity contacts and industrial profile data.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-2 text-left">
-            <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>First Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Last Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left">
+            <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Building className="h-4 w-4" /> Core Entity Identity
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                  <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" /></FormControl></FormItem> )} />
+                  <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                </div>
+                <FormField control={form.control} name="status" render={({ field }) => ( 
+                    <FormItem className="text-left">
+                        <FormLabel>Status</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl><SelectTrigger className="bg-white border-2"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="new">New Lead</SelectItem>
+                                <SelectItem value="contacted">Researching</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="active">Active Participant</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem> 
+                )} />
             </div>
-            <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-            <div className="grid grid-cols-2 gap-4 text-left">
-              <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Email</FormLabel><FormControl><Input {...field} type="email" className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
-              <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} className="bg-white" /></FormControl><FormMessage /></FormItem> )} />
+
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                        <Users className="h-4 w-4" /> Marketing Manager
+                    </h4>
+                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                </div>
+
+                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                        <UserCheck className="h-4 w-4" /> CEO / Principal
+                    </h4>
+                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                </div>
             </div>
-            <FormField control={form.control} name="status" render={({ field }) => ( 
-                <FormItem className="text-left">
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl><SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
-                        <SelectContent>
-                            <SelectItem value="new">New Lead</SelectItem>
-                            <SelectItem value="contacted">Researching</SelectItem>
-                            <SelectItem value="qualified">Qualified</SelectItem>
-                            <SelectItem value="active">Active Participant</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </FormItem> 
-            )} />
-            <DialogFooter className="pt-4 border-t text-left">
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Record
+
+            <Separator />
+
+            <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" /> Technical Profile
+                </h4>
+                <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
+                    <FormItem>
+                        <FormControl><Textarea className="min-h-[150px] bg-white border-2 leading-relaxed" {...field} value={field.value || ''} /></FormControl>
+                    </FormItem>
+                )} />
+            </div>
+
+            <DialogFooter className="pt-4 border-t sticky bottom-0 bg-white z-10">
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg text-white">
+                {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>
           </form>
@@ -145,7 +197,6 @@ export default function TransporterManagement() {
   const [dialog, setDialog] = useState<{ type: 'add' | 'edit' | 'delete' | 'engage' | null, data?: any, initialIndex?: number }>({ type: null });
 
   const [statusFilter, setStatusFilter] = useState('all');
-  const [outreachFilter, setOutreachFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
@@ -163,7 +214,7 @@ export default function TransporterManagement() {
         const token = await getClientSideAuthToken();
         if (!token) return;
         const [res, staffRes] = await Promise.all([
-          performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, outreachFilter, limit }),
+          performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, limit }),
           performAdminAction(token, 'getPlatformStaff', {})
         ]);
         setAllRecords(res.data || []);
@@ -173,7 +224,7 @@ export default function TransporterManagement() {
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, outreachFilter, toast]);
+  }, [searchTerm, toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -191,88 +242,85 @@ export default function TransporterManagement() {
     });
   }, [allRecords, statusFilter, assigneeFilter]);
 
-  const columns: ColumnDef<any>[] = useMemo(() => {
-    const cols: ColumnDef<any>[] = [
-      { 
-          accessorKey: 'companyName',
-          header: 'Haulier Entity', 
-          cell: ({row}) => (
-              <div className="flex flex-col text-left">
-                  <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left text-foreground">
-                      {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">{row.original.industrial_category || 'Logistics'}</Badge>
-                  </div>
-              </div>
-          )
-      },
-      { 
-          accessorKey: 'contactPerson',
-          header: 'Key Decision Maker',
-          cell: ({ row }) => <div className="text-sm font-medium text-left text-foreground">{row.original.contactPerson || 'N/A'}</div>
-      },
-      { accessorKey: 'email', header: 'Email' },
-      { 
-          header: 'Outreach Stage',
-          id: 'outreach',
-          accessorKey: 'lastOutreachSubject',
-          cell: ({ row }) => {
-              if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-              const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
-              return (
-                  <div className="flex flex-col text-left text-foreground text-left">
-                      <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
-                        {row.original.lastOpenedAt && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
-                              </TooltipTrigger>
-                              <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                        {row.original.lastAccessedAt && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
-                              </TooltipTrigger>
-                              <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
-                  </div>
-              );
-          }
-      },
-      { 
-          accessorKey: 'status', 
-          header: 'Status', 
-          cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
-      },
-      { id: 'actions', header: 'Actions', cell: ({ row }) => (
-        <div className="flex justify-end items-center gap-1 text-left text-foreground">
-          <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
-          <AddCommunicationLogDialog 
-              partnerId={row.original.id} 
-              collection={row.original.source === 'Lead' ? 'leads' : 'partners'} 
-              onLogAdded={() => fetchData()} 
-          />
-          <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
-          <PartnerTasksDialog partner={row.original} />
-          <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
-          <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-        </div>
-      ) },
-    ];
-    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    { 
+        accessorKey: 'companyName',
+        header: 'Haulier Entity', 
+        cell: ({row}) => (
+            <div className="flex flex-col text-left">
+                <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
+                <div className="flex items-center gap-2 mt-1 text-left text-foreground">
+                    {row.original.website && <Globe className="h-3 w-3 text-primary" />}
+                    <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">{row.original.industrial_category || 'Logistics'}</Badge>
+                </div>
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'contactPerson',
+        header: 'Key Decision Maker',
+        cell: ({ row }) => <div className="text-sm font-medium text-left text-foreground">{row.original.contactPerson || 'N/A'}</div>
+    },
+    { accessorKey: 'email', header: 'Email' },
+    { 
+        header: 'Outreach Stage',
+        id: 'outreach',
+        accessorKey: 'lastOutreachSubject',
+        cell: ({ row }) => {
+            if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
+            const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
+            return (
+                <div className="flex flex-col text-left text-foreground text-left">
+                    <div className="flex items-center gap-1">
+                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
+                      {row.original.lastOpenedAt && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                            </TooltipTrigger>
+                            <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      {row.original.lastAccessedAt && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                            </TooltipTrigger>
+                            <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                    <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
+                </div>
+            );
+        }
+    },
+    { 
+        accessorKey: 'status', 
+        header: 'Status', 
+        cell: ({ row }) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
+    },
+    { id: 'actions', header: 'Actions', cell: ({ row }) => (
+      <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground text-foreground">
+        <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
+        <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
+        <AddCommunicationLogDialog 
+            partnerId={row.original.id} 
+            collection={row.original.source === 'Lead' ? 'leads' : 'partners'} 
+            onLogAdded={() => fetchData()} 
+        />
+        <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.firstName} />
+        <PartnerTasksDialog partner={row.original} />
+        <PartnerOversightDialog partner={row.original} onUpdate={() => fetchData()} />
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'edit', data: row.original })}><Edit className="h-4 w-4" /></Button>
+        <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+      </div>
+    ) },
+  ], [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -333,17 +381,17 @@ export default function TransporterManagement() {
           <Card className="text-left text-foreground text-foreground">
               <CardContent className="pt-6 text-left text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground">
-                      <div className="space-y-1 text-left text-foreground">
+                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Filter className="h-3 w-3"/> Status</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
-                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                               <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active Participant</SelectItem></SelectContent>
                           </Select>
                       </div>
                       <div className="space-y-1 text-left text-foreground">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                              <SelectTrigger className="bg-white text-left text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                              <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="all">All Staff</SelectItem>
                                   <SelectItem value="none">Unallocated</SelectItem>
@@ -351,21 +399,14 @@ export default function TransporterManagement() {
                               </SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-1 text-left text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Send className="h-3 w-3"/> Outreach</Label>
-                          <Select value={outreachFilter} onValueChange={setOutreachFilter}>
-                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground"><SelectValue placeholder="All Outreach" /></SelectTrigger>
-                              <SelectContent><SelectItem value="all">All Outreach</SelectItem><SelectItem value="none">No Outreach Yet</SelectItem></SelectContent>
-                          </Select>
-                      </div>
-                      <div className="flex items-end text-left text-foreground">
+                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                           <div className="flex-1 space-y-1 text-left">
                               <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Registry</Label>
                               <Input placeholder="Filter registry by name or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
                           </div>
                       </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                       <div className="space-y-6 text-left text-foreground">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
