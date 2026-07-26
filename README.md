@@ -18,7 +18,7 @@ git add .
 ### Step 2: Save Your Changes
 Commit your changes with a descriptive message.
 ```bash
-git commit -m "Forensic V8: Information Dividend Sync & Backend Management"
+git commit -m "Forensic V13: Performance Optimization & Protocol Alignment"
 ```
 
 ### Step 3: Push Your Backup to GitHub
@@ -31,13 +31,13 @@ git push
 
 ---
 
-## Recent Updates: Forensic V8 (The Information Dividend)
-- **Dividend Rewards Terminal**: Implemented a dedicated management view in the Revenue section of the Admin Portal to explicitly configure Bronze, Silver, and Gold rewards.
-- **Dynamic About Page**: Synchronized the "Information Dividend" cards on the public /about page with the live backend configurations.
-- **Feature Registry Expansion**: Added "20% Reduction", "Branding Studio", and "CRM Access" to the backend feature list for granular tiering.
-- **Partnership Ecosystem Redesign**: Distinguished between Digital Associates (ISA) for individuals and Strategic Business Partners for corporate entities.
+## Recent Updates: Forensic V13 (The Performance Bridge)
+- **504 Timeout Resolution**: Enforced 500-record query limits and prioritized `updatedAt` sorting in the Admin API to ensure high-velocity responses on datasets with 9,000+ records.
+- **V13 Forensic Protocol**: Upgraded the AI Scavenger to V13, introducing iterative acronym expansion (e.g., JH -> Junior H) and sectional "Contact Card" mining for single-page industrial websites.
+- **CRM Stakeholder Restoration**: Restored the CEO and Marketing/Sales Manager fields to the Supplier and Transporter management modals for complete forensic oversight.
+- **Logging Optimization**: Optimized the "Log & Copy" partner fetch to use a targeted 100-record subset, preventing session timeouts during engagement.
 
-## Forensic V7
-- **Build Stabilization**: Resolved critical TypeScript errors and import mismating in the Intelligence and Marketing hubs.
+## Forensic V8 - V12
+- **Dividend Rewards Terminal**: Implemented Bronze, Silver, and Gold reward configurations.
+- **Inductive Reconstruction**: Moved AI logic from "evidence-only" to fragment-stitching across multiple sources.
 - **Node Ownership Workflow**: Implemented R10/mo node claiming and community vouching.
-- **Tactical Engagement Hub**: Added psychological triggers (Wedge, Signal, Elite Filter, Break-Up) to the Outreach Wizard.
