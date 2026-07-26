@@ -32,32 +32,43 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
-        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
+        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V5 - SCAVENGER PROTOCOL).
         
-TASK: Discover and bridge ALL data gaps for the business: "${companyName}".
+TASK: Perform a high-velocity investigation to bridge ALL data gaps for: "${companyName}".
 
-CRITICAL INTEGRITY SHIELD (ANTI-BOUNCE):
-1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
-2. NO GUESSING: NEVER construct or "guess" email addresses based on patterns (e.g. info@company.co.za).
-3. VERIFICATION MANDATE: Only return emails explicitly visible in search evidence or metadata. If not found, return null.
+REQUIRED DISCOVERY PROTOCOL:
+1. MULTI-PLATFORM SCAN: You MUST perform a live search for "${companyName}" across:
+   - Official Corporate Website (check "About", "Team", and "Contact" sub-pages).
+   - LinkedIn (Look for the MD, CEO, and Marketing Manager).
+   - Facebook & Instagram (Mine the 'Bio' and 'About' sections for WhatsApp/Mobile).
+   - SA Directories: Brabys, Yellosa, Infoisinfo, and Easyinfo.co.za.
 
-REQUIRED PROTOCOL:
-1. SEARCH: Perform a live search for "${companyName}" corporate website and LinkedIn in South Africa.
-2. IDENTITY: Identify the actual name, email, and mobile for the Marketing Manager and CEO/Owner.
-3. EXTRACTION: Provide a 300-word verbatim profile of their technical services.
+2. IDENTITY RESOLUTION: If you identify a name (e.g. CEO or Marketing Lead), you are COMMANDED to do a secondary search for that specific person to find their professional email and mobile.
 
-RETURN ONLY A RAW JSON OBJECT IN THIS FORMAT:
+3. DATA FIDELITY (ANTI-BOUNCE):
+   - REAL DATA ONLY: Do not invent names or guess emails based on patterns.
+   - NULL MANDATE: If after searching ALL sources data is still missing, return null.
+
+RETURN ONLY A RAW JSON OBJECT:
 {
   "record_id": "${partner.id}",
   "companyName": "${companyName}",
   "industrial_category": "...",
-  "website": "OFFICIAL URL",
-  "email": "Primary Email",
-  "phone": "RSA Landline",
-  "address": "Verified Physical Address",
-  "marketingManager": { "name": "...", "email": "...", "mobile": "..." },
-  "ceo": { "name": "...", "email": "...", "mobile": "..." },
-  "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS)"
+  "website": "OFFICIAL CORPORATE URL",
+  "email": "VERIFIED GENERAL EMAIL",
+  "phone": "RSA LANDLINE",
+  "address": "VERIFIED PHYSICAL ADDRESS",
+  "marketingManager": { 
+      "name": "VERIFIED NAME", 
+      "email": "VERIFIED DIRECT EMAIL", 
+      "mobile": "VERIFIED MOBILE" 
+  },
+  "ceo": { 
+      "name": "VERIFIED OWNER/MD NAME", 
+      "email": "VERIFIED DIRECT EMAIL", 
+      "mobile": "VERIFIED MOBILE" 
+  },
+  "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS) - MINE THE PRODUCT/SERVICE PAGES."
 }
 
 NO MARKDOWN. NO PREAMBLE.`;
@@ -77,7 +88,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Prompt Ready", description: "Interaction logged. Paste into AI Studio." });
+            toast({ title: "Scavenger Prompt Ready", description: "Mandate copied. Paste into AI Studio." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -105,21 +116,21 @@ NO MARKDOWN. NO PREAMBLE.`;
             <Dialog open={isOpen} onOpenChange={(o) => !isLogging && setIsOpen(o)}>
                 <DialogContent className="sm:max-w-xl text-left text-foreground">
                     <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black text-left">
+                        <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Industrial Gap-Analysis V4
+                            Industrial Gap-Analysis V5
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
-                            Generate a forensic research command for <strong>{companyName}</strong>.
+                            Generate a high-velocity scavenger command for <strong>{companyName}</strong>.
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground">Gap Bridging Mode</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground">Scavenger Mandate Active</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                Use this prompt in Google AI Studio. The "Anti-Bounce" protocol is now hard-coded to prevent fictitious emails.
+                                This V5 prompt commands the AI to search sub-pages and directories to find the direct contacts you need for engagement.
                             </AlertDescription>
                         </Alert>
 
@@ -138,7 +149,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                             className="w-full bg-primary hover:bg-primary/90 text-white font-bold"
                         >
                             {isLogging ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
-                            {isCopied ? 'Command Ready!' : 'Copy Research Prompt'}
+                            {isCopied ? 'Command Ready!' : 'Copy Scavenger Prompt'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

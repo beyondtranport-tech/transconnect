@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -21,22 +20,23 @@ export const transporterCategories = [
 function generateDiscoveryPrompt(category: string, startPage: number) {
     const startSeq = (startPage - 1) * 30 + 1;
 
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT.
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V5 - SCAVENGER PROTOCOL).
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
-1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
-2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@company.co.za). 
-3. NULL MANDATE: If data is not explicitly visible in search evidence, you MUST set the field to null.
+STRICT REGIONAL LOCK: 
+ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
-TASK: Discover and extract exactly 30 UNIQUE live transport companies in SOUTH AFRICA for: "${category}".
+TASK: Discover and extract exactly 30 UNIQUE, LIVE South African transport companies for: "${category}".
 
-STRICT PROTOCOL:
-1. DATA MINING: Find the OFFICIAL CORPORATE WEBSITE. Verify existence.
-2. IDENTITY VERIFICATION: Find the ACTUAL NAME (First and Last) of the Managing Director, Owner, or CEO. If not found on the site, check LinkedIn. If still not found, set to null.
-3. RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
+SCAVENGER MANDATE (CRITICAL):
+1. MULTI-STEP INVESTIGATION: You MUST search the Official Website, LinkedIn, and local directories (Brabys/Yellosa) for each entity.
+2. BRIDGE THE GAPS: If an email is not on the home page, you are COMMANDED to find it on the "Contact Us" or "About" sub-pages.
+3. IDENTITY RESOLUTION: Find the ACTUAL NAME (First/Last) of the MD, CEO, or Owner. 
+4. ANTI-HALLUCINATION: Do NOT guess. If data is truly missing after checking multiple sources, return null.
 
-REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
+RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
+
+REQUIRED JSON FIELDS:
 [
   {
     "seq": ${startSeq},
@@ -44,11 +44,12 @@ REQUIRED OUTPUT FORMAT (RAW JSON ARRAY ONLY):
     "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
     "contactPerson": "VERIFIED HUMAN NAME (OR NULL)",
-    "email": "Professional Email",
-    "phone": "...",
+    "email": "VERIFIED EMAIL",
+    "mobile": "VERIFIED MOBILE",
+    "phone": "VERIFIED LANDLINE",
     "website": "OFFICIAL VERIFIED URL",
     "address": "FULL Street, Suburb, City, Province",
-    "notes": "TECHNICAL SUMMARY"
+    "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SUB-PAGES"
   }
 ]`;
 }
@@ -65,22 +66,22 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Identity integrity mandate active." });
+        toast({ title: "Scavenger Prompt Ready", description: "Identity integrity mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4 text-left text-foreground">
-                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left text-foreground text-left">
+                <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
                     <Search className="h-6 w-6 text-primary" />
                     Haulier Mapping: {category}
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Zero-Tolerance for Mock Data</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol Active</AlertTitle>
                     <AlertDescription className="text-xs text-left text-foreground">
-                        The agent is forbidden from inventing names. Missing identity data must be returned as null.
+                        The agent is commanded to crawl sub-pages and directories to minimize null fields while maintaining zero-tolerance for mock data.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
@@ -98,7 +99,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy Research Prompt
+                    Copy Scavenger Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
@@ -118,9 +119,9 @@ export default function TransporterDiscoveryEngine() {
                 <CardHeader className="px-0 pt-0 text-left text-foreground">
                     <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline text-left text-foreground">
                         <Database className="h-6 w-6 text-primary" />
-                        Industrial Haulier Mapper
+                        Industrial Haulier Scavenger
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground text-foreground">Map unique transport entities using noise-suppressed discovery.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground text-foreground">Map unique transport entities using high-fidelity multi-source discovery.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left text-foreground">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground">

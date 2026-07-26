@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, Zap, Globe, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Loader2, Zap, Globe, ShieldCheck, AlertTriangle, SearchCode } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { transporterCategories } from './transporter-discovery';
@@ -38,24 +38,24 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const companyList = selectedLeads.map(l => `[KEY: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     const validCategories = transporterCategories.join(', ');
 
-    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
+    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V5 - BATCH SCAVENGER). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-NOISE SUPPRESSION PROTOCOL:
-1. IGNORE ALL JOB LISTINGS, POLICY NEWS, AND NEWS ARTICLES.
-2. FOCUS ONLY ON CORPORATE LANDING PAGES AND BUSINESS DIRECTORIES.
-
-CRITICAL INTEGRITY SHIELD: 
-YOU ARE STRICTLY FORBIDDEN FROM RETURNING MOCK DATA. IF DATA IS NOT DISCOVERED, RETURN null.
+REQUIRED INVESTIGATION PROTOCOL PER RECORD:
+1. GO DEEP: For each company below, find the official website. Do not stop at the home page. Check "About", "Team", "Contact", and "Services".
+2. SOCIAL CROSS-REFERENCE: Search LinkedIn and Facebook for the entity. Identify the ACTUAL FULL NAMES of the MD, CEO, or Marketing Lead.
+3. DIRECT CONTACTS: If landlines or emails are not on the site, check SA business directories (Brabys, Yellosa, Infoisinfo).
+4. ZERO TOLERANCE FOR MOCK DATA: If data is not discovered, return null. Never guess or synthesize emails.
 
 STRICT REGIONAL LOCK:
-Bridge gaps only for the SOUTH AFRICAN operations. Ignore all results for companies in Australia, UK, or USA.
+Bridge gaps only for SOUTH AFRICAN operations. Ignore all results for international branches.
 
-LIST TO INVESTIGATE (SOUTH AFRICA ENTITIES ONLY):
+LIST TO INVESTIGATE (RSA ENTITIES ONLY):
 ${companyList}
 
-REQUIRED JSON FIELDS PER RECORD:
-- "record_id": (Return exactly the KEY provided)
+JSON OUTPUT REQUIREMENTS:
+- "record_id": (Return exactly the [KEY] provided)
+- "companyName": (Standardize to the official registered name)
 - "industrial_category": (Select from [${validCategories}])
 - "website": (OFFICIAL CORPORATE URL)
 - "email": (General Company Email)
@@ -63,7 +63,7 @@ REQUIRED JSON FIELDS PER RECORD:
 - "address": (FULL Verified Physical Address in South Africa)
 - "marketingManager": { "name": "...", "email": "...", "mobile": "..." }
 - "ceo": { "name": "...", "email": "...", "mobile": "..." }
-- "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS)"`;
+- "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS) - MINE THE TECHNICAL PAGES."`;
 
     const handleCopyAndLogBatch = async () => {
         setIsLoading(true);
@@ -82,7 +82,7 @@ REQUIRED JSON FIELDS PER RECORD:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "Batch Command Ready", description: "Noise suppression mandate active." });
+            toast({ title: "Batch Scavenger Ready", description: "Paste into AI Studio to bridge gaps." });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -100,21 +100,21 @@ REQUIRED JSON FIELDS PER RECORD:
         <Dialog open={open} onOpenChange={(o) => !isLoading && onOpenChange(o)}>
             <DialogContent className="sm:max-w-2xl text-left text-foreground">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
-                        <Globe className="h-5 w-5 text-primary" />
-                        Industrial Batch Research V4
+                    <DialogTitle className="flex items-center gap-2 text-left font-black">
+                        <SearchCode className="h-5 w-5 text-primary" />
+                        Batch Scavenger V5
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
-                        Noise-suppressed research specifically for South African entities.
+                        High-velocity batch research mandate for South African industrial entities.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left text-foreground">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-foreground">Noise Suppression Active</AlertTitle>
+                        <AlertTitle className="font-bold text-foreground">Deep Discovery Mandated</AlertTitle>
                         <AlertDescription className="text-xs text-left">
-                            The agent is explicitly forbidden from returning news or job listings.
+                            The agent is commanded to crawl sub-pages and directories. Hallucination is strictly forbidden.
                         </AlertDescription>
                     </Alert>
 
@@ -129,7 +129,7 @@ REQUIRED JSON FIELDS PER RECORD:
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Batch Command Ready!' : 'Copy Research Command'}
+                        {isCopied ? 'Batch Command Ready!' : 'Copy Batch Scavenger'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
