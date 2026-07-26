@@ -32,22 +32,23 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
-        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V5 - SCAVENGER PROTOCOL).
+        return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER).
         
 TASK: Perform a high-velocity investigation to bridge ALL data gaps for: "${companyName}".
 
-REQUIRED DISCOVERY PROTOCOL:
+REQUIRED INVESTIGATION PROTOCOL:
 1. MULTI-PLATFORM SCAN: You MUST perform a live search for "${companyName}" across:
-   - Official Corporate Website (check "About", "Team", and "Contact" sub-pages).
-   - LinkedIn (Look for the MD, CEO, and Marketing Manager).
-   - Facebook & Instagram (Mine the 'Bio' and 'About' sections for WhatsApp/Mobile).
+   - Official Corporate Website (check "About", "Team", "Contact", and "Services").
+   - LinkedIn & Facebook (Look for the MD, CEO, and Marketing Manager).
    - SA Directories: Brabys, Yellosa, Infoisinfo, and Easyinfo.co.za.
 
-2. IDENTITY RESOLUTION: If you identify a name (e.g. CEO or Marketing Lead), you are COMMANDED to do a secondary search for that specific person to find their professional email and mobile.
+2. ITERATIVE IDENTITY RESOLUTION:
+   - If you identify a name (e.g. CEO Kyle Gounden), you are COMMANDED to do a SECONDARY search for that specific person (e.g. "Kyle Gounden [CompanyName] email mobile") to find their direct contact path.
+   - Do not stop at the company level. Resolve the human nodes.
 
 3. DATA FIDELITY (ANTI-BOUNCE):
    - REAL DATA ONLY: Do not invent names or guess emails based on patterns.
-   - NULL MANDATE: If after searching ALL sources data is still missing, return null.
+   - NULL MANDATE: If after searching ALL sources and performing secondary identity lookups data is still missing, return null.
 
 RETURN ONLY A RAW JSON OBJECT:
 {
@@ -88,7 +89,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "Scavenger Prompt Ready", description: "Mandate copied. Paste into AI Studio." });
+            toast({ title: "Scavenger Prompt Ready", description: "V6 Mandate copied. Paste into AI Studio." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -118,7 +119,7 @@ NO MARKDOWN. NO PREAMBLE.`;
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-left text-foreground font-black">
                             <Sparkles className="h-5 w-5 text-primary" />
-                            Industrial Gap-Analysis V5
+                            Industrial Gap-Analysis V6
                         </DialogTitle>
                         <DialogDescription className="text-left text-foreground">
                             Generate a high-velocity scavenger command for <strong>{companyName}</strong>.
@@ -128,15 +129,15 @@ NO MARKDOWN. NO PREAMBLE.`;
                     <div className="space-y-4 py-4 text-left text-foreground">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold text-foreground">Scavenger Mandate Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold text-foreground text-left">Scavenger Mandate Active</AlertTitle>
                             <AlertDescription className="text-xs text-left text-foreground">
-                                This V5 prompt commands the AI to search sub-pages and directories to find the direct contacts you need for engagement.
+                                This V6 prompt commands the AI to perform **Iterative Identity Resolution**—it will search for the specific person once found to find their direct contacts.
                             </AlertDescription>
                         </Alert>
 
                         <div className="space-y-2 text-left">
                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Research Command</label>
-                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left">
+                            <ScrollArea className="h-48 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground">
                                 <pre className="text-xs whitespace-pre-wrap font-mono leading-relaxed text-foreground">{getPrompt()}</pre>
                             </ScrollArea>
                         </div>

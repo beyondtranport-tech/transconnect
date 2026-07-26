@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, Loader2, RefreshCcw, Database, Zap, AlertTriangle, Globe, ShieldCheck } from "lucide-react";
+import { ArrowRight, Copy, ClipboardCheck, Info, Search, Terminal, Loader2, RefreshCcw, Database, Zap, AlertTriangle, Globe, ShieldCheck, SearchCode } from "lucide-react";
 import * as React from "react";
 import { useState, useMemo } from 'react';
 import { useToast } from "@/hooks/use-toast";
@@ -24,20 +23,23 @@ export const supplierCategories = [
 ];
 
 function generateDiscoveryPrompt(category: string, startSeq: number = 1) {
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT. 
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
-CRITICAL INTEGRITY SHIELD (ANTI-MOCK POLICY): 
-1. ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names, emails, or titles to fill fields.
-2. NO PATTERN GUESSING: Never construct email addresses based on patterns (e.g., info@company.co.za). 
-3. NULL MANDATE: If data is not explicitly visible in search evidence, you MUST set the field to null.
+STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African suppliers for: "${category}".
 
-DEEP-CRAWLING PROTOCOL:
-1. WEBSITE HIERARCHY SCAN: Find the primary Menu/Navigation. 
-2. SUB-PAGE EXTRACTION: Identify the "About Us" and "Products/Services" pages. 
-3. HUMAN IDENTITY: MINE the "Contact Us" or "About" pages to find the ACTUAL NAME of the CEO, MD, or Owner. Only provide a name if it is confirmed in the text.
+SCAVENGER PROTOCOL:
+1. SUB-PAGE EXTRACTION: Identify the "About Us", "Team", and "Contact" pages of the official website. 
+2. ITERATIVE IDENTITY RESOLUTION: 
+   - You are COMMANDED to find the ACTUAL NAMES of the CEO, MD, or Owner. 
+   - If a name is identified, perform a SECONDARY search to find that individual's professional email and direct mobile.
+3. SOCIAL CROSS-REFERENCE: Use LinkedIn and Facebook to bridge contact gaps.
+
+CRITICAL INTEGRITY SHIELD: 
+- ZERO TOLERANCE FOR FICTITIOUS DATA: Do not invent names or guess emails.
+- NULL MANDATE: If data is not explicitly visible in search evidence after multi-platform checks, set the field to null.
 
 REQUIRED JSON FIELDS:
 [
@@ -46,13 +48,15 @@ REQUIRED JSON FIELDS:
     "record_id": "DISC_SUPP_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
     "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
-    "contactPerson": "VERIFIED HUMAN NAME (OR NULL)",
-    "email": "...",
-    "phone": "...",
+    "contactPerson": "VERIFIED HUMAN NAME",
+    "email": "VERIFIED GENERAL EMAIL",
+    "phone": "RSA LANDLINE",
     "website": "OFFICIAL VERIFIED URL",
     "address": "...",
-    "minedServiceWording": "FULL SCANNED ABOUT-TEXT AND HERO HEADLINES FROM PRODUCT PAGES",
-    "industrialTags": ["Tag1", "Tag2", "Tag3", "Tag4", "Tag5"]
+    "marketingManager": { "name": "...", "email": "...", "mobile": "..." },
+    "ceo": { "name": "...", "email": "...", "mobile": "..." },
+    "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SUB-PAGES (300 WORDS)",
+    "industrialTags": ["Tag1", "Tag2", "Tag3"]
   }
 ]`;
 }
@@ -68,7 +72,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "Research Prompt Ready", description: "Anti-hallucination protocol active." });
+        toast({ title: "V6 Command Ready", description: "Identity integrity mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -76,19 +80,19 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
         <div className="grid md:grid-cols-2 gap-6 text-left">
             <div className="space-y-4 text-left text-foreground">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
-                    <Globe className="h-6 w-6 text-primary" />
-                    Industrial Discovery: {category}
+                    <SearchCode className="h-6 w-6 text-primary" />
+                    High-Velocity Research: {category}
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground">Identity Integrity Protocol</AlertTitle>
+                    <AlertTitle className="text-left font-bold text-foreground">Iterative Identity Resolution</AlertTitle>
                     <AlertDescription className="text-xs text-left text-muted-foreground">
-                        The agent is forbidden from guessing names or emails. Records will return null for missing data to ensure registry accuracy.
+                        The agent is commanded to perform secondary searches for discovered names to find direct contact details. Fictitious data remains forbidden.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Sequence Sync</Label>
-                    <div className="space-y-1.5 text-left text-foreground">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Sequence Sync</Label>
+                    <div className="space-y-1.5 text-left">
                         <Label className="text-xs font-bold text-foreground text-left">Start Sequence #</Label>
                         <Input 
                             type="number" 
@@ -104,7 +108,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </Button>
             </div>
             <div className="space-y-2 text-left text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Command Preview (V6)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -117,21 +121,21 @@ export default function DiscoveryEngine() {
     return (
         <Card className="shadow-none border-none text-left text-foreground">
             <Tabs defaultValue="Accessories" className="w-full text-left">
-                <CardHeader className="px-0 pt-0 text-left text-foreground">
-                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline text-left text-foreground">
+                <CardHeader className="px-0 pt-0 text-left">
+                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline">
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Discovery Hub
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground text-foreground">Build a high-fidelity registry using noise-suppressed batches.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground text-foreground">Build a high-fidelity registry using noise-suppressed V6 batches.</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left text-foreground">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground">
+                <CardContent className="px-0 text-left">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
                         {supplierCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
                         ))}
                     </TabsList>
                     {supplierCategories.map(category => (
-                        <TabsContent key={category} value={category} className="text-left text-foreground">
+                        <TabsContent key={category} value={category} className="text-left">
                             <DiscoveryTab category={category} currentCount={0} />
                         </TabsContent>
                     ))}

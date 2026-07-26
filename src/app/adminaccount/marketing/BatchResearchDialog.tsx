@@ -38,17 +38,16 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const companyList = selectedLeads.map(l => `[KEY: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     const validCategories = transporterCategories.join(', ');
 
-    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V5 - BATCH SCAVENGER). 
+    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V6 - DEEP SCAVENGER). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-1. GO DEEP: For each company below, find the official website. Do not stop at the home page. Check "About", "Team", "Contact", and "Services".
-2. SOCIAL CROSS-REFERENCE: Search LinkedIn and Facebook for the entity. Identify the ACTUAL FULL NAMES of the MD, CEO, or Marketing Lead.
-3. DIRECT CONTACTS: If landlines or emails are not on the site, check SA business directories (Brabys, Yellosa, Infoisinfo).
-4. ZERO TOLERANCE FOR MOCK DATA: If data is not discovered, return null. Never guess or synthesize emails.
-
-STRICT REGIONAL LOCK:
-Bridge gaps only for SOUTH AFRICAN operations. Ignore all results for international branches.
+1. GO DEEP: For each company below, find the official website. Check "About", "Team", "Contact", and "Services".
+2. ITERATIVE IDENTITY RESOLUTION: 
+   - Identify the ACTUAL NAMES of the CEO, MD, or Owner via LinkedIn or Company Site. 
+   - If a name is found, perform a SECONDARY search to resolve their direct professional email and mobile.
+3. SOCIAL CROSS-REFERENCE: Use Facebook and Instagram bios to find hidden WhatsApp/Mobile numbers.
+4. ZERO TOLERANCE FOR MOCK DATA: If data is not discovered after iterative checks, return null.
 
 LIST TO INVESTIGATE (RSA ENTITIES ONLY):
 ${companyList}
@@ -63,7 +62,7 @@ JSON OUTPUT REQUIREMENTS:
 - "address": (FULL Verified Physical Address in South Africa)
 - "marketingManager": { "name": "...", "email": "...", "mobile": "..." }
 - "ceo": { "name": "...", "email": "...", "mobile": "..." }
-- "minedServiceWording": "CONCATENATED RAW SITE TEXT (300 WORDS) - MINE THE TECHNICAL PAGES."`;
+- "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SUB-PAGES (300 WORDS)."`;
 
     const handleCopyAndLogBatch = async () => {
         setIsLoading(true);
@@ -82,7 +81,7 @@ JSON OUTPUT REQUIREMENTS:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "Batch Scavenger Ready", description: "Paste into AI Studio to bridge gaps." });
+            toast({ title: "V6 Batch Mandate Ready", description: "Paste into AI Studio to resolve human nodes." });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -102,7 +101,7 @@ JSON OUTPUT REQUIREMENTS:
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-left font-black">
                         <SearchCode className="h-5 w-5 text-primary" />
-                        Batch Scavenger V5
+                        Batch Scavenger V6
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
                         High-velocity batch research mandate for South African industrial entities.
@@ -112,15 +111,15 @@ JSON OUTPUT REQUIREMENTS:
                 <div className="space-y-4 py-4 text-left text-foreground">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-foreground">Deep Discovery Mandated</AlertTitle>
-                        <AlertDescription className="text-xs text-left">
-                            The agent is commanded to crawl sub-pages and directories. Hallucination is strictly forbidden.
+                        <AlertTitle className="font-bold text-foreground text-left">Deep Investigation Mandated</AlertTitle>
+                        <AlertDescription className="text-xs text-left text-foreground">
+                            The agent is commanded to resolve human identities through secondary targeted searches.
                         </AlertDescription>
                     </Alert>
 
                     <div className="space-y-2 text-left">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">AI Research Command</label>
-                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left">
+                        <ScrollArea className="h-64 w-full border rounded-md p-3 bg-muted/30 text-left text-foreground">
                             <pre className="text-[11px] whitespace-pre-wrap font-mono leading-relaxed text-foreground">{aiPrompt}</pre>
                         </ScrollArea>
                     </div>
@@ -129,7 +128,7 @@ JSON OUTPUT REQUIREMENTS:
                 <DialogFooter>
                     <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'Batch Command Ready!' : 'Copy Batch Scavenger'}
+                        {isCopied ? 'V6 Batch Ready!' : 'Copy Batch Scavenger'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
