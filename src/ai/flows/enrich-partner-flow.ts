@@ -1,7 +1,7 @@
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V7.
- * FORENSIC HUNT PROTOCOL: Implements sitemap-to-social identity resolution.
+ * @fileOverview High-fidelity Industrial Research Agent V8.
+ * FORENSIC SCAVENGER PROTOCOL: Implements sitemap-to-social identity resolution.
  * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
  */
 
@@ -49,20 +49,18 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V7: FORENSIC HUNT
-    // Search 1: Primary Discovery (Broad for domain identification)
+    // SEARCH STRATEGY V8: BROAD DISCOVERY
+    // We use broad terms to ensure Google finds the official .co.za domain first.
     const siteResults = await googleSearchTool({ 
-        query: `${company} South Africa official website sitemap contact` 
+        query: `${company} South Africa official website` 
     });
     
-    // Search 2: Identity Resolution (Targeted for leadership names)
     const identityResults = await googleSearchTool({ 
-        query: `${company} South Africa CEO Managing Director Marketing Manager LinkedIn Facebook` 
+        query: `${company} South Africa CEO Managing Director Marketing Manager` 
     });
 
-    // Search 3: Aggregator Cross-Reference (For missing contacts)
     const directoryResults = await googleSearchTool({
-        query: `${company} South Africa phone email Brabys Yellosa Infoisinfo`
+        query: `${company} South Africa phone email address Brabys Yellosa`
     });
     
     const allContent = [...(siteResults || []), ...(identityResults || []), ...(directoryResults || [])]
@@ -75,19 +73,21 @@ const enrichPartnerFlow = ai.defineFlow(
 
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN EXPERT SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V7 - FORENSIC HUNT).
+        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V8 - FORENSIC SCAVENGER).
         
         INVESTIGATION PROTOCOL:
-        1. WEBSITE & SITEMAP: First, identify the official website. CRAWL THE SITEMAP metadata (About Us, Our Team, Contact) to extract names of the CEO/Owner and Marketing Lead.
-        2. IDENTITY RESOLUTION: Use identified names to pivot to LinkedIn/Facebook/Instagram to resolve direct emails and mobile numbers.
-        3. AGGREGATOR SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) to find landlines or general company emails if missing.
+        1. DOMAIN IDENTIFICATION: Identify the official website from the search evidence. Look for .co.za or .com domains first.
+        2. SITEMAP CRAWL: If the evidence describes "Meet the Team", "Management", or "Contact" pages, extract the specific names of the CEO and Marketing Lead.
+        3. IDENTITY RESOLUTION: Use those names to resolve direct emails and mobile numbers from LinkedIn/Facebook/Instagram snippets in the evidence.
+        4. DIRECTORY SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) as a fallback for general contacts.
         
         CRITICAL INTEGRITY SHIELD:
         - NO GUESSING: Never construct email addresses based on patterns.
-        - EVIDENCE ONLY: Only return data explicitly visible in search evidence or metadata. If not found, return null.
+        - EVIDENCE ONLY: Only return data explicitly visible in search evidence or metadata.
+        - NULL FALLBACK: If a field is not found, return null.
         
         MANDATE: Return RAW JSON only.`,
-        prompt: `PERFORM THE V7 FORENSIC HUNT FOR "${company}" USING THIS EVIDENCE:\n\n${allContent}`,
+        prompt: `PERFORM THE V8 FORENSIC HUNT FOR "${company}" USING THIS EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }

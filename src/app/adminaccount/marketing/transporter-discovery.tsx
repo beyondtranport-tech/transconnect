@@ -20,22 +20,23 @@ export const transporterCategories = [
 function generateDiscoveryPrompt(category: string, startPage: number) {
     const startSeq = (startPage - 1) * 30 + 1;
 
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V7 - FORENSIC HUNT).
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V8 - FORENSIC SCAVENGER).
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African transport companies for: "${category}".
 
-HUNT PROTOCOL:
-1. WEBSITE & SITEMAP: Identify the official website. You MUST CRAWL THE SITEMAP sub-pages ('About Us', 'Meet the Team', 'Contact') to identify the names of the CEO, MD, and Marketing Manager.
-2. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve their direct professional email and direct mobile numbers (+27 format).
-3. BROAD SEARCHING: Do not use restrictive quotes. Search for variants of the name to ensure you find the domain (e.g. jhtrucking.co.za).
-4. AGGREGATOR CROSS-REFERENCE: Use local SA directories (Brabys, Yellosa, Infoisinfo) to bridge contact gaps for landlines.
+SCAVENGER PROTOCOL:
+1. BROAD DISCOVERY: Search for "${category} transport companies South Africa". Do not use restrictive quotes.
+2. DOMAIN SEARCH: First, identify the official .co.za or .com website for each entity.
+3. SITEMAP CRAWL: For each site found, you MUST search the Sitemap and sub-pages ('About Us', 'Management', 'Contact') to identify the names of the CEO, MD, and Marketing Manager.
+4. IDENTITY RESOLUTION: Use identified names to perform a targeted SECONDARY search on LinkedIn and Facebook for that specific individual to resolve direct professional emails and direct mobile numbers (+27 format).
+5. DIRECTORY FALLBACK: Cross-reference local SA directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining gaps.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
-- NULL MANDATE: If data is not explicitly found after deep sitemap and secondary checks, set the field to null.
+- NULL MANDATE: If data is not explicitly found after deep sitemap and identity checks, set the field to null.
 
 RECORD KEY: Generate a unique "record_id" starting with "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_".
 
@@ -71,28 +72,28 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V7 Scavenger Ready", description: "Broad search and sitemap mandate active." });
+        toast({ title: "V8 Scavenger Ready", description: "Broad search and sitemap mandate active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
     return (
-        <div className="grid md:grid-cols-2 gap-6 text-left">
-            <div className="space-y-4 text-left text-foreground">
+        <div className="grid md:grid-cols-2 gap-6 text-left text-foreground">
+            <div className="space-y-4 text-left">
                 <h2 className="text-2xl font-bold font-headline flex items-center gap-2 text-left">
                     <SearchCode className="h-6 w-6 text-primary" />
                     Haulier Mapping: {category}
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold text-foreground text-left text-foreground">Scavenger Protocol V7 Active</AlertTitle>
-                    <AlertDescription className="text-xs text-left text-foreground text-foreground leading-relaxed">
-                        The agent is commanded to mine website sitemaps for employee lists, then pivot to social platforms to resolve their direct contact details. Broadened search parameters ensure domain identification.
+                    <AlertTitle className="text-left font-bold text-foreground">Scavenger Protocol V8 Active</AlertTitle>
+                    <AlertDescription className="text-xs text-left leading-relaxed">
+                        The agent uses broad search queries to identify the domain first, then enforces a deep crawl of sitemap sub-pages for employee lists before resolving identities on social platforms.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Pagination Sync</Label>
-                    <div className="space-y-1.5 text-left text-foreground text-foreground">
-                        <Label className="text-xs font-bold text-left text-foreground">Start from Batch #</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Pagination Sync</Label>
+                    <div className="space-y-1.5 text-left">
+                        <Label className="text-xs font-bold text-left">Start from Batch #</Label>
                         <Input 
                             type="number" 
                             placeholder={String(suggestedPage)}
@@ -104,12 +105,12 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V7 Haulier Prompt
+                    Copy V8 Haulier Prompt
                 </Button>
             </div>
-            <div className="space-y-2 text-left text-foreground text-foreground text-foreground">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left text-foreground"><Terminal className="h-3 w-3"/> Industrial Command (V7)</Label>
-                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left text-foreground">
+            <div className="space-y-2 text-left">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V8)</Label>
+                <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
             </div>
@@ -119,17 +120,17 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
 
 export default function TransporterDiscoveryEngine() {
     return (
-        <Card className="shadow-none border-none text-left text-foreground text-foreground">
-            <Tabs defaultValue="Long Haul" className="w-full text-left text-foreground text-foreground">
-                <CardHeader className="px-0 pt-0 text-left text-foreground text-foreground">
-                    <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline text-left">
+        <Card className="shadow-none border-none text-left">
+            <Tabs defaultValue="Long Haul" className="w-full text-left">
+                <CardHeader className="px-0 pt-0 text-left">
+                    <CardTitle className="flex items-center gap-2 text-left font-black font-headline text-foreground">
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Haulier Scavenger
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground text-foreground text-foreground">Map unique transport entities using high-fidelity V7 sitemap resolution.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Map unique transport entities using broad V8 sitemap resolution.</CardDescription>
                 </CardHeader>
-                <CardContent className="px-0 text-left text-foreground text-foreground text-foreground">
-                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left text-foreground text-foreground">
+                <CardContent className="px-0 text-left">
+                    <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">
                         {transporterCategories.map(category => (
                             <TabsTrigger key={category} value={category} className="text-xs px-4 py-2">{category}</TabsTrigger>
                         ))}
