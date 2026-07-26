@@ -32,7 +32,6 @@ import { BulkImportDialog } from './BulkImportDialog';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { supplierCategories } from './discovery-engine';
 
 async function performAdminAction(token: string, action: string, payload: any) {
   const response = await fetch('/api/admin', {
@@ -176,7 +175,7 @@ export default function SupplierManagement() {
     } finally {
       setIsLoading(false);
     }
-  }, [searchTerm, toast, type]);
+  }, [searchTerm, toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
