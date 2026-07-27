@@ -90,7 +90,10 @@ export async function POST(req: NextRequest) {
                     currentPipelineStep: stepIndex,
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
+                    updatedAt: FieldValue.serverTimestamp(),
+                    // Reset tracking for new step
+                    lastOpenedAt: null,
+                    lastAccessedAt: null
                 };
 
                 if (nextStep) {
@@ -132,7 +135,10 @@ export async function POST(req: NextRequest) {
                     status: 'contacted',
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
+                    updatedAt: FieldValue.serverTimestamp(),
+                    // Reset tracking for fresh outreach
+                    lastOpenedAt: null,
+                    lastAccessedAt: null
                 });
 
                 await docRef.collection('communications').add({
@@ -147,9 +153,16 @@ export async function POST(req: NextRequest) {
 
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: colOverride } = payload;
-                const colName = colOverride || 'partners';
-                const docRef = db.collection(colName).doc(partnerId);
                 
+                // FORENSIC COLLECTION DETECTION
+                // Ensure we are updating the correct record even if the UI guess is wrong
+                let colName = colOverride;
+                if (!colName) {
+                    const pSnap = await db.collection('partners').doc(partnerId).get();
+                    colName = pSnap.exists ? 'partners' : 'leads';
+                }
+
+                const docRef = db.collection(colName).doc(partnerId);
                 const batch = db.batch();
                 
                 const logRef = docRef.collection('communications').doc();
@@ -161,12 +174,15 @@ export async function POST(req: NextRequest) {
                     loggedBy: decodedToken.uid
                 });
 
-                batch.update(docRef, {
+                batch.set(docRef, {
                     status: 'contacted',
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
+                    updatedAt: FieldValue.serverTimestamp(),
+                    // IMPORTANT: Reset tracking on manual send so next open is attributed correctly
+                    lastOpenedAt: null,
+                    lastAccessedAt: null
+                }, { merge: true });
 
                 await batch.commit();
                 return NextResponse.json({ success: true });
@@ -210,11 +226,9 @@ export async function POST(req: NextRequest) {
                 const data = snap.data()!;
                 const companyName = data.companyName || data.firstName || 'Unknown';
 
-                // Call the enrichment flow
                 const { enrichPartner } = await import('@/ai/flows/enrich-partner-flow');
                 const result = await enrichPartner({ companyName });
 
-                // Update record with forensic result
                 await docRef.update({
                     ...result,
                     status: 'contacted',

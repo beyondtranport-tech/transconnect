@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -371,7 +372,8 @@ export default function TransporterManagement() {
           accessorKey: 'lastOutreachSubject',
           cell: ({ row }: { row: { original: any } }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
-              const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
+              // STRIP "Logistics Flow: " AND " for [Company]"
+              const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split(' for ')[0].trim();
               return (
                   <div className="flex flex-col text-left text-foreground text-left">
                       <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>

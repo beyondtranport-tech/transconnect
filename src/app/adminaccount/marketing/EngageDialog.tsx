@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -52,9 +53,9 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const ALL_ENGAGEMENT_TABS = [
-    { id: 'strategic-intro', label: 'Strategic Intro', icon: Handshake, hideFor: ['supplier', 'transporter', 'investor'] },
-    { id: 'platform-dm', label: 'Platform DM Script', icon: MessageSquare, hideFor: ['supplier', 'transporter', 'investor'] },
     { id: 'digital-handshake', label: 'Digital Handshake', icon: ShieldCheck, hideFor: ['associate'] },
+    { id: 'strategic-intro', label: 'Strategic Intro', icon: Handshake },
+    { id: 'platform-dm', label: 'Platform DM Script', icon: MessageSquare, hideFor: ['supplier', 'transporter', 'investor'] },
     { id: 'company-profile', label: 'Company Profile', icon: Building },
     { id: 'incentive-handshake', label: 'Welcome Incentive', icon: Gift },
     { id: 'tech-architecture', label: 'Tech Architecture', icon: Zap },
@@ -72,17 +73,21 @@ function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
     const clean = (val: any) => {
-        if (!val) return '';
+        if (!val) return false;
         const v = String(val).trim();
         const low = v.toLowerCase();
         const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending', 'h', 'x'];
-        if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return '';
+        if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return false;
         return v;
     };
 
     const searchObj = (obj: any, keys: string[]): string => {
         if (!obj || typeof obj !== 'object') return '';
-        for (const k of keys) if (obj[k]) { const c = clean(obj[k]); if (c) return c; }
+        for (const k of keys) {
+            const val = obj[k];
+            const c = clean(val);
+            if (c) return c;
+        }
         return '';
     };
 
@@ -92,24 +97,22 @@ function resolveContact(partner: any) {
     const primaryRole = partner.primaryContactRole;
     const primaryContact = primaryRole ? partner[primaryRole] : null;
 
-    const name = clean(
-        primaryContact?.name ||
-        partner.firstName || 
-        partner.marketingManager?.name || 
-        partner.ceo?.name || 
-        partner.operationsManager?.name ||
-        partner.technicalManager?.name ||
-        partner.contactPerson || 
-        partner.contact_person || 
-        partner.companyName || 
-        'Partner'
-    );
+    const name = clean(primaryContact?.name) || 
+                 clean(partner.firstName) || 
+                 clean(partner.marketingManager?.name) || 
+                 clean(partner.ceo?.name) || 
+                 clean(partner.operationsManager?.name) ||
+                 clean(partner.technicalManager?.name) ||
+                 clean(partner.contactPerson) || 
+                 clean(partner.contact_person) || 
+                 clean(partner.companyName) || 
+                 'Partner';
     
-    const email = clean(primaryContact?.email) || searchObj(partner.marketingManager, emailKeys) || searchObj(partner.ceo, emailKeys) || searchObj(partner, emailKeys) || clean(partner.email);
-    const mobile = clean(primaryContact?.mobile) || searchObj(partner.marketingManager, phoneKeys) || searchObj(partner.ceo, phoneKeys) || searchObj(partner, phoneKeys) || clean(partner.mobile || partner.phone);
-    const whatsapp = clean(partner.whatsapp) || mobile;
+    const email = clean(primaryContact?.email) || searchObj(partner.marketingManager, emailKeys) || searchObj(partner.ceo, emailKeys) || searchObj(partner, emailKeys) || (clean(partner.email) || '');
+    const mobile = clean(primaryContact?.mobile) || searchObj(partner.marketingManager, phoneKeys) || searchObj(partner.ceo, phoneKeys) || searchObj(partner, phoneKeys) || (clean(partner.mobile || partner.phone) || '');
+    const whatsapp = (clean(partner.whatsapp) || mobile).toString();
 
-    return { name, email, mobile, whatsapp };
+    return { name: name.toString(), email: email.toString(), mobile: mobile.toString(), whatsapp: whatsapp.toString() };
 }
 
 export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, audience, onEngageSuccess }: EngageDialogProps) {
@@ -329,15 +332,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="flex-1 overflow-y-auto bg-slate-50 p-8 text-left">
                     <div id={`engage-content-wrapper-${activeTab}`} className="bg-white p-10 rounded-lg shadow-sm border min-h-full text-left">
                         <Suspense fallback={<div className="flex justify-center items-center py-20"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
-                            {activeTab === 'platform-dm' && (
-                                <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
-                                    <p>Hi {contact.name.split(' ')[0]}, I'm Michael, owner of **Logistics Flow**. </p>
-                                    <p style={{ margin: '10pt 0' }}>I've been following your content here and think your creative influence is a perfect match for a strategic partnership we're launching for the South African transport industry.</p>
-                                    <p>We're offering influencers **Free 4K AI Studio access** and a **30% recurring annuity** on all referrals. We've already cataloged your business in our industrial registry.</p>
-                                    <p style={{ marginTop: '10pt' }}>Are you interested in the details? Let's establish the handshake here:</p>
-                                    <p><a href={`${window.location.origin}/opt-in/${currentPartner.id}?role=associate`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a></p>
-                                </div>
-                            )}
                             {activeTab === 'strategic-intro' && (
                                 <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
                                     <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt', marginBottom: '15pt' }}>
@@ -362,6 +356,15 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                                     <p>[   ] <strong>NO</strong>, I am not interested at this time:<br/>
                                        <a href={`${window.location.origin}/api/recordConsent?partnerId=${currentPartner.id}&status=declined`} style={{ color: '#475569', fontSize: '10pt' }}>Click here to decline</a>
                                     </p>
+                                </div>
+                            )}
+                            {activeTab === 'platform-dm' && (
+                                <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
+                                    <p>Hi {contact.name.split(' ')[0]}, I'm Michael, owner of **Logistics Flow**. </p>
+                                    <p style={{ margin: '10pt 0' }}>I've been following your content here and think your creative influence is a perfect match for a strategic partnership we're launching for the South African transport industry.</p>
+                                    <p>We're offering influencers **Free 4K AI Studio access** and a **30% recurring annuity** on all referrals. We've already cataloged your business in our industrial registry.</p>
+                                    <p style={{ marginTop: '10pt' }}>Are you interested in the details? Let's establish the handshake here:</p>
+                                    <p><a href={`${window.location.origin}/opt-in/${currentPartner.id}?role=associate`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a></p>
                                 </div>
                             )}
                             {activeTab === 'digital-handshake' && <DigitalHandshake partner={currentPartner} audience={normalizedAudience} />}
