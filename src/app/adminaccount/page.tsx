@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -99,12 +100,12 @@ import AssociateOversight from '@/app/adminaccount/associate-oversight';
 import AdminGuides from '@/app/adminaccount/guides';
 import AdsOversight from '@/app/adminaccount/ads-oversight';
 import SocialStudio from '@/app/adminaccount/social-studio';
+import EngagementPipeline from '@/app/adminaccount/marketing/EngagementPipeline';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     
-    // Stabilize check with primitive values to prevent loop
     const uid = user?.uid;
     const email = user?.email;
 
@@ -193,6 +194,7 @@ function AdminAccountContent() {
       case 'associate-oversight': return <AssociateOversight />;
       case 'ads-oversight': return <AdsOversight />;
       case 'guides': return <AdminGuides />;
+      case 'engagement-pipeline': return <EngagementPipeline />;
       default: return <AdminDashboardContent />;
     }
   }, [activeView]);
@@ -202,7 +204,16 @@ function AdminAccountContent() {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
+  if (isUserLoading || !user) {
+    return (
+        <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
+  }
+
   const navigate = (view: string) => router.push(`/adminaccount?view=${view}`, { scroll: false });
+  
   const isSocialActive = activeView.startsWith('social-');
   const isMarketingActive = activeView.startsWith('marketing-');
 
@@ -237,6 +248,12 @@ function AdminAccountContent() {
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'leads-database'} onClick={() => navigate('leads-database')}>Leads Database</SidebarMenuSubButton></SidebarMenuSubItem>
                       <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'platform-staff'} onClick={() => navigate('platform-staff')}>Platform Staff</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Automation" isActive={activeView === 'engagement-pipeline'} onClick={() => navigate('engagement-pipeline')}>
+                      <Zap className="text-primary fill-primary/20" /><span>Auto-Pilot</span>
+                  </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
