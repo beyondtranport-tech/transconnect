@@ -1,9 +1,9 @@
+
 'use server';
 /**
  * @fileOverview High-fidelity Industrial Research Agent V13.
  * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches together fragments from multiple sources.
- * FLAT-SITE RESILIENCE: Specifically optimized for one-page industrial sites.
- * ACRONYM RESOLUTION: Expands initials (e.g. JH) to find official identities.
+ * STAKEHOLDER MANDATE: Extracts CEO, Marketing Lead, Operations Manager, and Technical Manager.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -30,6 +30,8 @@ const EnrichPartnerOutputSchema = z.object({
   industrial_category: z.string().nullable().describe('Refined industrial classification.'),
   minedServiceWording: z.string().nullable().describe('A 300-word technical profile extracted from the website content.'),
   marketingManager: ContactInfoSchema.nullable().describe('Full contact details for the Marketing Manager.'),
+  operationsManager: ContactInfoSchema.nullable().describe('Full contact details for the Operations Manager.'),
+  technicalManager: ContactInfoSchema.nullable().describe('Full contact details for the Technical/Maintenance Manager.'),
   ceo: ContactInfoSchema.nullable().describe('Full contact details for the CEO/MD/Owner.'),
 });
 export type EnrichPartnerOutput = z.infer<typeof EnrichPartnerOutputSchema>;
@@ -50,54 +52,27 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION (ACRONYM & FLAT-SITE AWARE)
-    
-    // Phase 1: Identity & Acronym Expansion
-    const expansionResults = await googleSearchTool({ 
-        query: `What does ${company} stand for in South Africa transport? Full legal name contact` 
-    });
-
-    // Phase 2: Robust Domain Discovery
+    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION
     const siteResults = await googleSearchTool({ 
-        query: `${company} South Africa official website full name address email` 
+        query: `${company} South Africa official website contact management team CEO Operations Technical` 
     });
     
-    // Phase 3: Sectional & Sitemap Mining (Cards, Footer, Team)
     const teamResults = await googleSearchTool({ 
-        query: `${company} South Africa "Meet the team" OR "Contact Cards" OR "About us" CEO MD Owner` 
+        query: `${company} South Africa "Operations Manager" OR "Technical Manager" OR "Marketing Manager" LinkedIn` 
     });
 
-    // Phase 4: Identity Resolution (LinkedIn/Facebook Pivot)
-    const identityResults = await googleSearchTool({ 
-        query: `${company} South Africa LinkedIn profile employees management mobile` 
-    });
-
-    // Phase 5: Aggregator Scavenge (Local SA Directories)
-    const directoryResults = await googleSearchTool({
-        query: `${company} South Africa Brabys Yellosa infoisinfo contact details`
-    });
-    
-    const allContent = [...(expansionResults || []), ...(siteResults || []), ...(teamResults || []), ...(identityResults || []), ...(directoryResults || [])]
+    const allContent = [...(siteResults || []), ...(teamResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
-
-    if (!allContent || allContent.trim().length < 5) {
-        return { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
-    }
 
     const extraction = await ai.generate({
         model: geminiModel,
         system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - INDUCTIVE RECONSTRUCTION).
         
-        INVESTIGATION MANDATE (FLAT-SITE & ACRONYM AWARE):
-        1. ACRONYM RESOLUTION: You MUST determine if the input name is an acronym (e.g. JH) and identify the full name (e.g. Junior H).
-        2. INDUCTIVE STITCHING: You MUST combine data fragments from different snippets. If a phone is in a directory and an email is in a bio, combine them.
-        3. FLAT-SITE MINING: Industrial sites often contain data in "Contact Cards" or "Footer Sections" rather than sub-pages. Analyze root snippets carefully.
-        4. IDENTITY RESOLUTION: Find the names of the CEO and Marketing Lead. Pivot to social evidence in the snippets to resolve their direct professional contact.
-        
-        CRITICAL INTEGRITY SHIELD:
-        - EVIDENCE ONLY: Only return data explicitly visible in the snippets.
-        - NO GUESSING: Do not construct emails based on patterns.
+        INVESTIGATION MANDATE:
+        1. IDENTITY RESOLUTION: Find the names of the CEO, Marketing Lead, Operations Manager, and Technical Manager.
+        2. FRAGMENT STITCHING: Combine data from all snippets to eliminate nulls.
+        3. EVIDENCE ONLY: Only return data explicitly visible in the snippets.
         
         MANDATE: Return RAW JSON only.`,
         prompt: `PERFORM THE V13 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
@@ -106,6 +81,6 @@ const enrichPartnerFlow = ai.defineFlow(
         }
     });
     
-    return extraction.output || { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, ceo: null };
+    return extraction.output || { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, operationsManager: null, technicalManager: null, ceo: null };
   }
 );

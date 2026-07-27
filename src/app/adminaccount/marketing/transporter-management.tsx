@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -33,6 +34,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
@@ -67,8 +69,11 @@ const partnerSchema = z.object({
   notes: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   marketingManager: contactSchema.optional().nullable(),
+  operationsManager: contactSchema.optional().nullable(),
+  technicalManager: contactSchema.optional().nullable(),
   ceo: contactSchema.optional().nullable(),
   minedServiceWording: z.string().optional().nullable(),
+  syncContacts: z.boolean().default(false),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -77,8 +82,22 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
     resolver: zodResolver(partnerSchema),
-    defaultValues: { type: targetType, status: 'new' }
+    defaultValues: { type: targetType, status: 'new', syncContacts: false }
   });
+
+  const syncContacts = form.watch('syncContacts');
+  const firstName = form.watch('firstName');
+  const lastName = form.watch('lastName');
+  const email = form.watch('email');
+  const mobile = form.watch('mobile');
+
+  useEffect(() => {
+    if (syncContacts) {
+        form.setValue('marketingManager.name', `${firstName || ''} ${lastName || ''}`.trim());
+        form.setValue('marketingManager.email', email || '');
+        form.setValue('marketingManager.mobile', mobile || '');
+    }
+  }, [syncContacts, firstName, lastName, email, mobile, form]);
 
   useEffect(() => {
     if (open) {
@@ -86,28 +105,15 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
           const sanitizedPartner = {
               ...partner,
               marketingManager: partner.marketingManager || { name: '', email: '', mobile: '' },
+              operationsManager: partner.operationsManager || { name: '', email: '', mobile: '' },
+              technicalManager: partner.technicalManager || { name: '', email: '', mobile: '' },
               ceo: partner.ceo || { name: '', email: '', mobile: '' },
-              status: partner.status || 'new'
+              status: partner.status || 'new',
+              syncContacts: false
           };
           form.reset(sanitizedPartner);
       } else {
-        form.reset({ 
-            firstName: '', 
-            lastName: '', 
-            email: '', 
-            phone: '', 
-            mobile: '', 
-            whatsapp: '',
-            contactPerson: '', 
-            companyName: '', 
-            status: 'new', 
-            type: targetType, 
-            website: '', 
-            notes: '', 
-            address: '', 
-            marketingManager: { name: '', email: '', mobile: '' }, 
-            ceo: { name: '', email: '', mobile: '' } 
-        });
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', whatsapp: '', contactPerson: '', companyName: '', status: 'new', type: targetType, website: '', notes: '', address: '', marketingManager: { name: '', email: '', mobile: '' }, operationsManager: { name: '', email: '', mobile: '' }, technicalManager: { name: '', email: '', mobile: '' }, ceo: { name: '', email: '', mobile: '' }, syncContacts: false });
       }
     }
   }, [open, partner, form, targetType]);
@@ -147,14 +153,16 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
                   <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="e.g. jhtrucking.co.za" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Primary Contact First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Primary Contact Last Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="whatsapp" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input placeholder="+27..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                </div>
-                <FormField control={form.control} name="status" render={({ field }) => ( 
+                  <FormField control={form.control} name="status" render={({ field }) => ( 
                     <FormItem className="text-left">
                         <FormLabel>Pipeline Status</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || ''}>
@@ -169,6 +177,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
                         <FormMessage />
                     </FormItem> 
                 )} />
+                </div>
                 <FormField control={form.control} name="address" render={({ field }) => (
                     <FormItem className="text-left">
                         <FormLabel>Physical Operational Address</FormLabel>
@@ -180,23 +189,57 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
-                        <Users className="h-4 w-4" /> Marketing Manager
+            <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                        <Users className="h-4 w-4" /> Strategic Stakeholders
                     </h4>
-                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="syncContacts" render={({ field }) => (
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                            <FormLabel className="text-xs font-bold text-muted-foreground cursor-pointer">Sync Primary Contact to Account Lead</FormLabel>
+                        </FormItem>
+                    )} />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                    <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
+                            <UserCheck className="h-4 w-4" /> Marketing Manager (Account Lead)
+                        </h4>
+                        <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+
+                    <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
+                            <UserCircle className="h-4 w-4" /> CEO / Principal
+                        </h4>
+                        <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
                 </div>
 
-                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
-                        <UserCircle className="h-4 w-4" /> CEO / Principal
-                    </h4>
-                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                    <div className="space-y-4 p-6 rounded-2xl bg-blue-50/50 border border-blue-100 shadow-inner text-left text-foreground">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-700 flex items-center gap-2 text-left text-foreground">
+                            <Zap className="h-4 w-4" /> Operations Manager
+                        </h4>
+                        <FormField control={form.control} name="operationsManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="operationsManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="operationsManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
+
+                    <div className="space-y-4 p-6 rounded-2xl bg-orange-50/50 border border-orange-100 shadow-inner text-left text-foreground">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-orange-700 flex items-center gap-2 text-left text-foreground">
+                            <Wrench className="h-4 w-4" /> Technical / Maintenance
+                        </h4>
+                        <FormField control={form.control} name="technicalManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="technicalManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="technicalManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    </div>
                 </div>
             </div>
 
@@ -457,6 +500,8 @@ export default function TransporterManagement() {
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="contacted">Researching</SelectItem>
+                                <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="active">Active Participant</SelectItem>
                             </SelectContent>
                         </Select>
@@ -479,7 +524,7 @@ export default function TransporterManagement() {
                         </div>
                     </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                  {isLoading ? <div className="flex justify-center py-20 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
                       <div className="space-y-6 text-left">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (

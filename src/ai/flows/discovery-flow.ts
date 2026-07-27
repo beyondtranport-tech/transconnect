@@ -1,9 +1,10 @@
+
 'use server';
 /**
- * @fileOverview Automated industrial discovery agent V12.
+ * @fileOverview Automated industrial discovery agent V13.
  * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches fragments from multiple sources.
  * FLAT-SITE RESILIENT: Specifically optimized for one-page industrial websites.
- * ANTI-BOUNCE PROTOCOL: Forbids constructed or guessed email addresses.
+ * STAKEHOLDER MANDATE: Specifically extracts CEO, Marketing, Operations, and Technical Managers.
  */
 
 import { ai, geminiModel } from '@/ai/genkit';
@@ -33,6 +34,8 @@ const DiscoveryOutputSchema = z.object({
         phone: z.string().nullable().describe('Company landline.'),
         address: z.string().nullable(),
         marketingManager: ContactSchema.nullable(),
+        operationsManager: ContactSchema.nullable(),
+        technicalManager: ContactSchema.nullable(),
         ceo: ContactSchema.nullable(),
         minedServiceWording: z.string().nullable().describe('Verbatim technical profile (approx 300 words).'),
         notes: z.string().optional()
@@ -54,17 +57,17 @@ const discoveryFlow = ai.defineFlow(
     try {
         const { category, type, batchSize } = input;
         
-        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V12 - INDUCTIVE RECONSTRUCTION).
+        const systemPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - INDUCTIVE RECONSTRUCTION).
         RETURN ONLY RAW JSON. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
         
         REQUIRED INVESTIGATION PROTOCOL PER RECORD:
         1. ACRONYM EXPANSION: Identify full legal names from initials.
-        2. INDUCTIVE STITCHING: Combine data fragments from multiple sources. Stitch directory landlines with social bio emails and human names.
-        3. FLAT-SITE ANALYSIS: Many haulier sites are one-page. Analyze root domain snippets for "Contact Cards" and "Sections".
-        4. IDENTITY RESOLUTION: Identify the CEO and Marketing Manager by name. Pivot to LinkedIn/Facebook snippets to resolve their direct contact details.
+        2. INDUCTIVE STITCHING: Combine data fragments from multiple sources.
+        3. IDENTITY RESOLUTION: You MUST identify the CEO, Marketing Manager, Operations Manager, and Technical Manager by name.
+        4. FLAT-SITE ANALYSIS: Mine root domains for "Contact Cards" to resolve these four specific personas.
         
         CRITICAL INTEGRITY SHIELD:
-        1. REAL DATA ONLY: DO NOT RETURN MOCK, PLACEHOLDER, OR SYNTHETIC DATA.
+        1. REAL DATA ONLY: DO NOT RETURN MOCK OR PLACEHOLDER DATA.
         2. EVIDENCE MANDATE: Every field must be derived from actual snippet evidence.
         
         ID: GENERATE A UNIQUE ID STARTING WITH 'DISC_${type.toUpperCase()}_'.`;
@@ -73,7 +76,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `EXTRACT ${batchSize} UNIQUE VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FOLLOW V12 INDUCTIVE PROTOCOL.`,
+            prompt: `EXTRACT ${batchSize} UNIQUE VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FIND ALL MANAGER ROLES.`,
             output: {
                 schema: DiscoveryOutputSchema
             }
@@ -82,7 +85,7 @@ const discoveryFlow = ai.defineFlow(
         return response.output || { results: [] };
 
     } catch (e: any) {
-        console.error("[DISCOVERY_V12] Error:", e);
+        console.error("[DISCOVERY_V13] Error:", e);
         throw e;
     }
   }

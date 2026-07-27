@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -38,34 +39,35 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
     const companyList = selectedLeads.map(l => `[KEY: ${l.id}] ${l.companyName || `${l.firstName} ${l.lastName}`}`).join('\n');
     const validCategories = transporterCategories.join(', ');
 
-    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V9 - FORENSIC SCAVENGER). 
+    const aiPrompt = `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - FORENSIC SCAVENGER). 
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-1. DOMAIN IDENTIFICATION: Identify the official website. Search variants to find the .co.za domain first.
-2. TEAM DISCOVERY: You MUST find the names of the CEO, MD, and Marketing/Sales Lead. Specifically search for "site:[DOMAIN] about" or "site:[DOMAIN] management" or "site:[DOMAIN] team".
-3. IDENTITY RESOLUTION: Once a name is found, perform a targeted secondary search on LinkedIn and Facebook for that person: "[NAME] [COMPANY_NAME] South Africa".
-4. CONTACT RESOLUTION: Identify direct professional emails and direct mobile numbers from social bios or directory snippets.
-5. AGGREGATOR SYNC: Cross-reference SA directories (Brabys, Yellosa, Infoisinfo) to bridge any remaining landline gaps.
+1. DOMAIN IDENTIFICATION: Identify the official website.
+2. TEAM DISCOVERY: You MUST find the names of: CEO, MD, Marketing Lead, Operations Manager, and Technical Manager.
+3. IDENTITY RESOLUTION: Perform targeted searches to resolve direct professional contacts (Email/Mobile) for these specific roles.
+4. AGGREGATOR SYNC: Cross-reference SA directories to bridge any remaining gaps.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
-- NULL MANDATE: If data is not explicitly visible in search evidence after iterative lookups, return null for that field.
+- NULL MANDATE: If data is not explicitly visible in search evidence, return null.
 
 LIST TO INVESTIGATE (RSA ENTITIES ONLY):
 ${companyList}
 
-JSON OUTPUT REQUIREMENTS:
+JSON OUTPUT REQUIREMENTS PER OBJECT:
 - "record_id": (Return exactly the [KEY] provided)
-- "companyName": (Standardize to the official registered name)
+- "companyName": (Official registered name)
 - "industrial_category": (Select from [${validCategories}])
-- "website": (OFFICIAL CORPORATE URL)
-- "email": (General Company Email)
+- "website": (OFFICIAL URL)
+- "email": (General Email)
 - "phone": (RSA Landline)
-- "address": (FULL Verified Physical Address in South Africa)
+- "address": (FULL RSA Address)
 - "marketingManager": { "name": "...", "email": "...", "mobile": "..." }
+- "operationsManager": { "name": "...", "email": "...", "mobile": "..." }
+- "technicalManager": { "name": "...", "email": "...", "mobile": "..." }
 - "ceo": { "name": "...", "email": "...", "mobile": "..." }
-- "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SUB-PAGES (300 WORDS)."`;
+- "minedServiceWording": "TECHNICAL SUMMARY (300 WORDS)."`;
 
     const handleCopyAndLogBatch = async () => {
         setIsLoading(true);
@@ -84,7 +86,7 @@ JSON OUTPUT REQUIREMENTS:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "V9 Batch Mandate Ready", description: "Iterative multi-query identity resolution active. Paste into AI Studio." });
+            toast({ title: "V13 Batch Mandate Ready", description: "Optimized for deep stakeholder extraction." });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -104,19 +106,19 @@ JSON OUTPUT REQUIREMENTS:
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-left font-black">
                         <SearchCode className="h-5 w-5 text-primary" />
-                        Batch Scavenger V9
+                        Batch Scavenger V13
                     </DialogTitle>
-                    <DialogDescription className="text-left text-foreground text-foreground">
-                        High-velocity batch research using the iterative multi-query resolution mandate.
+                    <DialogDescription className="text-left text-foreground">
+                        High-velocity batch research with the new V13 stakeholder extraction mandate.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left text-foreground">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-foreground text-left">Iterative Identity Resolve Active</AlertTitle>
+                        <AlertTitle className="font-bold text-foreground text-left">V13 Stakeholder Mandate</AlertTitle>
                         <AlertDescription className="text-xs text-left text-foreground">
-                            This V9 mandate forces the AI to perform secondary searches specifically for human contacts once the company identity is established.
+                            Now mandatory to resolve: CEO, Marketing, Operations, and Technical Leads.
                         </AlertDescription>
                     </Alert>
 
@@ -129,9 +131,9 @@ JSON OUTPUT REQUIREMENTS:
                 </div>
 
                 <DialogFooter>
-                    <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold">
+                    <Button onClick={handleCopyAndLogBatch} disabled={isLoading} className="w-full h-12 text-lg font-bold text-white">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Zap className="mr-2 h-4 w-4" />}
-                        {isCopied ? 'V9 Batch Ready!' : 'Copy V9 Batch Scavenger'}
+                        {isCopied ? 'V13 Batch Ready!' : 'Copy V13 Batch Scavenger'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

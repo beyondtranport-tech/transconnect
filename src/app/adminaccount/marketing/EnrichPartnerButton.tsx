@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -38,10 +39,10 @@ TASK: Complete a forensic gap-analysis for: "${companyName}". Use an aggressive,
 
 INVESTIGATION MANDATE (V13 PROTOCOL):
 1. IDENTITY EXPANSION: If the name is an acronym or short-hand (e.g. "JH"), you MUST first determine the full legal identity (e.g. "Junior H").
-2. FRAGMENT STITCHING: You MUST combine data fragments from multiple sources. Take the address from a directory, the email from a social bio, and human names from a LinkedIn snippet.
-3. FLAT-SITE RESILIENCY: Industrial sites are often one-page. Analyze snippets for "Contact Cards", "Footer Sections", and "Meet our staff" cards specifically if sub-URLs are missing.
-4. IDENTITY RESOLUTION: Find the names of the CEO and Marketing Lead. Pivot to targeted searches on LinkedIn and Facebook to resolve their direct professional contact detail.
-5. AGGREGATOR SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) to populate fields if the official site is unreachable.
+2. FRAGMENT STITCHING: You MUST combine data fragments from multiple sources.
+3. FLAT-SITE RESILIENCY: Industrial sites are often one-page. Analyze snippets for "Contact Cards" and "Footer Sections" specifically.
+4. IDENTITY RESOLUTION: Find the names and contacts of: CEO, Marketing Lead, Operations Manager, and Technical/Maintenance Manager.
+5. AGGREGATOR SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) to populate fields.
 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
 
@@ -53,16 +54,10 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
   "email": "VERIFIED GENERAL EMAIL",
   "phone": "RSA LANDLINE",
   "address": "VERIFIED PHYSICAL ADDRESS",
-  "marketingManager": { 
-      "name": "VERIFIED NAME", 
-      "email": "VERIFIED EMAIL", 
-      "mobile": "VERIFIED MOBILE" 
-  },
-  "ceo": { 
-      "name": "VERIFIED NAME", 
-      "email": "VERIFIED EMAIL", 
-      "mobile": "VERIFIED MOBILE" 
-  },
+  "marketingManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
+  "operationsManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
+  "technicalManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
+  "ceo": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
   "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SECTIONS (300 WORDS)."
 }`;
     };
@@ -81,7 +76,7 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "V13 Scavenger Prompt Ready", description: "Inductive reconstruction and acronym expansion active." });
+            toast({ title: "V13 Scavenger Prompt Ready", description: "Expanded to include Operations and Technical leads." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -121,9 +116,9 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                     <div className="space-y-4 py-4 text-left">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold">Inductive Reconstruction Protocol</AlertTitle>
+                            <AlertTitle className="text-left font-bold">V13 Stakeholder Mandate Active</AlertTitle>
                             <AlertDescription className="text-xs text-left">
-                                V13 Protocol: Explicitly handles acronyms (JH &rarr; Junior H) and flat-site card mining to resolve human contacts across multiple sources.
+                                The scavenger will now prioritize finding Operations and Technical leads in addition to the CEO and Marketing.
                             </AlertDescription>
                         </Alert>
 
