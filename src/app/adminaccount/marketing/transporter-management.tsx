@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -48,37 +47,37 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const contactSchema = z.object({
-  name: z.string().nullable().optional().or(z.literal('')),
-  email: z.string().nullable().optional().or(z.literal('')),
-  mobile: z.string().nullable().optional().or(z.literal('')),
+  name: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  mobile: z.string().optional().nullable(),
 });
 
 const partnerSchema = z.object({
-  firstName: z.string().optional().or(z.literal('')),
-  lastName: z.string().optional().or(z.literal('')),
-  email: z.string().optional().or(z.literal('')),
-  phone: z.string().optional().or(z.literal('')),
-  mobile: z.string().optional().or(z.literal('')),
-  whatsapp: z.string().optional().or(z.literal('')),
-  contactPerson: z.string().optional().or(z.literal('')),
-  companyName: z.string().optional().or(z.literal('')),
-  status: z.string().optional().or(z.literal('')),
-  type: z.literal('transporter'),
-  website: z.string().optional().or(z.literal('')),
-  notes: z.string().optional().or(z.literal('')),
-  address: z.string().optional().or(z.literal('')),
-  marketingManager: contactSchema.nullable().optional(),
-  ceo: contactSchema.nullable().optional(),
-  minedServiceWording: z.string().nullable().optional().or(z.literal('')),
+  firstName: z.string().optional().nullable(),
+  lastName: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  mobile: z.string().optional().nullable(),
+  whatsapp: z.string().optional().nullable(),
+  contactPerson: z.string().optional().nullable(),
+  companyName: z.string().optional().nullable(),
+  status: z.string().optional().nullable(),
+  type: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  marketingManager: contactSchema.optional().nullable(),
+  ceo: contactSchema.optional().nullable(),
+  minedServiceWording: z.string().optional().nullable(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
+function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; targetType: string; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
     resolver: zodResolver(partnerSchema),
-    defaultValues: { type: 'transporter', status: 'new' }
+    defaultValues: { type: targetType, status: 'new' }
   });
 
   useEffect(() => {
@@ -98,10 +97,11 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
             email: '', 
             phone: '', 
             mobile: '', 
+            whatsapp: '',
             contactPerson: '', 
             companyName: '', 
             status: 'new', 
-            type: 'transporter', 
+            type: targetType, 
             website: '', 
             notes: '', 
             address: '', 
@@ -110,7 +110,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
         });
       }
     }
-  }, [open, partner, form]);
+  }, [open, partner, form, targetType]);
 
   const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -118,7 +118,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
         const collection = partner?.source === 'Lead' ? 'leads' : 'partners';
-        await performAdminAction(token, 'savePartner', { collection, partner: { id: partner?.id, ...values, type: 'transporter' } });
+        await performAdminAction(token, 'savePartner', { collection, partner: { id: partner?.id, ...values, type: targetType } });
         toast({ title: 'Transporter Record Saved' });
         onSave();
         onOpenChange(false);
@@ -144,11 +144,15 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="e.g. jhtrucking.co.za" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl><FormMessage /></FormItem> )} />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="whatsapp" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Dedicated WhatsApp (Business)</FormLabel><FormControl><Input placeholder="+27..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <FormField control={form.control} name="status" render={({ field }) => ( 
                     <FormItem className="text-left">
@@ -178,7 +182,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                 <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
                     <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
@@ -312,31 +316,28 @@ export default function TransporterManagement() {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
-                  <div className="flex flex-col text-left text-foreground">
-                      <div className="flex items-center gap-1 text-left">
-                        <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
-                        <TooltipProvider>
-                            <div className="flex items-center gap-1 text-left">
-                                {row.original.lastOpenedAt && (
-                                    <Tooltip>
-                                    <TooltipTrigger>
-                                        <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
-                                    </Tooltip>
-                                )}
-                                {row.original.lastAccessedAt && (
-                                    <Tooltip>
-                                    <TooltipTrigger>
-                                        <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
-                                    </TooltipTrigger>
-                                    <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
-                                    </Tooltip>
-                                )}
-                            </div>
-                        </TooltipProvider>
-                      </div>
-                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
+                  <div className="flex flex-col text-left text-foreground text-left">
+                      <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
+                      <TooltipProvider>
+                        <div className="flex items-center gap-1 text-left">
+                            {row.original.lastOpenedAt && (
+                                <Tooltip>
+                                <TooltipTrigger>
+                                    <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
+                                </Tooltip>
+                            )}
+                            {row.original.lastAccessedAt && (
+                                <Tooltip>
+                                <TooltipTrigger>
+                                    <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
+                      </TooltipProvider>
                   </div>
               );
           }
@@ -354,7 +355,7 @@ export default function TransporterManagement() {
                 <div className="flex flex-col gap-1 text-left text-foreground">
                     <div className="flex items-center gap-2 text-left">
                         <Badge variant={isVerified ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{statusLabel}</Badge>
-                        {isVerified && <TooltipProvider><Tooltip><TooltipTrigger><ShieldCheck className="h-4 w-4 text-green-600" /></TooltipTrigger><TooltipContent className="text-xs font-bold">Forensic Handshake Linked (Member Roster Verified)</TooltipContent></Tooltip></TooltipProvider>}
+                        {isVerified && <TooltipProvider><Tooltip><TooltipTrigger><ShieldCheck className="h-4 w-4 text-green-600" /></TooltipTrigger><TooltipContent className="text-xs font-bold text-foreground">Forensic Handshake Linked (Member Roster Verified)</TooltipContent></Tooltip></TooltipProvider>}
                     </div>
                     {isConverted && !isVerified && (
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[8px] h-4 uppercase font-black py-0 px-1.5 w-fit text-left">
@@ -454,7 +455,7 @@ export default function TransporterManagement() {
                             <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="new">New Lead</SelectItem>
                                 <SelectItem value="contacted">Researching</SelectItem>
                                 <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="active">Active Participant</SelectItem>
@@ -472,8 +473,8 @@ export default function TransporterManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="md:col-span-2 flex items-end gap-2 text-left">
-                        <div className="flex-1 space-y-1 text-left">
+                    <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground">
+                        <div className="flex-1 space-y-1 text-left text-foreground">
                             <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Registry</Label>
                             <Input placeholder="Filter registry by name or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
                         </div>
@@ -498,4 +499,3 @@ export default function TransporterManagement() {
     </div>
   );
 }
-

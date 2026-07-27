@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -50,26 +49,26 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const contactSchema = z.object({
-  name: z.string().nullable().optional().or(z.literal('')),
-  email: z.string().nullable().optional().or(z.literal('')),
-  mobile: z.string().nullable().optional().or(z.literal('')),
+  name: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  mobile: z.string().optional().nullable(),
 });
 
 const partnerSchema = z.object({
-  firstName: z.string().nullable().optional().or(z.literal('')),
-  lastName: z.string().nullable().optional().or(z.literal('')),
-  email: z.string().nullable().optional().or(z.literal('')),
-  phone: z.string().nullable().optional().or(z.literal('')),
-  mobile: z.string().nullable().optional().or(z.literal('')),
-  contactPerson: z.string().nullable().optional().or(z.literal('')),
-  companyName: z.string().nullable().optional().or(z.literal('')),
-  website: z.string().nullable().optional().or(z.literal('')),
-  address: z.string().nullable().optional().or(z.literal('')),
-  minedServiceWording: z.string().nullable().optional().or(z.literal('')),
-  status: z.string().nullable().optional().or(z.literal('')),
-  type: z.string().nullable().optional().or(z.literal('')),
-  marketingManager: contactSchema.nullable().optional(),
-  ceo: contactSchema.nullable().optional(),
+  firstName: z.string().optional().nullable(),
+  lastName: z.string().optional().nullable(),
+  email: z.string().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  mobile: z.string().optional().nullable(),
+  contactPerson: z.string().optional().nullable(),
+  companyName: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  address: z.string().optional().nullable(),
+  minedServiceWording: z.string().optional().nullable(),
+  status: z.string().optional().nullable(),
+  type: z.string().optional().nullable(),
+  marketingManager: contactSchema.optional().nullable(),
+  ceo: contactSchema.optional().nullable(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -137,14 +136,14 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
             <DialogDescription>Manage high-fidelity contacts and industrial profile data.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="space-y-4">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Building className="h-4 w-4" /> Core Entity Details
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-left">
                   <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="https://..." className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="e.g. jhtrucking.co.za" className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-left">
                   <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
@@ -440,6 +439,7 @@ export default function SupplierManagement() {
                           </div>
                       </PopoverContent>
                   </Popover>
+                  <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'suppliers-backup.csv')} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
                   <BulkImportDialog type="supplier" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
                   <Button onClick={() => setDialog({ type: 'add' })} className="text-white"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
               </div>
@@ -453,7 +453,7 @@ export default function SupplierManagement() {
                             <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="new">New Lead</SelectItem>
                                 <SelectItem value="contacted">Researching</SelectItem>
                                 <SelectItem value="qualified">Qualified</SelectItem>
                                 <SelectItem value="active">Active Participant</SelectItem>
@@ -485,4 +485,3 @@ export default function SupplierManagement() {
     </div>
   );
 }
-
