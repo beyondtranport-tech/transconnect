@@ -11,12 +11,24 @@ export default function DigitalHandshake({ partner, audience }: { partner?: any,
     const [isRequesting, setIsRequesting] = useState(false);
     const [pin, setPin] = useState<string | null>(null);
 
-    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
+    const isValid = (val: any) => {
+        if (!val) return false;
+        const v = String(val).trim().toLowerCase();
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending', 'h', 'x'];
+        return v.length > 1 && !forbidden.includes(v);
+    };
 
     const resolvedName = useMemo(() => {
+        // --- V13 RESOLUTION: PRIORITIZE ACCOUNT LEAD ---
+        const primaryRole = partner?.primaryContactRole;
+        const primaryContact = primaryRole ? partner[primaryRole] : null;
+        if (primaryContact?.name && isValid(primaryContact.name)) return primaryContact.name;
+
         if (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) return partner.marketingManager.name;
         if (partner?.ceo?.name && isValid(partner.ceo.name)) return partner.ceo.name;
-        return partner?.firstName || partner?.contactPerson || 'Partner';
+        if (partner?.contactPerson && isValid(partner.contactPerson)) return partner.contactPerson;
+        if (partner?.contact_person && isValid(partner.contact_person)) return partner.contact_person;
+        return (partner?.firstName && isValid(partner.firstName)) ? partner.firstName : 'Partner';
     }, [partner]);
 
     const firstName = resolvedName.split(' ')[0];

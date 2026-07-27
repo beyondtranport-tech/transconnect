@@ -1,12 +1,30 @@
 'use client';
 
-import React from "react";
+import React, { useMemo } from "react";
 
 /**
  * THE ELITE FILTER: Negative CTA & Elite Positioning
- * Reverse psychology to attract Alpha-profile partners/ISAs.
  */
 export default function TheEliteFilter({ partner }: { partner?: any }) {
+    const isValid = (val: any) => {
+        if (!val) return false;
+        const v = String(val).trim().toLowerCase();
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending', 'h', 'x'];
+        return v.length > 1 && !forbidden.includes(v);
+    };
+
+    const resolvedName = useMemo(() => {
+        // --- V13 RESOLUTION: PRIORITIZE ACCOUNT LEAD ---
+        const primaryRole = partner?.primaryContactRole;
+        const primaryContact = primaryRole ? partner[primaryRole] : null;
+        if (primaryContact?.name && isValid(primaryContact.name)) return primaryContact.name;
+
+        if (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) return partner.marketingManager.name;
+        if (partner?.ceo?.name && isValid(partner.ceo.name)) return partner.ceo.name;
+        return (partner?.firstName && isValid(partner.firstName)) ? partner.firstName : 'Partner';
+    }, [partner]);
+
+    const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
     const pixelUrl = `https://studio--ecosystem-hub.us-central1.hosted.app/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
     const optInLink = `https://studio--ecosystem-hub.us-central1.hosted.app/opt-in/${partner?.id || 'TEST'}`;
@@ -17,7 +35,7 @@ export default function TheEliteFilter({ partner }: { partner?: any }) {
                 INTERNAL MEMO: ISA AUTHORIZATION CRITERIA
             </p>
             
-            <p>Good day,</p>
+            <p>Good day {firstName},</p>
             
             <p>We are reaching out to <strong>{companyName}</strong> regarding a potential appointment as an <strong>Authorized Independent Sales Agent (ISA)</strong>. However, it is important to be clear: <strong>Logistics Flow is not for everyone.</strong></p>
             
@@ -44,7 +62,7 @@ export default function TheEliteFilter({ partner }: { partner?: any }) {
             
             <p style={{ marginTop: '20pt' }}>
                 Regards,<br />
-                <strong>The Logistics Flow Partnership Division</strong>
+                <strong>The Logistics Flow Team</strong>
             </p>
             <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>

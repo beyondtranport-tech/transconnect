@@ -54,7 +54,7 @@ function resolveContact(partner: any) {
         if (!val) return '';
         const v = String(val).trim();
         const low = v.toLowerCase();
-        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending'];
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending', 'h', 'x'];
         if (!v || forbidden.some(f => low === f) || low.includes('locked@')) return '';
         return v;
     };
@@ -68,17 +68,25 @@ function resolveContact(partner: any) {
     const emailKeys = ['email', 'email_address', 'contact_email', 'mail'];
     const phoneKeys = ['mobile', 'whatsapp', 'phone', 'cell'];
 
+    // --- V13 RESOLUTION: PRIORITIZE ACCOUNT LEAD ---
+    const primaryRole = partner.primaryContactRole;
+    const primaryContact = primaryRole ? partner[primaryRole] : null;
+
     const name = clean(
+        primaryContact?.name ||
         partner.firstName || 
         partner.marketingManager?.name || 
         partner.ceo?.name || 
+        partner.operationsManager?.name ||
+        partner.technicalManager?.name ||
         partner.contactPerson || 
         partner.contact_person || 
         partner.companyName || 
         'Partner'
     );
-    const email = searchObj(partner.marketingManager, emailKeys) || searchObj(partner.ceo, emailKeys) || searchObj(partner, emailKeys) || clean(partner.email);
-    const mobile = searchObj(partner.marketingManager, phoneKeys) || searchObj(partner.ceo, phoneKeys) || searchObj(partner, phoneKeys) || clean(partner.mobile || partner.phone);
+    
+    const email = clean(primaryContact?.email) || searchObj(partner.marketingManager, emailKeys) || searchObj(partner.ceo, emailKeys) || searchObj(partner, emailKeys) || clean(partner.email);
+    const mobile = clean(primaryContact?.mobile) || searchObj(partner.marketingManager, phoneKeys) || searchObj(partner.ceo, phoneKeys) || searchObj(partner, phoneKeys) || clean(partner.mobile || partner.phone);
     const whatsapp = clean(partner.whatsapp) || mobile;
 
     return { name, email, mobile, whatsapp };
@@ -299,8 +307,8 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         ].map((tab) => (
                             <Button
                                 key={tab.id}
-                                variant={activeTab === tab.id ? "secondary" : "ghost"}
-                                className={cn("w-full justify-start text-xs h-10 px-3 transition-all", activeTab === tab.id && "bg-white shadow-sm ring-1 ring-primary/20")}
+                                variant={activeTab === id ? "secondary" : "ghost"}
+                                className={cn("w-full justify-start text-xs h-10 px-3 transition-all", activeTab === id && "bg-white shadow-sm ring-1 ring-primary/20")}
                                 onClick={() => setActiveTab(tab.id)}
                             >
                                 <tab.icon className="h-3.5 w-3.5 mr-2 text-primary" />

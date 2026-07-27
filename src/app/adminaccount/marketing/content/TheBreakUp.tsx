@@ -1,12 +1,30 @@
 'use client';
 
-import React from "react";
+import React, { useMemo } from "react";
 
 /**
  * THE BREAK-UP: Ghost Reply & Loss Aversion
- * Final attempt to re-engage by threatening to remove "allocated" value.
  */
 export default function TheBreakUp({ partner }: { partner?: any }) {
+    const isValid = (val: any) => {
+        if (!val) return false;
+        const v = String(val).trim().toLowerCase();
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending', 'h', 'x'];
+        return v.length > 1 && !forbidden.includes(v);
+    };
+
+    const resolvedName = useMemo(() => {
+        // --- V13 RESOLUTION: PRIORITIZE ACCOUNT LEAD ---
+        const primaryRole = partner?.primaryContactRole;
+        const primaryContact = primaryRole ? partner[primaryRole] : null;
+        if (primaryContact?.name && isValid(primaryContact.name)) return primaryContact.name;
+
+        if (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) return partner.marketingManager.name;
+        if (partner?.ceo?.name && isValid(partner.ceo.name)) return partner.ceo.name;
+        return (partner?.firstName && isValid(partner.firstName)) ? partner.firstName : 'Partner';
+    }, [partner]);
+
+    const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
     const pixelUrl = `https://studio--ecosystem-hub.us-central1.hosted.app/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
     const optInLink = `https://studio--ecosystem-hub.us-central1.hosted.app/opt-in/${partner?.id || 'TEST'}`;
@@ -17,7 +35,7 @@ export default function TheBreakUp({ partner }: { partner?: any }) {
                 FINAL NOTICE: RECORD DEACTIVATION SCHEDULED
             </p>
             
-            <p>Good day,</p>
+            <p>Good day {firstName},</p>
             
             <p>I assume that digitalizing your sales node and tracking inbound interest is not a priority for <strong>{companyName}</strong> right now. That is perfectly fine.</p>
             
@@ -44,7 +62,7 @@ export default function TheBreakUp({ partner }: { partner?: any }) {
             
             <p style={{ marginTop: '20pt' }}>
                 Regards,<br />
-                <strong>The Logistics Flow Engagement Division</strong>
+                <strong>The Logistics Flow Team</strong>
             </p>
             <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>

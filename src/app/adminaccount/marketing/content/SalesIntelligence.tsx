@@ -3,19 +3,31 @@
 import React, { useMemo } from "react";
 
 export default function SalesIntelligence({ partner }: { partner?: any }) {
-    const isValid = (val: any) => !!val && val !== 'N/A' && val !== 'null' && val !== 'None';
+    const isValid = (val: any) => {
+        if (!val) return false;
+        const v = String(val).trim().toLowerCase();
+        const forbidden = ['n/a', 'null', 'none', 'locked', 'undefined', '[locked]', 'no email', 'no phone', 'pending', 'h', 'x'];
+        return v.length > 1 && !forbidden.includes(v);
+    };
 
     const resolvedName = useMemo(() => {
+        // --- V13 RESOLUTION: PRIORITIZE ACCOUNT LEAD ---
+        const primaryRole = partner?.primaryContactRole;
+        const primaryContact = primaryRole ? partner[primaryRole] : null;
+        if (primaryContact?.name && isValid(primaryContact.name)) return primaryContact.name;
+
         if (partner?.marketingManager?.name && isValid(partner.marketingManager.name)) return partner.marketingManager.name;
         if (partner?.ceo?.name && isValid(partner.ceo.name)) return partner.ceo.name;
-        return partner?.firstName || partner?.contactPerson || 'Member';
+        if (partner?.contactPerson && isValid(partner.contactPerson)) return partner.contactPerson;
+        if (partner?.contact_person && isValid(partner.contact_person)) return partner.contact_person;
+        return (partner?.firstName && isValid(partner.firstName)) ? partner.firstName : 'Member';
     }, [partner]);
 
     const firstName = resolvedName.split(' ')[0];
     const companyName = partner?.companyName || 'your business';
     
     const baseUrl = 'https://studio--ecosystem-hub.us-central1.hosted.app';
-    const signupLink = `${baseUrl}/join?email=${encodeURIComponent(partner?.email || '')}&ref=${partner?.id || 'SYSTEM'}`;
+    const signupLink = `${baseUrl}/join?email=${encodeURIComponent(partner?.email || '')}&firstName=${encodeURIComponent(firstName)}&ref=${partner?.id || 'SYSTEM'}`;
     const pixelUrl = `${baseUrl}/api/trackEmailOpen/${partner?.id || 'anonymous'}`;
 
     return (
@@ -55,7 +67,7 @@ export default function SalesIntelligence({ partner }: { partner?: any }) {
             </p>
             
             <p style={{ marginTop: '20pt' }}>Regards,</p>
-            <p><strong>The Logistics Flow Engagement Division</strong></p>
+            <p><strong>The Logistics Flow Team</strong></p>
             <img src={pixelUrl} width="1" height="1" style={{ display: 'none' }} alt="" />
         </div>
     );
