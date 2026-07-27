@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -107,20 +108,19 @@ export default function EngagementPipeline() {
             const token = await getClientSideAuthToken();
             if (!token) return;
             
-            // This is where we'd generate the actual HTML based on the template
-            // For now, we hit the API which handles the dispatch
             await performAdminAction(token, 'dispatchPipelineStep', {
                 leadId: item.id,
                 stepIndex: (item.currentPipelineStep || 0) + 1,
                 email: item.email,
                 subject: `Logistics Flow: Follow-up for ${item.companyName}`,
-                html: `<p>Automated Follow-up Content</p>` // Simplified for MVP
+                html: `<p>Automated Follow-up Content</p>`,
+                collection: item.type === 'lead' ? 'leads' : 'partners'
             });
 
             toast({ title: "Dispatch Success", description: `Sent to ${item.companyName}` });
             loadQueue();
         } catch (e: any) {
-            console.error(e);
+            console.error("Auto-Pilot Dispatch Error:", e);
         }
     };
 
@@ -149,7 +149,7 @@ export default function EngagementPipeline() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6 text-left">
+                <div className="lg:col-span-2 space-y-6 text-left text-foreground">
                     <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
                         <CardHeader className="bg-slate-50 border-b text-left">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left">
@@ -159,7 +159,7 @@ export default function EngagementPipeline() {
                         </CardHeader>
                         <CardContent className="p-0 text-left">
                             {isLoadingQueue ? (
-                                <div className="py-20 text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" /></div>
+                                <div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" /></div>
                             ) : queue.length > 0 ? (
                                 <div className="divide-y text-left">
                                     {queue.map(item => (

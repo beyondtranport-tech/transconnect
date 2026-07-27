@@ -45,6 +45,79 @@ export async function POST(req: NextRequest) {
         const payload = body.payload || {};
 
         switch (action) {
+            case 'getPipelineQueue': {
+                // Find leads/partners where nextStepDueAt < Now AND status is 'contacted' or 'new'
+                const now = new Date();
+                const leadsSnap = await db.collection('leads')
+                    .where('nextStepDueAt', '<=', now)
+                    .where('status', 'in', ['new', 'contacted'])
+                    .limit(50)
+                    .get();
+                
+                const partnersSnap = await db.collection('partners')
+                    .where('nextStepDueAt', '<=', now)
+                    .where('status', 'in', ['new', 'contacted'])
+                    .limit(50)
+                    .get();
+
+                const results = [
+                    ...leadsSnap.docs.map(d => ({ id: d.id, ...d.data(), type: 'lead' })),
+                    ...partnersSnap.docs.map(d => ({ id: d.id, ...d.data(), type: 'partner' }))
+                ];
+
+                return NextResponse.json({ success: true, data: serializeData(results) });
+            }
+
+            case 'dispatchPipelineStep': {
+                const { leadId, stepIndex, email, subject, html, collection: colOverride } = payload;
+                const colName = colOverride || 'leads';
+                const docRef = db.collection(colName).doc(leadId);
+                
+                // 1. Send via SendGrid
+                if (process.env.SENDGRID_API_KEY) {
+                    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+                    await sgMail.send({
+                        to: email,
+                        from: 'michael@logisticsflow.co.za',
+                        subject,
+                        html
+                    });
+                }
+
+                // 2. Update record state
+                const policySnap = await db.doc('configuration/engagementPolicy').get();
+                const policy = policySnap.exists ? policySnap.data()?.steps : [];
+                const nextStep = policy[stepIndex];
+                
+                const update: any = {
+                    currentPipelineStep: stepIndex,
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                };
+
+                if (nextStep) {
+                    const dueAt = new Date();
+                    dueAt.setHours(dueAt.getHours() + (nextStep.waitHours || 48));
+                    update.nextStepDueAt = Timestamp.fromDate(dueAt);
+                } else {
+                    update.pipelineStatus = 'completed';
+                    update.nextStepDueAt = null;
+                }
+
+                await docRef.update(update);
+                
+                // 3. Log interaction
+                await docRef.collection('communications').add({
+                    type: 'Email (Auto-Pilot)',
+                    subject,
+                    timestamp: FieldValue.serverTimestamp(),
+                    notes: `Automated dispatch for Step ${stepIndex}.`
+                });
+
+                return NextResponse.json({ success: true });
+            }
+
             case 'getPartnersByType': {
                 const { type: queryType, limit: searchLimit = 100 } = payload;
                 const collectionName = (queryType === 'lead') ? 'leads' : 'partners';
@@ -54,6 +127,37 @@ export async function POST(req: NextRequest) {
                 }
                 const snap = await q.orderBy('updatedAt', 'desc').limit(searchLimit).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getMembers': {
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(500).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'savePartner': {
+                const { partner: pData, collection: colNameOverride } = payload;
+                if (!pData) throw new Error("Partner data missing.");
+                const colName = colNameOverride || (pData.source === 'Lead' || !pData.type || pData.type === 'lead' ? 'leads' : 'partners');
+                const id = pData.id || db.collection(colName).doc().id;
+                const ref = db.collection(colName).doc(id);
+                
+                await ref.set({
+                    ...pData,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                return NextResponse.json({ success: true, id });
             }
 
             case 'bulkSavePartners': {
@@ -75,89 +179,6 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'savePartner': {
-                const { partner: pData, collection: colNameOverride } = payload;
-                if (!pData) throw new Error("Partner data is required.");
-                const colName = colNameOverride || (pData.source === 'Lead' || !pData.type || pData.type === 'lead' ? 'leads' : 'partners');
-                const id = pData.id || db.collection(colName).doc().id;
-                const ref = db.collection(colName).doc(id);
-                
-                const cleanData: any = {};
-                Object.keys(pData).forEach(key => {
-                    if (pData[key] !== undefined) cleanData[key] = pData[key];
-                });
-
-                await ref.set({
-                    ...cleanData,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                
-                return NextResponse.json({ success: true, id });
-            }
-
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, type: commType, subject, notes, collection: colOverride } = payload;
-                const colName = colOverride || 'partners';
-                const parentRef = db.collection(colName).doc(partnerId);
-                const logRef = parentRef.collection('communications').doc();
-                
-                const batch = db.batch();
-                
-                batch.set(logRef, {
-                    id: logRef.id,
-                    type: commType,
-                    subject,
-                    notes: notes || '',
-                    timestamp: FieldValue.serverTimestamp()
-                });
-
-                batch.update(parentRef, {
-                    status: 'contacted',
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'searchRegistry': {
-                const { type: queryType, term, limit: searchLimit = 100 } = payload;
-                const collectionName = (queryType === 'all' || queryType === 'lead') ? 'leads' : 'partners';
-                let q: any = db.collection(collectionName);
-                if (collectionName === 'partners' && queryType !== 'all') q = q.where('type', '==', queryType);
-                
-                const finalLimit = Math.min(searchLimit, 1000);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(finalLimit).get();
-                
-                let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
-                if (term) {
-                    const lowTerm = term.toLowerCase();
-                    results = results.filter((r: any) => 
-                        (r.companyName || '').toLowerCase().includes(lowTerm) || 
-                        (r.email || '').toLowerCase().includes(lowTerm)
-                    );
-                }
-                return NextResponse.json({ success: true, data: serializeData(results) });
-            }
-
-            case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             default: 
