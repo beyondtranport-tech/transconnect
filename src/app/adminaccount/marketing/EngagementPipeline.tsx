@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { 
     Zap, Play, Pause, RotateCcw, ShieldCheck, Mail, Users, Clock, 
-    AlertTriangle, CheckCircle2, Activity, Settings2, ArrowRight, Loader2, ListOrdered
+    AlertTriangle, CheckCircle2, Activity, Settings2, ArrowRight, Loader2, ListOrdered, Info
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -17,6 +16,7 @@ import { cn, formatCurrency, formatDateSafe } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const defaultPolicy = [
     { label: 'Digital Handshake', waitHours: 0, template: 'digital-handshake' },
@@ -139,7 +139,7 @@ export default function EngagementPipeline() {
                         <Zap className={cn("h-8 w-8 text-primary", status === 'running' && "animate-pulse")} />
                         Engagement Auto-Pilot
                     </h1>
-                    <p className="text-muted-foreground mt-1">High-velocity automated follow-ups with forensic bounce tracking.</p>
+                    <p className="text-muted-foreground mt-1 text-left">High-velocity automated follow-ups with forensic bounce tracking.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant={status === 'running' ? "destructive" : "default"} size="lg" className="font-black uppercase text-xs tracking-widest px-8 shadow-xl" onClick={runAutoPilot}>
@@ -149,30 +149,30 @@ export default function EngagementPipeline() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
-                    <Card className="border-none shadow-xl bg-white overflow-hidden">
-                        <CardHeader className="bg-slate-50 border-b">
-                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2">
+                <div className="lg:col-span-2 space-y-6 text-left">
+                    <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
+                        <CardHeader className="bg-slate-50 border-b text-left">
+                            <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left">
                                 <ListOrdered className="h-4 w-4 text-primary" />
                                 Dispatch Queue ({queue.length} Due)
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
+                        <CardContent className="p-0 text-left">
                             {isLoadingQueue ? (
                                 <div className="py-20 text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" /></div>
                             ) : queue.length > 0 ? (
-                                <div className="divide-y">
+                                <div className="divide-y text-left">
                                     {queue.map(item => (
-                                        <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                        <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors text-left">
                                             <div className="flex flex-col text-left">
-                                                <span className="font-bold text-sm">{item.companyName}</span>
-                                                <span className="text-[10px] text-muted-foreground font-mono">{item.email}</span>
+                                                <span className="font-bold text-sm text-left">{item.companyName}</span>
+                                                <span className="text-[10px] text-muted-foreground font-mono text-left">{item.email}</span>
                                             </div>
-                                            <div className="flex items-center gap-3">
-                                                <Badge variant="outline" className="text-[9px] font-black uppercase">Step {item.currentPipelineStep + 1}</Badge>
+                                            <div className="flex items-center gap-3 text-left">
+                                                <Badge variant="outline" className="text-[9px] font-black uppercase text-left">Step {item.currentPipelineStep + 1}</Badge>
                                                 <div className="text-right">
-                                                    <p className="text-[10px] font-black text-destructive uppercase">Overdue</p>
-                                                    <p className="text-[9px] text-muted-foreground">{formatDateSafe(item.nextStepDueAt, "dd MMM")}</p>
+                                                    <p className="text-[10px] font-black text-destructive uppercase text-right">Overdue</p>
+                                                    <p className="text-[9px] text-muted-foreground text-right">{formatDateSafe(item.nextStepDueAt, "dd MMM")}</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -181,48 +181,48 @@ export default function EngagementPipeline() {
                             ) : (
                                 <div className="py-24 text-center space-y-4">
                                     <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 opacity-20" />
-                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Queue Clear</p>
+                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Queue Clear</p>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
 
-                    <Alert className="bg-primary/5 border-primary/20 p-6 rounded-2xl shadow-sm">
+                    <Alert className="bg-primary/5 border-primary/20 p-6 rounded-2xl shadow-sm text-left">
                         <Info className="h-6 w-6 text-primary" />
-                        <div className="ml-2">
-                            <AlertTitle className="font-black text-primary uppercase text-xs">Forensic Integrity Protection</AlertTitle>
-                            <AlertDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
+                        <div className="ml-2 text-left">
+                            <AlertTitle className="font-black text-primary uppercase text-xs text-left">Forensic Integrity Protection</AlertTitle>
+                            <AlertDescription className="text-xs text-muted-foreground leading-relaxed mt-1 text-left">
                                 The Auto-Pilot respects SendGrid rate limits by trickling dispatches. Conversion signals (signups) automatically stop the pipeline for that record.
                             </AlertDescription>
                         </div>
                     </Alert>
                 </div>
 
-                <div className="space-y-6">
-                    <Card className="shadow-lg border-none bg-slate-900 text-white">
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
+                <div className="space-y-6 text-left">
+                    <Card className="shadow-lg border-none bg-slate-900 text-white text-left">
+                        <CardHeader className="text-left">
+                            <CardTitle className="text-lg flex items-center gap-2 text-left text-white">
                                 <Settings2 className="h-5 w-5 text-primary" />
                                 Cadence Policy
                             </CardTitle>
-                            <CardDescription className="text-slate-400">Rules for automated follow-up.</CardDescription>
+                            <CardDescription className="text-slate-400 text-left">Rules for automated follow-up.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="space-y-6 text-left">
                             {currentPolicy.map((step: any, i: number) => (
-                                <div key={i} className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <Label className="text-[10px] font-black uppercase text-slate-500">Step {i}: {step.label}</Label>
-                                        <Badge variant="outline" className="text-[9px] border-white/10 text-slate-400">{step.waitHours}h Wait</Badge>
+                                <div key={i} className="space-y-2 text-left">
+                                    <div className="flex justify-between items-center text-left">
+                                        <Label className="text-[10px] font-black uppercase text-slate-500 text-left text-white">Step {i}: {step.label}</Label>
+                                        <Badge variant="outline" className="text-[9px] border-white/10 text-slate-400 text-left">{step.waitHours}h Wait</Badge>
                                     </div>
                                     <Input 
                                         type="number" 
                                         defaultValue={step.waitHours} 
-                                        className="h-8 bg-white/5 border-white/10 text-xs font-mono" 
+                                        className="h-8 bg-white/5 border-white/10 text-xs font-mono text-white text-left" 
                                         placeholder="Wait hours..."
                                     />
                                 </div>
                             ))}
-                            <Button className="w-full h-10 font-bold gap-2" onClick={() => handleSavePolicy(currentPolicy)} disabled={isSavingPolicy}>
+                            <Button className="w-full h-10 font-bold gap-2 text-white" onClick={() => handleSavePolicy(currentPolicy)} disabled={isSavingPolicy}>
                                 {isSavingPolicy ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="h-4 w-4" />}
                                 Save Dispatch Policy
                             </Button>
