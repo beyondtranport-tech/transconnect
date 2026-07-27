@@ -191,7 +191,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
                 </div>
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
                         <UserCircle className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
@@ -254,7 +254,7 @@ export default function TransporterManagement() {
         const token = await getClientSideAuthToken();
         if (!token) return;
         const [res, staffRes] = await Promise.all([
-          performAdminAction(token, 'searchRegistry', { type: 'transporter', term: searchTerm, limit }),
+          performAdminAction(token, 'searchRegistry', { type, term: searchTerm, limit }),
           performAdminAction(token, 'getPlatformStaff', {})
         ]);
         setAllRecords(res.data || []);
@@ -264,7 +264,7 @@ export default function TransporterManagement() {
     } finally {
         setIsLoading(false);
     }
-  }, [searchTerm, toast]);
+  }, [type, searchTerm, toast]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -373,7 +373,7 @@ export default function TransporterManagement() {
         }
       },
       { id: 'actions', header: 'Actions', cell: ({ row }: { row: { original: any } }) => (
-        <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
+        <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog 
@@ -456,9 +456,7 @@ export default function TransporterManagement() {
                             <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
-                                <SelectItem value="new">New Lead</SelectItem>
-                                <SelectItem value="contacted">Researching</SelectItem>
-                                <SelectItem value="qualified">Qualified</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
                                 <SelectItem value="active">Active Participant</SelectItem>
                             </SelectContent>
                         </Select>

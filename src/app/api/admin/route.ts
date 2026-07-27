@@ -46,6 +46,35 @@ export async function POST(req: NextRequest) {
         const payload = body.payload || {};
 
         switch (action) {
+            case 'savePartner': {
+                const { partner: pData, collection: colNameOverride } = payload;
+                if (!pData) throw new Error("Partner data is required.");
+                const colName = colNameOverride || (pData.source === 'Lead' || !pData.type || pData.type === 'lead' ? 'leads' : 'partners');
+                const id = pData.id || db.collection(colName).doc().id;
+                const ref = db.collection(colName).doc(id);
+                
+                const cleanData: any = {};
+                Object.keys(pData).forEach(key => {
+                    if (pData[key] !== undefined) cleanData[key] = pData[key];
+                });
+
+                await ref.set({
+                    ...cleanData,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                return NextResponse.json({ success: true, id });
+            }
+
+            case 'deletePartner': {
+                const { partnerId, source } = payload;
+                if (!partnerId) throw new Error("ID required.");
+                const colName = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(colName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'bulkSavePartners': {
                 const { partners: pList, type: pType } = payload;
                 if (!Array.isArray(pList)) throw new Error("Partners must be an array.");
