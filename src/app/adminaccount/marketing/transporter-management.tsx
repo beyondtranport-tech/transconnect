@@ -71,7 +71,7 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; targetType: string; }) {
+function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
@@ -108,7 +108,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
         });
       }
     }
-  }, [open, partner, form, targetType]);
+  }, [open, partner, form]);
 
   const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -228,6 +228,7 @@ export default function TransporterManagement() {
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [assigneeFilter, setAssigneeFilter] = useState('all');
+  const type = 'transporter';
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
@@ -281,8 +282,8 @@ export default function TransporterManagement() {
               <div className="flex flex-col text-left text-foreground">
                   <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
                   <div className="flex items-center gap-2 mt-1 text-left text-foreground">
-                      {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">{row.original.industrial_category || 'Logistics'}</Badge>
+                      <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[9px] h-4 uppercase font-bold">{row.original.source}</Badge>
+                      {row.original.companyId && <span className="text-[10px] text-muted-foreground font-mono">ID: {row.original.companyId}</span>}
                   </div>
               </div>
           )
@@ -350,12 +351,12 @@ export default function TransporterManagement() {
                         {isVerified && <TooltipProvider><Tooltip><TooltipTrigger><ShieldCheck className="h-4 w-4 text-green-600" /></TooltipTrigger><TooltipContent className="text-xs font-bold">Forensic Handshake Linked (Member Roster Verified)</TooltipContent></Tooltip></TooltipProvider>}
                     </div>
                     {isConverted && !isVerified && (
-                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[8px] h-4 uppercase font-black py-0 px-1.5 w-fit text-left">
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[8px] h-4 uppercase font-black py-0 px-1.5 w-fit text-left text-foreground">
                             Handshake Pending Sign-up
                         </Badge>
                     )}
                     {isVerified && (
-                        <Badge className="bg-green-100 text-green-700 text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit text-left">
+                        <Badge className="bg-green-100 text-green-700 text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit text-left text-foreground">
                             <UserPlus className="h-2 w-2 fill-current" /> Verified Member
                         </Badge>
                     )}
@@ -381,7 +382,7 @@ export default function TransporterManagement() {
       ) },
     ];
     return cols.filter(c => visibleColumns[c.id as string] || visibleColumns[c.accessorKey as string]);
-  }, [fetchData, handleEngage, visibleColumns, type]);
+  }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -400,7 +401,7 @@ export default function TransporterManagement() {
   return (
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="transporters" onEngageSuccess={() => fetchData()} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType="transporter" />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
