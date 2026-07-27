@@ -71,7 +71,7 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; targetType: string; }) {
+function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
@@ -108,7 +108,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
         });
       }
     }
-  }, [open, partner, form, targetType]);
+  }, [open, partner, form]);
 
   const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -226,7 +226,6 @@ export default function TransporterManagement() {
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
     accountLead: true,
-    email: true,
     outreach: true,
     status: true,
     actions: true
@@ -272,40 +271,42 @@ export default function TransporterManagement() {
           accessorKey: 'companyName',
           header: 'Haulier Entity', 
           cell: ({row}: { row: { original: any } }) => (
-              <div className="flex flex-col text-left text-foreground text-foreground">
-                  <span className="font-bold text-left text-foreground text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
-                  <div className="flex items-center gap-2 mt-1 text-left text-foreground text-foreground">
+              <div className="flex flex-col text-left text-foreground">
+                  <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
+                  <div className="flex items-center gap-2 mt-1 text-left text-foreground">
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
-                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left text-foreground">{row.original.industrial_category || 'Logistics'}</Badge>
+                      <Badge variant="outline" className="text-[10px] h-3.5 border-primary/20 text-primary uppercase font-bold text-left">{row.original.industrial_category || 'Logistics'}</Badge>
                   </div>
               </div>
           )
       },
       { 
+          id: 'accountLead',
           accessorKey: 'contactPerson',
           header: 'Account Lead',
           cell: ({ row }: { row: { original: any } }) => (
-            <div className="flex flex-col text-left text-foreground">
+            <div className="flex flex-col text-left">
                 <span className="font-bold text-sm text-left">{row.original.marketingManager?.name || row.original.contactPerson || 'N/A'}</span>
                 <span className="text-[10px] text-muted-foreground text-left">{row.original.marketingManager?.email || row.original.email || 'No email discovered'}</span>
             </div>
           )
       },
       { 
+          id: 'outreach',
           accessorKey: 'lastOutreachSubject',
           header: 'Outreach Stage',
           cell: ({ row }: { row: { original: any } }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
-                  <div className="flex flex-col text-left text-foreground text-left text-foreground text-foreground">
+                  <div className="flex flex-col text-left text-foreground">
                       <div className="flex items-center gap-1">
-                        <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left text-foreground">{cleanSubject}</Badge>
+                        <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
                         {row.original.lastOpenedAt && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -315,19 +316,20 @@ export default function TransporterManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
                         )}
                       </div>
-                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left text-foreground">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
+                      <span className="text-[8px] text-muted-foreground mt-0.5 text-left">{formatDateSafe(row.original.lastOutreachAt, "dd/MM, HH:mm")}</span>
                   </div>
               );
           }
       },
       { 
+        id: 'status',
         accessorKey: 'status', 
         header: 'Status & Conversion', 
         cell: ({ row }: { row: { original: any } }) => {
@@ -345,7 +347,7 @@ export default function TransporterManagement() {
         }
       },
       { id: 'actions', header: 'Actions', cell: ({ row }: { row: { original: any } }) => (
-        <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground text-foreground text-foreground">
+        <div className="flex justify-end items-center gap-1 text-left">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog 
@@ -379,12 +381,12 @@ export default function TransporterManagement() {
   }
 
   return (
-    <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
+    <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="transporters" onEngageSuccess={() => fetchData()} />
       <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType="transporter" />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground text-foreground">
-          <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent className="text-left text-foreground">
+          <AlertDialogHeader><AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -392,48 +394,48 @@ export default function TransporterManagement() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
-          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground text-foreground text-foreground">
-              <div className="text-left text-foreground text-foreground text-foreground"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground text-foreground"><Truck /> Transporters</CardTitle><CardDescription className="text-left text-muted-foreground text-foreground text-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
-              <div className="flex gap-2 text-left text-foreground text-foreground text-foreground text-foreground">
-                  <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground text-foreground text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
-                  {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left text-foreground text-foreground text-foreground"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
+      <div className="space-y-6 text-left text-foreground">
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Truck /> Transporters</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
+              <div className="flex gap-2 text-left">
+                  <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
+                  {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
                   
                   <Popover>
                       <PopoverTrigger asChild>
-                          <Button variant="outline" className="gap-2 text-foreground text-foreground text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
+                          <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground">
-                          <div className="space-y-1 text-left text-foreground text-foreground">
+                      <PopoverContent className="w-56 p-2 text-left">
+                          <div className="space-y-1 text-left">
                               {Object.keys(visibleColumns).map(col => (
-                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left text-foreground text-foreground text-foreground text-foreground" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
+                                  <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                       <span>{col.replace(/([A-Z])/g, ' $1')}</span>
-                                      {visibleColumns[col] && <Check className="h-3 w-3 text-primary text-foreground text-foreground" />}
+                                      {visibleColumns[col] && <Check className="h-3 w-3 text-primary" />}
                                   </div>
                               ))}
                           </div>
                       </PopoverContent>
                   </Popover>
 
-                  <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'transporters-backup.csv')} disabled={isLoading} className="text-left text-foreground text-foreground text-foreground text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
-                  <BulkImportDialog type="transporter" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-                  <Button onClick={() => setDialog({ type: 'add' })} className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
+                  <Button variant="outline" onClick={() => downloadDataAsCSV(filteredRecords, 'transporters-backup.csv')} disabled={isLoading} className="text-left text-foreground"><Download className="mr-2 h-4 w-4"/>Export CSV</Button>
+                  <BulkImportDialog type="transporter" onComplete={() => fetchData()}><Button variant="outline" className="text-left text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+                  <Button onClick={() => setDialog({ type: 'add' })} className="text-left"><PlusCircle className="mr-2 h-4 w-4"/>Add Record</Button>
               </div>
           </CardHeader>
-          <Card className="text-left text-foreground text-foreground text-foreground text-foreground">
-              <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
-                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">Status Filter</Label>
+          <Card className="text-left">
+              <CardContent className="pt-6 text-left">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left">
+                      <div className="space-y-1 text-left">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left">Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
-                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                              <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                               <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active Participant</SelectItem></SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">Assignee</Label>
+                      <div className="space-y-1 text-left">
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left">Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                              <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                              <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="all">All Staff</SelectItem>
                                   <SelectItem value="none">Unallocated</SelectItem>
@@ -441,19 +443,19 @@ export default function TransporterManagement() {
                               </SelectContent>
                           </Select>
                       </div>
-                      <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground">
-                          <div className="flex-1 space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">Search Registry</Label>
+                      <div className="space-y-1 text-left">
+                          <div className="flex-1 space-y-1 text-left">
+                              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left">Search Registry</Label>
                               <Input placeholder="Filter registry by name or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
                           </div>
                       </div>
                   </div>
-                  {isLoading ? <div className="flex justify-center items-center py-10 text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
-                      <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground">
+                  {isLoading ? <div className="flex justify-center items-center py-10 text-left"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div> : (
+                      <div className="space-y-6 text-left">
                           <DataTable columns={columns} data={filteredRecords} onSelectionChange={setSelectedIds} />
                           {allRecords.length >= 100 && (
-                               <div className="flex justify-center pt-4 text-left text-foreground text-foreground text-foreground">
-                                  <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
+                               <div className="flex justify-center pt-4 text-left">
+                                  <Button variant="outline" size="lg" onClick={() => fetchData(allRecords.length + 100)} disabled={isLoading} className="gap-2 min-w-[200px] text-left">
                                       {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <ChevronDown className="h-4 w-4" />}
                                       Load Next 100 Records
                                   </Button>
