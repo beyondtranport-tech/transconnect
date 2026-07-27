@@ -38,11 +38,11 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
 TASK: Complete a forensic gap-analysis for: "${companyName}". Use an aggressive, inductive reconstruction approach to eliminate all null fields.
 
 INVESTIGATION MANDATE (V13 PROTOCOL):
-1. IDENTITY EXPANSION: If the name is an acronym or short-hand (e.g. "JH"), you MUST first determine the full legal identity (e.g. "Junior H").
-2. FRAGMENT STITCHING: You MUST combine data fragments from multiple sources.
-3. FLAT-SITE RESILIENCY: Industrial sites are often one-page. Analyze snippets for "Contact Cards" and "Footer Sections" specifically.
+1. IDENTITY EXPANSION: Resolve acronyms into full legal identities.
+2. SOCIAL HUB & DIRECTORY RESILIENCY: Many SA hauliers operate on Facebook or business directories (Yellosa, Brabys). You MUST prioritize Facebook Bios and directory snippets to resolve contact data if a website is missing.
+3. FRAGMENT STITCHING: You MUST combine data fragments from multiple sources.
 4. IDENTITY RESOLUTION: Find the names and contacts of: CEO, Marketing Lead, Operations Manager, and Technical/Maintenance Manager.
-5. AGGREGATOR SYNC: Use SA directories (Yellosa, Brabys, Infoisinfo) to populate fields.
+5. AGGREGATOR SYNC: Cross-reference directory evidence to bridge all remaining gaps.
 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
 
@@ -50,7 +50,7 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
   "record_id": "${partner.id}",
   "companyName": "FULL REGISTERED NAME",
   "industrial_category": "Refined Category",
-  "website": "VERIFIED URL",
+  "website": "VERIFIED URL (WEBSITE OR FACEBOOK)",
   "email": "VERIFIED GENERAL EMAIL",
   "phone": "RSA LANDLINE",
   "address": "VERIFIED PHYSICAL ADDRESS",
@@ -58,7 +58,7 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
   "operationsManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
   "technicalManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
   "ceo": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
-  "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SECTIONS (300 WORDS)."
+  "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE OR SOCIAL SECTIONS (300 WORDS)."
 }`;
     };
 
@@ -76,7 +76,7 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                 isLead: !partner.type || partner.type === 'lead'
             });
 
-            toast({ title: "V13 Scavenger Prompt Ready", description: "Expanded to include Operations and Technical leads." });
+            toast({ title: "V13 Scavenger Prompt Ready", description: "Prioritizing Facebook and Directory bio-mining." });
             
             setTimeout(() => {
                 setIsOpen(false);
@@ -116,9 +116,9 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
                     <div className="space-y-4 py-4 text-left">
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Zap className="h-4 w-4 text-primary" />
-                            <AlertTitle className="text-left font-bold">V13 Stakeholder Mandate Active</AlertTitle>
+                            <AlertTitle className="text-left font-bold">V13 Social & Directory Mining Active</AlertTitle>
                             <AlertDescription className="text-xs text-left">
-                                The scavenger will now prioritize finding Operations and Technical leads in addition to the CEO and Marketing.
+                                The scavenger will now aggressively mine Facebook bios and SA directories if a standard website is unavailable.
                             </AlertDescription>
                         </Alert>
 

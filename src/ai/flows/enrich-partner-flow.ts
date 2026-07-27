@@ -3,6 +3,7 @@
 /**
  * @fileOverview High-fidelity Industrial Research Agent V13.
  * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches together fragments from multiple sources.
+ * SOCIAL-RESILIENT: Prioritizes Facebook and Business Directories if official domains are missing.
  * STAKEHOLDER MANDATE: Extracts CEO, Marketing Lead, Operations Manager, and Technical Manager.
  */
 
@@ -25,10 +26,10 @@ const EnrichPartnerOutputSchema = z.object({
   email: z.string().nullable().describe('Primary general/professional email.'),
   phone: z.string().nullable().optional().describe('Primary landline.'),
   mobile: z.string().nullable().optional().describe('Primary direct mobile.'),
-  website: z.string().nullable().describe('Official corporate domain URL.'),
+  website: z.string().nullable().describe('Official corporate domain or Facebook URL.'),
   address: z.string().nullable().describe('Full verified physical operational address.'),
   industrial_category: z.string().nullable().describe('Refined industrial classification.'),
-  minedServiceWording: z.string().nullable().describe('A 300-word technical profile extracted from the website content.'),
+  minedServiceWording: z.string().nullable().describe('A 300-word technical profile extracted from the website or social content.'),
   marketingManager: ContactInfoSchema.nullable().describe('Full contact details for the Marketing Manager.'),
   operationsManager: ContactInfoSchema.nullable().describe('Full contact details for the Operations Manager.'),
   technicalManager: ContactInfoSchema.nullable().describe('Full contact details for the Technical/Maintenance Manager.'),
@@ -52,7 +53,7 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION
+    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION (SOCIAL & DIRECTORY INCLUDED)
     const siteResults = await googleSearchTool({ 
         query: `${company} South Africa official website contact management team CEO Operations Technical` 
     });
@@ -61,7 +62,11 @@ const enrichPartnerFlow = ai.defineFlow(
         query: `${company} South Africa "Operations Manager" OR "Technical Manager" OR "Marketing Manager" LinkedIn` 
     });
 
-    const allContent = [...(siteResults || []), ...(teamResults || [])]
+    const socialResults = await googleSearchTool({
+        query: `${company} South Africa Facebook page contact address email mobile infoisinfo yellosa`
+    });
+
+    const allContent = [...(siteResults || []), ...(teamResults || []), ...(socialResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
@@ -71,8 +76,9 @@ const enrichPartnerFlow = ai.defineFlow(
         
         INVESTIGATION MANDATE:
         1. IDENTITY RESOLUTION: Find the names of the CEO, Marketing Lead, Operations Manager, and Technical Manager.
-        2. FRAGMENT STITCHING: Combine data from all snippets to eliminate nulls.
-        3. EVIDENCE ONLY: Only return data explicitly visible in the snippets.
+        2. SOCIAL HUB RESILIENCY: Many SA hauliers operate primarily on Facebook. If an official website is missing, you MUST prioritize the Facebook Page Bio and "About" snippets for contact details.
+        3. FRAGMENT STITCHING: Combine data from all snippets (Directories, Social, LinkedIn) to eliminate nulls.
+        4. EVIDENCE ONLY: Only return data explicitly visible in the snippets.
         
         MANDATE: Return RAW JSON only.`,
         prompt: `PERFORM THE V13 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,

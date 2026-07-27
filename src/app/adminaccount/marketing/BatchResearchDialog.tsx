@@ -43,14 +43,14 @@ export function BatchResearchDialog({ open, onOpenChange, selectedLeads, onCompl
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
 
 REQUIRED INVESTIGATION PROTOCOL PER RECORD:
-1. DOMAIN IDENTIFICATION: Identify the official website.
+1. SOCIAL & DIRECTORY RESILIENCY: Prioritize Facebook Bios and South African directories (Yellosa, Brabys, Infoisinfo) to resolve contacts if no website is found.
 2. TEAM DISCOVERY: You MUST find the names of: CEO, MD, Marketing Lead, Operations Manager, and Technical Manager.
 3. IDENTITY RESOLUTION: Perform targeted searches to resolve direct professional contacts (Email/Mobile) for these specific roles.
-4. AGGREGATOR SYNC: Cross-reference SA directories to bridge any remaining gaps.
+4. INDUCTIVE STITCHING: Combine data fragments from all snippets to eliminate null fields.
 
 CRITICAL INTEGRITY SHIELD: 
 - REAL DATA ONLY: Do not invent names or guess email patterns.
-- NULL MANDATE: If data is not explicitly visible in search evidence, return null.
+- NULL MANDATE: If data is not explicitly visible in search evidence after multi-platform checks, return null.
 
 LIST TO INVESTIGATE (RSA ENTITIES ONLY):
 ${companyList}
@@ -59,7 +59,7 @@ JSON OUTPUT REQUIREMENTS PER OBJECT:
 - "record_id": (Return exactly the [KEY] provided)
 - "companyName": (Official registered name)
 - "industrial_category": (Select from [${validCategories}])
-- "website": (OFFICIAL URL)
+- "website": (OFFICIAL URL OR FACEBOOK LINK)
 - "email": (General Email)
 - "phone": (RSA Landline)
 - "address": (FULL RSA Address)
@@ -67,7 +67,7 @@ JSON OUTPUT REQUIREMENTS PER OBJECT:
 - "operationsManager": { "name": "...", "email": "...", "mobile": "..." }
 - "technicalManager": { "name": "...", "email": "...", "mobile": "..." }
 - "ceo": { "name": "...", "email": "...", "mobile": "..." }
-- "minedServiceWording": "TECHNICAL SUMMARY (300 WORDS)."`;
+- "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SECTIONS (300 WORDS)."`;
 
     const handleCopyAndLogBatch = async () => {
         setIsLoading(true);
@@ -86,7 +86,7 @@ JSON OUTPUT REQUIREMENTS PER OBJECT:
                 type: isLeadBatch ? 'lead' : 'partner'
             });
 
-            toast({ title: "V13 Batch Mandate Ready", description: "Optimized for deep stakeholder extraction." });
+            toast({ title: "V13 Batch Mandate Ready", description: "Social and Directory mining protocol enabled." });
             
             setTimeout(() => {
                 onOpenChange(false);
@@ -109,16 +109,16 @@ JSON OUTPUT REQUIREMENTS PER OBJECT:
                         Batch Scavenger V13
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
-                        High-velocity batch research with the new V13 stakeholder extraction mandate.
+                        High-velocity batch research with the new V13 Social-Resiliency protocol.
                     </DialogDescription>
                 </DialogHeader>
                 
                 <div className="space-y-4 py-4 text-left text-foreground">
                     <Alert className="bg-primary/5 border-primary/20 text-left">
                         <ShieldCheck className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-bold text-foreground text-left">V13 Stakeholder Mandate</AlertTitle>
+                        <AlertTitle className="font-bold text-foreground text-left">V13 Social & Directory Protocol</AlertTitle>
                         <AlertDescription className="text-xs text-left text-foreground">
-                            Now mandatory to resolve: CEO, Marketing, Operations, and Technical Leads.
+                            Now mandatory to mine Facebook and directories for businesses without official websites.
                         </AlertDescription>
                     </Alert>
 

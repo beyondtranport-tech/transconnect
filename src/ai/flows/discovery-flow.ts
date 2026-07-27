@@ -3,7 +3,7 @@
 /**
  * @fileOverview Automated industrial discovery agent V13.
  * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches fragments from multiple sources.
- * FLAT-SITE RESILIENT: Specifically optimized for one-page industrial websites.
+ * SOCIAL HUB RESILIENT: Optimized for Facebook Pages and South African business directories.
  * STAKEHOLDER MANDATE: Specifically extracts CEO, Marketing, Operations, and Technical Managers.
  */
 
@@ -63,8 +63,8 @@ const discoveryFlow = ai.defineFlow(
         REQUIRED INVESTIGATION PROTOCOL PER RECORD:
         1. ACRONYM EXPANSION: Identify full legal names from initials.
         2. INDUCTIVE STITCHING: Combine data fragments from multiple sources.
-        3. IDENTITY RESOLUTION: You MUST identify the CEO, Marketing Manager, Operations Manager, and Technical Manager by name.
-        4. FLAT-SITE ANALYSIS: Mine root domains for "Contact Cards" to resolve these four specific personas.
+        3. SOCIAL HUB RESILIENCY: South African industry stakeholders frequently use Facebook or directories (Yellosa, Brabys) instead of official websites. You MUST mine these bios for contact cards.
+        4. IDENTITY RESOLUTION: You MUST identify the CEO, Marketing Manager, Operations Manager, and Technical Manager by name.
         
         CRITICAL INTEGRITY SHIELD:
         1. REAL DATA ONLY: DO NOT RETURN MOCK OR PLACEHOLDER DATA.
@@ -76,7 +76,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `EXTRACT ${batchSize} UNIQUE VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. FIND ALL MANAGER ROLES.`,
+            prompt: `EXTRACT ${batchSize} UNIQUE VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. PRIORITIZE FACEBOOK AND DIRECTORIES IF WEBSITES ARE MISSING. FIND ALL MANAGER ROLES.`,
             output: {
                 schema: DiscoveryOutputSchema
             }
