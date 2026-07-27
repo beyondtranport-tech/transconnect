@@ -4,7 +4,11 @@ import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Mail, Zap, Send, ShieldCheck, MessageSquare, Smartphone, Info, ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, Handshake, ExternalLink, AtSign } from 'lucide-react';
+import { 
+    Loader2, Mail, Zap, Send, ShieldCheck, MessageSquare, Smartphone, Info, 
+    ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, 
+    Handshake, ExternalLink, AtSign, Building, DollarSign, FileText, Presentation, Sparkles 
+} from 'lucide-react';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -247,7 +251,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
             <DialogHeader className="p-6 border-b bg-muted/50">
                 <div className="flex justify-between items-center">
                     <div className="text-left space-y-1">
-                        <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                        <DialogTitle className="text-2xl font-bold flex items-center gap-2 text-left">
                             <Send className="h-6 w-6 text-primary" />
                             Engagement Hub: {contact.name}
                         </DialogTitle>
@@ -305,7 +309,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                     <Separator />
 
                     <div className="space-y-1 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary px-2 mb-2 block flex items-center gap-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary px-2 mb-2 block flex items-center gap-2 text-left">
                             <Zap className="h-3 w-3" /> Tactical Sequences
                         </Label>
                         {ALL_ENGAGEMENT_TABS.slice(10).map((tab) => (
