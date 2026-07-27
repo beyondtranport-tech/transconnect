@@ -71,7 +71,7 @@ const partnerSchema = z.object({
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
+function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; targetType: string; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
@@ -108,7 +108,7 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
         });
       }
     }
-  }, [open, partner, form]);
+  }, [open, partner, form, targetType]);
 
   const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -140,18 +140,18 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <Building className="h-4 w-4" /> Core Entity Identity
                 </h4>
-                <div className="grid grid-cols-2 gap-4 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                   <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
                   <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
                 <FormField control={form.control} name="status" render={({ field }) => ( 
                     <FormItem className="text-left">
                         <FormLabel>Pipeline Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl><SelectTrigger className="bg-white border-2 text-left"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 <SelectItem value="new">New Lead</SelectItem>
@@ -161,6 +161,12 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                             </SelectContent>
                         </Select>
                     </FormItem> 
+                )} />
+                <FormField control={form.control} name="address" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Physical Operational Address</FormLabel>
+                        <FormControl><Textarea {...field} value={field.value || ''} className="bg-white h-20 border-2" /></FormControl>
+                    </FormItem>
                 )} />
             </div>
 
@@ -269,6 +275,7 @@ export default function TransporterManagement() {
     const cols: ColumnDef<any>[] = [
       { 
           accessorKey: 'companyName',
+          id: 'companyName',
           header: 'Haulier Entity', 
           cell: ({row}: { row: { original: any } }) => (
               <div className="flex flex-col text-left text-foreground">
@@ -292,9 +299,9 @@ export default function TransporterManagement() {
           )
       },
       { 
+          header: 'Outreach Stage',
           id: 'outreach',
           accessorKey: 'lastOutreachSubject',
-          header: 'Outreach Stage',
           cell: ({ row }: { row: { original: any } }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
@@ -373,8 +380,8 @@ export default function TransporterManagement() {
         </div>
       ) },
     ];
-    return cols.filter(c => visibleColumns[c.id || c.accessorKey as string]);
-  }, [fetchData, handleEngage, visibleColumns]);
+    return cols.filter(c => visibleColumns[c.id as string] || visibleColumns[c.accessorKey as string]);
+  }, [fetchData, handleEngage, visibleColumns, type]);
 
   async function handleDeleteRecord() {
     if (!dialog.data) return;
@@ -393,7 +400,7 @@ export default function TransporterManagement() {
   return (
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="transporters" onEngageSuccess={() => fetchData()} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType="transporter" />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
           <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
@@ -406,7 +413,7 @@ export default function TransporterManagement() {
 
       <div className="space-y-6 text-left text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Truck /> Transporters</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Truck /> Transporters</CardTitle><CardDescription className="text-left text-muted-foreground text-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
                   {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
@@ -442,6 +449,8 @@ export default function TransporterManagement() {
                               <SelectContent>
                                   <SelectItem value="all">All Statuses</SelectItem>
                                   <SelectItem value="new">New</SelectItem>
+                                  <SelectItem value="contacted">Researching</SelectItem>
+                                  <SelectItem value="qualified">Qualified</SelectItem>
                                   <SelectItem value="active">Active Participant</SelectItem>
                               </SelectContent>
                           </Select>

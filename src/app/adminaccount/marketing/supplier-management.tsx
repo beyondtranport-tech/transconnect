@@ -165,6 +165,12 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                         </FormItem>
                     )} />
                 </div>
+                <FormField control={form.control} name="address" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Physical Operational Address</FormLabel>
+                        <FormControl><Textarea {...field} value={field.value || ''} className="bg-white h-20 border-2" /></FormControl>
+                    </FormItem>
+                )} />
             </div>
 
             <Separator />
@@ -274,6 +280,7 @@ export default function SupplierManagement() {
     return [
       { 
           accessorKey: 'companyName', 
+          id: 'companyName',
           header: 'Supplier Entity', 
           cell: ({ row }: { row: { original: any } }) => (
               <div className="flex flex-col text-left text-foreground">
