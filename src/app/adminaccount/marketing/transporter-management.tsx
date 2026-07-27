@@ -138,10 +138,6 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
                   <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="e.g. jhtrucking.co.za" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Owner/MD First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Owner/MD Last Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl><FormMessage /></FormItem> )} />
                   <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl><FormMessage /></FormItem> )} />
                 </div>
@@ -448,7 +444,8 @@ export default function TransporterManagement() {
           <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
       ) },
-    ].filter(c => visibleColumns[c.id as string] || visibleColumns[c.accessorKey as string]);
+    ];
+    return cols.filter(c => visibleColumns[c.id as string] || visibleColumns[c.accessorKey as string]);
   }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
@@ -480,7 +477,7 @@ export default function TransporterManagement() {
       </AlertDialog>
 
       <div className="space-y-6 text-left text-foreground">
-          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+          <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
               <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Truck /> Transporters</CardTitle><CardDescription className="text-left text-muted-foreground text-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>

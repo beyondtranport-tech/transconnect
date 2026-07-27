@@ -137,17 +137,13 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
                   <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="e.g. jhtrucking.co.za" className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-left">
-                  <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Owner/MD First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="lastName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Owner/MD Last Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-left">
+                <div className="grid grid-cols-2 gap-4 text-left text-foreground text-foreground">
                   <FormField control={form.control} name="email" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="phone" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-left">
+                <div className="grid grid-cols-2 gap-4 text-left text-foreground text-foreground">
                     <FormField control={form.control} name="status" render={({ field }) => (
-                        <FormItem className="text-left text-foreground">
+                        <FormItem className="text-left text-foreground text-foreground">
                             <FormLabel>Pipeline Status</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ''}>
                                 <FormControl><SelectTrigger className="bg-white border-2 text-left text-foreground"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
@@ -163,7 +159,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
                     )} />
                 </div>
                 <FormField control={form.control} name="address" render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left text-foreground text-foreground text-foreground">
                         <FormLabel>Physical Operational Address</FormLabel>
                         <FormControl><Textarea {...field} value={field.value || ''} className="bg-white h-20 border-2" /></FormControl>
                         <FormMessage />
@@ -229,7 +225,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
                         </div>
                         <FormField control={form.control} name="operationsManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="operationsManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="operationsManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormMessage> )} />
+                        <FormField control={form.control} name="operationsManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
 
                     <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'technicalManager' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
@@ -246,14 +242,14 @@ function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { o
                         </div>
                         <FormField control={form.control} name="technicalManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="technicalManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="technicalManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormMessage> )} />
+                        <FormField control={form.control} name="technicalManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
                 </div>
             </div>
 
             <Separator />
 
-            <div className="space-y-4 text-left text-foreground">
+            <div className="space-y-4 text-left text-foreground text-foreground">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                     <Sparkles className="h-4 w-4" /> Technical Profile
                 </h4>

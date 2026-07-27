@@ -156,7 +156,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                     <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem>)} />
+                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                     <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Primary Contact First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
@@ -430,7 +430,7 @@ function LeadsDatabaseComponent() {
       id: 'actions',
       header: <div className="text-right">Actions</div>,
       cell: ({ row }) => (
-        <div className="text-right flex items-center justify-end gap-1 text-foreground text-foreground text-foreground text-foreground">
+        <div className="text-right flex items-center justify-end gap-1 text-foreground text-foreground text-foreground text-foreground text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
           <Button variant="ghost" size="icon" onClick={() => setEngageLead(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog partnerId={row.original.id} collection="leads" onLogAdded={forceRefresh} />
@@ -449,7 +449,7 @@ function LeadsDatabaseComponent() {
       <EngageDialog open={!!engageLead} onOpenChange={(o) => { setEngageLead(null); }} partners={engageLead ? [engageLead] : leads.filter(l => selectedIds.includes(l.id))} audience="transporters" onEngageSuccess={forceRefresh} />
       <LeadDialog open={isAddLeadOpen || !!editLead} onOpenChange={(o) => { if(!o) { setEditLead(null); setIsAddLeadOpen(false); } }} lead={editLead} onSave={forceRefresh} />
       <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-        <AlertDialogContent className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
+        <AlertDialogContent className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
           <AlertDialogHeader className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><AlertDialogTitle className="text-left text-foreground text-left text-foreground text-foreground text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground text-foreground text-foreground text-foreground">This will permanently delete the record.</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteLead(null)}>Cancel</AlertDialogCancel>
@@ -458,33 +458,33 @@ function LeadsDatabaseComponent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
-        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-          <div className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground">
-            <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>
-            <CardDescription className="text-left text-muted-foreground text-left text-foreground text-foreground text-foreground text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
+      <div className="space-y-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+        <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 px-0 pt-0 text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+          <div className="text-left text-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
+            <CardTitle className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Users /> Master Lead Database</CardTitle>
+            <CardDescription className="text-left text-muted-foreground text-left text-foreground text-foreground text-foreground text-foreground text-foreground">Comprehensive registry of prospects and attributed referrals.</CardDescription>
           </div>
-          <div className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
+          <div className="flex items-center gap-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+             <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><RotateCcw className="h-4 w-4" /> Sync Registry</Button>
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
+                    <Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Download className="mr-2 h-4 w-4" /> Export</Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground">
-                    <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground">
+                <PopoverContent className="w-56 p-2 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
+                    <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-foreground text-left text-foreground" onClick={() => handleExport('Standard')}><Download className="mr-2 h-3.5 w-3.5" /> Standard CSV</Button>
                         <Button variant="ghost" className="w-full justify-start text-xs font-bold text-primary text-left text-foreground" onClick={() => handleExport('SendGrid')}><Mail className="mr-2 h-3.5 w-3.5" /> SendGrid Export</Button>
                     </div>
                 </PopoverContent>
             </Popover>
-            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
-            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
+            <BulkImportDialog type="lead" onComplete={forceRefresh}><Button variant="outline" className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button></BulkImportDialog>
+            <Button onClick={() => setIsAddLeadOpen(true)} className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><PlusCircle className="mr-2 h-4 w-4" />Add Lead</Button>
           </div>
         </CardHeader>
 
-        <Card className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
-            <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
-                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
+        <Card className="text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+            <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">
+                {isLoading ? <div className="flex justify-center py-20 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div> : <DataTable columns={columns} data={leads} onSelectionChange={setSelectedIds} />}
             </CardContent>
         </Card>
       </div>
