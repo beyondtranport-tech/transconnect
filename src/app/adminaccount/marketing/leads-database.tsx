@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useMemo, useEffect, Suspense } from 'react';
@@ -26,7 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Sparkles, Zap, Smartphone, Info, UserCircle, Wrench } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Search, Send, Download, Tag, Save, Database, RefreshCcw, UserCheck, RotateCcw, Upload, Mail, Building, Sparkles, Zap, Smartphone, Info, UserCircle, Wrench, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -58,7 +57,7 @@ async function performAdminAction(token: string, action: string, payload?: any) 
     cache: 'no-store'
   });
   const result = await response.json();
-  if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
+  if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
   return result;
 }
 
@@ -87,7 +86,7 @@ const leadSchema = z.object({
   operationsManager: contactSchema.nullable().optional(),
   technicalManager: contactSchema.nullable().optional(),
   ceo: contactSchema.nullable().optional(),
-  syncContacts: z.boolean().default(false),
+  primaryContactRole: z.enum(['marketingManager', 'ceo', 'operationsManager', 'technicalManager']).default('marketingManager'),
 });
 
 type LeadFormValues = z.infer<typeof leadSchema>;
@@ -98,27 +97,13 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
   const form = useForm<LeadFormValues>({
     resolver: zodResolver(leadSchema),
-    defaultValues: { syncContacts: false }
+    defaultValues: { primaryContactRole: 'marketingManager' }
   });
-
-  const syncContacts = form.watch('syncContacts');
-  const firstName = form.watch('firstName');
-  const lastName = form.watch('lastName');
-  const email = form.watch('email');
-  const mobile = form.watch('mobile');
-
-  useEffect(() => {
-    if (syncContacts) {
-        form.setValue('marketingManager.name', `${firstName || ''} ${lastName || ''}`.trim());
-        form.setValue('marketingManager.email', email || '');
-        form.setValue('marketingManager.mobile', mobile || '');
-    }
-  }, [syncContacts, firstName, lastName, email, mobile, form]);
 
   useEffect(() => {
     if (open) {
       if (lead) {
-        form.reset({ ...lead, status: lead.status || 'new', syncContacts: false });
+        form.reset({ ...lead, status: lead.status || 'new', primaryContactRole: lead.primaryContactRole || 'marketingManager' });
       } else {
         form.reset({
           companyName: defaultValues?.companyName || '',
@@ -137,7 +122,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
           technicalManager: { name: '', email: '', mobile: '' },
           ceo: { name: '', email: '', mobile: '' },
           minedServiceWording: '',
-          syncContacts: false
+          primaryContactRole: 'marketingManager'
         });
       }
     }
@@ -204,32 +189,40 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
             <Separator />
 
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
-                        <Users className="h-4 w-4" /> Strategic Stakeholders
-                    </h4>
-                    <FormField control={form.control} name="syncContacts" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="text-xs font-bold text-muted-foreground cursor-pointer">Sync Primary Contact to Account Lead</FormLabel>
-                        </FormItem>
-                    )} />
-                </div>
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                    <Users className="h-4 w-4" /> Strategic Stakeholders
+                </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                    <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
-                            <UserCheck className="h-4 w-4" /> Marketing Manager (Account Lead)
-                        </h4>
-                        <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'marketingManager' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
+                                <UserCheck className="h-4 w-4" /> Marketing Lead
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-marketing" checked={field.value === 'marketingManager'} onCheckedChange={() => field.onChange('marketingManager')} />
+                                    <Label htmlFor="primary-marketing" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
+                        <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
 
-                    <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
-                            <UserCircle className="h-4 w-4" /> CEO / Principal
-                        </h4>
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'ceo' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
+                                <UserCircle className="h-4 w-4" /> CEO / Principal
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-ceo" checked={field.value === 'ceo'} onCheckedChange={() => field.onChange('ceo')} />
+                                    <Label htmlFor="primary-ceo" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
                         <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
@@ -237,19 +230,35 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                    <div className="space-y-4 p-6 rounded-2xl bg-blue-50/50 border border-blue-100 shadow-inner text-left text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-700 flex items-center gap-2 text-left text-foreground">
-                            <Zap className="h-4 w-4" /> Operations Manager
-                        </h4>
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'operationsManager' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-700 flex items-center gap-2 text-left text-foreground">
+                                <Zap className="h-4 w-4" /> Operations Manager
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-ops" checked={field.value === 'operationsManager'} onCheckedChange={() => field.onChange('operationsManager')} />
+                                    <Label htmlFor="primary-ops" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
                         <FormField control={form.control} name="operationsManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="operationsManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="operationsManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
 
-                    <div className="space-y-4 p-6 rounded-2xl bg-orange-50/50 border border-orange-100 shadow-inner text-left text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-orange-700 flex items-center gap-2 text-left text-foreground">
-                            <Wrench className="h-4 w-4" /> Technical / Maintenance
-                        </h4>
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'technicalManager' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-orange-700 flex items-center gap-2 text-left text-foreground">
+                                <Wrench className="h-4 w-4" /> Technical Manager
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-tech" checked={field.value === 'technicalManager'} onCheckedChange={() => field.onChange('technicalManager')} />
+                                    <Label htmlFor="primary-tech" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
                         <FormField control={form.control} name="technicalManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="technicalManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="technicalManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
@@ -259,8 +268,8 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <Separator />
 
-            <div className="space-y-4 text-left text-foreground text-foreground">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground text-foreground">
+            <div className="space-y-4 text-left text-foreground text-foreground text-foreground">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground text-foreground text-foreground">
                     <Sparkles className="h-4 w-4" /> Technical Profile
                 </h4>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
@@ -361,12 +370,21 @@ function LeadsDatabaseComponent() {
     { accessorKey: 'companyName', header: 'Lead Entity' },
     { 
         id: 'contact',
-        header: 'Contact', 
-        cell: ({ row }) => (
-            <div className="text-sm font-medium text-left text-foreground text-foreground">
-                {row.original.marketingManager?.name || row.original.contactPerson || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'N/A'}
-            </div>
-        )
+        header: 'Account Lead', 
+        cell: ({ row }) => {
+            const p = row.original;
+            const role = p.primaryContactRole || 'marketingManager';
+            const contact = p[role];
+            const name = contact?.name || p.contactPerson || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'N/A';
+            return (
+                <div className="flex flex-col text-left">
+                    <span className="text-sm font-bold text-foreground">{name}</span>
+                    <span className="text-[10px] font-black uppercase text-primary tracking-tighter">
+                        {role === 'marketingManager' ? 'Marketing' : role === 'ceo' ? 'CEO' : role === 'operationsManager' ? 'Operations' : 'Technical'}
+                    </span>
+                </div>
+            )
+        }
     },
     { 
         header: 'Referrer Node', 

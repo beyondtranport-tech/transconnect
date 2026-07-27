@@ -72,7 +72,7 @@ const partnerSchema = z.object({
   technicalManager: contactSchema.optional().nullable(),
   ceo: contactSchema.optional().nullable(),
   minedServiceWording: z.string().optional().nullable(),
-  syncContacts: z.boolean().default(false),
+  primaryContactRole: z.enum(['marketingManager', 'ceo', 'operationsManager', 'technicalManager']).default('marketingManager'),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
@@ -81,22 +81,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
     resolver: zodResolver(partnerSchema),
-    defaultValues: { type: targetType, status: 'new', syncContacts: false }
+    defaultValues: { type: targetType, status: 'new', primaryContactRole: 'marketingManager' }
   });
-
-  const syncContacts = form.watch('syncContacts');
-  const firstName = form.watch('firstName');
-  const lastName = form.watch('lastName');
-  const email = form.watch('email');
-  const mobile = form.watch('mobile');
-
-  useEffect(() => {
-    if (syncContacts) {
-        form.setValue('marketingManager.name', `${firstName || ''} ${lastName || ''}`.trim());
-        form.setValue('marketingManager.email', email || '');
-        form.setValue('marketingManager.mobile', mobile || '');
-    }
-  }, [syncContacts, firstName, lastName, email, mobile, form]);
 
   useEffect(() => {
     if (open) {
@@ -108,11 +94,11 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
               technicalManager: partner.technicalManager || { name: '', email: '', mobile: '' },
               ceo: partner.ceo || { name: '', email: '', mobile: '' },
               status: partner.status || 'new',
-              syncContacts: false
+              primaryContactRole: partner.primaryContactRole || 'marketingManager'
           };
           form.reset(sanitizedPartner);
       } else {
-        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', whatsapp: '', contactPerson: '', companyName: '', status: 'new', type: targetType, website: '', notes: '', address: '', marketingManager: { name: '', email: '', mobile: '' }, operationsManager: { name: '', email: '', mobile: '' }, technicalManager: { name: '', email: '', mobile: '' }, ceo: { name: '', email: '', mobile: '' }, syncContacts: false });
+        form.reset({ firstName: '', lastName: '', email: '', phone: '', mobile: '', whatsapp: '', contactPerson: '', companyName: '', status: 'new', type: targetType, website: '', notes: '', address: '', marketingManager: { name: '', email: '', mobile: '' }, operationsManager: { name: '', email: '', mobile: '' }, technicalManager: { name: '', email: '', mobile: '' }, ceo: { name: '', email: '', mobile: '' }, primaryContactRole: 'marketingManager' });
       }
     }
   }, [open, partner, form, targetType]);
@@ -152,8 +138,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
                   <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="e.g. jhtrucking.co.za" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Primary Contact First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Primary Contact Last Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="firstName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Owner/MD First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="lastName" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Owner/MD Last Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl><FormMessage /></FormItem> )} />
@@ -189,32 +175,40 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
             <Separator />
 
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
-                        <Users className="h-4 w-4" /> Strategic Stakeholders
-                    </h4>
-                    <FormField control={form.control} name="syncContacts" render={({ field }) => (
-                        <FormItem className="flex items-center space-x-2 space-y-0">
-                            <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                            <FormLabel className="text-xs font-bold text-muted-foreground cursor-pointer">Sync Primary Contact to Account Lead</FormLabel>
-                        </FormItem>
-                    )} />
-                </div>
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                    <Users className="h-4 w-4" /> Strategic Stakeholders
+                </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                    <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
-                            <UserCheck className="h-4 w-4" /> Marketing Manager (Account Lead)
-                        </h4>
-                        <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
-                        <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" disabled={syncContacts} /></FormControl><FormMessage /></FormItem> )} />
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'marketingManager' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
+                                <UserCheck className="h-4 w-4" /> Marketing Lead
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-marketing" checked={field.value === 'marketingManager'} onCheckedChange={() => field.onChange('marketingManager')} />
+                                    <Label htmlFor="primary-marketing" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
+                        <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                        <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
 
-                    <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
-                            <UserCircle className="h-4 w-4" /> CEO / Principal
-                        </h4>
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'ceo' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
+                                <UserCircle className="h-4 w-4" /> CEO / Principal
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-ceo" checked={field.value === 'ceo'} onCheckedChange={() => field.onChange('ceo')} />
+                                    <Label htmlFor="primary-ceo" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
                         <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
@@ -222,19 +216,35 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                    <div className="space-y-4 p-6 rounded-2xl bg-blue-50/50 border border-blue-100 shadow-inner text-left text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-700 flex items-center gap-2 text-left text-foreground">
-                            <Zap className="h-4 w-4" /> Operations Manager
-                        </h4>
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'operationsManager' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-700 flex items-center gap-2 text-left text-foreground">
+                                <Zap className="h-4 w-4" /> Operations Manager
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-ops" checked={field.value === 'operationsManager'} onCheckedChange={() => field.onChange('operationsManager')} />
+                                    <Label htmlFor="primary-ops" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
                         <FormField control={form.control} name="operationsManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="operationsManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="operationsManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                     </div>
 
-                    <div className="space-y-4 p-6 rounded-2xl bg-orange-50/50 border border-orange-100 shadow-inner text-left text-foreground">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-orange-700 flex items-center gap-2 text-left text-foreground">
-                            <Wrench className="h-4 w-4" /> Technical / Maintenance
-                        </h4>
+                    <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'technicalManager' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-orange-700 flex items-center gap-2 text-left text-foreground">
+                                <Wrench className="h-4 w-4" /> Technical Manager
+                            </h4>
+                            <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox id="primary-tech" checked={field.value === 'technicalManager'} onCheckedChange={() => field.onChange('technicalManager')} />
+                                    <Label htmlFor="primary-tech" className="text-[10px] font-black uppercase text-muted-foreground cursor-pointer">Set as Account Lead</Label>
+                                </div>
+                            )} />
+                        </div>
                         <FormField control={form.control} name="technicalManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="technicalManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                         <FormField control={form.control} name="technicalManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
@@ -344,12 +354,20 @@ export default function TransporterManagement() {
           id: 'contactPerson',
           accessorKey: 'contactPerson',
           header: 'Account Lead',
-          cell: ({ row }: { row: { original: any } }) => (
-            <div className="flex flex-col text-left text-foreground">
-                <span className="font-bold text-sm text-left">{row.original.marketingManager?.name || row.original.contactPerson || 'N/A'}</span>
-                <span className="text-[10px] text-muted-foreground text-left">{row.original.marketingManager?.email || row.original.email || 'No email discovered'}</span>
-            </div>
-          )
+          cell: ({ row }: { row: { original: any } }) => {
+            const p = row.original;
+            const role = p.primaryContactRole || 'marketingManager';
+            const contact = p[role];
+            const name = contact?.name || p.contactPerson || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'N/A';
+            return (
+                <div className="flex flex-col text-left">
+                    <span className="font-bold text-sm text-left">{name}</span>
+                    <span className="text-[10px] font-black uppercase text-primary tracking-tighter">
+                        {role === 'marketingManager' ? 'Marketing' : role === 'ceo' ? 'CEO' : role === 'operationsManager' ? 'Operations' : 'Technical'}
+                    </span>
+                </div>
+            )
+          }
       },
       { 
           header: 'Outreach Stage',
