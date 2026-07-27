@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { 
     Zap, Play, Pause, RotateCcw, ShieldCheck, Mail, Users, Clock, 
-    AlertTriangle, CheckCircle2, Activity, Settings2, ArrowRight, Loader2, ListOrdered, Info
+    AlertTriangle, CheckCircle2, Activity, Settings2, ArrowRight, Loader2, ListOrdered, Info, Save
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
@@ -187,7 +187,7 @@ export default function EngagementPipeline() {
                         </CardContent>
                     </Card>
 
-                    <Alert className="bg-primary/5 border-primary/20 p-6 rounded-2xl shadow-sm text-left">
+                    <Alert className="bg-primary/5 border-primary/20 p-6 rounded-2xl shadow-sm text-left text-foreground">
                         <Info className="h-6 w-6 text-primary" />
                         <div className="ml-2 text-left">
                             <AlertTitle className="font-black text-primary uppercase text-xs text-left">Forensic Integrity Protection</AlertTitle>
