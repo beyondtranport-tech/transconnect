@@ -172,6 +172,60 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            case 'logForensicInitiated': {
+                const { partnerId, isLead } = payload;
+                const colName = isLead ? 'leads' : 'partners';
+                const ref = db.collection(colName).doc(partnerId);
+                await ref.update({
+                    enhancementMethod: 'V13-AI',
+                    lastEnrichedAt: FieldValue.serverTimestamp(),
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'bulkLogForensicInitiated': {
+                const { leadIds, type } = payload;
+                const colName = type === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
+                leadIds.forEach((id: string) => {
+                    batch.update(db.collection(colName).doc(id), {
+                        enhancementMethod: 'V9-Batch',
+                        lastEnrichedAt: FieldValue.serverTimestamp(),
+                        status: 'contacted',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'autoEnrichRecord': {
+                const { id, type } = payload;
+                const colName = type === 'lead' ? 'leads' : 'partners';
+                const docRef = db.collection(colName).doc(id);
+                const snap = await docRef.get();
+                if (!snap.exists) throw new Error("Record not found");
+                const data = snap.data()!;
+                const companyName = data.companyName || data.firstName || 'Unknown';
+
+                // Call the enrichment flow
+                const { enrichPartner } = await import('@/ai/flows/enrich-partner-flow');
+                const result = await enrichPartner({ companyName });
+
+                // Update record with forensic result
+                await docRef.update({
+                    ...result,
+                    status: 'contacted',
+                    enhancementMethod: 'V13-Auto',
+                    lastEnrichedAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                return NextResponse.json({ success: true, data: serializeData(result) });
+            }
+
             case 'getPartnersByType': {
                 const { type: queryType, limit: searchLimit = 100 } = payload;
                 const collectionName = (queryType === 'lead') ? 'leads' : 'partners';
@@ -235,15 +289,28 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
+            case 'deleteLeads': {
+                const { leadIds } = payload;
+                const batch = db.batch();
+                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
+                await batch.commit();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deletePartner': {
+                const { partnerId, source } = payload;
+                const colName = source === 'Lead' ? 'leads' : 'partners';
+                await db.collection(colName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'getAudienceCommunications': {
                 const { type: audType } = payload;
-                // Query collection group for communications
                 const snap = await db.collectionGroup('communications')
                     .orderBy('timestamp', 'desc')
                     .limit(200)
                     .get();
                 
-                // Fetch partner details for each log to enrich with names
                 const logs = await Promise.all(snap.docs.map(async (doc) => {
                     const data = doc.data();
                     const path = doc.ref.path;
