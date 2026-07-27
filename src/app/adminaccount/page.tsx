@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -138,7 +137,7 @@ function AdminAccountContent() {
   const searchParams = useSearchParams();
   const initialView = searchParams.get('view') || 'dashboard';
   const [activeView, setActiveView] = useState(initialView);
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const auth = useAuth();
   
   useEffect(() => {
@@ -184,7 +183,7 @@ function AdminAccountContent() {
       case 'pricing-tech': return <TechPricing />;
       case 'pricing-ads': return <AdPricingSettings />;
       case 'pricing-dividend': return <DividendManagement />;
-      case 'pricing-marketplace': return <MarketplaceFees />;
+      case 'pricing-marketplace': return < MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'commissions-isa': return <ISAPitchSettings />;
       case 'incentives-sales': return <SalesIncentives />;
