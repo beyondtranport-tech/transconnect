@@ -68,7 +68,7 @@ export default function EngagementPipeline() {
         loadQueue();
         const interval = setInterval(() => {
             if (status === 'running') loadQueue();
-        }, 30000); // Check for new due items every 30s
+        }, 30000); 
         return () => clearInterval(interval);
     }, [status, loadQueue]);
 
@@ -112,12 +112,12 @@ export default function EngagementPipeline() {
                 leadId: item.id,
                 stepIndex: (item.currentPipelineStep || 0) + 1,
                 email: item.email,
-                subject: `Logistics Flow: Follow-up for ${item.companyName}`,
+                subject: `Logistics Flow: Follow-up for ${item.companyName || item.firstName}`,
                 html: `<p>Automated Follow-up Content</p>`,
                 collection: item.type === 'lead' ? 'leads' : 'partners'
             });
 
-            toast({ title: "Dispatch Success", description: `Sent to ${item.companyName}` });
+            toast({ title: "Dispatch Success", description: `Sent to ${item.companyName || item.firstName}` });
             loadQueue();
         } catch (e: any) {
             console.error("Auto-Pilot Dispatch Error:", e);
@@ -126,7 +126,7 @@ export default function EngagementPipeline() {
 
     useEffect(() => {
         if (status === 'running' && queue.length > 0) {
-            const timer = setTimeout(dispatchNextInQueue, 5000); // Send one every 5 seconds to be safe
+            const timer = setTimeout(dispatchNextInQueue, 5000); 
             return () => clearTimeout(timer);
         }
     }, [status, queue]);
@@ -159,19 +159,19 @@ export default function EngagementPipeline() {
                         </CardHeader>
                         <CardContent className="p-0 text-left">
                             {isLoadingQueue ? (
-                                <div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" /></div>
+                                <div className="py-20 text-center text-foreground text-center"><Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" /></div>
                             ) : queue.length > 0 ? (
                                 <div className="divide-y text-left">
                                     {queue.map(item => (
                                         <div key={item.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors text-left">
                                             <div className="flex flex-col text-left">
-                                                <span className="font-bold text-sm text-left">{item.companyName}</span>
+                                                <span className="font-bold text-sm text-left">{item.companyName || `${item.firstName} ${item.lastName}`}</span>
                                                 <span className="text-[10px] text-muted-foreground font-mono text-left">{item.email}</span>
                                             </div>
                                             <div className="flex items-center gap-3 text-left">
-                                                <Badge variant="outline" className="text-[9px] font-black uppercase text-left">Step {item.currentPipelineStep + 1}</Badge>
+                                                <Badge variant="outline" className="text-[9px] font-black uppercase text-left">Step {(item.currentPipelineStep || 0) + 1}</Badge>
                                                 <div className="text-right">
-                                                    <p className="text-[10px] font-black text-destructive uppercase text-right">Overdue</p>
+                                                    <p className="text-[10px] font-black text-destructive uppercase text-right text-destructive">Overdue</p>
                                                     <p className="text-[9px] text-muted-foreground text-right">{formatDateSafe(item.nextStepDueAt, "dd MMM")}</p>
                                                 </div>
                                             </div>
@@ -200,17 +200,17 @@ export default function EngagementPipeline() {
 
                 <div className="space-y-6 text-left">
                     <Card className="shadow-lg border-none bg-slate-900 text-white text-left">
-                        <CardHeader className="text-left">
+                        <CardHeader className="text-left text-white">
                             <CardTitle className="text-lg flex items-center gap-2 text-left text-white">
                                 <Settings2 className="h-5 w-5 text-primary" />
                                 Cadence Policy
                             </CardTitle>
                             <CardDescription className="text-slate-400 text-left">Rules for automated follow-up.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6 text-left">
+                        <CardContent className="space-y-6 text-left text-white">
                             {currentPolicy.map((step: any, i: number) => (
-                                <div key={i} className="space-y-2 text-left">
-                                    <div className="flex justify-between items-center text-left">
+                                <div key={i} className="space-y-2 text-left text-white">
+                                    <div className="flex justify-between items-center text-left text-white">
                                         <Label className="text-[10px] font-black uppercase text-slate-500 text-left text-white">Step {i}: {step.label}</Label>
                                         <Badge variant="outline" className="text-[9px] border-white/10 text-slate-400 text-left">{step.waitHours}h Wait</Badge>
                                     </div>

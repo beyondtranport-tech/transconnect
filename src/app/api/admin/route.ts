@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getPipelineQueue': {
-                // Find leads/partners where nextStepDueAt < Now AND status is 'contacted' or 'new'
                 const now = new Date();
                 const leadsSnap = await db.collection('leads')
                     .where('nextStepDueAt', '<=', now)
@@ -73,8 +72,7 @@ export async function POST(req: NextRequest) {
                 const colName = colOverride || 'leads';
                 const docRef = db.collection(colName).doc(leadId);
                 
-                // 1. Send via SendGrid
-                if (process.env.SENDGRID_API_KEY) {
+                if (process.env.SENDGRID_API_KEY && email) {
                     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
                     await sgMail.send({
                         to: email,
@@ -84,7 +82,6 @@ export async function POST(req: NextRequest) {
                     });
                 }
 
-                // 2. Update record state
                 const policySnap = await db.doc('configuration/engagementPolicy').get();
                 const policy = policySnap.exists ? policySnap.data()?.steps : [];
                 const nextStep = policy[stepIndex];
@@ -106,8 +103,6 @@ export async function POST(req: NextRequest) {
                 }
 
                 await docRef.update(update);
-                
-                // 3. Log interaction
                 await docRef.collection('communications').add({
                     type: 'Email (Auto-Pilot)',
                     subject,
@@ -115,6 +110,65 @@ export async function POST(req: NextRequest) {
                     notes: `Automated dispatch for Step ${stepIndex}.`
                 });
 
+                return NextResponse.json({ success: true });
+            }
+
+            case 'dispatchEngagement': {
+                const { partnerId, email, subject, html, collection: colOverride } = payload;
+                const colName = colOverride || 'partners';
+                const docRef = db.collection(colName).doc(partnerId);
+
+                if (process.env.SENDGRID_API_KEY && email) {
+                    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+                    await sgMail.send({
+                        to: email,
+                        from: 'michael@logisticsflow.co.za',
+                        subject,
+                        html
+                    });
+                }
+
+                await docRef.update({
+                    status: 'contacted',
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                await docRef.collection('communications').add({
+                    type: 'Email (Automated)',
+                    subject,
+                    timestamp: FieldValue.serverTimestamp(),
+                    notes: 'Sent via automated server-side dispatch.'
+                });
+
+                return NextResponse.json({ success: true });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type, subject, notes, collection: colOverride } = payload;
+                const colName = colOverride || 'partners';
+                const docRef = db.collection(colName).doc(partnerId);
+                
+                const batch = db.batch();
+                
+                const logRef = docRef.collection('communications').doc();
+                batch.set(logRef, {
+                    type,
+                    subject,
+                    notes,
+                    timestamp: FieldValue.serverTimestamp(),
+                    loggedBy: decodedToken.uid
+                });
+
+                batch.update(docRef, {
+                    status: 'contacted',
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -179,6 +233,47 @@ export async function POST(req: NextRequest) {
                 
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'getAudienceCommunications': {
+                const { type: audType } = payload;
+                // Query collection group for communications
+                const snap = await db.collectionGroup('communications')
+                    .orderBy('timestamp', 'desc')
+                    .limit(200)
+                    .get();
+                
+                // Fetch partner details for each log to enrich with names
+                const logs = await Promise.all(snap.docs.map(async (doc) => {
+                    const data = doc.data();
+                    const path = doc.ref.path;
+                    const partnerId = path.split('/')[1];
+                    const pRef = db.collection(path.startsWith('leads') ? 'leads' : 'partners').doc(partnerId);
+                    const pSnap = await pRef.get();
+                    const pData = pSnap.data();
+                    
+                    if (audType && pData?.type !== audType) return null;
+
+                    return {
+                        id: doc.id,
+                        ...data,
+                        partnerName: pData?.companyName || pData?.firstName || 'Unknown',
+                        partnerType: pData?.type
+                    };
+                }));
+
+                return NextResponse.json({ success: true, data: serializeData(logs.filter(l => l !== null)) });
+            }
+
+            case 'searchRegistry': {
+                const { type: rType, limit: rLimit = 100 } = payload;
+                const colName = (rType === 'driver' || rType === 'transporter' || rType === 'supplier' || rType === 'finance' || rType === 'distributor' || rType === 'warehouse') ? 'partners' : 'leads';
+                let q: any = db.collection(colName);
+                if (colName === 'partners' && rType !== 'all') {
+                    q = q.where('type', '==', rType);
+                }
+                const snap = await q.orderBy('updatedAt', 'desc').limit(rLimit).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             default: 

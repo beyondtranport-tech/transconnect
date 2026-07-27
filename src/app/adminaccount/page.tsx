@@ -84,7 +84,6 @@ import PricingManagement from '@/app/backend/revenue/pricing-management';
 import ConnectPlanPricing from '@/app/backend/revenue/connect-plan-pricing';
 import TechPricing from '@/app/backend/revenue/tech-pricing';
 import AdPricingSettings from '@/app/backend/revenue/ad-pricing-settings';
-import DividendManagement from '@/app/adminaccount/dividend-management';
 import MarketplaceFees from '@/app/backend/revenue/marketplace-fees';
 import MallCommissions from '@/app/backend/revenue/mall-commissions';
 import ISAPitchSettings from '@/app/backend/revenue/isa-pitch-settings';
@@ -101,6 +100,7 @@ import AdminGuides from '@/app/adminaccount/guides';
 import AdsOversight from '@/app/adminaccount/ads-oversight';
 import SocialStudio from '@/app/adminaccount/social-studio';
 import EngagementPipeline from '@/app/adminaccount/marketing/EngagementPipeline';
+import DividendManagement from '@/app/adminaccount/dividend-management';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
