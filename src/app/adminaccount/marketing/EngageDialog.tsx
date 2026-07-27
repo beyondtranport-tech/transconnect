@@ -47,6 +47,23 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
+const ALL_ENGAGEMENT_TABS = [
+    { id: 'strategic-intro', label: 'Strategic Intro', icon: Handshake, hideFor: ['supplier', 'transporter', 'investor'] },
+    { id: 'platform-dm', label: 'Platform DM Script', icon: MessageSquare, hideFor: ['supplier', 'transporter', 'investor'] },
+    { id: 'digital-handshake', label: 'Digital Handshake', icon: ShieldCheck, hideFor: ['associate'] },
+    { id: 'company-profile', label: 'Company Profile', icon: Building },
+    { id: 'incentive-handshake', label: 'Welcome Incentive', icon: Gift },
+    { id: 'tech-architecture', label: 'Tech Architecture', icon: Zap },
+    { id: 'revenue-model', label: 'Revenue Model', icon: DollarSign },
+    { id: 'offer', label: 'The Offer', icon: FileText },
+    { id: 'pitch', label: 'The Pitch', icon: Presentation },
+    { id: 'sales-intelligence', label: 'Sales Intelligence', icon: Sparkles },
+    { id: 'the-wedge', label: 'The Wedge', icon: Target },
+    { id: 'the-signal', label: 'The Signal', icon: MousePointer2 },
+    { id: 'the-elite-filter', label: 'The Elite Filter', icon: Filter },
+    { id: 'the-break-up', label: 'The Break-Up', icon: Ban },
+];
+
 function resolveContact(partner: any) {
     if (!partner) return { name: 'Partner', email: '', mobile: '', whatsapp: '' };
 
@@ -68,7 +85,6 @@ function resolveContact(partner: any) {
     const emailKeys = ['email', 'email_address', 'contact_email', 'mail'];
     const phoneKeys = ['mobile', 'whatsapp', 'phone', 'cell'];
 
-    // --- V13 RESOLUTION: PRIORITIZE ACCOUNT LEAD ---
     const primaryRole = partner.primaryContactRole;
     const primaryContact = primaryRole ? partner[primaryRole] : null;
 
@@ -101,7 +117,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
   const [isProcessing, setIsProcessing] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
 
-  // FETCH ACTIVE INCENTIVE FOR ENAGEMENT
   const incentivesQuery = useMemoFirebase(() => {
       if (!firestore) return null;
       return query(collection(firestore, 'configuration/communityIncentives/active'), limit(1));
@@ -136,9 +151,10 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
       return (currentPartner.source === 'Lead' || !currentPartner.type || currentPartner.type === 'lead') ? 'leads' : 'partners';
   }, [currentPartner]);
 
-  const getSubject = () => {
+  const getSubject = (tabId: string) => {
       const company = currentPartner?.companyName || 'your business';
-      let label = activeTab.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      const tab = ALL_ENGAGEMENT_TABS.find(t => t.id === tabId);
+      const label = tab ? tab.label : tabId.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
       return `Logistics Flow: ${label} for ${company}`;
   }
 
@@ -153,10 +169,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const token = (await getClientSideAuthToken()) || '';
         if (!token) throw new Error("Authentication failed.");
         
+        const subjectToLog = getSubject(activeTab);
+
         await performAdminAction(token, 'logCommunication', {
             partnerId: currentPartner.id,
             type: channel === 'whatsapp' ? 'WhatsApp' : (channel === 'social-dm' ? 'Social DM' : 'Email'),
-            subject: activeTab.split('-').join(' ').toUpperCase(),
+            subject: subjectToLog,
             notes: `Manual engagement launched via ${channel}.`,
             collection: targetCollection
         });
@@ -174,7 +192,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         } else {
             const wrappedHtml = `<div style="font-family: Calibri, sans-serif; font-size: 12pt;">${contentElement.innerHTML}</div>`;
             await copyHtmlToClipboard(wrappedHtml);
-            window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(getSubject())}`;
+            window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(subjectToLog)}`;
         }
         
         if (onEngageSuccess) onEngageSuccess();
@@ -196,10 +214,12 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         const contentElement = document.getElementById(contentId);
         if (!contentElement) throw new Error("Content not found.");
 
+        const subject = getSubject(activeTab);
+
         await performAdminAction(token, 'dispatchEngagement', {
             partnerId: currentPartner.id,
             email: contact.email,
-            subject: getSubject(),
+            subject,
             html: contentElement.innerHTML,
             collection: targetCollection
         });
@@ -269,18 +289,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                 <div className="w-64 border-r bg-muted/10 p-4 space-y-4 overflow-y-auto text-left">
                     <div className="space-y-1 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2 mb-2 block">Standard Narrative</Label>
-                        {[
-                            { id: 'strategic-intro', label: '0. Strategic Intro', icon: Handshake, hideFor: ['supplier', 'transporter', 'investor'] },
-                            { id: 'platform-dm', label: '0. Platform DM Script', icon: MessageSquare, hideFor: ['supplier', 'transporter', 'investor'] },
-                            { id: 'digital-handshake', label: '0. Digital Handshake', icon: ShieldCheck, hideFor: ['associate'] },
-                            { id: 'company-profile', label: '1. Company Profile' },
-                            { id: 'incentive-handshake', label: '2. Welcome Incentive', icon: Gift },
-                            { id: 'tech-architecture', label: '3. Tech Architecture' },
-                            { id: 'revenue-model', label: '4. Revenue Model' },
-                            { id: 'offer', label: '5. The Offer' },
-                            { id: 'pitch', label: '6. The Pitch' },
-                            { id: 'sales-intelligence', label: '7. Sales Intelligence' },
-                        ].filter(t => !t.hideFor || !t.hideFor.includes(normalizedAudience)).map((tab) => (
+                        {ALL_ENGAGEMENT_TABS.slice(0, 10).filter(t => !t.hideFor || !t.hideFor.includes(normalizedAudience)).map((tab) => (
                             <Button
                                 key={tab.id}
                                 variant={activeTab === tab.id ? "secondary" : "ghost"}
@@ -299,12 +308,7 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary px-2 mb-2 block flex items-center gap-2">
                             <Zap className="h-3 w-3" /> Tactical Sequences
                         </Label>
-                        {[
-                            { id: 'the-wedge', label: 'The Wedge (Gap)', icon: Target },
-                            { id: 'the-signal', label: 'The Signal (Interest)', icon: MousePointer2 },
-                            { id: 'the-elite-filter', label: 'The Elite Filter', icon: Filter },
-                            { id: 'the-break-up', label: 'The Break-Up', icon: Ban },
-                        ].map((tab) => (
+                        {ALL_ENGAGEMENT_TABS.slice(10).map((tab) => (
                             <Button
                                 key={tab.id}
                                 variant={activeTab === tab.id ? "secondary" : "ghost"}

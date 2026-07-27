@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Building, UserCircle, UserPlus, ShieldCheck, MapPin, Zap, Wrench
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Building, UserCircle, UserPlus, ShieldCheck, MapPin, Zap, Wrench, Clock
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -485,7 +485,7 @@ export default function TransporterManagement() {
                   
                   <Popover>
                       <PopoverTrigger asChild>
-                          <Button variant="outline" className="gap-2 text-foreground text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
+                          <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-56 p-2 text-left text-foreground">
                           <div className="space-y-1 text-left text-foreground">
