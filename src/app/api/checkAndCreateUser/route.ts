@@ -60,23 +60,16 @@ export async function POST(req: NextRequest) {
         
     let existingRecord = null;
     let recordSource = '';
+    let registryRef = null;
 
     if (!partnersSnap.empty) {
         existingRecord = partnersSnap.docs[0].data();
         recordSource = 'partner';
-        await partnersSnap.docs[0].ref.update({
-            status: 'active',
-            invitationStatus: 'registered',
-            updatedAt: FieldValue.serverTimestamp()
-        });
+        registryRef = partnersSnap.docs[0].ref;
     } else if (!leadsSnap.empty) {
         existingRecord = leadsSnap.docs[0].data();
         recordSource = 'lead';
-        await leadsSnap.docs[0].ref.update({
-            status: 'active',
-            convertedAt: FieldValue.serverTimestamp(),
-            updatedAt: FieldValue.serverTimestamp()
-        });
+        registryRef = leadsSnap.docs[0].ref;
     }
 
     const batch = db.batch();
@@ -93,6 +86,17 @@ export async function POST(req: NextRequest) {
         companyIdToUse = companyRef.id;
     }
 
+    // 4. BIND THE REGISTRY RECORD (The Handshake)
+    if (registryRef) {
+        batch.update(registryRef, {
+            status: 'active',
+            companyId: companyIdToUse, // CRITICAL: Save the ID back to the lead for cross-referencing
+            invitationStatus: 'registered',
+            convertedAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp()
+        });
+    }
+
     const displayName = firebaseUser.displayName.trim();
     const companyName = existingRecord?.companyName || (displayName ? `${displayName}'s Company` : 'My Company');
     const isAssociate = declaredPosition === 'associate';
@@ -102,8 +106,8 @@ export async function POST(req: NextRequest) {
         id: companyIdToUse,
         ownerId: firebaseUser.uid,
         companyName: companyName,
-        membershipId: isAssociate ? 'free' : 'free', // Both start free, but associate is non-billable
-        isBillable: !isAssociate, // Associates are not charged
+        membershipId: isAssociate ? 'free' : 'free',
+        isBillable: !isAssociate,
         walletBalance: 0,
         pendingBalance: 0,
         availableBalance: 0,
@@ -120,17 +124,15 @@ export async function POST(req: NextRequest) {
     if (finalReferrer) {
         newCompanyData.referrerId = finalReferrer;
         
-        // 4. Log Handshake for Associate Yield
         const auditRef = db.collection('auditLogs').doc();
         batch.set(auditRef, {
             action: 'associate_handshake',
             details: `Referral Handshake: ${companyName} joined via node ${finalReferrer}.`,
-            companyId: finalReferrer, // Log against Associate
+            companyId: finalReferrer, 
             metadata: { newMemberId: companyIdToUse, source: recordSource },
             timestamp: FieldValue.serverTimestamp()
         });
 
-        // Increment Associate's referral count
         const referrerRef = db.collection('companies').doc(finalReferrer);
         batch.update(referrerRef, { 
             referralCount: FieldValue.increment(1),

@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone, UserCircle, Smartphone, UserPlus
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone, UserCircle, Smartphone, UserPlus, ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -179,7 +179,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
 
-                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground">
+                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground text-foreground">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
                         <UserCircle className="h-4 w-4" /> CEO / Principal
                     </h4>
@@ -278,7 +278,7 @@ export default function SupplierManagement() {
           cell: ({ row }: { row: { original: any } }) => (
               <div className="flex flex-col text-left text-foreground">
                   <span className="font-bold text-foreground text-left">{row.original.companyName || 'Unnamed'}</span>
-                  <div className="flex items-center gap-1.5 mt-1 text-left text-foreground">
+                  <div className="flex items-center gap-1.5 mt-1 text-left text-foreground text-foreground">
                       {row.original.website && <Globe className="h-3 w-3 text-primary" />}
                       <span className="text-[10px] text-muted-foreground uppercase font-black">{row.original.source || 'Registry'}</span>
                   </div>
@@ -290,7 +290,7 @@ export default function SupplierManagement() {
           accessorKey: 'contactPerson',
           header: 'Account Lead', 
           cell: ({ row }: { row: { original: any } }) => (
-              <div className="flex flex-col text-left text-foreground text-foreground">
+              <div className="flex flex-col text-left text-foreground text-foreground text-foreground">
                   <span className="font-bold text-sm text-left">{row.original.marketingManager?.name || row.original.contactPerson || 'N/A'}</span>
                   <span className="text-[10px] text-muted-foreground text-left">{row.original.marketingManager?.email || row.original.email || 'No email discovered'}</span>
               </div>
@@ -300,7 +300,7 @@ export default function SupplierManagement() {
           id: 'mobile',
           header: 'Direct Line', 
           cell: ({ row }: { row: { original: any } }) => (
-              <div className="flex items-center gap-2 text-xs font-bold text-foreground text-foreground">
+              <div className="flex items-center gap-2 text-xs font-bold text-foreground text-foreground text-foreground">
                   <Phone className="h-3 w-3 text-muted-foreground" />
                   {row.original.marketingManager?.mobile || row.original.mobile || row.original.phone || 'N/A'}
               </div>
@@ -321,7 +321,7 @@ export default function SupplierManagement() {
                             {row.original.lastOpenedAt && (
                                 <Tooltip>
                                     <TooltipTrigger>
-                                        <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                        <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                                     </TooltipTrigger>
                                     <TooltipContent className="text-[10px] font-bold">Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}</TooltipContent>
                                 </Tooltip>
@@ -329,7 +329,7 @@ export default function SupplierManagement() {
                             {row.original.lastAccessedAt && (
                                 <Tooltip>
                                     <TooltipTrigger>
-                                        <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                        <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground text-foreground text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                                     </TooltipTrigger>
                                     <TooltipContent className="text-[10px] font-bold">Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM")}</TooltipContent>
                                 </Tooltip>
@@ -345,13 +345,23 @@ export default function SupplierManagement() {
         accessorKey: 'status', 
         header: 'Status & Conversion', 
         cell: ({ row }: { row: { original: any } }) => {
+            const isVerified = !!row.original.companyId;
             const isConverted = row.original.status === 'active' && (row.original.lastOpenedAt || row.original.lastAccessedAt);
+            
             return (
                 <div className="flex flex-col gap-1 text-left">
-                    <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
-                    {isConverted && (
-                        <Badge className="bg-green-100 text-green-700 text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
-                            <UserPlus className="h-2 w-2 fill-current" /> Conversion {formatDateSafe(row.original.updatedAt, "dd/MM")}
+                    <div className="flex items-center gap-2 text-left">
+                        <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
+                        {isVerified && <TooltipProvider><Tooltip><TooltipTrigger><ShieldCheck className="h-4 w-4 text-green-600" /></TooltipTrigger><TooltipContent className="text-xs font-bold">Forensic Handshake Linked (Member Roster Verified)</TooltipContent></Tooltip></TooltipProvider>}
+                    </div>
+                    {isConverted && !isVerified && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[8px] h-4 uppercase font-black py-0 px-1.5 w-fit text-left">
+                            Handshake Pending Sign-up
+                        </Badge>
+                    )}
+                    {isVerified && (
+                        <Badge className="bg-green-100 text-green-700 text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit text-left">
+                            <UserPlus className="h-2 w-2 fill-current" /> Verified Member
                         </Badge>
                     )}
                 </div>
@@ -359,7 +369,7 @@ export default function SupplierManagement() {
         }
       },
       { id: 'actions', header: 'Actions', cell: ({ row }: { row: { original: any } }) => (
-          <div className="flex justify-end gap-1 text-foreground text-foreground">
+          <div className="flex justify-end gap-1 text-foreground text-foreground text-foreground">
             <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
             <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)}><Send className="h-4 w-4 text-primary" /></Button>
             <AddCommunicationLogDialog 
@@ -397,7 +407,7 @@ export default function SupplierManagement() {
       <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -407,9 +417,9 @@ export default function SupplierManagement() {
 
       <div className="space-y-6 text-left text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row items-center justify-between gap-4 text-left">
-              <div className="text-left text-foreground text-foreground">
+              <div className="text-left text-foreground text-foreground text-foreground">
                 <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Building className="h-6 w-6" /> Supplier Registry</CardTitle>
-                <CardDescription className="text-left text-muted-foreground text-foreground">Unified database view ({filteredRecords.length} records).</CardDescription>
+                <CardDescription className="text-left text-muted-foreground text-foreground text-foreground">Unified database view ({filteredRecords.length} records).</CardDescription>
               </div>
               <div className="flex gap-2 text-left">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
@@ -432,8 +442,8 @@ export default function SupplierManagement() {
                   <Button onClick={() => setDialog({ type: 'add' })} className="text-white"><PlusCircle className="mr-2 h-4 w-4" /> Add Record</Button>
               </div>
           </CardHeader>
-          <Card className="text-left text-foreground text-foreground">
-              <CardContent className="pt-6 text-left text-foreground">
+          <Card className="text-left text-foreground text-foreground text-foreground">
+              <CardContent className="pt-6 text-left text-foreground text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground">
                     <div className="space-y-1 text-left text-foreground">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left">Status Filter</Label>

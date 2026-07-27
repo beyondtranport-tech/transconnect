@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Building, UserCircle, UserPlus
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Building, UserCircle, UserPlus, ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -140,19 +140,19 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <Building className="h-4 w-4" /> Core Entity Identity
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 text-left">
                   <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                   <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem> )} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 text-left">
                   <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
                   <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
                 <FormField control={form.control} name="status" render={({ field }) => ( 
                     <FormItem className="text-left">
-                        <FormLabel>Status</FormLabel>
+                        <FormLabel>Pipeline Status</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl><SelectTrigger className="bg-white border-2"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="bg-white border-2 text-left"><SelectValue placeholder="Select status..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 <SelectItem value="new">New Lead</SelectItem>
                                 <SelectItem value="contacted">Researching</SelectItem>
@@ -166,9 +166,9 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
             <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="space-y-4 p-6 rounded-2xl bg-primary/5 border border-primary/10 shadow-inner text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
                     <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -176,8 +176,8 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
                     <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                 </div>
 
-                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2">
+                <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left">
                         <UserCircle className="h-4 w-4" /> CEO / Principal
                     </h4>
                     <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
@@ -188,18 +188,18 @@ function TransporterDialog({ open, onOpenChange, partner, onSave }: { open: bool
 
             <Separator />
 
-            <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+            <div className="space-y-4 text-left">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Sparkles className="h-4 w-4" /> Technical Profile
                 </h4>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="text-left">
                         <FormControl><Textarea className="min-h-[150px] bg-white border-2 leading-relaxed" {...field} value={field.value || ''} /></FormControl>
                     </FormItem>
                 )} />
             </div>
 
-            <DialogFooter className="pt-4 border-t sticky bottom-0 bg-white z-10">
+            <DialogFooter className="pt-4 border-t sticky bottom-0 bg-white z-10 text-left">
               <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg text-white">
                 {isLoading ? <Loader2 className="animate-spin h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
@@ -306,7 +306,7 @@ export default function TransporterManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-blue-100 p-0.5 rounded-full text-left"><UserCheck className="h-3 w-3 text-blue-600" /></div>
+                                <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Email Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -316,7 +316,7 @@ export default function TransporterManagement() {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
-                                <div className="bg-purple-100 p-0.5 rounded-full text-left"><Smartphone className="h-3 w-3 text-purple-600" /></div>
+                                <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                               </TooltipTrigger>
                               <TooltipContent className="text-[10px] font-bold">Landed on Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM HH:mm")}</TooltipContent>
                             </Tooltip>
@@ -333,13 +333,23 @@ export default function TransporterManagement() {
         accessorKey: 'status', 
         header: 'Status & Conversion', 
         cell: ({ row }: { row: { original: any } }) => {
+            const isVerified = !!row.original.companyId;
             const isConverted = row.original.status === 'active' && (row.original.lastOpenedAt || row.original.lastAccessedAt);
+            
             return (
                 <div className="flex flex-col gap-1 text-left">
-                    <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
-                    {isConverted && (
-                        <Badge className="bg-green-100 text-green-700 text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
-                            <UserPlus className="h-2 w-2 fill-current" /> Conversion {formatDateSafe(row.original.updatedAt, "dd/MM")}
+                    <div className="flex items-center gap-2 text-left">
+                        <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
+                        {isVerified && <TooltipProvider><Tooltip><TooltipTrigger><ShieldCheck className="h-4 w-4 text-green-600" /></TooltipTrigger><TooltipContent className="text-xs font-bold">Forensic Handshake Linked (Member Roster Verified)</TooltipContent></Tooltip></TooltipProvider>}
+                    </div>
+                    {isConverted && !isVerified && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[8px] h-4 uppercase font-black py-0 px-1.5 w-fit text-left">
+                            Handshake Pending Sign-up
+                        </Badge>
+                    )}
+                    {isVerified && (
+                        <Badge className="bg-green-100 text-green-700 text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit text-left">
+                            <UserPlus className="h-2 w-2 fill-current" /> Verified Member
                         </Badge>
                     )}
                 </div>
@@ -347,7 +357,7 @@ export default function TransporterManagement() {
         }
       },
       { id: 'actions', header: 'Actions', cell: ({ row }: { row: { original: any } }) => (
-        <div className="flex justify-end items-center gap-1 text-left">
+        <div className="flex justify-end items-center gap-1 text-left text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
           <AddCommunicationLogDialog 
@@ -383,10 +393,10 @@ export default function TransporterManagement() {
   return (
     <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="transporters" onEngageSuccess={() => fetchData()} />
-      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType="transporter" />
+      <TransporterDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
         <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left">Delete record?</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -396,7 +406,7 @@ export default function TransporterManagement() {
 
       <div className="space-y-6 text-left text-foreground">
           <CardHeader className="px-0 pt-0 flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left"><Truck /> Transporters</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
+              <div className="text-left"><CardTitle className="flex items-center gap-2 font-black font-headline text-left text-foreground"><Truck /> Transporters</CardTitle><CardDescription className="text-left text-muted-foreground">Registry view ({allRecords.length} records).</CardDescription></div>
               <div className="flex gap-2 text-left">
                   <Button variant="outline" size="sm" onClick={() => fetchData()} className="text-foreground"><RotateCcw className="h-4 w-4 mr-2" /> Sync Registry</Button>
                   {selectedIds.length > 0 && <Button variant="secondary" onClick={() => handleEngage(null)} className="gap-2 shadow-sm font-bold animate-in fade-in zoom-in text-left"><Send className="h-4 w-4" /> Batch Engage ({selectedIds.length})</Button>}
@@ -405,8 +415,8 @@ export default function TransporterManagement() {
                       <PopoverTrigger asChild>
                           <Button variant="outline" className="gap-2 text-foreground"><Settings2 className="h-4 w-4" /> Columns</Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-56 p-2 text-left">
-                          <div className="space-y-1 text-left">
+                      <PopoverContent className="w-56 p-2 text-left text-foreground">
+                          <div className="space-y-1 text-left text-foreground">
                               {Object.keys(visibleColumns).map(col => (
                                   <div key={col} className="flex items-center justify-between p-2 hover:bg-muted rounded-md cursor-pointer text-[10px] font-black uppercase tracking-widest text-left" onClick={() => setVisibleColumns(prev => ({...prev, [col]: !prev[col]}))}>
                                       <span>{col.replace(/([A-Z])/g, ' $1')}</span>
@@ -428,14 +438,18 @@ export default function TransporterManagement() {
                       <div className="space-y-1 text-left">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left">Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
-                              <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-                              <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active Participant</SelectItem></SelectContent>
+                              <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="all">All Statuses</SelectItem>
+                                  <SelectItem value="new">New</SelectItem>
+                                  <SelectItem value="active">Active Participant</SelectItem>
+                              </SelectContent>
                           </Select>
                       </div>
                       <div className="space-y-1 text-left">
                           <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left">Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                              <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                              <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
                                   <SelectItem value="all">All Staff</SelectItem>
                                   <SelectItem value="none">Unallocated</SelectItem>
