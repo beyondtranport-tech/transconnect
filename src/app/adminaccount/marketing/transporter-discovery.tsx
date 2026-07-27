@@ -20,22 +20,17 @@ export const transporterCategories = [
 function generateDiscoveryPrompt(category: string, startPage: number) {
     const startSeq = (startPage - 1) * 30 + 1;
 
-    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V12 - INDUCTIVE RECONSTRUCTION).
+    return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - INDUCTIVE RECONSTRUCTION).
 RETURN ONLY A RAW JSON ARRAY. NO MARKDOWN. NO CODE BLOCKS. NO CONVERSATION.
-
-STRICT REGIONAL LOCK: ONLY return entities based in SOUTH AFRICA. IGNORE all international results.
 
 TASK: Discover and extract exactly 30 UNIQUE, LIVE South African transport companies for: "${category}".
 
-HUNT PROTOCOL (V12 INDUCTIVE):
+HUNT PROTOCOL (V13 INDUCTIVE):
 1. IDENTITY EXPANSION: Resolve acronyms (e.g. "JH") into full legal identities ("Junior H").
-2. INDUCTIVE STITCHING: Combine fragments from different search results. Match directory snippets with social bio snippets to bridge gaps.
-3. FLAT-SITE ANALYSIS: Many haulier sites are one-page. Analyze root domain snippets for "Contact Cards" or sectional data (Address, Email, Phone).
-4. IDENTITY RESOLUTION: Identify the CEO/MD and Marketing Lead. Pivot to social platform evidence in snippets to resolve direct professional contact.
-
-CRITICAL INTEGRITY SHIELD: 
-- REAL DATA ONLY: Do not invent names or guess email patterns.
-- NULL MANDATE: If data is not explicitly visible in search evidence after these multi-query checks, return null for that field.
+2. SOCIAL HUB RESILIENCY: Prioritize the FACEBOOK PAGE bio for the correct operational address and direct WhatsApp.
+3. INDUCTIVE STITCHING: Combine fragments from different search results. Match directory snippets with social bio snippets to bridge gaps.
+4. IDENTITY RESOLUTION: You MUST identify the NAMES AND CONTACTS (Email/Mobile) for: CEO/MD, Marketing Lead, Operations Manager, and Technical Manager.
+5. REAL DATA ONLY: Do not guess email patterns. Use actual evidence from snippets.
 
 REQUIRED JSON FIELDS:
 [
@@ -44,12 +39,15 @@ REQUIRED JSON FIELDS:
     "record_id": "DISC_TRANS_${category.toUpperCase().replace(/\s/g, '_')}_[RAND_ID]",
     "companyName": "FULL LEGAL NAME",
     "industrial_category": "${category}",
-    "website": "OFFICIAL VERIFIED URL",
+    "website": "OFFICIAL VERIFIED URL (OR FACEBOOK)",
     "email": "VERIFIED GENERAL EMAIL",
     "phone": "RSA LANDLINE",
-    "address": "FULL PHYSICAL ADDRESS IN RSA",
+    "address": "VERIFIED PHYSICAL ADDRESS (PRIORITIZE FACEBOOK BIO)",
     "marketingManager": { "name": "...", "email": "...", "mobile": "..." },
+    "operationsManager": { "name": "...", "email": "...", "mobile": "..." },
+    "technicalManager": { "name": "...", "email": "...", "mobile": "..." },
     "ceo": { "name": "...", "email": "...", "mobile": "..." },
+    "primaryContactRole": "marketingManager",
     "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE SECTIONS (300 WORDS)"
   }
 ]`;
@@ -67,7 +65,7 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
     const handleCopy = async () => {
         await navigator.clipboard.writeText(prompt);
         setIsCopied(true);
-        toast({ title: "V12 Scavenger Ready", description: "Inductive reconstruction and acronym expansion active." });
+        toast({ title: "V13 Scavenger Ready", description: "Inductive reconstruction and acronym expansion active." });
         setTimeout(() => setIsCopied(false), 3000);
     };
 
@@ -80,9 +78,9 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </h2>
                 <Alert className="bg-primary/5 border-primary/20 text-left">
                     <ShieldCheck className="h-4 w-4 text-primary" />
-                    <AlertTitle className="text-left font-bold">Hunt Protocol V12 Active</AlertTitle>
+                    <AlertTitle className="text-left font-bold">Hunt Protocol V13 Active</AlertTitle>
                     <AlertDescription className="text-xs text-left leading-relaxed">
-                        Optimized for inductive reconstruction. Commands the AI to stitch together data fragments from multiple sources to eliminate null records in the haulier registry.
+                        Optimized for inductive reconstruction and Facebook bio-mining. Commands the AI to find direct manager contacts and prioritize social-media operational data.
                     </AlertDescription>
                 </Alert>
                 <div className="p-4 bg-muted/30 border rounded-xl space-y-4 text-left">
@@ -100,11 +98,11 @@ const DiscoveryTab = ({ category, currentCount }: { category: string, currentCou
                 </div>
                 <Button onClick={handleCopy} size="lg" className="w-full gap-2 h-14 font-black uppercase tracking-widest bg-primary hover:bg-primary/90 text-white">
                     {isCopied ? <ClipboardCheck className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
-                    Copy V12 Haulier Prompt
+                    Copy V13 Haulier Prompt
                 </Button>
             </div>
             <div className="space-y-2 text-left">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V12)</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5 text-left"><Terminal className="h-3 w-3"/> Industrial Command (V13)</Label>
                 <ScrollArea className="h-[400px] border rounded-lg bg-slate-900 p-4 shadow-inner text-left">
                     <pre className="text-[10px] text-slate-400 font-mono whitespace-pre-wrap leading-tight text-left">{prompt}</pre>
                 </ScrollArea>
@@ -122,7 +120,7 @@ export default function TransporterDiscoveryEngine() {
                         <Database className="h-6 w-6 text-primary" />
                         Industrial Haulier Scavenger
                     </CardTitle>
-                    <CardDescription className="text-left text-muted-foreground">Map unique transport entities using the V12 inductive reconstruction protocol.</CardDescription>
+                    <CardDescription className="text-left text-muted-foreground">Map unique transport entities using the V13 inductive reconstruction protocol.</CardDescription>
                 </CardHeader>
                 <CardContent className="px-0 text-left">
                     <TabsList className="h-auto flex-wrap justify-start bg-muted/30 mb-8 p-1 text-left">

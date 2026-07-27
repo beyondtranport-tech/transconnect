@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Automated industrial discovery agent V13.
@@ -32,11 +31,12 @@ const DiscoveryOutputSchema = z.object({
         website: z.string().nullable(),
         email: z.string().nullable().describe('General company email.'),
         phone: z.string().nullable().describe('Company landline.'),
-        address: z.string().nullable(),
+        address: z.string().nullable().describe('PRIORITIZE FACEBOOK BIO ADDRESS.'),
         marketingManager: ContactSchema.nullable(),
         operationsManager: ContactSchema.nullable(),
         technicalManager: ContactSchema.nullable(),
         ceo: ContactSchema.nullable(),
+        primaryContactRole: z.enum(['marketingManager', 'ceo', 'operationsManager', 'technicalManager']).default('marketingManager'),
         minedServiceWording: z.string().nullable().describe('Verbatim technical profile (approx 300 words).'),
         notes: z.string().optional()
     })).describe('A list of verified professional entities.'),
@@ -63,8 +63,8 @@ const discoveryFlow = ai.defineFlow(
         REQUIRED INVESTIGATION PROTOCOL PER RECORD:
         1. ACRONYM EXPANSION: Identify full legal names from initials.
         2. INDUCTIVE STITCHING: Combine data fragments from multiple sources.
-        3. SOCIAL HUB RESILIENCY: South African industry stakeholders frequently use Facebook or directories (Yellosa, Brabys) instead of official websites. You MUST mine these bios for contact cards.
-        4. IDENTITY RESOLUTION: You MUST identify the CEO, Marketing Manager, Operations Manager, and Technical Manager by name.
+        3. SOCIAL HUB RESILIENCY: For SA hauliers without websites, the FACEBOOK PAGE BIO is the source of truth for the ADDRESS and WHATSAPP.
+        4. IDENTITY RESOLUTION: You MUST identify the direct CONTACT details (Email/Mobile) for the CEO, Marketing Manager, Operations Manager, and Technical Manager.
         
         CRITICAL INTEGRITY SHIELD:
         1. REAL DATA ONLY: DO NOT RETURN MOCK OR PLACEHOLDER DATA.
@@ -76,7 +76,7 @@ const discoveryFlow = ai.defineFlow(
             model: geminiModel,
             tools: [googleSearchTool],
             system: systemPrompt,
-            prompt: `EXTRACT ${batchSize} UNIQUE VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. PRIORITIZE FACEBOOK AND DIRECTORIES IF WEBSITES ARE MISSING. FIND ALL MANAGER ROLES.`,
+            prompt: `EXTRACT ${batchSize} UNIQUE VERIFIED PROFESSIONAL RECORDS FOR ${category} IN SOUTH AFRICA. PRIORITIZE FACEBOOK AND DIRECTORIES IF WEBSITES ARE MISSING. FIND ALL MANAGER CONTACTS.`,
             output: {
                 schema: DiscoveryOutputSchema
             }

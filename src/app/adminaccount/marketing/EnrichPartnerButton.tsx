@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -39,10 +38,10 @@ TASK: Complete a forensic gap-analysis for: "${companyName}". Use an aggressive,
 
 INVESTIGATION MANDATE (V13 PROTOCOL):
 1. IDENTITY EXPANSION: Resolve acronyms into full legal identities.
-2. SOCIAL HUB & DIRECTORY RESILIENCY: Many SA hauliers operate on Facebook or business directories (Yellosa, Brabys). You MUST prioritize Facebook Bios and directory snippets to resolve contact data if a website is missing.
-3. FRAGMENT STITCHING: You MUST combine data fragments from multiple sources.
-4. IDENTITY RESOLUTION: Find the names and contacts of: CEO, Marketing Lead, Operations Manager, and Technical/Maintenance Manager.
-5. AGGREGATOR SYNC: Cross-reference directory evidence to bridge all remaining gaps.
+2. SOCIAL HUB & DIRECTORY RESILIENCY: Prioritize the Facebook Page "About" section for the physical address and WhatsApp.
+3. FRAGMENT STITCHING: Combine data fragments from Facebook, Yellosa, Brabys, and Infoisinfo.
+4. IDENTITY RESOLUTION: Find the NAMES AND DIRECT CONTACTS (Email/Mobile) for: CEO, Marketing Lead, Operations Manager, and Technical Manager.
+5. EVIDENCE ONLY: If multiple sources conflict, prioritize the most recent (usually Facebook).
 
 RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
 
@@ -53,11 +52,12 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
   "website": "VERIFIED URL (WEBSITE OR FACEBOOK)",
   "email": "VERIFIED GENERAL EMAIL",
   "phone": "RSA LANDLINE",
-  "address": "VERIFIED PHYSICAL ADDRESS",
+  "address": "VERIFIED PHYSICAL ADDRESS (FROM FACEBOOK BIO)",
   "marketingManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
   "operationsManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
   "technicalManager": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
   "ceo": { "name": "VERIFIED NAME", "email": "VERIFIED EMAIL", "mobile": "VERIFIED MOBILE" },
+  "primaryContactRole": "marketingManager",
   "minedServiceWording": "TECHNICAL SUMMARY MINED FROM SITE OR SOCIAL SECTIONS (300 WORDS)."
 }`;
     };

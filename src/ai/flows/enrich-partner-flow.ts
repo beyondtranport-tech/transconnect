@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview High-fidelity Industrial Research Agent V13.
@@ -27,13 +26,14 @@ const EnrichPartnerOutputSchema = z.object({
   phone: z.string().nullable().optional().describe('Primary landline.'),
   mobile: z.string().nullable().optional().describe('Primary direct mobile.'),
   website: z.string().nullable().describe('Official corporate domain or Facebook URL.'),
-  address: z.string().nullable().describe('Full verified physical operational address.'),
+  address: z.string().nullable().describe('Full verified physical operational address. PRIORITIZE FACEBOOK BIO OVER DIRECTORIES.'),
   industrial_category: z.string().nullable().describe('Refined industrial classification.'),
   minedServiceWording: z.string().nullable().describe('A 300-word technical profile extracted from the website or social content.'),
   marketingManager: ContactInfoSchema.nullable().describe('Full contact details for the Marketing Manager.'),
   operationsManager: ContactInfoSchema.nullable().describe('Full contact details for the Operations Manager.'),
   technicalManager: ContactInfoSchema.nullable().describe('Full contact details for the Technical/Maintenance Manager.'),
   ceo: ContactInfoSchema.nullable().describe('Full contact details for the CEO/MD/Owner.'),
+  primaryContactRole: z.enum(['marketingManager', 'ceo', 'operationsManager', 'technicalManager']).default('marketingManager'),
 });
 export type EnrichPartnerOutput = z.infer<typeof EnrichPartnerOutputSchema>;
 
@@ -53,20 +53,24 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION (SOCIAL & DIRECTORY INCLUDED)
+    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION (AGGRESSIVE CONTACT RESOLUTION)
     const siteResults = await googleSearchTool({ 
         query: `${company} South Africa official website contact management team CEO Operations Technical` 
     });
     
     const teamResults = await googleSearchTool({ 
-        query: `${company} South Africa "Operations Manager" OR "Technical Manager" OR "Marketing Manager" LinkedIn` 
+        query: `${company} South Africa "Operations Manager" OR "Technical Manager" OR "Marketing Manager" contact email mobile` 
     });
 
     const socialResults = await googleSearchTool({
-        query: `${company} South Africa Facebook page contact address email mobile infoisinfo yellosa`
+        query: `${company} South Africa Facebook page bio contact address email mobile infoisinfo yellosa`
     });
 
-    const allContent = [...(siteResults || []), ...(teamResults || []), ...(socialResults || [])]
+    const leaderResolveResults = await googleSearchTool({
+        query: `${company} South Africa CEO Managing Director Marketing Manager contact details`
+    });
+
+    const allContent = [...(siteResults || []), ...(teamResults || []), ...(socialResults || []), ...(leaderResolveResults || [])]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
@@ -75,10 +79,11 @@ const enrichPartnerFlow = ai.defineFlow(
         system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - INDUCTIVE RECONSTRUCTION).
         
         INVESTIGATION MANDATE:
-        1. IDENTITY RESOLUTION: Find the names of the CEO, Marketing Lead, Operations Manager, and Technical Manager.
-        2. SOCIAL HUB RESILIENCY: Many SA hauliers operate primarily on Facebook. If an official website is missing, you MUST prioritize the Facebook Page Bio and "About" snippets for contact details.
-        3. FRAGMENT STITCHING: Combine data from all snippets (Directories, Social, LinkedIn) to eliminate nulls.
-        4. EVIDENCE ONLY: Only return data explicitly visible in the snippets.
+        1. ACRONYM EXPANSION: Resolve acronyms (e.g. EC, JH) to full legal names.
+        2. SOCIAL HUB RESILIENCY: For SA hauliers, the FACEBOOK PAGE is the source of truth for the ADDRESS and WHATSAPP.
+        3. IDENTITY RESOLUTION: You MUST bridge names to contact details. If you find a name (e.g. Barry Burger), aggressively search the snippets for their email/mobile.
+        4. FRAGMENT STITCHING: Combine data from all snippets (Directories, Social, LinkedIn) to eliminate nulls.
+        5. ADDRESS PRIORITY: The address in a Facebook Bio is usually more current than directories. Use it.
         
         MANDATE: Return RAW JSON only.`,
         prompt: `PERFORM THE V13 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
@@ -87,6 +92,6 @@ const enrichPartnerFlow = ai.defineFlow(
         }
     });
     
-    return extraction.output || { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, operationsManager: null, technicalManager: null, ceo: null };
+    return extraction.output || { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, operationsManager: null, technicalManager: null, ceo: null, primaryContactRole: 'marketingManager' };
   }
 );
