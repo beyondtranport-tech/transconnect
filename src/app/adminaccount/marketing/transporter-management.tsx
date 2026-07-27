@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Truck, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Building, UserCircle
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, Smartphone, Phone, Building, UserCircle, UserPlus
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -225,7 +225,7 @@ export default function TransporterManagement() {
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
-    contactPerson: true,
+    accountLead: true,
     email: true,
     outreach: true,
     status: true,
@@ -271,7 +271,7 @@ export default function TransporterManagement() {
       { 
           accessorKey: 'companyName',
           header: 'Haulier Entity', 
-          cell: ({row}: any) => (
+          cell: ({row}: { row: { original: any } }) => (
               <div className="flex flex-col text-left text-foreground text-foreground">
                   <span className="font-bold text-left text-foreground text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
                   <div className="flex items-center gap-2 mt-1 text-left text-foreground text-foreground">
@@ -283,15 +283,18 @@ export default function TransporterManagement() {
       },
       { 
           accessorKey: 'contactPerson',
-          header: 'Key Decision Maker',
-          cell: ({ row }: any) => <div className="text-sm font-medium text-left text-foreground text-foreground">{row.original.marketingManager?.name || row.original.contactPerson || 'N/A'}</div>
+          header: 'Account Lead',
+          cell: ({ row }: { row: { original: any } }) => (
+            <div className="flex flex-col text-left text-foreground">
+                <span className="font-bold text-sm text-left">{row.original.marketingManager?.name || row.original.contactPerson || 'N/A'}</span>
+                <span className="text-[10px] text-muted-foreground text-left">{row.original.marketingManager?.email || row.original.email || 'No email discovered'}</span>
+            </div>
+          )
       },
-      { accessorKey: 'email', header: 'Email' },
       { 
-          header: 'Outreach Stage',
-          id: 'outreach',
           accessorKey: 'lastOutreachSubject',
-          cell: ({ row }: any) => {
+          header: 'Outreach Stage',
+          cell: ({ row }: { row: { original: any } }) => {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
@@ -325,11 +328,23 @@ export default function TransporterManagement() {
           }
       },
       { 
-          accessorKey: 'status', 
-          header: 'Status', 
-          cell: ({ row }: any) => <Badge variant="outline" className="capitalize text-[10px]">{row.original.status}</Badge> 
+        accessorKey: 'status', 
+        header: 'Status & Conversion', 
+        cell: ({ row }: { row: { original: any } }) => {
+            const isConverted = row.original.status === 'active' && (row.original.lastOpenedAt || row.original.lastAccessedAt);
+            return (
+                <div className="flex flex-col gap-1 text-left">
+                    <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
+                    {isConverted && (
+                        <Badge className="bg-green-100 text-green-700 text-[8px] h-4 uppercase font-black border-none gap-1 py-0 px-1.5 w-fit">
+                            <UserPlus className="h-2 w-2 fill-current" /> Conversion {formatDateSafe(row.original.updatedAt, "dd/MM")}
+                        </Badge>
+                    )}
+                </div>
+            )
+        }
       },
-      { id: 'actions', header: 'Actions', cell: ({ row }: any) => (
+      { id: 'actions', header: 'Actions', cell: ({ row }: { row: { original: any } }) => (
         <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground text-foreground text-foreground">
           <EnrichPartnerButton partner={row.original} onUpdate={() => fetchData()} />
           <Button variant="ghost" size="icon" onClick={() => handleEngage(row.original)} title="Engage"><Send className="h-4 w-4 text-primary" /></Button>
@@ -346,7 +361,7 @@ export default function TransporterManagement() {
         </div>
       ) },
     ];
-    return cols.filter(c => visibleColumns[c.accessorKey as string] || visibleColumns[c.id as string]);
+    return cols.filter(c => visibleColumns[c.id || c.accessorKey as string]);
   }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
@@ -409,14 +424,14 @@ export default function TransporterManagement() {
               <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground">
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 p-4 bg-muted/30 rounded-lg text-left text-foreground text-foreground text-foreground">
                       <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground"><Filter className="h-3 w-3"/> Status</Label>
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">Status Filter</Label>
                           <Select value={statusFilter} onValueChange={setStatusFilter}>
                               <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                               <SelectContent><SelectItem value="all">All Statuses</SelectItem><SelectItem value="new">New</SelectItem><SelectItem value="active">Active Participant</SelectItem></SelectContent>
                           </Select>
                       </div>
                       <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><Users className="h-3 w-3"/> Assignee</Label>
+                          <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground">Assignee</Label>
                           <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
                               <SelectTrigger className="bg-white text-left text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                               <SelectContent>
@@ -428,7 +443,7 @@ export default function TransporterManagement() {
                       </div>
                       <div className="space-y-1 text-left text-foreground text-foreground text-foreground text-foreground">
                           <div className="flex-1 space-y-1 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">
-                              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground"><Search className="h-3 w-3"/> Search Registry</Label>
+                              <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left text-foreground text-foreground text-foreground text-foreground text-foreground">Search Registry</Label>
                               <Input placeholder="Filter registry by name or ID..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
                           </div>
                       </div>
