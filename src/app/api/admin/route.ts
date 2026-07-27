@@ -67,7 +67,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getLeads': {
-                // ADDED LIMIT: Prevents 504 timeout on large datasets (9000+ records)
                 const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
@@ -75,12 +74,8 @@ export async function POST(req: NextRequest) {
             case 'getPartnersByType': {
                 const { type: pType, limit: pLimit = 200 } = payload;
                 if (!pType) throw new Error("Partner type is required.");
-                
-                // Optimized search for dropdowns/logging: 
-                // Uses updatedAt to ensure relevant records are returned first.
                 let q: any = db.collection('partners').where('type', '==', pType);
                 const snap = await q.orderBy('updatedAt', 'desc').limit(pLimit).get();
-                
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -122,16 +117,13 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getAudienceCommunications': {
-                const { type: targetType } = payload;
                 const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
-                
                 const logs = snap.docs.map(d => ({ 
                     id: d.id, 
                     ...d.data(), 
                     path: d.ref.path,
                     partnerId: d.ref.path.split('/')[1]
                 }));
-                
                 return NextResponse.json({ success: true, data: serializeData(logs) });
             }
 
@@ -157,14 +149,28 @@ export async function POST(req: NextRequest) {
             case 'logCommunication': {
                 const { partnerId, type: commType, subject, notes, collection: colOverride } = payload;
                 const colName = colOverride || 'partners';
-                const logRef = db.collection(colName).doc(partnerId).collection('communications').doc();
-                await logRef.set({
+                const parentRef = db.collection(colName).doc(partnerId);
+                const logRef = parentRef.collection('communications').doc();
+                
+                const batch = db.batch();
+                
+                batch.set(logRef, {
                     id: logRef.id,
                     type: commType,
                     subject,
-                    notes,
+                    notes: notes || '',
                     timestamp: FieldValue.serverTimestamp()
                 });
+
+                // Update parent record so outreach state is reflected in the table
+                batch.update(parentRef, {
+                    status: 'contacted',
+                    lastOutreachSubject: subject,
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -183,19 +189,22 @@ export async function POST(req: NextRequest) {
                 const colName = colOverride || 'partners';
                 const partnerRef = db.collection(colName).doc(partnerId);
                 const logRef = partnerRef.collection('communications').doc();
-                await logRef.set({ 
+                
+                const batch = db.batch();
+                batch.set(logRef, { 
                     id: logRef.id, 
                     type: 'Email', 
                     subject, 
                     notes: 'Sent via SendGrid API.', 
                     timestamp: FieldValue.serverTimestamp() 
                 });
-                await partnerRef.update({ 
+                batch.update(partnerRef, { 
                     status: 'contacted', 
                     lastOutreachSubject: subject, 
                     lastOutreachAt: FieldValue.serverTimestamp(), 
                     updatedAt: FieldValue.serverTimestamp() 
                 });
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -205,7 +214,6 @@ export async function POST(req: NextRequest) {
                 let q: any = db.collection(collectionName);
                 if (collectionName === 'partners' && queryType !== 'all') q = q.where('type', '==', queryType);
                 
-                // Hard limit safety to prevent 504 timeouts on massive datasets
                 const finalLimit = Math.min(searchLimit, 1000);
                 const snap = await q.orderBy('updatedAt', 'desc').limit(finalLimit).get();
                 
@@ -221,7 +229,6 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getMembers': {
-                // ADDED LIMIT: Prevents 504 on large member lists
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }

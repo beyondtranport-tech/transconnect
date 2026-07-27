@@ -241,7 +241,8 @@ export default function TransporterManagement() {
 
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
-    accountLead: true,
+    contactPerson: true,
+    email: true,
     outreach: true,
     status: true,
     actions: true
@@ -287,7 +288,7 @@ export default function TransporterManagement() {
           accessorKey: 'companyName',
           id: 'companyName',
           header: 'Haulier Entity', 
-          cell: ({row}: { row: { original: any } }) => (
+          cell: ({ row }: { row: { original: any } }) => (
               <div className="flex flex-col text-left text-foreground">
                   <span className="font-bold text-left text-foreground">{row.original.companyName || 'Unnamed Entity'}</span>
                   <div className="flex items-center gap-1.5 mt-1 text-left text-foreground">
@@ -298,7 +299,7 @@ export default function TransporterManagement() {
           )
       },
       { 
-          id: 'accountLead',
+          id: 'contactPerson',
           accessorKey: 'contactPerson',
           header: 'Account Lead',
           cell: ({ row }: { row: { original: any } }) => (
