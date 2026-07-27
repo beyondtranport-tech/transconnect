@@ -20,8 +20,6 @@ function serializeData(docData: any): any {
     return docData;
 }
 
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
 export async function POST(req: NextRequest) {
     try {
         const { app, error: initError } = getAdminApp();
@@ -47,65 +45,36 @@ export async function POST(req: NextRequest) {
         const payload = body.payload || {};
 
         switch (action) {
-            case 'getPipelineQueue': {
-                const now = new Date();
-                const snap = await db.collection('leads')
-                    .where('pipelineStatus', '==', 'running')
-                    .where('nextStepDueAt', '<=', Timestamp.fromDate(now))
-                    .limit(20)
-                    .get();
-                
-                return NextResponse.json({ 
-                    success: true, 
-                    data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) 
-                });
+            case 'getPartnersByType': {
+                const { type: queryType, limit: searchLimit = 100 } = payload;
+                const collectionName = (queryType === 'lead') ? 'leads' : 'partners';
+                let q: any = db.collection(collectionName);
+                if (collectionName === 'partners' && queryType !== 'all') {
+                    q = q.where('type', '==', queryType);
+                }
+                const snap = await q.orderBy('updatedAt', 'desc').limit(searchLimit).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))) });
             }
 
-            case 'dispatchPipelineStep': {
-                const { leadId, stepIndex, email, subject, html } = payload;
-                if (!email) throw new Error("Email required for dispatch.");
+            case 'bulkSavePartners': {
+                const { partners, type: partnerType } = payload;
+                if (!Array.isArray(partners)) throw new Error("Invalid partners array.");
+                const colName = partnerType === 'lead' ? 'leads' : 'partners';
+                const batch = db.batch();
                 
-                const apiKey = process.env.SENDGRID_API_KEY;
-                if (!apiKey) throw new Error("SendGrid Key Missing.");
-                sgMail.setApiKey(apiKey);
+                partners.forEach((p: any) => {
+                    const id = p.record_id || p.id || db.collection(colName).doc().id;
+                    const ref = db.collection(colName).doc(id);
+                    batch.set(ref, {
+                        ...p,
+                        id,
+                        type: partnerType,
+                        updatedAt: FieldValue.serverTimestamp()
+                    }, { merge: true });
+                });
                 
-                await sgMail.send({ 
-                    to: email.trim(), 
-                    from: 'Logistics Flow <noreply@logisticsflow.co.za>', 
-                    subject, 
-                    html 
-                });
-
-                const leadRef = db.collection('leads').doc(leadId);
-                const policySnap = await db.doc('configuration/engagementPolicy').get();
-                const policy = policySnap.data()?.steps || [];
-                const nextStep = policy[stepIndex + 1];
-
-                const update: any = {
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    currentPipelineStep: stepIndex,
-                    updatedAt: FieldValue.serverTimestamp()
-                };
-
-                if (nextStep) {
-                    const dueDate = new Date();
-                    dueDate.setHours(dueDate.getHours() + (nextStep.waitHours || 72));
-                    update.nextStepDueAt = Timestamp.fromDate(dueDate);
-                } else {
-                    update.pipelineStatus = 'completed';
-                    update.nextStepDueAt = null;
-                }
-
-                await leadRef.update(update);
-                await leadRef.collection('communications').add({
-                    type: 'Email',
-                    subject,
-                    notes: `Automated Pipeline Step ${stepIndex}.`,
-                    timestamp: FieldValue.serverTimestamp()
-                });
-
-                return NextResponse.json({ success: true });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
             }
 
             case 'savePartner': {
