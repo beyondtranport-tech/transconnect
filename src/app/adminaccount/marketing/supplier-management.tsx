@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone, UserCircle, Smartphone, UserPlus, ShieldCheck
+  Filter, Users, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserCheck, Phone, UserCircle, Smartphone, UserPlus, ShieldCheck, Zap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -49,35 +50,35 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const contactSchema = z.object({
-  name: z.string().nullable().optional(),
-  email: z.string().nullable().optional(),
-  mobile: z.string().nullable().optional(),
+  name: z.string().nullable().optional().or(z.literal('')),
+  email: z.string().nullable().optional().or(z.literal('')),
+  mobile: z.string().nullable().optional().or(z.literal('')),
 });
 
 const partnerSchema = z.object({
-  firstName: z.string().nullable().optional(),
-  lastName: z.string().nullable().optional(),
-  email: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  mobile: z.string().nullable().optional(),
-  contactPerson: z.string().nullable().optional(),
-  companyName: z.string().nullable().optional(),
-  website: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  minedServiceWording: z.string().nullable().optional(),
-  status: z.string().nullable().optional(),
-  type: z.string().nullable().optional(),
+  firstName: z.string().nullable().optional().or(z.literal('')),
+  lastName: z.string().nullable().optional().or(z.literal('')),
+  email: z.string().nullable().optional().or(z.literal('')),
+  phone: z.string().nullable().optional().or(z.literal('')),
+  mobile: z.string().nullable().optional().or(z.literal('')),
+  contactPerson: z.string().nullable().optional().or(z.literal('')),
+  companyName: z.string().nullable().optional().or(z.literal('')),
+  website: z.string().nullable().optional().or(z.literal('')),
+  address: z.string().nullable().optional().or(z.literal('')),
+  minedServiceWording: z.string().nullable().optional().or(z.literal('')),
+  status: z.string().nullable().optional().or(z.literal('')),
+  type: z.string().nullable().optional().or(z.literal('')),
   marketingManager: contactSchema.nullable().optional(),
   ceo: contactSchema.nullable().optional(),
 });
 type PartnerFormValues = z.infer<typeof partnerSchema>;
 
-function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; }) {
+function SupplierDialog({ open, onOpenChange, partner, onSave, targetType }: { open: boolean; onOpenChange: (open: boolean) => void; partner?: any; onSave: () => void; targetType: string; }) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const form = useForm<PartnerFormValues>({ 
     resolver: zodResolver(partnerSchema),
-    defaultValues: { type: 'supplier', status: 'new' }
+    defaultValues: { type: targetType, status: 'new' }
   });
 
   useEffect(() => {
@@ -103,13 +104,13 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
             minedServiceWording: '', 
             address: '', 
             status: 'new', 
-            type: 'supplier', 
+            type: targetType, 
             marketingManager: { name: '', email: '', mobile: '' }, 
             ceo: { name: '', email: '', mobile: '' } 
         });
       }
     }
-  }, [open, partner, form]);
+  }, [open, partner, form, targetType]);
 
   const handleFormSubmit = async (values: PartnerFormValues) => {
     setIsLoading(true);
@@ -117,7 +118,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Auth failed.");
       const coll = partner?.source === 'Lead' ? 'leads' : 'partners';
-      await performAdminAction(token, 'savePartner', { collection: coll, partner: { id: partner?.id, ...values, type: 'supplier' } });
+      await performAdminAction(token, 'savePartner', { collection: coll, partner: { id: partner?.id, ...values, type: targetType } });
       toast({ title: 'Record Saved' });
       onSave();
       onOpenChange(false);
@@ -138,7 +139,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left">
             <div className="space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Building className="h-4 w-4" /> Core Entity Details
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-left">
@@ -162,6 +163,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                                     <SelectItem value="active">Active Participant</SelectItem>
                                 </SelectContent>
                             </Select>
+                            <FormMessage />
                         </FormItem>
                     )} />
                 </div>
@@ -169,6 +171,7 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <FormItem className="text-left">
                         <FormLabel>Physical Operational Address</FormLabel>
                         <FormControl><Textarea {...field} value={field.value || ''} className="bg-white h-20 border-2" /></FormControl>
+                        <FormMessage />
                     </FormItem>
                 )} />
             </div>
@@ -180,18 +183,18 @@ function SupplierDialog({ open, onOpenChange, partner, onSave }: { open: boolean
                     <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                         <Users className="h-4 w-4" /> Marketing Manager
                     </h4>
-                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="marketingManager.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
 
                 <div className="space-y-4 p-6 rounded-2xl bg-slate-50 border border-slate-200 shadow-inner text-left text-foreground text-foreground">
                     <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
                         <UserCircle className="h-4 w-4" /> CEO / Principal
                     </h4>
-                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
-                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                    <FormField control={form.control} name="ceo.name" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="ceo.email" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                    <FormField control={form.control} name="ceo.mobile" render={({ field }) => ( <FormItem className="text-left"><FormLabel>Mobile (Direct)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
                 </div>
             </div>
 
@@ -237,13 +240,12 @@ export default function SupplierManagement() {
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>({
     companyName: true,
     accountLead: true,
-    mobile: true,
     outreach: true,
     status: true,
     actions: true
   });
 
-  const fetchData = useCallback(async (limit: number = 20000) => {
+  const fetchData = useCallback(async (limit: number = 500) => {
     setIsLoading(true);
     try {
       const token = await getClientSideAuthToken();
@@ -306,16 +308,6 @@ export default function SupplierManagement() {
           )
       },
       { 
-          id: 'mobile',
-          header: 'Direct Line', 
-          cell: ({ row }: { row: { original: any } }) => (
-              <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                  <Phone className="h-3 w-3 text-muted-foreground" />
-                  {row.original.marketingManager?.mobile || row.original.mobile || row.original.phone || 'N/A'}
-              </div>
-          )
-      },
-      { 
           id: 'outreach',
           accessorKey: 'lastOutreachSubject', 
           header: 'Outreach Stage', 
@@ -323,16 +315,16 @@ export default function SupplierManagement() {
               if (!row.original.lastOutreachSubject) return <span className="text-[10px] text-muted-foreground italic text-left">None</span>;
               const cleanSubject = row.original.lastOutreachSubject.replace('Logistics Flow: ', '').split('(')[0].trim();
               return (
-                  <div className="flex flex-col text-left text-foreground">
+                  <div className="flex flex-col text-left text-foreground text-left">
                       <Badge variant="outline" className="text-[9px] h-4 border-primary/20 text-primary uppercase font-bold truncate max-w-[100px] text-left">{cleanSubject}</Badge>
                       <TooltipProvider>
-                        <div className="flex items-center gap-1 mt-1 text-left">
+                        <div className="flex items-center gap-1 mt-1 text-left text-foreground">
                             {row.original.lastOpenedAt && (
                                 <Tooltip>
                                     <TooltipTrigger>
                                         <div className="bg-blue-100 p-0.5 rounded-full text-left text-foreground"><UserCheck className="h-3 w-3 text-blue-600" /></div>
                                     </TooltipTrigger>
-                                    <TooltipContent className="text-[10px] font-bold">Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}</TooltipContent>
+                                    <TooltipContent className="text-[10px] font-bold text-foreground">Read: {formatDateSafe(row.original.lastOpenedAt, "dd/MM")}</TooltipContent>
                                 </Tooltip>
                             )}
                             {row.original.lastAccessedAt && (
@@ -340,7 +332,7 @@ export default function SupplierManagement() {
                                     <TooltipTrigger>
                                         <div className="bg-purple-100 p-0.5 rounded-full text-left text-foreground"><Smartphone className="h-3 w-3 text-purple-600" /></div>
                                     </TooltipTrigger>
-                                    <TooltipContent className="text-[10px] font-bold">Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM")}</TooltipContent>
+                                    <TooltipContent className="text-[10px] font-bold text-foreground">Link: {formatDateSafe(row.original.lastAccessedAt, "dd/MM")}</TooltipContent>
                                 </Tooltip>
                             )}
                         </div>
@@ -356,12 +348,13 @@ export default function SupplierManagement() {
         cell: ({ row }: { row: { original: any } }) => {
             const isVerified = !!row.original.companyId;
             const isConverted = row.original.status === 'active' && (row.original.lastOpenedAt || row.original.lastAccessedAt);
+            const statusLabel = row.original.status === 'active' && !isVerified ? 'CRM Active (Unlinked)' : row.original.status;
             
             return (
-                <div className="flex flex-col gap-1 text-left">
+                <div className="flex flex-col gap-1 text-left text-foreground">
                     <div className="flex items-center gap-2 text-left">
-                        <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{row.original.status}</Badge>
-                        {isVerified && <TooltipProvider><Tooltip><TooltipTrigger><ShieldCheck className="h-4 w-4 text-green-600" /></TooltipTrigger><TooltipContent className="text-xs font-bold">Forensic Handshake Linked (Member Roster Verified)</TooltipContent></Tooltip></TooltipProvider>}
+                        <Badge variant={isVerified ? 'default' : 'outline'} className="capitalize text-[10px] font-black w-fit">{statusLabel}</Badge>
+                        {isVerified && <TooltipProvider><Tooltip><TooltipTrigger><ShieldCheck className="h-4 w-4 text-green-600" /></TooltipTrigger><TooltipContent className="text-xs font-bold text-foreground">Forensic Handshake Linked (Member Roster Verified)</TooltipContent></Tooltip></TooltipProvider>}
                     </div>
                     {isConverted && !isVerified && (
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[8px] h-4 uppercase font-black py-0 px-1.5 w-fit text-left">
@@ -393,7 +386,7 @@ export default function SupplierManagement() {
             <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
           </div>
         )},
-    ].filter(c => visibleColumns[c.id || c.accessorKey as string]);
+    ].filter(c => visibleColumns[c.id as string] || visibleColumns[c.accessorKey as string]);
   }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
@@ -411,12 +404,12 @@ export default function SupplierManagement() {
   }
 
   return (
-    <div className="space-y-6 text-left">
+    <div className="space-y-6 text-left text-foreground">
       <EngageDialog open={dialog.type === 'engage'} onOpenChange={(o) => !o && setDialog({ type: null })} partners={dialog.data || []} initialIndex={dialog.initialIndex} audience="suppliers" onEngageSuccess={() => fetchData()} />
-      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} />
+      <SupplierDialog open={dialog.type === 'add' || dialog.type === 'edit'} onOpenChange={(o) => !o && setDialog({ type: null })} partner={dialog.type === 'edit' ? dialog.data : undefined} onSave={() => fetchData()} targetType={type} />
       <AlertDialog open={dialog.type === 'delete'} onOpenChange={(o) => !o && setDialog({ type: null })}>
-        <AlertDialogContent className="text-left text-foreground">
-          <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogContent className="text-left text-foreground text-foreground">
+          <AlertDialogHeader><AlertDialogTitle className="text-left text-foreground text-foreground">Are you sure?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground text-foreground">Delete record?</AlertDialogDescription></AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDialog({ type: null })}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteRecord} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
@@ -457,7 +450,7 @@ export default function SupplierManagement() {
                     <div className="space-y-1 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left">Status Filter</Label>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
-                            <SelectTrigger className="h-9 bg-white text-xs text-left"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+                            <SelectTrigger className="h-9 bg-white text-xs text-left text-foreground"><SelectValue placeholder="All Statuses" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Statuses</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
@@ -470,7 +463,7 @@ export default function SupplierManagement() {
                     <div className="space-y-1 text-left">
                         <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Users className="h-3 w-3"/> Assignee</Label>
                         <Select value={assigneeFilter} onValueChange={setAssigneeFilter}>
-                            <SelectTrigger className="bg-white text-left"><SelectValue placeholder="All Staff" /></SelectTrigger>
+                            <SelectTrigger className="bg-white text-left text-foreground"><SelectValue placeholder="All Staff" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Staff</SelectItem>
                                 <SelectItem value="none">Unallocated</SelectItem>
@@ -478,8 +471,8 @@ export default function SupplierManagement() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="md:col-span-2 flex items-end gap-2 text-left">
-                        <div className="flex-1 space-y-1 text-left">
+                    <div className="md:col-span-2 flex items-end gap-2 text-left text-foreground">
+                        <div className="flex-1 space-y-1 text-left text-foreground">
                             <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1.5 text-left"><Search className="h-3 w-3"/> Search Registry</Label>
                             <Input placeholder="Filter registry by name or tag..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} onKeyDown={e => e.key === 'Enter' && fetchData()} className="h-9 bg-white" />
                         </div>
@@ -492,3 +485,4 @@ export default function SupplierManagement() {
     </div>
   );
 }
+
