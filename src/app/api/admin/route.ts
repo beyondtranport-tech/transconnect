@@ -46,6 +46,26 @@ export async function POST(req: NextRequest) {
         const payload = body.payload || {};
 
         switch (action) {
+            case 'bulkSavePartners': {
+                const { partners: pList, type: pType } = payload;
+                if (!Array.isArray(pList)) throw new Error("Partners must be an array.");
+                const batch = db.batch();
+                const colName = (pType === 'lead' || pType === 'all') ? 'leads' : 'partners';
+                
+                for (const p of pList) {
+                    const id = p.record_id || p.id || db.collection(colName).doc().id;
+                    const ref = db.collection(colName).doc(id);
+                    batch.set(ref, { 
+                        ...p, 
+                        id, 
+                        updatedAt: FieldValue.serverTimestamp(),
+                        source: 'Import' 
+                    }, { merge: true });
+                }
+                await batch.commit();
+                return NextResponse.json({ success: true, count: pList.length });
+            }
+
             case 'getAuditLogs': {
                 const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
@@ -58,11 +78,6 @@ export async function POST(req: NextRequest) {
 
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getStaff': {
-                const snap = await db.collectionGroup('staff').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -91,61 +106,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'autoEnrichRecord': {
-                const { id, type: pType } = payload;
-                const col = pType === 'lead' ? 'leads' : 'partners';
-                const docRef = db.collection(col).doc(id);
-                const snap = await docRef.get();
-                const data = snap.data();
-                if (!data) throw new Error("Record not found.");
-
-                const { enrichPartner } = await import('@/ai/flows/enrich-partner-flow');
-                const enriched = await enrichPartner({ 
-                    companyName: data.companyName || data.trading_name || `${data.firstName} ${data.lastName}` 
-                });
-                
-                const update = {
-                    ...enriched,
-                    status: 'contacted',
-                    enhancementMethod: 'V4-BRIDGE',
-                    lastEnrichedAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                };
-                
-                await docRef.update(update);
-                return NextResponse.json({ success: true, data: serializeData(update) });
-            }
-
-            case 'getAudienceCommunications': {
-                const snap = await db.collectionGroup('communications').orderBy('timestamp', 'desc').limit(200).get();
-                const logs = snap.docs.map(d => ({ 
-                    id: d.id, 
-                    ...d.data(), 
-                    path: d.ref.path,
-                    partnerId: d.ref.path.split('/')[1]
-                }));
-                return NextResponse.json({ success: true, data: serializeData(logs) });
-            }
-
-            case 'getAudienceTasks': {
-                const snap = await db.collectionGroup('tasks').orderBy('createdAt', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'savePartner': {
-                const { partner, collection: colName = 'partners' } = payload;
-                const id = partner.id || db.collection(colName).doc().id;
-                await db.collection(colName).doc(id).set({ ...partner, id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id });
-            }
-
-            case 'deletePartner': {
-                const { partnerId, source } = payload;
-                const col = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(col).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
             case 'logCommunication': {
                 const { partnerId, type: commType, subject, notes, collection: colOverride } = payload;
                 const colName = colOverride || 'partners';
@@ -162,7 +122,6 @@ export async function POST(req: NextRequest) {
                     timestamp: FieldValue.serverTimestamp()
                 });
 
-                // Update parent record so outreach state is reflected in the table
                 batch.update(parentRef, {
                     status: 'contacted',
                     lastOutreachSubject: subject,
