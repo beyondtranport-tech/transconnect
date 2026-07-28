@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -27,39 +26,33 @@ const { featureSections } = featuresData;
 
 const defaultPlans = [
     {
-        id: 'foundation',
-        name: 'Node Ownership',
-        price: 10,
-        type: 'foundation',
-        description: 'Secure your standing in the industrial registry.',
-        features: ["node:verified_identity", "node:reputation_management", "node:direct_rfqs"],
-        isPopular: false
-    },
-    {
-        id: 'intelligence',
-        name: 'Intelligence Access',
+        id: 'basic',
+        name: 'Basic Membership',
         price: 100,
         type: 'registry',
-        description: 'The foundation for industrial growth. Unlock the map.',
-        features: ["registry:unlimited_search", "registry:direct_contacts", "registry:mobile_verification", "loyalty:20_reduction_intelligence", "loyalty:regional_scans"],
-        isPopular: true
+        description: 'Establish forensic visibility in the industrial grid.',
+        features: ["node:verified_identity", "registry:direct_contacts", "loyalty:regional_scans"],
+        searchLimit: 100,
+        isPopular: false
     },
     {
         id: 'standard',
-        name: 'Standard Transactional',
+        name: 'Standard Membership',
         price: 500,
         type: 'global',
-        description: 'Enhanced tools for active industrial players.',
-        features: ["ecosystem:access_all_malls", "shop:digital_branch", "ai:branding_studio", "loyalty:35_reduction_mall", "loyalty:lead_signals"],
-        isPopular: false
+        description: 'The core commerce engine for active trading.',
+        features: ["node:verified_identity", "registry:direct_contacts", "ecosystem:access_all_malls", "shop:digital_branch", "loads:post_unlimited", "loyalty:lead_signals"],
+        searchLimit: 1000,
+        isPopular: true
     },
     {
         id: 'premium',
-        name: 'Premium Transactional',
+        name: 'Premium Membership',
         price: 1000,
         type: 'global',
-        description: 'The ultimate operational tier for industrial leaders.',
-        features: ["ecosystem:access_all_malls", "shop:digital_branch", "ai:discovery_tools", "loyalty:50_reduction_all", "loyalty:priority_ranking", "support:dedicated_manager"],
+        description: 'Maximum dominance with unlimited industrial power.',
+        features: ["node:verified_identity", "registry:direct_contacts", "ecosystem:access_all_malls", "shop:digital_branch", "ai:branding_studio", "ai:discovery_tools", "support:dedicated_manager"],
+        searchLimit: 999999,
         isPopular: false
     }
 ];
@@ -70,6 +63,7 @@ const planSchema = z.object({
   type: z.enum(['foundation', 'registry', 'mall', 'global']).default('foundation'),
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().min(0, 'Price must be 0 or more'),
+  searchLimit: z.coerce.number().min(0).default(0),
   annualDiscount: z.coerce.number().min(0, "Must be between 0-100").optional(),
   features: z.array(z.string()).min(1, 'At least one feature is required'),
   isPopular: z.boolean().default(false),
@@ -99,6 +93,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             type: plan?.type || 'foundation',
             description: plan?.description || '',
             price: monthlyPrice,
+            searchLimit: plan?.searchLimit || 0,
             annualDiscount: plan?.annualDiscount ?? 0,
             features: plan?.features || [],
             isPopular: plan?.isPopular || false,
@@ -177,9 +172,12 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
               <FormItem className="text-left text-foreground"><FormLabel>Public Plan Name</FormLabel><FormControl><Input {...field} placeholder="e.g. Standard Transactional" /></FormControl><FormMessage /></FormItem>
             )} />
 
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+            <div className="grid grid-cols-3 gap-4 text-left text-foreground">
                 <FormField name="price" control={form.control} render={({ field }) => (
                     <FormItem className="text-left"><FormLabel>Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField name="searchLimit" control={form.control} render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Registry Scans</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField name="annualDiscount" control={form.control} render={({ field }) => (
                     <FormItem className="text-left"><FormLabel>Annual Discount (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
@@ -274,7 +272,7 @@ export default function PricingManagement() {
                 }),
             });
         }
-        toast({ title: "Core Plans Seeded", description: "All 4 layers of the platform are now defined." });
+        toast({ title: "Membership Tiers Seeded", description: "The Basic, Standard, and Premium structure is now live." });
         forceRefresh();
     } catch (e: any) {
         toast({ variant: 'destructive', title: "Seeding Failed", description: e.message });
@@ -303,13 +301,13 @@ export default function PricingManagement() {
     <div className="space-y-6 text-left text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
         <div className="text-left text-foreground">
-            <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Layers className="h-6 w-6 text-primary"/> Membership & Node Ledger</CardTitle>
-            <CardDescription className="text-left text-foreground">Configure the 4 layers of the industrial grid: Ownership, Registry, Mall, and Transactional App access.</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-2xl font-black font-headline text-left text-foreground"><Layers className="h-6 w-6 text-primary"/> Membership Tier Management</CardTitle>
+            <CardDescription className="text-left text-foreground">Manage the 3 core layers of the platform: Basic (Intelligence), Standard (Operator), and Premium (Leader).</CardDescription>
         </div>
         <div className="flex gap-2 text-left">
             <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-foreground">
                 {isSeeding ? <Loader2 className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4" />}
-                Seed All Core Plans
+                Re-Seed 3-Tier Model
             </Button>
             <PlanDialog onSave={forceRefresh} />
         </div>
@@ -324,9 +322,9 @@ export default function PricingManagement() {
                 <Table className="text-left text-foreground">
                 <TableHeader className="bg-slate-50 text-left text-foreground">
                     <TableRow className="text-left text-foreground">
-                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Plan / Layer</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Plan / Tier</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Monthly Price</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Layer Logic</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Intelligence Scans</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase text-left text-foreground">Status</TableHead>
                     <TableHead className="text-right font-bold text-[10px] uppercase text-foreground">Actions</TableHead>
                     </TableRow>
@@ -345,7 +343,7 @@ export default function PricingManagement() {
                             </TableCell>
                             <TableCell className="text-left text-foreground">
                                 <Badge variant="outline" className="capitalize text-[10px] font-black border-primary/20 text-primary">
-                                    {plan.type === 'registry' ? 'Data Intelligence' : plan.type === 'mall' ? 'Deep Mall Data' : plan.type === 'global' ? 'App & Transactions' : 'Foundation'}
+                                    {plan.searchLimit === 999999 ? 'Unlimited' : `${plan.searchLimit || 0} / mo`}
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-left text-foreground">
@@ -365,7 +363,7 @@ export default function PricingManagement() {
                                 <div className="space-y-4 text-center">
                                     <p>No plans defined in the ecosystem ledger.</p>
                                     <Button variant="outline" onClick={handleSeed} disabled={isSeeding} className="text-foreground">
-                                        Click here to seed standard platform layers
+                                        Click here to seed Basic/Standard/Premium tiers
                                     </Button>
                                 </div>
                             </TableCell>
