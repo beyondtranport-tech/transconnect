@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -125,7 +125,7 @@ export default function MembershipPage() {
                         <CardFooter className="p-8 bg-slate-50 border-t">
                             <Button asChild className={cn("w-full h-14 font-black uppercase tracking-widest shadow-md group text-white", !plan.isPopular && "bg-slate-800 hover:bg-slate-700")}>
                                 <Link href={`/checkout/${plan.id}`}>
-                                    Activate {plan.id} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                    Activate {plan.name} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                 </Link>
                             </Button>
                         </CardFooter>
