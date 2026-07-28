@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -19,7 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   AlertDialog,
@@ -119,7 +118,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       
-      const planId = values.id.trim().toLowerCase();
+      const planId = values.id.trim();
       const dataToSave = { ...values, id: planId, updatedAt: { _methodName: 'serverTimestamp' } };
 
       const response = await fetch('/api/updateConfigDoc', {
@@ -249,7 +248,7 @@ export default function PricingManagement() {
         if (!token) throw new Error("Auth failed.");
 
         for (const plan of defaultPlans) {
-            const planId = plan.id.trim().toLowerCase();
+            const planId = plan.id.trim();
             await fetch('/api/updateConfigDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -304,10 +303,10 @@ export default function PricingManagement() {
     <div className="space-y-6 text-left text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="text-left">
-            <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left text-foreground"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
+            <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left text-foreground text-foreground"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
             <CardDescription className="text-left">Manage the outcome-based pricing for the 3 core industrial tiers.</CardDescription>
         </div>
-        <div className="flex gap-2 text-left">
+        <div className="flex gap-2 text-left text-foreground">
             <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-left text-foreground">
                 {isSeeding ? <Loader2 className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4 text-primary" />}
                 Reset to Core Model
@@ -352,7 +351,7 @@ export default function PricingManagement() {
                                     <AlertDialogContent className="text-left">
                                         <AlertDialogHeader className="text-left">
                                             <AlertDialogTitle className="text-left">Delete Membership Plan?</AlertDialogTitle>
-                                            <AlertDialogDescription className="text-left">
+                                            <AlertDialogDescription className="text-left text-foreground">
                                                 This will remove "{plan.name}" from the commercial registry. Existing subscribers will not be affected, but new signups will no longer see this tier.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
@@ -371,7 +370,7 @@ export default function PricingManagement() {
                         </TableRow>
                     ))}
                     {sortedPlans.length === 0 && (
-                        <TableRow className="text-left"><TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic text-left">No plans defined. Click "Reset to Core Model" above.</TableCell></TableRow>
+                        <TableRow className="text-left text-foreground"><TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic text-left">No plans defined. Click "Reset to Core Model" above.</TableCell></TableRow>
                     )}
                 </TableBody>
                 </Table>
