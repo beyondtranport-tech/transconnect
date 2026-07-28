@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
@@ -8,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { 
     Loader2, Mail, Zap, Send, ShieldCheck, MessageSquare, Smartphone, Info, 
     ChevronRight, ChevronLeft, Target, Ban, Filter, MousePointer2, Gift, 
-    Handshake, ExternalLink, AtSign, Building, DollarSign, FileText, Presentation, Sparkles 
+    Handshake, ExternalLink, AtSign, Building, DollarSign, FileText, Presentation, Sparkles, UserCheck 
 } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { copyHtmlToClipboard, cn } from '@/lib/utils';
@@ -335,27 +334,19 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             {activeTab === 'strategic-intro' && (
                                 <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
                                     <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt', marginBottom: '15pt' }}>
-                                        STRATEGIC PARTNERSHIP: {currentPartner?.companyName?.toUpperCase() || 'CREATIVE'} X LOGISTICS FLOW
+                                        STRATEGIC INTRO: {currentPartner?.companyName?.toUpperCase() || 'INDUSTRIAL NODE'} X LOGISTICS FLOW
                                     </p>
                                     <p>Good day {contact.name.split(' ')[0]},</p>
-                                    <p>My name is Michael Koton, I am the owner of Logistics Flow. I am reaching out to form a strategic relationship with you.</p>
-                                    <p style={{ margin: '15pt 0' }}>We have built the "Industrial Brain" of South Africa's Logistics sector which includes a high-fidelity digital grid that maps over 22,000 suppliers, 5000 transporters and 4000 Financiers. Our app enables our members to transact with one another directly in a closed loop.</p>
-                                    <p><strong>Why I am reaching out:</strong> We have identified your creative influence as a perfect match for our ecosystem. We are looking to establish a formal partnership with you to generate exposure for the platform.</p>
-                                    <p style={{ marginTop: '15pt', fontWeight: 'bold' }}>What you get:</p>
+                                    <p>My name is Michael Koton, owner of Logistics Flow. We have established your operational node in our industrial grid and identified a data gap that is currently preventing matched deal-flow from reaching your desk.</p>
+                                    <p style={{ margin: '15pt 0' }}>We are a South African Data-as-a-Service ecosystem that maps over 22,000 suppliers and hauliers to automate sourcing and finance. We have identified a strategic fit for <strong>{currentPartner?.companyName || 'your business'}</strong> within our current expansion cycle.</p>
+                                    <p style={{ marginTop: '15pt', fontWeight: 'bold' }}>Establish your digital standing for free to unlock:</p>
                                     <ul style={{ paddingLeft: '20pt' }}>
-                                        <li><strong>Free membership.</strong> Valued at R6,000 p.a.</li>
-                                        <li><strong>Content Studio:</strong> Unrestricted access to our cinematic video generators.</li>
-                                        <li><strong>Social Studio:</strong> Enabling tracked posts to social networks.</li>
-                                        <li><strong>My Network:</strong> Tracking of your network growth and revenue generated.</li>
-                                        <li><strong>The Annuity Layer:</strong> Earn 30% recurring share on all membership fees directly into your wallet.</li>
+                                        <li><strong>Forensic Registry Access:</strong> Map your competitors and suppliers directly.</li>
+                                        <li><strong>Matching Engine:</strong> Receive proactive alerts for capacity and cargo.</li>
+                                        <li><strong>Capital division:</strong> Access in-house finance where traditional banks fail.</li>
                                     </ul>
-                                    <p style={{ margin: '15pt 0' }}><strong>Are you interested in exploring this?</strong></p>
-                                    <p>[   ] <strong>YES</strong>, I am interested. Let's establish the handshake:<br/>
-                                       <a href={`${window.location.origin}/opt-in/${currentPartner.id}?role=associate`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a>
-                                    </p>
-                                    <p>[   ] <strong>NO</strong>, I am not interested at this time:<br/>
-                                       <a href={`${window.location.origin}/api/recordConsent?partnerId=${currentPartner.id}&status=declined`} style={{ color: '#475569', fontSize: '10pt' }}>Click here to decline</a>
-                                    </p>
+                                    <p style={{ margin: '15pt 0' }}><strong>Are you ready to establish the handshake?</strong></p>
+                                    <p><a href={`${window.location.origin}/opt-in/${currentPartner.id}`} style={{ color: '#228B22', fontWeight: 'bold' }}>{window.location.origin}/opt-in/{currentPartner.id}</a></p>
                                 </div>
                             )}
                             {activeTab === 'platform-dm' && (
@@ -372,13 +363,6 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
                             {activeTab === 'incentive-handshake' && <IncentiveHandshake partner={currentPartner} incentive={activeIncentive} />}
                             {activeTab === 'tech-architecture' && <TechArchitecture partner={currentPartner} />}
                             {activeTab === 'revenue-model' && <RevenueModel partner={currentPartner} />}
-                            {activeTab === 'offer' && (
-                                normalizedAudience === 'supplier' ? <SupplierOffer /> :
-                                normalizedAudience === 'transporter' ? <TransporterOffer /> :
-                                <PartnerOffer />
-                            )}
-                            {activeTab === 'pitch' && <PitchDeck partner={currentPartner} />}
-                            {activeTab === 'framework' && <Framework partner={currentPartner} />}
                             {activeTab === 'sales-intelligence' && <SalesIntelligence partner={currentPartner} />}
                             
                             {activeTab === 'the-wedge' && <TheWedge partner={currentPartner} audience={normalizedAudience} />}
@@ -392,47 +376,4 @@ export function EngageDialog({ open, onOpenChange, partners, initialIndex = 0, a
         </DialogContent>
     </Dialog>
   );
-}
-
-function TransporterOffer() {
-    return (
-        <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
-            <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
-                TRANSPORTER PARTNERSHIP OFFER
-            </p>
-            <p>Our offering to transporters is designed to minimize operational friction and maximize haulier profitability.</p>
-            <ul style={{ paddingLeft: '20pt', marginTop: '10pt' }}>
-                <li>Direct matches for verified freight instructions.</li>
-                <li>Group-negotiated spare parts and tires.</li>
-                <li>In-house finance for asset growth.</li>
-            </ul>
-        </div>
-    );
-}
-
-function SupplierOffer() {
-    return (
-        <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
-            <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
-                SUPPLIER PARTNERSHIP OFFER
-            </p>
-            <p>Connect your parts inventory directly to the haulier grid.</p>
-            <ul style={{ paddingLeft: '20pt', marginTop: '10pt' }}>
-                <li>Digital shopfront in the Supplier Mall.</li>
-                <li>Direct RFQs from verified decision makers.</li>
-                <li>Payment protection through integrated escrow.</li>
-            </ul>
-        </div>
-    );
-}
-
-function PartnerOffer() {
-    return (
-        <div style={{ fontFamily: 'Calibri, sans-serif', fontSize: '12pt', color: '#000000', lineHeight: '1.4' }}>
-            <p style={{ fontWeight: 'bold', textTransform: 'uppercase', borderBottom: '2px solid #000000', paddingBottom: '4pt' }}>
-                STRATEGIC PARTNERSHIP OFFER
-            </p>
-            <p>Joint growth through data intelligence and shared transactional revenue.</p>
-        </div>
-    );
 }

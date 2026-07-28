@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -33,7 +32,7 @@ import { getClientSideAuthToken } from '@/firebase';
 
 /**
  * MARKETING PAGE TERMINAL
- * Build Identifier: 2026-03-15T23:55:00Z (Hardened Registry Index Resolution)
+ * Build Identifier: 2026-03-16T00:15:00Z (Hardened Stability Release)
  */
 
 // Content components using absolute paths
