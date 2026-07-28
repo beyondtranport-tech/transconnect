@@ -147,51 +147,63 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
             <div className="grid grid-cols-2 gap-4">
                 <FormField name="id" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Plan ID</FormLabel><FormControl><Input {...field} disabled={!!plan} placeholder="e.g. basic" /></FormControl></FormItem>
+                    <FormItem className="text-left">
+                        <FormLabel>Plan ID</FormLabel>
+                        <FormControl><Input {...field} disabled={!!plan} placeholder="e.g. basic" /></FormControl>
+                    </FormItem>
                 )} />
                  <FormField name="name" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Public Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                    <FormItem className="text-left">
+                        <FormLabel>Public Name</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                    </FormItem>
                 )} />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
                  <FormField name="price" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel>Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                    <FormItem className="text-left">
+                        <FormLabel>Monthly Price (R)</FormLabel>
+                        <FormControl><Input type="number" {...field} /></FormControl>
+                    </FormItem>
                 )} />
                 <FormField name="isPopular" control={form.control} render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 pt-8">
+                    <FormItem className="flex items-center space-x-2 pt-8 text-left">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel>Mark as Popular</FormLabel>
+                        <FormLabel className="cursor-pointer">Mark as Popular</FormLabel>
                     </FormItem>
                 )} />
             </div>
 
             <FormField name="description" control={form.control} render={({ field }) => (
-              <FormItem><FormLabel>Pitch Description</FormLabel><FormControl><Textarea {...field} /></FormControl></FormItem>
+              <FormItem className="text-left">
+                  <FormLabel>Pitch Description</FormLabel>
+                  <FormControl><Textarea {...field} /></FormControl>
+              </FormItem>
             )} />
 
             <Separator />
-            <h4 className="text-xs font-black uppercase tracking-widest text-primary">Outcome Metrics (Limits)</h4>
+            <h4 className="text-xs font-black uppercase tracking-widest text-primary text-left">Outcome Metrics (Limits)</h4>
             
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
                 <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Intel Queries</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Intel Queries</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField name="shopProducts" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Shop Products</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Shop Products</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField name="loadsLimit" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Max Loads</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Max Loads</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField name="vehiclesLimit" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Max Vehicles</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Max Vehicles</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                 )} />
                 <FormField name="financeApplications" control={form.control} render={({ field }) => (
-                    <FormItem><FormLabel className="text-[10px] uppercase font-bold">Max Finance Apps</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Max Finance Apps</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                 )} />
             </div>
 
-            <DialogFooter className="pt-6 border-t">
+            <DialogFooter className="pt-6 border-t text-left">
               <Button type="submit" disabled={isLoading} className="w-full font-bold">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 Save Tier Logic
@@ -248,13 +260,13 @@ export default function PricingManagement() {
 
   return (
     <div className="space-y-6 text-left text-foreground">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="text-left">
-            <CardTitle className="text-2xl font-black font-headline flex items-center gap-2"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
-            <CardDescription>Manage the outcome-based pricing for the 3 core industrial tiers.</CardDescription>
+            <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
+            <CardDescription className="text-left">Manage the outcome-based pricing for the 3 core industrial tiers.</CardDescription>
         </div>
-        <div className="flex gap-2">
-            <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2">
+        <div className="flex gap-2 text-left">
+            <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-left">
                 {isSeeding ? <Loader2 className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4 text-primary" />}
                 Reset to Core Model
             </Button>
@@ -262,38 +274,38 @@ export default function PricingManagement() {
         </div>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
+      <Card className="text-left">
+        <CardContent className="pt-6 text-left">
             {isLoading ? (
-            <div className="flex justify-center p-20"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
+            <div className="flex justify-center p-20 text-left"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
             ) : (
-            <div className="border rounded-xl overflow-hidden">
-                <Table>
-                <TableHeader className="bg-slate-50">
-                    <TableRow>
-                    <TableHead className="font-bold text-[10px] uppercase">Plan</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">Price</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">Intel</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">Shop</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase">Finance</TableHead>
-                    <TableHead className="text-right font-bold text-[10px] uppercase">Actions</TableHead>
+            <div className="border rounded-xl overflow-hidden text-left">
+                <Table className="text-left">
+                <TableHeader className="bg-slate-50 text-left">
+                    <TableRow className="text-left">
+                    <TableHead className="font-bold text-[10px] uppercase text-left">Plan</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left">Price</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left">Intel</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left">Shop</TableHead>
+                    <TableHead className="font-bold text-[10px] uppercase text-left">Finance</TableHead>
+                    <TableHead className="text-right font-bold text-[10px] uppercase text-left">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
-                <TableBody>
+                <TableBody className="text-left">
                     {sortedPlans.map((plan: any) => (
-                        <TableRow key={plan.id}>
-                            <TableCell className="font-black py-4">{plan.name}</TableCell>
-                            <TableCell className="font-mono font-bold text-primary">{formatCurrency(plan.price)}</TableCell>
-                            <TableCell className="text-xs">{plan.intelligenceQueries === 999999 ? 'Unlimited' : plan.intelligenceQueries}</TableCell>
-                            <TableCell className="text-xs">{plan.shopProducts === 999999 ? 'Unlimited' : plan.shopProducts}</TableCell>
-                            <TableCell className="text-xs">{plan.financeApplications === 999999 ? 'Unlimited' : plan.financeApplications}</TableCell>
-                            <TableCell className="text-right">
+                        <TableRow key={plan.id} className="text-left">
+                            <TableCell className="font-black py-4 text-left">{plan.name}</TableCell>
+                            <TableCell className="font-mono font-bold text-primary text-left">{formatCurrency(plan.price)}</TableCell>
+                            <TableCell className="text-xs text-left">{plan.intelligenceQueries === 999999 ? 'Unlimited' : plan.intelligenceQueries}</TableCell>
+                            <TableCell className="text-xs text-left">{plan.shopProducts === 999999 ? 'Unlimited' : plan.shopProducts}</TableCell>
+                            <TableCell className="text-xs text-left">{plan.financeApplications === 999999 ? 'Unlimited' : plan.financeApplications}</TableCell>
+                            <TableCell className="text-right text-left">
                                 <PlanDialog plan={plan} onSave={forceRefresh} />
                             </TableCell>
                         </TableRow>
                     ))}
                     {sortedPlans.length === 0 && (
-                        <TableRow><TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic">No plans defined. Click "Reset to Core Model" above.</TableCell></TableRow>
+                        <TableRow className="text-left"><TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic text-left">No plans defined. Click "Reset to Core Model" above.</TableCell></TableRow>
                     )}
                 </TableBody>
                 </Table>
