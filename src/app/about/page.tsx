@@ -5,27 +5,18 @@ import data from "@/lib/placeholder-images.json";
 import { 
   CheckCircle, 
   ArrowRight, 
-  Database, 
-  Zap, 
-  Scale, 
   Store, 
   Handshake, 
-  Award, 
-  Activity, 
-  Target,
-  UserCheck,
-  FileCheck,
-  Truck,
   Building,
   BrainCircuit,
-  Loader2,
   ShieldCheck,
   Landmark,
-  ShoppingBasket
+  ShoppingBasket,
+  Search,
+  Zap
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import React from "react";
 import { useUser } from "@/firebase";
@@ -50,61 +41,76 @@ export default function AboutPage() {
                     priority
                 />
             )}
-            <div className="container relative mx-auto px-4 text-center z-10 flex flex-col items-center">
+            <div className="container relative mx-auto px-4 text-center z-10 flex flex-col items-center text-white">
                 <Badge className="bg-primary text-white mb-6 py-1 px-4 font-black uppercase tracking-widest text-[10px] border-none">The Commerce Engine</Badge>
                 <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tighter text-white uppercase leading-none text-center">The Industrial <br/><span className="text-primary">Ecosystem</span>.</h1>
-                <p className="mt-6 text-xl max-w-3xl mx-auto text-slate-300 leading-relaxed font-medium text-center">We provide the digital infrastructure to connect, verify, and transact in the South African transport industry.</p>
+                <p className="mt-6 text-xl max-w-3xl mx-auto text-slate-300 leading-relaxed font-medium text-center text-white">We provide the digital infrastructure to connect, verify, and transact in the South African transport industry.</p>
             </div>
         </section>
 
-        {/* THE THREE PILLARS */}
+        {/* THE THREE PILLARS - TRADING WITH EYES OPEN */}
         <section className="py-24 bg-white border-b">
             <div className="container mx-auto px-4">
                 <div className="text-center max-w-3xl mx-auto mb-20 space-y-4 text-left md:text-center">
-                    <h2 className="text-3xl md:text-5xl font-black font-headline text-slate-900 uppercase">One Grid. Three Pillars.</h2>
+                    <h2 className="text-3xl md:text-5xl font-black font-headline text-slate-900 uppercase">Trading with Eyes Open.</h2>
                     <p className="text-lg text-muted-foreground leading-relaxed">
-                        We've digitized the logistics workflow into three core mechanisms designed to drive your growth.
+                        We've digitized the logistics workflow into three core mechanisms designed to remove information constraints and drive your growth.
                     </p>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto">
                     {/* COMMERCE */}
-                    <div className="space-y-6 text-left">
+                    <div className="space-y-6 text-left flex flex-col h-full">
                         <div className="bg-primary/10 p-5 rounded-3xl w-fit"><ShoppingBasket className="h-10 w-10 text-primary" /></div>
                         <h3 className="text-2xl font-black uppercase text-slate-900">1. Commerce</h3>
-                        <p className="text-muted-foreground leading-relaxed text-left">
-                            Our primary mission is to help you sell more. Whether you are a supplier of parts or a haulier of freight, our Malls and Shops provide the terminal to list your branch and transact.
+                        <p className="text-muted-foreground leading-relaxed text-left flex-grow">
+                            Our primary mission is to help you sell more. Whether you are a supplier of parts or a haulier of freight, our Malls and Shops provide the terminal to list your branch and execute commercial handshakes.
                         </p>
                         <ul className="space-y-2 pt-2 text-left">
                             <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Digital Shop Profiles</li>
                             <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Real-Time Load Boards</li>
                         </ul>
+                        <div className="pt-4">
+                            <Button asChild variant="outline" className="w-full font-bold border-2 h-12 shadow-sm">
+                                <Link href="/mall">Explore Commerce Hub <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                            </Button>
+                        </div>
                     </div>
 
                     {/* INTELLIGENCE */}
-                    <div className="space-y-6 text-left">
+                    <div className="space-y-6 text-left flex flex-col h-full">
                         <div className="bg-primary/10 p-5 rounded-3xl w-fit"><BrainCircuit className="h-10 w-10 text-primary" /></div>
                         <h3 className="text-2xl font-black uppercase text-slate-900">2. Intelligence</h3>
-                        <p className="text-muted-foreground leading-relaxed text-left">
-                            Intelligence is the fuel for your commerce. We've mapped the grid to provide you with the forensic leads and AI matching needed to eliminate the manual sales cycle.
+                        <p className="text-muted-foreground leading-relaxed text-left flex-grow">
+                            Intelligence is the fuel for your commerce. We've mapped the grid to provide you with the forensic leads and AI matching needed to eliminate the manual search cycle and speak directly to decision makers.
                         </p>
                          <ul className="space-y-2 pt-2 text-left">
                             <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> 22,000+ Direct MD/CEO Contacts</li>
-                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> AI Freight Matching Engine</li>
+                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Forensic Registry Scans</li>
                         </ul>
+                        <div className="pt-4">
+                            <Button asChild variant="outline" className="w-full font-bold border-2 h-12 shadow-sm">
+                                <Link href="/resources">Access Intelligence <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                            </Button>
+                        </div>
                     </div>
 
                     {/* CAPITAL */}
-                    <div className="space-y-6 text-left">
+                    <div className="space-y-6 text-left flex flex-col h-full">
                         <div className="bg-primary/10 p-5 rounded-3xl w-fit"><Landmark className="h-10 w-10 text-primary" /></div>
                         <h3 className="text-2xl font-black uppercase text-slate-900">3. Capital</h3>
-                        <p className="text-muted-foreground leading-relaxed text-left">
-                            Data is the new collateral. By analyzing your platform activity and standing, we unlock asset finance and working capital where traditional banks fail to see the pulse.
+                        <p className="text-muted-foreground leading-relaxed text-left flex-grow">
+                            Data is the new collateral. By analyzing your platform activity and standing, we unlock asset finance and working capital where traditional banks fail to see the pulse of the transport industry.
                         </p>
                          <ul className="space-y-2 pt-2 text-left">
                             <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> In-House Asset Finance</li>
                             <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Performance-Based Lending</li>
                         </ul>
+                        <div className="pt-4">
+                            <Button asChild variant="outline" className="w-full font-bold border-2 h-12 shadow-sm">
+                                <Link href="/funding">Source Capital <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -139,7 +145,7 @@ export default function AboutPage() {
                         <h4 className="text-primary font-black text-xs uppercase tracking-[0.2em] mb-8 text-left">The Flow Protocol</h4>
                         <div className="space-y-8 relative z-10 text-left text-sm text-slate-400 leading-relaxed">
                             <p>We believe that when information flows freely, capital follows. By establishing your digital branch on our grid, you are moving from a single point of failure to a networked economy of growth.</p>
-                            <p>Our platform handles the compliance, the discovery, and the introduciton. You handle the deal.</p>
+                            <p>Our platform handles the compliance, the discovery, and the introduction. You handle the deal.</p>
                         </div>
                     </div>
                 </div>
