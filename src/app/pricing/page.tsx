@@ -13,7 +13,7 @@ import * as React from 'react';
 
 /**
  * CORE MEMBERSHIP TIERS: Basic, Standard, Premium
- * Strictly limited to 3 cards for commercial clarity.
+ * Respects the 'isActive' flag set in the backend ledger.
  */
 
 const formatLimit = (val: number | undefined | null) => {
@@ -35,9 +35,9 @@ export default function MembershipPage() {
 
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
-    // Strictly filter for the 3 core commercial tiers (Basic, Standard, Premium)
+    // Filter for active plans only
     return [...dbPlans]
-        .filter(p => ['basic', 'standard', 'premium'].includes(p.id?.toLowerCase()))
+        .filter(p => p.isActive !== false)
         .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 

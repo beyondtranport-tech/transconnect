@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Trash2, Layers, Zap, Info, Package, Truck, ShoppingCart, Landmark } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Trash2, Layers, Zap, Info, Package, Truck, ShoppingCart, Landmark, Store, PackageSearch, Eye, EyeOff } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { cn, formatCurrency } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +44,8 @@ const defaultPlans = [
         loadsLimit: 2,
         vehiclesLimit: 1,
         financeApplications: 2,
-        isPopular: false
+        isPopular: false,
+        isActive: true
     },
     {
         id: 'standard',
@@ -55,7 +57,8 @@ const defaultPlans = [
         loadsLimit: 20,
         vehiclesLimit: 5,
         financeApplications: 10,
-        isPopular: true
+        isPopular: true,
+        isActive: true
     },
     {
         id: 'premium',
@@ -67,7 +70,8 @@ const defaultPlans = [
         loadsLimit: 999999,
         vehiclesLimit: 999999,
         financeApplications: 999999,
-        isPopular: false
+        isPopular: false,
+        isActive: true
     }
 ];
 
@@ -82,6 +86,7 @@ const planSchema = z.object({
   vehiclesLimit: z.coerce.number().min(0),
   financeApplications: z.coerce.number().min(0),
   isPopular: z.boolean().default(false),
+  isActive: z.boolean().default(true),
 });
 
 type PlanFormValues = z.infer<typeof planSchema>;
@@ -108,6 +113,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             vehiclesLimit: plan?.vehiclesLimit || 0,
             financeApplications: plan?.financeApplications || 0,
             isPopular: plan?.isPopular || false,
+            isActive: plan?.isActive !== false,
         });
     }
   }, [isOpen, plan, form]);
@@ -173,17 +179,23 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                 )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
                  <FormField name="price" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left">
+                    <FormItem className="text-left col-span-1">
                         <FormLabel>Monthly Price (R)</FormLabel>
                         <FormControl><Input type="number" {...field} /></FormControl>
                     </FormItem>
                 )} />
                 <FormField name="isPopular" control={form.control} render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 pt-8 text-left">
+                    <FormItem className="flex items-center space-x-2 pt-8 text-left col-span-1">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                         <FormLabel className="cursor-pointer">Mark as Popular</FormLabel>
+                    </FormItem>
+                )} />
+                <FormField name="isActive" control={form.control} render={({ field }) => (
+                    <FormItem className="flex items-center space-x-2 pt-8 text-left col-span-1">
+                        <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        <FormLabel className="cursor-pointer text-primary font-bold">Publicly Active</FormLabel>
                     </FormItem>
                 )} />
             </div>
@@ -267,13 +279,34 @@ export default function PricingManagement() {
     }
   };
 
+  const handleToggleActive = async (plan: any) => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/updateConfigDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                path: `memberships/${plan.id}`,
+                data: { isActive: !plan.isActive, updatedAt: { _methodName: 'serverTimestamp' } }
+            }),
+        });
+
+        if (!response.ok) throw new Error("Failed to update status.");
+        toast({ title: plan.isActive ? "Plan Disabled" : "Plan Activated" });
+        forceRefresh();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: "Status Update Failed", description: e.message });
+    }
+  };
+
   const handleDelete = async (planId: string) => {
     setIsDeleting(planId);
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
 
-        // Use the exact document ID for the path
         const response = await fetch('/api/deleteConfigDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -299,12 +332,82 @@ export default function PricingManagement() {
     return [...plans].sort((a,b) => a.price - b.price);
   }, [plans]);
 
+  const columns: ColumnDef<any>[] = [
+    { 
+        header: 'Status',
+        cell: ({row}) => (
+            <div className="flex items-center gap-2">
+                <Switch 
+                    checked={row.original.isActive !== false} 
+                    onCheckedChange={() => handleToggleActive(row.original)}
+                />
+                {row.original.isActive !== false ? <Eye className="h-3 w-3 text-primary" /> : <EyeOff className="h-3 w-3 text-muted-foreground" />}
+            </div>
+        )
+    },
+    { 
+        accessorKey: 'name', 
+        header: 'Plan Name',
+        cell: ({ row }) => <div className="font-bold capitalize">{row.original.name}</div>,
+    },
+    { 
+        accessorKey: 'price', 
+        header: 'Price',
+        cell: ({ row }) => <span className="font-mono font-bold text-primary">{formatCurrency(row.original.price)}</span> 
+    },
+    { 
+        header: 'Allowances (I / S / L / V / F)',
+        cell: ({row}) => (
+            <div className="flex gap-2 font-mono text-[10px] text-muted-foreground">
+                <span>{row.original.intelligenceQueries}</span> /
+                <span>{row.original.shopProducts}</span> /
+                <span>{row.original.loadsLimit}</span> /
+                <span>{row.original.vehiclesLimit}</span> /
+                <span>{row.original.financeApplications}</span>
+            </div>
+        )
+    },
+    {
+        id: 'actions',
+        header: <div className="text-right">Actions</div>,
+        cell: ({ row }) => (
+            <div className="text-right flex justify-end gap-1">
+                <PlanDialog plan={row.original} onSave={forceRefresh} />
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" disabled={isDeleting === row.original.id}>
+                            {isDeleting === row.original.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="text-left">
+                        <AlertDialogHeader className="text-left">
+                            <AlertDialogTitle className="text-left">Delete Membership Plan?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-left text-foreground">
+                                This will remove "{row.original.name}" from the commercial registry. Existing subscribers will not be affected, but new signups will no longer see this tier.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="text-left">
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction 
+                                onClick={() => handleDelete(row.original.id)}
+                                className={cn(buttonVariants({ variant: 'destructive' }), "font-bold")}
+                            >
+                                Delete Plan
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </div>
+        )
+    }
+  ];
+
   return (
     <div className="space-y-6 text-left text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="text-left">
             <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left text-foreground text-foreground"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
-            <CardDescription className="text-left">Manage the outcome-based pricing for the 3 core industrial tiers.</CardDescription>
+            <CardDescription className="text-left">Manage visibility and outcome-based pricing for the core industrial tiers.</CardDescription>
         </div>
         <div className="flex gap-2 text-left text-foreground">
             <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-left text-foreground">
@@ -320,61 +423,7 @@ export default function PricingManagement() {
             {isLoading ? (
             <div className="flex justify-center p-20 text-left"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
             ) : (
-            <div className="border rounded-xl overflow-hidden text-left">
-                <Table className="text-left">
-                <TableHeader className="bg-slate-50 text-left">
-                    <TableRow className="text-left">
-                    <TableHead className="font-bold text-[10px] uppercase text-left">Plan</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase text-left">Price</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase text-left">Intel</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase text-left">Shop</TableHead>
-                    <TableHead className="font-bold text-[10px] uppercase text-left">Finance</TableHead>
-                    <TableHead className="text-right font-bold text-[10px] uppercase text-left">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody className="text-left">
-                    {sortedPlans.map((plan: any) => (
-                        <TableRow key={plan.id} className="text-left">
-                            <TableCell className="font-black py-4 text-left capitalize">{plan.name}</TableCell>
-                            <TableCell className="font-mono font-bold text-primary text-left">{formatCurrency(plan.price)}</TableCell>
-                            <TableCell className="text-xs text-left">{plan.intelligenceQueries === 999999 ? 'Unlimited' : plan.intelligenceQueries}</TableCell>
-                            <TableCell className="text-xs text-left">{plan.shopProducts === 999999 ? 'Unlimited' : plan.shopProducts}</TableCell>
-                            <TableCell className="text-xs text-left">{plan.financeApplications === 999999 ? 'Unlimited' : plan.financeApplications}</TableCell>
-                            <TableCell className="text-right text-left flex justify-end gap-1">
-                                <PlanDialog plan={plan} onSave={forceRefresh} />
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" disabled={isDeleting === plan.id}>
-                                            {isDeleting === plan.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent className="text-left">
-                                        <AlertDialogHeader className="text-left">
-                                            <AlertDialogTitle className="text-left">Delete Membership Plan?</AlertDialogTitle>
-                                            <AlertDialogDescription className="text-left text-foreground">
-                                                This will remove "{plan.name}" from the commercial registry. Existing subscribers will not be affected, but new signups will no longer see this tier.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter className="text-left">
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction 
-                                                onClick={() => handleDelete(plan.id)}
-                                                className={cn(buttonVariants({ variant: 'destructive' }), "font-bold")}
-                                            >
-                                                Delete Plan
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                    {sortedPlans.length === 0 && (
-                        <TableRow className="text-left text-foreground"><TableCell colSpan={6} className="text-center py-20 text-muted-foreground italic text-left">No plans defined. Click "Reset to Core Model" above.</TableCell></TableRow>
-                    )}
-                </TableBody>
-                </Table>
-            </div>
+                <DataTable columns={columns} data={sortedPlans} />
             )}
         </CardContent>
       </Card>
