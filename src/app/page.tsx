@@ -15,7 +15,9 @@ import {
   CheckCircle2,
   ArrowDown,
   PackageSearch,
-  Landmark
+  Landmark,
+  ShoppingCart,
+  Users
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -78,24 +80,53 @@ export default function HomePage() {
       {/* CORE MECHANISM - THE TRANSACTIONAL VALUE */}
       <section className="py-24 bg-white">
         <div className="container mx-auto px-4 text-left">
-            <div className="max-w-4xl mx-auto space-y-12">
+            <div className="max-w-5xl mx-auto space-y-12">
                 <div className="space-y-4">
                     <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 tracking-tight uppercase">The Power to Transact.</h2>
                     <p className="text-xl text-muted-foreground leading-relaxed">
-                        We've built the digital infrastructure to remove the friction from industrial sales. No more cold calls, no more payment uncertainty.
+                        We've built the digital infrastructure to remove the friction from industrial sales and procurement.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <Card className="p-8 border-none shadow-xl bg-slate-50 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {/* DIGITAL SHOPS */}
+                    <Card className="p-6 border-none shadow-xl bg-slate-50 text-left flex flex-col h-full">
                         <Store className="h-10 w-10 text-primary mb-4" />
-                        <h3 className="text-2xl font-black uppercase mb-2">Digital Shops</h3>
-                        <p className="text-muted-foreground">List your parts and services in a verified mall. Reach 5,400+ hauliers who are actively maintaining fleets.</p>
+                        <h3 className="text-xl font-black uppercase mb-2">Digital Shops</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                          <strong>The Pain:</strong> Being invisible to the market. <br/>
+                          <strong>The Fix:</strong> Open a branch in front of 5,400+ hauliers actively maintaining fleets.
+                        </p>
                     </Card>
-                    <Card className="p-8 border-none shadow-xl bg-slate-50 text-left">
+
+                    {/* LOAD BOARD */}
+                    <Card className="p-6 border-none shadow-xl bg-slate-50 text-left flex flex-col h-full">
                         <PackageSearch className="h-10 w-10 text-primary mb-4" />
-                        <h3 className="text-2xl font-black uppercase mb-2">The Load Board</h3>
-                        <p className="text-muted-foreground">Post freight or find loads in real-time. We bridge the gap between shippers and vetted transporters.</p>
+                        <h3 className="text-xl font-black uppercase mb-2">The Load Board</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                          <strong>The Pain:</strong> Empty return miles. <br/>
+                          <strong>The Fix:</strong> Post freight or find loads in real-time. We bridge shippers with vetted transporters instantly.
+                        </p>
+                    </Card>
+
+                    {/* BUY & SELL BOARD */}
+                    <Card className="p-6 border-none shadow-xl bg-slate-50 text-left flex flex-col h-full">
+                        <ShoppingCart className="h-10 w-10 text-primary mb-4" />
+                        <h3 className="text-xl font-black uppercase mb-2">Buy & Sell Board</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                          <strong>The Pain:</strong> Asset illiquidity. <br/>
+                          <strong>The Fix:</strong> Trade trucks and equipment within a high-trust, verified peer-to-peer marketplace.
+                        </p>
+                    </Card>
+
+                    {/* CUSTOMERS BOARD */}
+                    <Card className="p-6 border-none shadow-xl bg-slate-50 text-left flex flex-col h-full">
+                        <Users className="h-10 w-10 text-primary mb-4" />
+                        <h3 className="text-xl font-black uppercase mb-2">Customers Board</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                          <strong>The Pain:</strong> Gatekeepers & Cold Calls. <br/>
+                          <strong>The Fix:</strong> Access direct MD/CEO lines and lead signals for 22,000+ industry stakeholders.
+                        </p>
                     </Card>
                 </div>
             </div>
