@@ -10,6 +10,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    /**
+     * IS ADMIN CHECK
+     * High-priority check for platform administrators.
+     * Hard-coded UIDs and Emails for maximum reliability in prototype.
+     */
     function isAdmin() {
       return isSignedIn() && (
         request.auth.uid in ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'] ||
@@ -34,18 +39,13 @@ service cloud.firestore {
       );
     }
 
-    function isSaleParticipant(sale) {
-        return isSignedIn() && (
-            isAdmin() || 
-            (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
-                sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
-                sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
-            ))
-        );
+    // --- GLOBAL ADMIN OVERRIDE ---
+    // Rule Sync ID: 2026-03-17T15:00:00Z - FORCING ABSOLUTE ADMIN ACCESS
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
     }
 
-    // --- CRITICAL ENGINE RULES ---
-    // Rule Sync ID: 2026-03-17T14:30:00Z - FORCING ADMIN ACCESS ON ALL SUBCOLLECTIONS
+    // --- COLLECTION RULES ---
 
     match /engagementPings/{pingId} {
       allow list, get: if isSignedIn();
@@ -55,8 +55,6 @@ service cloud.firestore {
     match /platformTasks/{taskId} {
       allow read, write: if isAdmin();
     }
-
-    // --- COLLECTION RULES ---
 
     match /partners/{partnerId} {
       allow get: if true; 
@@ -104,8 +102,6 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
-    // --- STANDARD PATH RULES ---
-
     match /users/{userId} {
       allow get: if isSignedIn(); 
       allow list: if isAdmin();
@@ -122,22 +118,9 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // Explicitly allow read and list on all sub-collections (transactions, enquiries, etc.) for members and admins.
       match /{allSub=**} {
         allow read, list: if isAdmin() || isMember(companyId);
-        allow write: if isAdmin() || (isMember(companyId) && allSub.split('/')[0] in ['enquiries', 'quotes', 'tasks', 'brokerAgreements', 'shops', 'products', 'supportMessages', 'walletPayments']);
-      }
-    }
-
-    match /sales/{saleId} {
-      allow read: if isSignedIn() && (isAdmin() || isSaleParticipant(resource.data));
-      allow write: if isAdmin() || (isSignedIn() && (
-        (!exists(/databases/$(database)/documents/sales/$(saleId)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
-        isSaleParticipant(resource.data)
-      ));
-      
-      match /messages/{id} {
-        allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
+        allow write: if isAdmin() || isMember(companyId);
       }
     }
 
@@ -150,10 +133,5 @@ service cloud.firestore {
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin() || isSignedIn(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
-
-    // --- GLOBAL ADMIN OVERRIDE ---
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
-    }
   }
 }
