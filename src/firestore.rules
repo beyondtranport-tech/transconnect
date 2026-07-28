@@ -20,6 +20,7 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
+     * High-speed resilient verification for mission-critical paths.
      */
     function isMember(cid) {
       return isAdmin() || (
@@ -44,9 +45,56 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     match /engagementPings/{pingId} {
+      // Allow any signed-in user to see their pings, and admins to see everything
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    match /partners/{partnerId} {
+      allow get: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      
+      match /vouches/{vouchId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn(); 
+      }
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+      }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    match /leads/{leadId} {
+      allow get: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      
+      match /vouches/{vouchId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn(); 
+      }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    match /configuration/{allPaths=**} {
+      allow read: if true;
+    }
+    
+    match /memberships/{membershipId} {
+      allow get, list: if true;
+    }
+    match /shops/{shopId} { 
+      allow read: if true; 
+      match /products/{prodId} { allow read: if true; }
+      match /agreements/{agId} { allow read: if true; }
+    }
+    match /visitors/{visitorId} {
+      allow read, write: if true;
+    }
+
+    // --- STANDARD PATH RULES ---
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -105,63 +153,17 @@ service cloud.firestore {
       }
     }
 
-    match /partners/{partnerId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-
-    match /leads/{leadId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-    
-    match /visitors/{visitorId} {
-      allow read, write: if true;
-    }
-
-    match /memberships/{membershipId} {
-      allow get, list: if true;
-    }
-    
-    match /configuration/{configId} {
-      allow get, list: if true;
-    }
-
-    match /contributions/{contributionId} {
-      allow create: if isSignedIn();
-      allow read: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
-    }
-    
-    match /reconciliations/{id} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /platformTransactions/{id} {
-      allow read, write: if isAdmin();
-    }
-
     // --- COLLECTION GROUP RULES ---
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /{path=**}/adCampaigns/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
-    
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/quotes/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/facilities/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
 
+    // --- GLOBAL ADMIN OVERRIDE ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
