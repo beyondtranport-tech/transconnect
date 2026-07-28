@@ -43,12 +43,11 @@ export async function POST(req: NextRequest) {
         const action = (body.action || '').trim();
         const payload = body.payload || {};
 
-        // SPECIAL CASE: Allow members to fetch their own engagement pings via Admin SDK to bypass flaking security rules
+        // SPECIAL CASE: Allow members to fetch their own engagement pings via Admin SDK to bypass security rules
         if (action === 'getMemberEngagementPings') {
             const { companyId } = payload;
             if (!companyId) throw new Error("Company ID required.");
             
-            // Authorization Check: User must be admin OR the owner of the company
             const userDoc = await db.collection('users').doc(decodedToken.uid).get();
             if (userDoc.data()?.companyId !== companyId && !isAdmin) {
                 throw new Error("Forbidden: Access to these signals is restricted to the node owner.");
@@ -66,6 +65,17 @@ export async function POST(req: NextRequest) {
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {
+            case 'finalizeSale': {
+                const { saleId, commissionRate } = payload;
+                const saleRef = db.collection('sales').doc(saleId);
+                await saleRef.update({ 
+                    status: 'concluded', 
+                    finalCommissionRate: commissionRate,
+                    concludedAt: FieldValue.serverTimestamp() 
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'getPipelineQueue': {
                 const now = new Date();
                 const leadsSnap = await db.collection('leads')
@@ -112,8 +122,6 @@ export async function POST(req: NextRequest) {
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),
-                    lastOpenedAt: null,
-                    lastAccessedAt: null
                 };
 
                 if (nextStep) {
@@ -155,9 +163,7 @@ export async function POST(req: NextRequest) {
                     status: 'contacted',
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp(),
-                    lastOpenedAt: null,
-                    lastAccessedAt: null
+                    updatedAt: FieldValue.serverTimestamp()
                 });
 
                 await docRef.collection('communications').add({
@@ -195,65 +201,11 @@ export async function POST(req: NextRequest) {
                     status: 'contacted',
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp(),
-                    lastOpenedAt: null,
-                    lastAccessedAt: null
+                    updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
 
                 await batch.commit();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead } = payload;
-                const colName = isLead ? 'leads' : 'partners';
-                const ref = db.collection(colName).doc(partnerId);
-                await ref.update({
-                    enhancementMethod: 'V13-AI',
-                    lastEnrichedAt: FieldValue.serverTimestamp(),
-                    status: 'contacted',
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'bulkLogForensicInitiated': {
-                const { leadIds, type } = payload;
-                const colName = type === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                leadIds.forEach((id: string) => {
-                    batch.update(db.collection(colName).doc(id), {
-                        enhancementMethod: 'V13-Batch',
-                        lastEnrichedAt: FieldValue.serverTimestamp(),
-                        status: 'contacted',
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'autoEnrichRecord': {
-                const { id, type } = payload;
-                const colName = type === 'lead' ? 'leads' : 'partners';
-                const docRef = db.collection(colName).doc(id);
-                const snap = await docRef.get();
-                if (!snap.exists) throw new Error("Record not found");
-                const data = snap.data()!;
-                const companyName = data.companyName || data.firstName || 'Unknown';
-
-                const { enrichPartner } = await import('@/ai/flows/enrich-partner-flow');
-                const result = await enrichPartner({ companyName });
-
-                await docRef.update({
-                    ...result,
-                    status: 'contacted',
-                    enhancementMethod: 'V13-Auto',
-                    lastEnrichedAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                return NextResponse.json({ success: true, data: serializeData(result) });
             }
 
             case 'getPartnersByType': {
@@ -335,64 +287,24 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'getAudienceCommunications': {
-                const { type: audType } = payload;
-                const snap = await db.collectionGroup('communications')
-                    .orderBy('timestamp', 'desc')
-                    .limit(200)
-                    .get();
-                
-                const logs = await Promise.all(snap.docs.map(async (doc) => {
-                    const data = doc.data();
-                    const path = doc.ref.path;
-                    const partnerId = path.split('/')[1];
-                    const pRef = db.collection(path.startsWith('leads') ? 'leads' : 'partners').doc(partnerId);
-                    const pSnap = await pRef.get();
-                    const pData = pSnap.data();
-                    
-                    if (audType && pData?.type !== audType) return null;
-
-                    return {
-                        id: doc.id,
-                        ...data,
-                        partnerName: pData?.companyName || pData?.firstName || 'Unknown',
-                        partnerType: pData?.type
-                    };
-                }));
-
-                return NextResponse.json({ success: true, data: serializeData(logs.filter(l => l !== null)) });
-            }
-
             case 'searchRegistry': {
                 const { type: rType, limit: rLimit = 100, term = '' } = payload;
                 const normalizedTerm = term.toLowerCase().trim();
                 const limitNum = parseInt(String(rLimit), 10) || 100;
                 
-                // 1. SCAN PARTNERS
                 let pQuery: any = db.collection('partners');
-                if (rType !== 'all') {
-                    pQuery = pQuery.where('type', '==', rType);
-                }
+                if (rType !== 'all') pQuery = pQuery.where('type', '==', rType);
                 const pSnap = await pQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const pResults = pSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Member' }));
 
-                // 2. SCAN LEADS
                 let lQuery: any = db.collection('leads');
                 if (rType !== 'all') {
-                    const roleMap: Record<string, string> = {
-                        'transporter': 'Transporter',
-                        'supplier': 'Supplier',
-                        'driver': 'Driver',
-                        'finance': 'Funder',
-                        'associate': 'Associate'
-                    };
-                    const roleTerm = roleMap[rType] || rType;
-                    lQuery = lQuery.where('role', '==', roleTerm);
+                    const roleMap: Record<string, string> = { 'transporter': 'Transporter', 'supplier': 'Supplier', 'driver': 'Driver', 'finance': 'Funder', 'associate': 'Associate' };
+                    lQuery = lQuery.where('role', '==', roleMap[rType] || rType);
                 }
                 const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const lResults = lSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
-                // 3. MERGE & SORT
                 let combined = [...pResults, ...lResults];
                 if (normalizedTerm) {
                     combined = combined.filter(item => {
@@ -402,12 +314,7 @@ export async function POST(req: NextRequest) {
                     });
                 }
 
-                combined.sort((a, b) => {
-                    const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate().getTime() : 0;
-                    const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate().getTime() : 0;
-                    return dateB - dateA;
-                });
-
+                combined.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
                 return NextResponse.json({ success: true, data: serializeData(combined.slice(0, limitNum)) });
             }
 

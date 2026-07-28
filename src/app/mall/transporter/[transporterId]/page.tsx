@@ -1,124 +1,168 @@
 
 'use client';
 
-import data from "@/lib/placeholder-images.json";
-import { Truck, CheckCircle, Star, Sparkles } from "lucide-react";
+import React from 'react';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { notFound } from "next/navigation";
+import { notFound, useParams, useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
-const { placeholderImages } = data;
+export default function TransporterProfilePage() {
+    const params = useParams();
+    const router = useRouter();
+    const transporterId = params?.transporterId as string;
+    const firestore = useFirestore();
 
-const featuredTransporters = [
-    { 
-        id: "abc-logistics",
-        name: "ABC Logistics", 
-        specialty: "Refrigerated Transport",
-        rating: 4.8,
-        image: placeholderImages.find(p => p.id === 'tech-division'),
-        about: "ABC Logistics is a family-owned business with 15 years of experience in temperature-controlled logistics. We specialize in transporting perishable goods across Southern Africa, ensuring your cargo arrives fresh and on time.",
-        services: ["Refrigerated LTL & FTL", "Cold Storage Warehousing", "Pharmaceutical Transport", "Real-time Temperature Monitoring"],
-        fleetSize: "50+ Trucks",
-        routes: "Domestic & Cross-Border (SADC)",
-        contactPerson: "John Smith",
-    },
-    { 
-        id: "swift-haulers",
-        name: "Swift Haulers", 
-        specialty: "Long-Haul & General Freight",
-        rating: 4.6,
-        image: placeholderImages.find(p => p.id === 'hero-home'),
-        about: "Swift Haulers is a leading provider of long-haul transportation services. Our modern fleet and experienced drivers are equipped to handle general freight of all types, ensuring safe and efficient delivery nationwide.",
-        services: ["Full Truckload (FTL)", "Less-Than-Truckload (LTL)", "Dedicated Fleet Solutions", "Expedited Services"],
-        fleetSize: "120+ Trucks",
-        routes: "Nationwide (South Africa)",
-        contactPerson: "Jane Doe",
-    },
-]
+    const partnerRef = useMemoFirebase(() => {
+        if (!firestore || !transporterId) return null;
+        return doc(firestore, 'partners', transporterId);
+    }, [firestore, transporterId]);
 
+    const leadRef = useMemoFirebase(() => {
+        if (!firestore || !transporterId) return null;
+        return doc(firestore, 'leads', transporterId);
+    }, [firestore, transporterId]);
 
-export default function TransporterProfilePage({ params }: { params: { transporterId: string } }) {
+    const { data: partner, isLoading: isPartnerLoading } = useDoc(partnerRef);
+    const { data: lead, isLoading: isLeadLoading } = useDoc(leadRef);
 
-    const transporter = featuredTransporters.find(s => s.id === params.transporterId);
+    const isLoading = isPartnerLoading && isLeadLoading;
+    const transporter = partner || lead;
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen gap-4">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Retrieving Forensic Node...</p>
+            </div>
+        );
+    }
 
     if (!transporter) {
         notFound();
     }
     
     return (
-        <div className="py-16 md:py-24 bg-background">
+        <div className="bg-slate-50 min-h-screen py-16 md:py-24 text-left text-foreground">
              <div className="container mx-auto px-4">
-                <div className="max-w-6xl mx-auto border rounded-xl overflow-hidden shadow-2xl bg-background">
-                    {/* Profile Header */}
-                    <div className="relative h-48 md:h-64">
-                            {transporter.image && (
-                            <Image
-                                src={transporter.image.imageUrl}
-                                alt={transporter.name}
-                                fill
-                                className="object-cover"
-                                data-ai-hint={transporter.image.imageHint}
-                            />
-                        )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-                        <div className="absolute bottom-0 left-0 p-6">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-background p-3 rounded-lg shadow-md">
-                                    <Truck className="h-10 w-10 text-primary" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl font-bold text-white font-headline">{transporter.name}</h1>
-                                    <p className="text-white/90">{transporter.specialty}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-muted-foreground">
+                    <ArrowLeft className="h-4 w-4" /> Back to Results
+                </Button>
 
-                    {/* Profile Body */}
-                    <div className="p-6 md:p-8 grid md:grid-cols-3 gap-8">
-                        <div className="md:col-span-2">
-                            <h2 className="text-xl font-semibold font-headline">About Us</h2>
-                            <p className="mt-2 text-muted-foreground">
-                                {transporter.about}
-                            </p>
-
-                            <h3 className="mt-8 text-xl font-semibold font-headline">Our Services</h3>
-                            <div className="mt-4 grid grid-cols-2 gap-4">
-                                {transporter.services.map(cat => (
-                                    <div key={cat} className="flex items-center gap-2 p-3 bg-card rounded-md border">
-                                        <CheckCircle className="h-5 w-5 text-green-500" />
-                                        <span>{cat}</span>
+                <div className="max-w-6xl mx-auto border-none rounded-[2rem] overflow-hidden shadow-2xl bg-white text-left">
+                    {/* Header */}
+                    <div className="relative h-64 md:h-80 bg-slate-900">
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10" />
+                        <div className="absolute bottom-0 left-0 p-8 md:p-12 z-20 w-full">
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                <div className="flex items-center gap-6">
+                                    <div className="bg-white p-4 rounded-3xl shadow-xl">
+                                        <Truck className="h-12 w-12 text-primary" />
                                     </div>
-                                ))}
+                                    <div className="space-y-1">
+                                        <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 mb-2">Verified Haulier</Badge>
+                                        <h1 className="text-3xl md:text-5xl font-black text-white font-headline leading-none uppercase">{transporter.companyName || `${transporter.firstName} ${transporter.lastName}`}</h1>
+                                        <div className="flex items-center gap-2 text-slate-300 font-bold text-sm">
+                                            <MapPin className="h-4 w-4" /> {transporter.address || 'National Network'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <Button className="h-14 px-10 font-black uppercase tracking-tight shadow-xl shadow-primary/20 text-white" size="lg">
+                                    Initiate Handshake
+                                </Button>
                             </div>
-                        </div>
-                        <div className="bg-card p-6 rounded-lg border">
-                            <h3 className="text-xl font-semibold font-headline">Company Details</h3>
-                            <ul className="mt-4 space-y-3 text-sm text-muted-foreground">
-                                <li><strong>Fleet Size:</strong> {transporter.fleetSize}</li>
-                                <li><strong>Primary Routes:</strong> {transporter.routes}</li>
-                                <li><strong>Contact:</strong> {transporter.contactPerson}</li>
-                            </ul>
-                                <h3 className="mt-6 text-xl font-semibold font-headline">Community Rating</h3>
-                            <div className="flex items-center gap-1 mt-2">
-                                {[...Array(5)].map((_, i) => (
-                                    <Star 
-                                        key={i} 
-                                        className={`h-5 w-5 ${i < Math.floor(transporter.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-yellow-400/50'}`} 
-                                    />
-                                ))}
-                                <span className="ml-2 text-sm text-muted-foreground">({transporter.rating.toFixed(1)}/5)</span>
-                            </div>
-                             <Button className="w-full mt-6">Contact Partner</Button>
                         </div>
                     </div>
-                </div>
 
-                <div className="text-center mt-16">
-                    <Button size="lg" variant="outline">
-                        <Sparkles className="mr-2 h-5 w-5" />
-                        Want your company featured? Join TransConnect!
-                    </Button>
+                    {/* Content */}
+                    <div className="p-8 md:p-12 grid md:grid-cols-3 gap-12 text-left">
+                        <div className="md:col-span-2 space-y-10 text-left">
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+                                    <ShieldCheck className="h-6 w-6 text-primary" />
+                                    Technical Profile
+                                </h2>
+                                <p className="text-lg leading-relaxed text-slate-600 whitespace-pre-wrap italic">
+                                    {transporter.minedServiceWording || transporter.notes || "Professional haulier established in the South African logistics grid. Full service profile undergoing forensic verification."}
+                                </p>
+                            </div>
+
+                            <Separator />
+
+                            <div className="space-y-6">
+                                <h3 className="text-lg font-black uppercase tracking-tight">Verified Capability</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <Card className="bg-slate-50 border-none shadow-inner p-4 flex items-center gap-4">
+                                        <CheckCircle className="h-6 w-6 text-green-600 shrink-0" />
+                                        <div className="text-left">
+                                            <p className="text-[10px] font-black uppercase text-muted-foreground">Primary Sector</p>
+                                            <p className="font-bold">{transporter.industrial_category || transporter.role || 'Transport'}</p>
+                                        </div>
+                                    </Card>
+                                    <Card className="bg-slate-50 border-none shadow-inner p-4 flex items-center gap-4">
+                                        <CheckCircle className="h-6 w-6 text-green-600 shrink-0" />
+                                        <div className="text-left">
+                                            <p className="text-[10px] font-black uppercase text-muted-foreground">Compliance</p>
+                                            <p className="font-bold">RC1 Standard Verified</p>
+                                        </div>
+                                    </Card>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-8 text-left">
+                            <Card className="shadow-lg border-primary/10 overflow-hidden bg-white">
+                                <CardHeader className="bg-slate-50 border-b p-6">
+                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-left">Contact Node</CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-6 space-y-4">
+                                    <div className="space-y-1 text-left">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">MD / Decision Maker</p>
+                                        <p className="font-bold text-foreground">{transporter.contactPerson || transporter.ceo?.name || transporter.marketingManager?.name || 'Identity Protected'}</p>
+                                    </div>
+                                    {transporter.email && (
+                                        <div className="space-y-1 text-left">
+                                            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct E-mail</p>
+                                            <div className="flex items-center gap-2 text-xs font-bold text-primary">
+                                                <Mail className="h-3.5 w-3.5" /> {transporter.email}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {(transporter.phone || transporter.mobile) && (
+                                        <div className="space-y-1 text-left">
+                                            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct Line</p>
+                                            <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                                                <Phone className="h-3.5 w-3.5" /> {transporter.phone || transporter.mobile}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {transporter.website && (
+                                        <div className="space-y-1 text-left">
+                                            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Official Domain</p>
+                                            <a href={transporter.website.startsWith('http') ? transporter.website : `https://${transporter.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline">
+                                                <Globe className="h-3.5 w-3.5" /> {transporter.website}
+                                            </a>
+                                        </div>
+                                    )}
+                                </CardContent>
+                                <CardFooter className="bg-slate-50 border-t p-6">
+                                    <Button className="w-full font-black uppercase text-xs tracking-widest">Direct RFQ</Button>
+                                </CardFooter>
+                            </Card>
+
+                            <Alert className="bg-primary/5 border-primary/20">
+                                <Info className="h-4 w-4 text-primary" />
+                                <AlertTitle className="font-bold text-xs uppercase text-primary">Grid Standing</AlertTitle>
+                                <AlertDescription className="text-[10px] text-muted-foreground leading-relaxed mt-1">
+                                    This node is monitored for responsiveness. Initiating a handshake logs a forensic signal for both parties.
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    </div>
                 </div>
              </div>
         </div>
