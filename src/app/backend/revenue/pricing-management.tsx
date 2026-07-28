@@ -112,7 +112,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          path: `memberships/${values.id}`,
+          path: `memberships/${values.id.toLowerCase()}`,
           data: dataToSave
         }),
       });
@@ -148,7 +148,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             <div className="grid grid-cols-2 gap-4">
                 <FormField name="id" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
-                        <FormLabel>Plan ID</FormLabel>
+                        <FormLabel>Plan ID (Lowercase)</FormLabel>
                         <FormControl><Input {...field} disabled={!!plan} placeholder="e.g. basic" /></FormControl>
                     </FormItem>
                 )} />
@@ -239,12 +239,12 @@ export default function PricingManagement() {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `memberships/${plan.id}`,
+                    path: `memberships/${plan.id.toLowerCase()}`,
                     data: { ...plan, updatedAt: { _methodName: 'serverTimestamp' } }
                 }),
             });
         }
-        toast({ title: "Core Tiers Seeded" });
+        toast({ title: "Core Tiers Seeded", description: "Basic, Standard, and Premium tiers are now active." });
         forceRefresh();
     } catch (e: any) {
         toast({ variant: 'destructive', title: "Seeding Failed", description: e.message });
@@ -294,7 +294,7 @@ export default function PricingManagement() {
                 <TableBody className="text-left">
                     {sortedPlans.map((plan: any) => (
                         <TableRow key={plan.id} className="text-left">
-                            <TableCell className="font-black py-4 text-left">{plan.name}</TableCell>
+                            <TableCell className="font-black py-4 text-left capitalize">{plan.name}</TableCell>
                             <TableCell className="font-mono font-bold text-primary text-left">{formatCurrency(plan.price)}</TableCell>
                             <TableCell className="text-xs text-left">{plan.intelligenceQueries === 999999 ? 'Unlimited' : plan.intelligenceQueries}</TableCell>
                             <TableCell className="text-xs text-left">{plan.shopProducts === 999999 ? 'Unlimited' : plan.shopProducts}</TableCell>

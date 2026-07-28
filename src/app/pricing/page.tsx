@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -35,9 +35,9 @@ export default function MembershipPage() {
 
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
-    // Strictly filter for the 3 core commercial tiers
+    // Strictly filter for the 3 core commercial tiers (Basic, Standard, Premium)
     return [...dbPlans]
-        .filter(p => ['basic', 'standard', 'premium'].includes(p.id))
+        .filter(p => ['basic', 'standard', 'premium'].includes(p.id?.toLowerCase()))
         .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
@@ -58,7 +58,7 @@ export default function MembershipPage() {
                 <Loader2 className="animate-spin h-12 w-12 text-primary mx-auto" />
                 <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Commercial Ledger...</p>
             </div>
-        ) : (
+        ) : plans.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch text-left text-foreground">
                 {plans.map((plan) => (
                     <Card key={plan.id} className={cn(
@@ -134,6 +134,19 @@ export default function MembershipPage() {
                         </CardFooter>
                     </Card>
                 ))}
+            </div>
+        ) : (
+            <div className="max-w-md mx-auto text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <h3 className="text-xl font-bold">Ledger Initialization Required</h3>
+                <p className="text-sm text-muted-foreground mt-2 px-8">
+                    The platform core tiers have not been seeded in the database. Please visit the Admin Backend to reset the commercial model.
+                </p>
+                {user?.email === 'michael@logisticsflow.co.za' && (
+                    <Button asChild variant="outline" className="mt-6 font-bold">
+                        <Link href="/adminaccount?view=pricing-memberships">Go to Backend Ledger</Link>
+                    </Button>
+                )}
             </div>
         )}
 
