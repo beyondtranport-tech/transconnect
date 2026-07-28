@@ -20,6 +20,7 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
+     * Updated to ensure admins always pass this check for company nodes.
      */
     function isMember(cid) {
       return isAdmin() || (
@@ -42,7 +43,7 @@ service cloud.firestore {
     }
 
     // --- CRITICAL ENGINE RULES ---
-    // Rule Sync ID: 2026-03-16T18:00:00Z
+    // Rule Sync ID: 2026-03-16T19:00:00Z
 
     match /engagementPings/{pingId} {
       allow list, get: if isSignedIn();
@@ -121,7 +122,7 @@ service cloud.firestore {
       
       // Explicitly allow list on all subcollections for members/admins
       match /{collectionName}/{id} {
-        allow read, list: if isMember(companyId);
+        allow read, list: if isMember(companyId) || isAdmin();
         allow write: if isAdmin() || (isMember(companyId) && collectionName in ['enquiries', 'quotes', 'tasks', 'brokerAgreements', 'shops', 'products']);
       }
       
