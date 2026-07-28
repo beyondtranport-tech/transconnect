@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -11,10 +12,9 @@ service cloud.firestore {
 
     function isAdmin() {
       return isSignedIn() && (
-        request.auth.uid == '0Y3IhZffEPNlMAIhURPnzRgNokL2' ||
-        request.auth.uid == 'ylVC4F2FIYV8o9jjq13wCYiAyyM2' ||
+        request.auth.uid in ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'] ||
         request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
-        (request.auth.token.keys().contains('admin') && request.auth.token.admin == true)
+        (request.auth.token.get('admin', false) == true)
       );
     }
 
@@ -26,10 +26,8 @@ service cloud.firestore {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          // Path 1: User profile link (Primary)
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
-          // Path 2: Direct ownership on target record (Fallback)
           (exists(/databases/$(database)/documents/companies/$(cid)) && 
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
@@ -44,17 +42,53 @@ service cloud.firestore {
         );
     }
 
-    // --- PUBLIC / CONFIGURATION RULES ---
+    // --- COLLECTION RULES ---
 
-    match /configuration/{configId} {
-      allow get, list: if true;
+    match /engagementPings/{pingId} {
+      // Allow any signed-in user to see pings (restricted by query in app code), and admins full access
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
+
+    match /partners/{partnerId} {
+      allow get: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      
+      match /vouches/{vouchId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn(); 
+      }
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if isSignedIn();
+      }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    match /leads/{leadId} {
+      allow get: if true; 
+      allow list: if isSignedIn();
+      allow write: if isAdmin();
+      
+      match /vouches/{vouchId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn(); 
+      }
+      match /{allSub=**} { allow read, write: if isAdmin(); }
+    }
+
+    match /configuration/{allPaths=**} {
+      allow read: if true;
+    }
+    
     match /memberships/{membershipId} {
       allow get, list: if true;
     }
     match /shops/{shopId} { 
       allow read: if true; 
       match /products/{prodId} { allow read: if true; }
+      match /agreements/{agId} { allow read: if true; }
     }
     match /visitors/{visitorId} {
       allow read, write: if true;
@@ -74,9 +108,9 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow read: if isSignedIn() && (isMember(companyId) || resource.data.ownerId == request.auth.uid);
+      allow read: if isSignedIn() && (isMember(companyId) || (exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid));
       allow create: if isSignedIn();
-      allow update, delete: if isAdmin() || (isSignedIn() && resource.data.ownerId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); }
@@ -87,23 +121,23 @@ service cloud.firestore {
       match /payoutRequests/{id} { allow read, write, list: if isMember(companyId); }
       match /searchLogs/{id} { allow read, write, list: if isMember(companyId); }
       match /facilities/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
-      match /staff/{id} { allow read, write, list: if isMember(companyId); }
+      match /staff/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
       match /brokerAgreements/{id} { allow read, write, list: if isMember(companyId); }
-      match /assets/{id} { allow read, write, list: if isMember(companyId); }
-      match /vehicleListings/{id} { allow read, write, list: if isMember(companyId); }
       
       match /shops/{shopId} { 
+        allow read: if true; 
         allow write: if isMember(companyId); 
-        match /products/{prodId} { allow write: if isMember(companyId); }
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
         match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
 
-      match /loads/{id} {
-        allow read, write, list: if isMember(companyId);
+      match /vehicleListings/{id} {
+          allow read: if true;
+          allow write: if isMember(companyId);
       }
-
-      match /warehouses/{id} {
-        allow read, write, list: if isMember(companyId);
+      
+      match /loadBoard/{allBoard=**} {
+        allow read, write: if isMember(companyId);
       }
     }
 
@@ -113,39 +147,23 @@ service cloud.firestore {
         (!exists(/databases/$(database)/documents/sales/$(saleId)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
         isSaleParticipant(resource.data)
       ));
-    }
-
-    match /partners/{partnerId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
-    }
-
-    match /leads/{leadId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin();
-      match /{allSub=**} { allow read, write: if isAdmin(); }
+      
+      match /messages/{id} {
+        allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
+      }
     }
 
     // --- COLLECTION GROUP RULES ---
-    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin() || isMember(resource.data.companyId); }
+    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /{path=**}/adCampaigns/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
-    match /{path=**}/assets/{id} { allow read: if true; allow write: if isAdmin() || isMember(resource.data.companyId); }
-    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin() || isMember(resource.data.companyId); }
-    match /{path=**}/enquiries/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/staff/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/tasks/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/communications/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/brokerAgreements/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/walletPayments/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/payoutRequests/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/reconciliations/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/searchLogs/{id} { allow read, write: if isAdmin(); }
-    
+    match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
+
+    // --- GLOBAL ADMIN OVERRIDE ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
