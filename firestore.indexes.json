@@ -26,6 +26,14 @@
       ]
     },
     {
+      "collectionId": "engagementPings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "targetId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionId": "communications",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

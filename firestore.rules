@@ -62,7 +62,7 @@ service cloud.firestore {
 
     match /engagementPings/{pingId} {
       // Allow members to read pings intended for their company
-      allow read: if isSignedIn();
+      allow get, list: if isSignedIn();
     }
 
     // --- PUBLIC / CONFIGURATION RULES ---
