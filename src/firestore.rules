@@ -20,16 +20,13 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * Simplified and optimized for high-speed verification.
      */
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
         cid != null && (
-          // Check 1: User document explicitly links to this company
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
-          // Check 2: Direct ownership check on the company document
           (exists(/databases/$(database)/documents/companies/$(cid)) && 
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
@@ -44,7 +41,12 @@ service cloud.firestore {
         );
     }
 
-    // --- STANDARD PATH RULES ---
+    // --- COLLECTION RULES ---
+
+    match /engagementPings/{pingId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
 
     match /users/{userId} {
       allow get: if isSignedIn(); 
@@ -58,12 +60,10 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      // Allow the owner to read the doc even before companyId is set on their profile
       allow read: if isSignedIn() && (isMember(companyId) || (exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid));
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // Sub-collections: Explicitly grant list/read to members
       match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
       match /transactions/{id} { allow read, list: if isMember(companyId); }
       match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
@@ -117,10 +117,6 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
     
-    match /engagementPings/{pingId} {
-      allow get, list: if isSignedIn();
-    }
-
     match /visitors/{visitorId} {
       allow read, write: if true;
     }

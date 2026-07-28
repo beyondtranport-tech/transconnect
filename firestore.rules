@@ -18,6 +18,10 @@ service cloud.firestore {
       );
     }
 
+    /**
+     * IS MEMBER / OWNER CHECK
+     * High-speed resilient verification for mission-critical paths.
+     */
     function isMember(cid) {
       return isAdmin() || (
         isSignedIn() && 
@@ -30,7 +34,13 @@ service cloud.firestore {
       );
     }
 
-    // --- PUBLIC HANDSHAKE & TRUST RULES ---
+    // --- COLLECTION RULES ---
+
+    match /engagementPings/{pingId} {
+      // Allow any signed-in user to see their pings, and admins to see everything
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
 
     match /partners/{partnerId} {
       allow get: if true; 
@@ -60,13 +70,6 @@ service cloud.firestore {
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
 
-    match /engagementPings/{pingId} {
-      // Allow members to read pings intended for their company
-      allow get, list: if isSignedIn();
-    }
-
-    // --- PUBLIC / CONFIGURATION RULES ---
-
     match /configuration/{allPaths=**} {
       allow read: if true;
     }
@@ -81,11 +84,6 @@ service cloud.firestore {
     }
     match /visitors/{visitorId} {
       allow read, write: if true;
-    }
-
-    // --- ADMIN OVERRIDE ---
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
     }
 
     // --- STANDARD PATH RULES ---
@@ -144,5 +142,10 @@ service cloud.firestore {
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
+
+    // --- GLOBAL ADMIN OVERRIDE ---
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
   }
 }
