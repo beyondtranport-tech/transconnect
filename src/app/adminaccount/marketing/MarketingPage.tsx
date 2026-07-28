@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,6 +31,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { getClientSideAuthToken } from '@/firebase';
 
+/**
+ * MARKETING PAGE TERMINAL
+ * Build Identifier: 2026-03-15T12:15:00Z (ChunkLoad Sync)
+ */
+
 // Content components using absolute paths
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
 const TechArchitecture = dynamic(() => import('@/app/adminaccount/marketing/content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -37,7 +43,7 @@ const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/
 const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
 const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Audience-specific components using absolute paths
+// Audience-specific components
 const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -103,7 +109,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
     if (!response.ok) {
         const text = await response.text();
-        // Handle 504 Gateway Timeout or other HTML error pages gracefully
         if (text.includes('<html>')) {
             throw new Error(`Server Error: ${response.status} - The request timed out. Try refreshing.`);
         }
@@ -150,7 +155,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                 subject: activeTabLabel,
             });
         } catch (e) {
-            // Error is handled by the parent component's toast
+            // Error is handled by parent
         } finally {
             setIsLogging(false);
         }
@@ -243,7 +248,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Not authenticated");
 
-        // Use a capped fetch for the dropdown to avoid 504 timeouts on large datasets
         let apiType: ApiPartnerType = 'partner';
         if (audience === 'isa') apiType = 'isa';
         else if (audience === 'investors') apiType = 'investor';
@@ -253,7 +257,6 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         else if (audience === 'associates') apiType = 'associate';
         else if (audience === 'finance') apiType = 'finance';
         
-        // Pass a small limit (100) specifically for the dropdown to avoid 504
         const result = await performAdminAction(token, 'getPartnersByType', { type: apiType, limit: 100 });
         setPartners(result.data || []);
         

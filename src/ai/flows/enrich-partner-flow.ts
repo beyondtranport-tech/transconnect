@@ -1,6 +1,7 @@
+
 'use server';
 /**
- * @fileOverview High-fidelity Industrial Research Agent V13.
+ * @fileOverview High-fidelity Industrial Research Agent V13.1.
  * INDUCTIVE RECONSTRUCTION PROTOCOL: Stitches together fragments from multiple sources.
  * SOCIAL-RESILIENT: Prioritizes Facebook and Business Directories if official domains are missing.
  * STAKEHOLDER MANDATE: Extracts CEO, Marketing Lead, Operations Manager, and Technical Manager.
@@ -53,7 +54,7 @@ const enrichPartnerFlow = ai.defineFlow(
       throw new Error("Company name is required for enrichment.");
     }
 
-    // SEARCH STRATEGY V13: INDUCTIVE RECONSTRUCTION (AGGRESSIVE CONTACT RESOLUTION)
+    // SEARCH STRATEGY V13.1: INDUCTIVE RECONSTRUCTION (AGGRESSIVE CONTACT RESOLUTION)
     const siteResults = await googleSearchTool({ 
         query: `${company} South Africa official website contact management team CEO Operations Technical` 
     });
@@ -63,30 +64,40 @@ const enrichPartnerFlow = ai.defineFlow(
     });
 
     const socialResults = await googleSearchTool({
-        query: `${company} South Africa Facebook page bio contact address email mobile infoisinfo yellosa`
+        query: `${company} South Africa Facebook page bio "About" section address email mobile whatsapp`
+    });
+
+    const directoryResults = await googleSearchTool({
+        query: `${company} South Africa infoisinfo yellosa brabys contact details physical address`
     });
 
     const leaderResolveResults = await googleSearchTool({
-        query: `${company} South Africa CEO Managing Director Marketing Manager contact details`
+        query: `${company} South Africa CEO Managing Director Marketing Manager direct professional email mobile number`
     });
 
-    const allContent = [...(siteResults || []), ...(teamResults || []), ...(socialResults || []), ...(leaderResolveResults || [])]
+    const allContent = [
+        ...(siteResults || []), 
+        ...(teamResults || []), 
+        ...(socialResults || []), 
+        ...(directoryResults || []),
+        ...(leaderResolveResults || [])
+    ]
         .map(res => `SOURCE: ${res.link}\nTITLE: ${res.title}\nSNIPPET: ${res.snippet}`)
         .join('\n---\n');
 
     const extraction = await ai.generate({
         model: geminiModel,
-        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13 - INDUCTIVE RECONSTRUCTION).
+        system: `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13.1 - INDUCTIVE RECONSTRUCTION).
         
         INVESTIGATION MANDATE:
         1. ACRONYM EXPANSION: Resolve acronyms (e.g. EC, JH) to full legal names.
-        2. SOCIAL HUB RESILIENCY: For SA hauliers, the FACEBOOK PAGE is the source of truth for the ADDRESS and WHATSAPP.
+        2. SOCIAL HUB RESILIENCY: For SA hauliers, the FACEBOOK PAGE BIO is the PRIMARY source of truth for the PHYSICAL ADDRESS and WHATSAPP. Use it even if directories show different data.
         3. IDENTITY RESOLUTION: You MUST bridge names to contact details. If you find a name (e.g. Barry Burger), aggressively search the snippets for their email/mobile.
         4. FRAGMENT STITCHING: Combine data from all snippets (Directories, Social, LinkedIn) to eliminate nulls.
-        5. ADDRESS PRIORITY: The address in a Facebook Bio is usually more current than directories. Use it.
+        5. MANDATE: Resolve all 4 management roles: CEO, Marketing, Operations, and Technical.
         
         MANDATE: Return RAW JSON only.`,
-        prompt: `PERFORM THE V13 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
+        prompt: `PERFORM THE V13.1 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }
