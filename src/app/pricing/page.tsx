@@ -13,7 +13,7 @@ import * as React from 'react';
 
 /**
  * CORE MEMBERSHIP TIERS: Basic, Standard, Premium
- * Simplified view focusing on 5 key industrial metrics.
+ * Strictly limited to 3 cards for commercial clarity.
  */
 
 const formatLimit = (val: number | undefined | null) => {
@@ -35,7 +35,10 @@ export default function MembershipPage() {
 
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
-    return [...dbPlans].sort((a,b) => (a.price || 0) - (b.price || 0));
+    // Strictly filter for the 3 core commercial tiers
+    return [...dbPlans]
+        .filter(p => ['basic', 'standard', 'premium'].includes(p.id))
+        .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
   return (
@@ -44,8 +47,8 @@ export default function MembershipPage() {
         
         <div className="text-center max-w-3xl mx-auto mb-20 text-left md:text-center">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Commercial Tiers</Badge>
-          <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none">Scale Your <br/><span className="text-primary">Industrial Node</span>.</h1>
-          <p className="mt-6 text-xl text-muted-foreground leading-relaxed font-medium">
+          <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none text-center">Scale Your <br/><span className="text-primary">Industrial Node</span>.</h1>
+          <p className="mt-6 text-xl text-muted-foreground leading-relaxed font-medium text-center">
             Simplified outcome-based pricing. Choose the tier that matches your monthly transaction volume.
           </p>
         </div>
