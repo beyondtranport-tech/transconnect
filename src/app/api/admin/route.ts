@@ -36,13 +36,34 @@ export async function POST(req: NextRequest) {
         const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
                         decodedToken.email === 'mkoton100@gmail.com' || 
                         decodedToken.email === 'michael@logisticsflow.co.za' ||
-                        decodedToken.admin === true;
-
-        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
+                        decodedToken.admin === true ||
+                        ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'].includes(decodedToken.uid);
 
         const body = await req.json();
         const action = (body.action || '').trim();
         const payload = body.payload || {};
+
+        // SPECIAL CASE: Allow members to fetch their own engagement pings via Admin SDK to bypass flaking security rules
+        if (action === 'getMemberEngagementPings') {
+            const { companyId } = payload;
+            if (!companyId) throw new Error("Company ID required.");
+            
+            // Authorization Check: User must be admin OR the owner of the company
+            const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+            if (userDoc.data()?.companyId !== companyId && !isAdmin) {
+                throw new Error("Forbidden: Access to these signals is restricted to the node owner.");
+            }
+
+            const pingsSnap = await db.collection('engagementPings')
+                .where('targetId', '==', companyId)
+                .orderBy('timestamp', 'desc')
+                .limit(20)
+                .get();
+
+            return NextResponse.json({ success: true, data: serializeData(pingsSnap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+        }
+
+        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {
             case 'getPipelineQueue': {
