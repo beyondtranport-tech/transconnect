@@ -343,10 +343,6 @@ export async function POST(req: NextRequest) {
 
             case 'searchRegistry': {
                 const { type: rType, limit: rLimit = 100, term = '' } = payload;
-                
-                // UNIFIED SEARCH LOGIC V13.5
-                // Search both 'leads' and 'partners' collections and merge results
-                
                 const normalizedTerm = term.toLowerCase().trim();
                 
                 // 1. SCAN PARTNERS
@@ -359,7 +355,6 @@ export async function POST(req: NextRequest) {
 
                 // 2. SCAN LEADS
                 let lQuery: any = db.collection('leads');
-                // Leads use 'role' instead of 'type' for industrial classification
                 if (rType !== 'all') {
                     const roleMap: Record<string, string> = {
                         'transporter': 'Transporter',
@@ -374,9 +369,8 @@ export async function POST(req: NextRequest) {
                 const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(rLimit).get();
                 const lResults = lSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
-                // 3. MERGE, FILTER BY SEARCH TERM & SORT
+                // 3. MERGE & SORT
                 let combined = [...pResults, ...lResults];
-                
                 if (normalizedTerm) {
                     combined = combined.filter(item => {
                         const name = (item.companyName || item.firstName || '').toLowerCase();

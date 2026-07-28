@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,7 +33,7 @@ import { getClientSideAuthToken } from '@/firebase';
 
 /**
  * MARKETING PAGE TERMINAL
- * Build Identifier: 2026-03-15T16:45:00Z (Index Sync + Forensic Unified)
+ * Build Identifier: 2026-03-15T18:15:00Z (Index & Sync Hardened)
  */
 
 // Content components using absolute paths
@@ -42,7 +43,7 @@ const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/
 const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
 const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Audience-specific components
+// Audience-specific components using absolute paths
 const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -57,7 +58,7 @@ const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails
 const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/AssociateEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Management components
+// Management components using absolute paths
 const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const ISAManagement = dynamic(() => import('@/app/adminaccount/marketing/isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -108,9 +109,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
 
     if (!response.ok) {
         const text = await response.text();
-        if (text.includes('<html>')) {
-            throw new Error(`Server Error: ${response.status} - The request timed out. Try refreshing.`);
-        }
         throw new Error(text.startsWith('{') ? JSON.parse(text).error : `Server Error: ${response.status}`);
     }
 
@@ -270,13 +268,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
     fetchPartnersForLogging();
   }, [fetchPartnersForLogging]);
 
-  if (!config) {
-      return (
-          <div className="p-12 text-center text-muted-foreground bg-muted/10 rounded-2xl border-2 border-dashed">
-              Marketing library for "{audience}" is not configured.
-          </div>
-      );
-  }
+  if (!config) return null;
 
   const { Offer, Emails, CRM, Discovery } = config;
 
@@ -339,7 +331,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
             onLogAndCopy={handleLogAndCopy}
             audienceTitle={config.title}
         />
-        <div className="space-y-6 text-left">
+        <div className="space-y-6 text-left text-foreground">
             <div className="text-left text-foreground">
                 <h1 className="text-2xl font-bold">Marketing & Pitch Library: {config.title}</h1>
                 <p className="text-muted-foreground">Tailored content and engagement tools for {config.title.toLowerCase()}.</p>
