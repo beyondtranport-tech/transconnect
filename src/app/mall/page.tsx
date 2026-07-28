@@ -7,7 +7,6 @@ import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, 
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
-import { marketplaceItems } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
 import * as React from "react";
 import { useState } from 'react';
@@ -25,19 +24,10 @@ const techImage = placeholderImages.find(p => p.id === 'tech-division')!;
 const tiresImage = placeholderImages.find(p => p.id === 'product-tires')!;
 const saAuctionMallImage = placeholderImages.find(p => p.id === 'sa-auction-mall')!;
 
-
-const formatPrice = (price: number) => {
-    if (typeof price !== 'number' || isNaN(price)) return 'R 0';
-    const parts = price.toFixed(0).toString().split('.');
-    const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return `R ${integerPart}`;
-};
-
-
 const malls = [
     {
         name: "Loads Mall",
-        description: "The central clearing house for all freight. Post or take local and long-haul loads.",
+        description: "Pain: Every empty return mile is a direct hit to your profit. Solution: Access the national clearing house to find or post freight, ensuring your fleet is always earning.",
         icon: PackageSearch,
         href: "/mall/loads",
         id: "loads",
@@ -46,7 +36,7 @@ const malls = [
     },
     {
         name: "Warehouse Mall",
-        description: "Map community storage capacity. Manage uplift, storage, and handling fees.",
+        description: "Pain: Paying for empty storage space is a waste of capital. Solution: Map community storage nodes to monetize your idle floor space or source overflow capacity instantly.",
         icon: Warehouse,
         href: "/mall/warehouse",
         id: "warehouse",
@@ -55,7 +45,7 @@ const malls = [
     },
     {
         name: "Transport Mall",
-        description: "Long-haul fleet registry. Connect with verified capacity for arterial routes.",
+        description: "Pain: Subcontracting to unverified fleets creates massive operational risk. Solution: Access a forensic haulier registry to connect with verified capacity for arterial routes.",
         icon: Truck,
         href: "/mall/transporter",
         id: "transporter",
@@ -64,7 +54,7 @@ const malls = [
     },
     {
         name: "Distribution Mall",
-        description: "Local fleet registry. Inner-city spokenetworks for final-mile collection and delivery.",
+        description: "Pain: Final-mile delivery in urban centers is slow and expensive. Solution: Utilize inner-city spoke networks for specialized local collection and delivery.",
         icon: Network,
         href: "/mall/distribution",
         id: "distribution",
@@ -73,7 +63,7 @@ const malls = [
     },
     {
         name: "Supplier Mall",
-        description: "Connect with trusted suppliers for parts, consumables, and services.",
+        description: "Pain: Paying retail prices for parts and tires makes you uncompetitive. Solution: Leverage collective buying power to secure 'Syndicate Rates' from verified industry vendors.",
         icon: Building2,
         href: "/mall/supplier",
         id: "supplier",
@@ -81,7 +71,7 @@ const malls = [
     },
     {
         name: "Finance Mall",
-        description: "Access flexible funding and insurance products.",
+        description: "Pain: Traditional banks fail to see the real pulse of your business. Solution: Connect with 85+ specialized lenders who use platform data to approve your funding requests.",
         icon: Landmark,
         href: "/mall/finance",
         id: "finance",
@@ -89,7 +79,7 @@ const malls = [
     },
     {
         name: "Buy & Sell Mall",
-        description: "Marketplace for new and used vehicles and equipment.",
+        description: "Pain: Liquidating or sourcing used assets is a slow, manual process. Solution: Trade vehicles and equipment in a secure, peer-to-peer ecosystem with identity verification.",
         icon: Store,
         href: "/marketplace",
         id: "buy-sell",
@@ -97,7 +87,7 @@ const malls = [
     },
     {
         name: "SA Auction Mall",
-        description: "Live auctions for vehicles and salvaged assets from SA Auction Group.",
+        description: "Pain: Missing out on high-value salvage and bank-repo deals. Solution: Gain exclusive access to live industrial auctions from the SA Auction Group network.",
         icon: Scale,
         href: "/mall/sa-auction",
         id: "sa-auction",
@@ -192,7 +182,6 @@ export default function MallPage() {
         return config as ModalConfig;
     }
 
-
     const handleExploreClick = (mallId: string, href: string) => {
         const config = createModalConfig(mallId, href);
         setModalConfig(config);
@@ -201,7 +190,7 @@ export default function MallPage() {
     };
 
     return (
-        <div className="text-left text-foreground">
+        <div className="text-left text-foreground bg-slate-50">
             <IntentModal 
                 isOpen={isModalOpen}
                 onOpenChange={setIsModalOpen}
@@ -224,17 +213,23 @@ export default function MallPage() {
                 )}
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
                     <Badge className="bg-primary/20 text-primary border-primary/30 mb-4 px-4 py-1 uppercase font-black text-[10px] tracking-widest">Digital Grid</Badge>
-                    <h1 className="text-4xl md:text-5xl font-black font-headline">Industrial Intelligence Mall</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl text-center">Optimizing capacity through Hub & Spoke connectivity.</p>
+                    <h1 className="text-4xl md:text-5xl font-black font-headline text-center uppercase tracking-tight">The Industrial Malls</h1>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl text-center text-slate-300">Breaking the constraints of fragmented commerce through Hub & Spoke connectivity.</p>
                 </div>
             </section>
+
              <section id="malls-grid" className="py-16 md:py-24 bg-background text-left">
                 <div className="container mx-auto px-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 text-left">
                         {malls.map((mall) => {
                             const Icon = mall.icon;
+                            // Parse description to highlight pain/solution
+                            const parts = mall.description.split('Solution:');
+                            const pain = parts[0].replace('Pain:', '').trim();
+                            const solution = parts[1]?.trim();
+
                             return (
-                                <div key={mall.name} className="grid md:grid-cols-2 gap-8 items-center border p-8 rounded-3xl hover:shadow-2xl transition-all bg-card group text-left">
+                                <div key={mall.name} className="grid md:grid-cols-2 gap-8 items-stretch border-2 p-8 rounded-3xl hover:shadow-2xl transition-all bg-card group text-left">
                                     <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted flex items-center justify-center shadow-inner">
                                         <Image
                                             src={mall.image.imageUrl}
@@ -249,15 +244,24 @@ export default function MallPage() {
                                             </div>
                                         )}
                                     </div>
-                                    <div className="space-y-4 text-left">
-                                        <div className="flex items-center gap-3 text-left">
-                                            <div className="p-2 bg-primary/10 rounded-lg"><Icon className="h-6 w-6 text-primary" /></div>
-                                            <h3 className="text-2xl font-black font-headline text-left">{mall.name}</h3>
+                                    <div className="space-y-4 flex flex-col justify-between text-left">
+                                        <div className="space-y-4 text-left">
+                                            <div className="flex items-center gap-3 text-left">
+                                                <div className="p-2 bg-primary/10 rounded-lg"><Icon className="h-6 w-6 text-primary" /></div>
+                                                <h3 className="text-2xl font-black font-headline text-left uppercase">{mall.name}</h3>
+                                            </div>
+                                            <div className="space-y-3 text-left">
+                                                <p className="text-xs leading-relaxed text-left">
+                                                    <span className="font-black text-destructive uppercase tracking-widest block text-[9px] mb-1">The Constraint</span>
+                                                    <span className="text-muted-foreground italic">"{pain}"</span>
+                                                </p>
+                                                <p className="text-xs leading-relaxed text-left">
+                                                    <span className="font-black text-primary uppercase tracking-widest block text-[9px] mb-1">The Solution</span>
+                                                    <span className="font-medium text-foreground">{solution}</span>
+                                                </p>
+                                            </div>
                                         </div>
-                                        <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                                            {mall.description}
-                                        </p>
-                                        <Button onClick={() => handleExploreClick(mall.id, mall.href)} className="w-full h-11 font-bold">
+                                        <Button onClick={() => handleExploreClick(mall.id, mall.href)} className="w-full h-11 font-bold shadow-md mt-4">
                                             Enter Mall <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </div>

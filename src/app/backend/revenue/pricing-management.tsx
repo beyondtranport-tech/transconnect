@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -30,7 +31,7 @@ const defaultPlans = [
         name: 'Basic Membership',
         price: 100,
         type: 'registry',
-        description: 'Establish forensic visibility in the industrial grid.',
+        description: 'Establish forensic visibility in the industrial grid. Access the map.',
         features: ["node:verified_identity", "registry:direct_contacts", "loyalty:regional_scans"],
         searchLimit: 100,
         isPopular: false
@@ -40,7 +41,7 @@ const defaultPlans = [
         name: 'Standard Membership',
         price: 500,
         type: 'global',
-        description: 'The core commerce engine for active trading.',
+        description: 'The core commerce engine for active trading. Find work and sell parts.',
         features: ["node:verified_identity", "registry:direct_contacts", "ecosystem:access_all_malls", "shop:digital_branch", "loads:post_unlimited", "loyalty:lead_signals"],
         searchLimit: 1000,
         isPopular: true
@@ -50,7 +51,7 @@ const defaultPlans = [
         name: 'Premium Membership',
         price: 1000,
         type: 'global',
-        description: 'Maximum dominance with unlimited industrial power.',
+        description: 'Maximum dominance with unlimited industrial power and specialized AI tools.',
         features: ["node:verified_identity", "registry:direct_contacts", "ecosystem:access_all_malls", "shop:digital_branch", "ai:branding_studio", "ai:discovery_tools", "support:dedicated_manager"],
         searchLimit: 999999,
         isPopular: false
