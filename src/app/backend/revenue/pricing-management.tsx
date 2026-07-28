@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle, Save, Edit, Trash2, Layers, Zap, Info, Package, Truck, ShoppingCart, Landmark } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
@@ -20,6 +20,17 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const defaultPlans = [
     {
@@ -220,6 +231,7 @@ export default function PricingManagement() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -250,6 +262,29 @@ export default function PricingManagement() {
         toast({ variant: 'destructive', title: "Seeding Failed", description: e.message });
     } finally {
         setIsSeeding(false);
+    }
+  };
+
+  const handleDelete = async (planId: string) => {
+    setIsDeleting(planId);
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) throw new Error("Authentication failed.");
+
+        const response = await fetch('/api/deleteConfigDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `memberships/${planId.toLowerCase()}` }),
+        });
+
+        if (!response.ok) throw new Error("Deletion failed.");
+
+        toast({ title: "Plan Deleted", description: "The membership tier has been removed from the ledger." });
+        forceRefresh();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
+    } finally {
+        setIsDeleting(null);
     }
   };
 
@@ -299,8 +334,32 @@ export default function PricingManagement() {
                             <TableCell className="text-xs text-left">{plan.intelligenceQueries === 999999 ? 'Unlimited' : plan.intelligenceQueries}</TableCell>
                             <TableCell className="text-xs text-left">{plan.shopProducts === 999999 ? 'Unlimited' : plan.shopProducts}</TableCell>
                             <TableCell className="text-xs text-left">{plan.financeApplications === 999999 ? 'Unlimited' : plan.financeApplications}</TableCell>
-                            <TableCell className="text-right text-left">
+                            <TableCell className="text-right text-left flex justify-end gap-1">
                                 <PlanDialog plan={plan} onSave={forceRefresh} />
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" disabled={isDeleting === plan.id}>
+                                            {isDeleting === plan.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Membership Plan?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will remove "{plan.name}" from the commercial registry. Existing subscribers will not be affected, but new signups will no longer see this tier.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction 
+                                                onClick={() => handleDelete(plan.id)}
+                                                className={buttonVariants({ variant: 'destructive' })}
+                                            >
+                                                Delete Plan
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </TableCell>
                         </TableRow>
                     ))}
