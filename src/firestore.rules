@@ -44,7 +44,6 @@ service cloud.firestore {
     // --- CRITICAL ENGINE RULES ---
 
     match /engagementPings/{pingId} {
-      // Explicitly allow list/get for all signed-in users (filtering happens in app query)
       allow list, get: if isSignedIn();
       allow write: if isAdmin();
     }
