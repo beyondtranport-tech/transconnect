@@ -42,10 +42,15 @@ service cloud.firestore {
     }
 
     // --- CRITICAL ENGINE RULES ---
+    // Update: 2026-03-17T10:00:00Z - Synchronized for dashboard stability
 
     match /engagementPings/{pingId} {
-      allow list, get: if isSignedIn();
+      allow read: if isSignedIn();
       allow write: if isAdmin();
+    }
+
+    match /platformTasks/{taskId} {
+      allow read, write: if isAdmin();
     }
 
     // --- COLLECTION RULES ---
