@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, RefreshCcw, User, Clock, ArrowRight, Tag } from 'lucide-react';
+import { Loader2, Search, RefreshCcw, User, Clock, ArrowRight, Tag, MapPin } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +72,21 @@ export default function SearchIntelligence() {
             )
         },
         {
+            header: 'Geographic Scope',
+            cell: ({ row }) => {
+                const vars = row.original.variables;
+                if (!vars || (!vars.province && !vars.city)) return <span className="text-[10px] text-muted-foreground italic">National</span>;
+                return (
+                    <div className="flex items-center gap-1.5 text-slate-700">
+                        <MapPin className="h-3 w-3 text-primary" />
+                        <span className="text-[10px] font-bold uppercase truncate max-w-[150px]">
+                            {vars.suburb ? `${vars.suburb}, ` : ''}{vars.city || vars.province}
+                        </span>
+                    </div>
+                );
+            }
+        },
+        {
             header: 'Timestamp',
             cell: ({ row }) => (
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -101,7 +116,7 @@ export default function SearchIntelligence() {
         <div className="space-y-8 text-left text-foreground">
             <div className="flex justify-between items-end">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Search className="h-8 w-8 text-primary" />
                         Search Intelligence Ledger
                     </h1>

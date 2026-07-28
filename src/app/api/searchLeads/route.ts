@@ -107,7 +107,14 @@ export async function POST(req: NextRequest) {
                 await db.collection('companies').doc(companyId).collection('searchLogs').add({
                     userId: uid,
                     type,
-                    searchTerm: searchTerm || category || 'General Scan',
+                    searchTerm: searchTerm || '',
+                    category: category || service || '',
+                    variables: {
+                        province: province || '',
+                        city: city || '',
+                        suburb: suburb || '',
+                        category: category || service || ''
+                    },
                     resultCount: finalResults.length,
                     timestamp: FieldValue.serverTimestamp(),
                 });
