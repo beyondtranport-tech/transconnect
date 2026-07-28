@@ -94,6 +94,10 @@ function RegistrySearch({ type }: { type: 'transporter' | 'supplier' | 'finance'
     };
 
     const handleEngage = async (res: any) => {
+        if (!user) {
+            router.push('/signin?redirect=/intelligence');
+            return;
+        }
         if (!isPaid) {
             router.push('/checkout/intelligence');
             return;
@@ -319,12 +323,14 @@ function RegistrySearch({ type }: { type: 'transporter' | 'supplier' | 'finance'
                             <div className="absolute top-0 right-0 p-8 opacity-5"><ShieldCheck className="h-32 w-32" /></div>
                             <div className="relative z-10 flex flex-col items-center">
                                 <div className="bg-primary/20 p-4 rounded-full w-fit mb-6"><Lock className="h-10 w-10 text-primary" /></div>
-                                <h3 className="text-3xl font-black font-headline mb-4 uppercase leading-none text-white">Unlock Absolute Transparency</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-white">
-                                    You are viewing a restricted subset of the industrial grid. Upgrade to <strong>Intelligence Access</strong> to remove data blurring and access direct MD/CEO lines for 22,000+ verified records.
+                                <h3 className="text-3xl font-black font-headline mb-4 uppercase leading-none text-white text-center">Unlock Absolute Transparency</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-white text-center">
+                                    You are viewing a restricted subset of the industrial grid. To remove data blurring and access direct MD/CEO lines for 22,000+ verified records, establish your Intelligence handshake.
                                 </p>
-                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
-                                    <Link href="/checkout/intelligence">Reveal Registry Contacts <ArrowRight className="ml-2 h-5 w-5"/></Link>
+                                <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20 text-white">
+                                    <Link href={user ? "/checkout/intelligence" : "/join?redirect=/checkout/intelligence"}>
+                                        Reveal Registry Contacts <ArrowRight className="ml-2 h-5 w-5"/>
+                                    </Link>
                                 </Button>
                             </div>
                         </Card>
@@ -339,7 +345,7 @@ export default function IndustrialIntelligenceHub() {
     return (
         <div className="bg-slate-50 min-h-screen text-left text-foreground">
             <section className="bg-slate-900 text-white py-20 text-center">
-                <div className="container mx-auto px-4">
+                <div className="container mx-auto px-4 text-center">
                     <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-[10px] font-black uppercase tracking-widest text-white">Master Intelligence Hub</Badge>
                     <h1 className="text-4xl md:text-7xl font-black font-headline text-white leading-none uppercase text-white">Industrial <br/><span className="text-primary">Intelligence</span>.</h1>
                     <p className="mt-6 text-xl text-slate-300 max-w-2xl mx-auto font-medium text-white">The central terminal for South African logistics data. Map capacity, suppliers, and capital through the forensic grid.</p>
@@ -373,7 +379,7 @@ export default function IndustrialIntelligenceHub() {
                             <div className="bg-primary/10 p-3 rounded-xl w-fit"><ShieldCheck className="h-8 w-8 text-primary" /></div>
                             <h3 className="text-3xl font-black uppercase font-headline text-slate-900">Verified Data Fidelity.</h3>
                             <p className="text-lg text-muted-foreground leading-relaxed">
-                                Our data is not scraped; it is reconstructed. By stitching fragments from multiple directories, social hubs, and official CIPC records, we provide the most accurate industrial map in South Africa.
+                                Our data is reconstructed by stitching fragments from multiple directories, social hubs, and official CIPC records, providing the most accurate industrial map in South Africa.
                             </p>
                             <div className="flex flex-col gap-4 text-left">
                                 <div className="flex items-center gap-3 text-sm font-bold uppercase text-slate-700 text-left"><CheckCircle2 className="h-5 w-5 text-primary" /> Multi-Source Cross-Reference</div>
