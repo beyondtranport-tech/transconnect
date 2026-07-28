@@ -45,7 +45,7 @@ service cloud.firestore {
     // --- COLLECTION RULES ---
 
     match /engagementPings/{pingId} {
-      // Allow any signed-in user to see their pings, and admins to see everything
+      // Allow any signed-in user to see pings (restricted by query in app code), and admins full access
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }

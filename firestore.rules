@@ -34,10 +34,18 @@ service cloud.firestore {
       );
     }
 
+    function isSaleParticipant(sale) {
+        return isSignedIn() && (
+            isAdmin() || 
+            sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
+            sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
+        );
+    }
+
     // --- COLLECTION RULES ---
 
     match /engagementPings/{pingId} {
-      // Allow any signed-in user to see their pings, and admins to see everything
+      // Allow any signed-in user to see pings (restricted by query in app code), and admins full access
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
@@ -130,6 +138,18 @@ service cloud.firestore {
       
       match /loadBoard/{allBoard=**} {
         allow read, write: if isMember(companyId);
+      }
+    }
+
+    match /sales/{saleId} {
+      allow read: if isSignedIn() && (isAdmin() || isSaleParticipant(resource.data));
+      allow write: if isAdmin() || (isSignedIn() && (
+        (!exists(/databases/$(database)/documents/sales/$(saleId)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
+        isSaleParticipant(resource.data)
+      ));
+      
+      match /messages/{id} {
+        allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
       }
     }
 
