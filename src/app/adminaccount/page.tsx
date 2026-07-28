@@ -101,6 +101,7 @@ import AdsOversight from '@/app/adminaccount/ads-oversight';
 import SocialStudio from '@/app/adminaccount/social-studio';
 import EngagementPipeline from '@/app/adminaccount/marketing/EngagementPipeline';
 import DividendManagement from '@/app/adminaccount/dividend-management';
+import HandshakeOversight from '@/app/adminaccount/handshake-oversight';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -163,6 +164,7 @@ function AdminAccountContent() {
     switch (activeView) {
       case 'dashboard': return <AdminDashboardContent />;
       case 'unified-directory': return <UnifiedDirectory />;
+      case 'handshake-oversight': return <HandshakeOversight />;
       case 'activity': return <ActivityFeed />;
       case 'leads-agent': return <LeadsAgent />;
       case 'leads-database': return <LeadsDatabase />;
@@ -180,10 +182,10 @@ function AdminAccountContent() {
       case 'loyalty-plan': return <TierBenefits />;
       case 'rewards-plan': return <RewardsManagement />;
       case 'pricing-memberships': return <PricingManagement />;
+      case 'pricing-dividend': return <DividendManagement />;
       case 'pricing-connect': return <ConnectPlanPricing />;
       case 'pricing-tech': return <TechPricing />;
       case 'pricing-ads': return <AdPricingSettings />;
-      case 'pricing-dividend': return <DividendManagement />;
       case 'pricing-marketplace': return < MarketplaceFees />;
       case 'commissions-malls': return <MallCommissions />;
       case 'commissions-isa': return <ISAPitchSettings />;
@@ -231,6 +233,11 @@ function AdminAccountContent() {
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Dashboard" isActive={activeView === 'dashboard'} onClick={() => navigate('dashboard')}>
                       <LayoutDashboard /><span>Dashboard</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                  <SidebarMenuButton tooltip="Handshake Oversight" isActive={activeView === 'handshake-oversight'} onClick={() => navigate('handshake-oversight')}>
+                      <Handshake className="text-primary" /><span>Handshake Oversight</span>
                   </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>

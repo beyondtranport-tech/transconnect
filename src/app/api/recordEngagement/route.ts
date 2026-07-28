@@ -9,7 +9,8 @@ import sgMail from '@sendgrid/mail';
  * DUAL-ENGAGEMENT LOGGING API (Handshake Terminal)
  * 1. Logs for the Engager (History).
  * 2. Logs for the Target (Engagement Ping).
- * 3. TRIGGERS LOOP CLOSURE: Emails the target based on their standing.
+ * 3. SCHEDULES FOLLOW-UP: Sets a 7-day forensic follow-up marker.
+ * 4. TRIGGERS LOOP CLOSURE: Emails the target based on their standing.
  */
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
@@ -48,16 +49,25 @@ export async function POST(req: NextRequest) {
         details: `Successfully initiated a handshake with ${targetName}.`
     });
 
-    // 2. LOG FOR THE TARGET (The Ping)
+    // 2. LOG FOR THE TARGET (The Ping) + SCHEDULE FOLLOW-UP
     const pingRef = db.collection('engagementPings').doc();
+    
+    // Set follow-up date for 7 days from now
+    const followUpDate = new Date();
+    followUpDate.setDate(followUpDate.getDate() + 7);
+
     batch.set(pingRef, {
         id: pingRef.id,
         targetId: targetId, 
         targetType: targetType,
+        targetName: targetName,
         engagerId: companyId,
         engagerName: companyName,
         timestamp: FieldValue.serverTimestamp(),
-        status: 'unread'
+        status: 'pending', // 'pending', 'negotiating', 'closed', 'lost'
+        result: 'Awaiting Response',
+        nextFollowUpAt: followUpDate,
+        isClaimed: false, // Updated if it's a member
     });
 
     // 3. UPDATE THE REGISTRY RECORD
@@ -67,6 +77,12 @@ export async function POST(req: NextRequest) {
     const rSnap = await recordRef.get();
     const rData = rSnap.data();
     const currentEngagements = (rData?.engagementCount || 0) + 1;
+    const isActuallyClaimed = !!rData?.companyId || !!rData?.isClaimed;
+
+    // Update ping record if it's already a claimed node
+    if (isActuallyClaimed) {
+        batch.update(pingRef, { isClaimed: true });
+    }
 
     batch.set(recordRef, {
         engagementCount: FieldValue.increment(1),
@@ -78,14 +94,12 @@ export async function POST(req: NextRequest) {
     if (process.env.SENDGRID_API_KEY && rData?.email) {
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         
-        const isClaimedMember = !!rData.companyId || rData.isClaimed;
         const baseUrl = 'https://logisticsflow.co.za';
         
         let subject = "";
         let html = "";
 
-        if (isClaimedMember) {
-            // OPTION A: Targeted at registered members
+        if (isActuallyClaimed) {
             subject = `Logistics Flow: New Handshake Request from ${companyName}`;
             html = `
                 <div style="font-family: sans-serif; max-width: 600px; color: #334155;">
@@ -96,7 +110,6 @@ export async function POST(req: NextRequest) {
                 </div>
             `;
         } else {
-            // OPTION B: Targeted at discovered leads (Sales Loop)
             subject = `Logistics Flow: Your profile is generating industrial heat.`;
             html = `
                 <div style="font-family: sans-serif; max-width: 600px; color: #334155;">

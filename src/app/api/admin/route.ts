@@ -43,7 +43,6 @@ export async function POST(req: NextRequest) {
         const action = (body.action || '').trim();
         const payload = body.payload || {};
 
-        // SPECIAL CASE: Allow members to fetch their own engagement pings via Admin SDK to bypass security rules
         if (action === 'getMemberEngagementPings') {
             const { companyId } = payload;
             if (!companyId) throw new Error("Company ID required.");
@@ -65,6 +64,27 @@ export async function POST(req: NextRequest) {
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         switch (action) {
+            case 'getGlobalHandshakes': {
+                const snap = await db.collection('engagementPings')
+                    .orderBy('timestamp', 'desc')
+                    .limit(200)
+                    .get();
+                return NextResponse.json({ 
+                    success: true, 
+                    data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) 
+                });
+            }
+
+            case 'updateHandshakeResult': {
+                const { pingId, status, result } = payload;
+                await db.collection('engagementPings').doc(pingId).update({
+                    status,
+                    result,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'finalizeSale': {
                 const { saleId, commissionRate } = payload;
                 const saleRef = db.collection('sales').doc(saleId);
