@@ -3,7 +3,7 @@
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck, ImageIcon, ExternalLink, MousePointer2, UserPlus, Info, Gift, CheckCircle2, ShoppingBasket, PackageSearch } from "lucide-react";
+import { Award, Gem, Loader2, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck, ImageIcon, ExternalLink, MousePointer2, UserPlus, Info, Gift, CheckCircle2, ShoppingBasket, PackageSearch, Store } from "lucide-react";
 import { doc, collection, query, limit, where, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
+import { Separator } from '@/components/ui/separator';
 
 /**
  * MEMBER VOUCHER VAULT
