@@ -1,16 +1,22 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck } from "lucide-react";
+import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { notFound, useParams, useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+/**
+ * DYNAMIC TRANSPORTER PROFILE
+ * Reconstructs the profile from either verified partners or discovered leads.
+ */
 export default function TransporterProfilePage() {
     const params = useParams();
     const router = useRouter();
@@ -30,26 +36,35 @@ export default function TransporterProfilePage() {
     const { data: partner, isLoading: isPartnerLoading } = useDoc(partnerRef);
     const { data: lead, isLoading: isLeadLoading } = useDoc(leadRef);
 
-    const isLoading = isPartnerLoading && isLeadLoading;
     const transporter = partner || lead;
+    
+    // Robust loading check: Wait while either is loading, 
+    // or if we have refs but no data and loading hasn't flipped to false yet.
+    const isLoading = isPartnerLoading || isLeadLoading || (!transporter && (isPartnerLoading === undefined || isLeadLoading === undefined));
+    const isActuallyNotFound = !isLoading && !transporter;
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen gap-4">
+            <div className="flex flex-col items-center justify-center h-screen gap-4 bg-slate-50">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Retrieving Forensic Node...</p>
             </div>
         );
     }
 
-    if (!transporter) {
+    if (isActuallyNotFound) {
         notFound();
     }
+
+    const name = transporter.companyName || `${transporter.firstName || ''} ${transporter.lastName || ''}`.trim() || 'Industrial Record';
+    const email = transporter.email || transporter.marketingManager?.email || transporter.ceo?.email;
+    const phone = transporter.phone || transporter.mobile || transporter.marketingManager?.mobile || transporter.ceo?.mobile;
+    const address = transporter.address || transporter.physicalAddress || 'Operational Hub Verified';
     
     return (
         <div className="bg-slate-50 min-h-screen py-16 md:py-24 text-left text-foreground">
              <div className="container mx-auto px-4">
-                <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-muted-foreground">
+                <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-muted-foreground hover:text-primary">
                     <ArrowLeft className="h-4 w-4" /> Back to Results
                 </Button>
 
@@ -65,9 +80,9 @@ export default function TransporterProfilePage() {
                                     </div>
                                     <div className="space-y-1">
                                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 mb-2">Verified Haulier</Badge>
-                                        <h1 className="text-3xl md:text-5xl font-black text-white font-headline leading-none uppercase">{transporter.companyName || `${transporter.firstName} ${transporter.lastName}`}</h1>
+                                        <h1 className="text-3xl md:text-5xl font-black text-white font-headline leading-none uppercase">{name}</h1>
                                         <div className="flex items-center gap-2 text-slate-300 font-bold text-sm">
-                                            <MapPin className="h-4 w-4" /> {transporter.address || 'National Network'}
+                                            <MapPin className="h-4 w-4" /> {address}
                                         </div>
                                     </div>
                                 </div>
@@ -124,19 +139,19 @@ export default function TransporterProfilePage() {
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">MD / Decision Maker</p>
                                         <p className="font-bold text-foreground">{transporter.contactPerson || transporter.ceo?.name || transporter.marketingManager?.name || 'Identity Protected'}</p>
                                     </div>
-                                    {transporter.email && (
+                                    {email && (
                                         <div className="space-y-1 text-left">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct E-mail</p>
                                             <div className="flex items-center gap-2 text-xs font-bold text-primary">
-                                                <Mail className="h-3.5 w-3.5" /> {transporter.email}
+                                                <Mail className="h-3.5 w-3.5" /> {email}
                                             </div>
                                         </div>
                                     )}
-                                    {(transporter.phone || transporter.mobile) && (
+                                    {phone && (
                                         <div className="space-y-1 text-left">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct Line</p>
                                             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
-                                                <Phone className="h-3.5 w-3.5" /> {transporter.phone || transporter.mobile}
+                                                <Phone className="h-3.5 w-3.5" /> {phone}
                                             </div>
                                         </div>
                                     )}
@@ -150,7 +165,9 @@ export default function TransporterProfilePage() {
                                     )}
                                 </CardContent>
                                 <CardFooter className="bg-slate-50 border-t p-6">
-                                    <Button className="w-full font-black uppercase text-xs tracking-widest">Direct RFQ</Button>
+                                    <Button className="w-full font-black uppercase text-xs tracking-widest gap-2">
+                                        <Mail className="h-3.5 w-3.5" /> Direct RFQ
+                                    </Button>
                                 </CardFooter>
                             </Card>
 

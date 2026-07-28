@@ -7,13 +7,16 @@ import { collection, doc, query } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Loader2, Store, ShoppingCart, ArrowLeft, ShieldCheck, Mail, Phone, Globe, Package, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
-function SupplierProfile() {
+/**
+ * DYNAMIC SUPPLIER PROFILE
+ * Reconstructs the profile from Shops, Partners, or discovered Leads.
+ */
+export default function SupplierProfilePage() {
     const params = useParams();
     const router = useRouter();
     const supplierId = params.supplierId as string;
@@ -46,33 +49,41 @@ function SupplierProfile() {
     }, [firestore, supplierId]);
     const { data: products, isLoading: areProductsLoading } = useCollection(productsQuery);
     
-    const isLoading = isShopLoading && isPartnerLoading && isLeadLoading;
     const supplier = shop || partner || lead;
+
+    // Robust loading check: Wait while either is loading, 
+    // or if we have refs but no data and loading hasn't flipped to false yet.
+    const isLoading = isShopLoading || isPartnerLoading || isLeadLoading || areProductsLoading || (!supplier && (isShopLoading === undefined || isPartnerLoading === undefined));
+    const isActuallyNotFound = !isLoading && !supplier;
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen gap-4">
+            <div className="flex flex-col items-center justify-center h-screen gap-4 bg-slate-50">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Opening Digital Branch...</p>
             </div>
         );
     }
 
-    if (!supplier) {
+    if (isActuallyNotFound) {
         notFound();
     }
     
+    const name = shop?.shopName || supplier.companyName || 'Industrial Supplier';
+    const email = supplier.email || supplier.marketingManager?.email || supplier.ceo?.email || 'N/A';
+    const phone = supplier.phone || supplier.mobile || supplier.marketingManager?.mobile || 'N/A';
+
     return (
         <div className="bg-slate-50 min-h-screen py-16 md:py-24 text-left text-foreground">
              <div className="container mx-auto px-4">
-                <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-muted-foreground">
+                <Button variant="ghost" onClick={() => router.back()} className="mb-6 gap-2 text-muted-foreground hover:text-primary">
                     <ArrowLeft className="h-4 w-4" /> Back to Mall
                 </Button>
 
                 <div className="max-w-6xl mx-auto border-none rounded-[2rem] overflow-hidden shadow-2xl bg-white text-left">
                     {/* Header */}
                     <div className="relative h-64 md:h-80 bg-slate-900">
-                         {shop?.heroBannerUrl && <Image src={shop.heroBannerUrl} alt={shop.shopName} fill className="object-cover opacity-50" />}
+                         {shop?.heroBannerUrl && <Image src={shop.heroBannerUrl} alt={name} fill className="object-cover opacity-50" />}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10" />
                         <div className="absolute bottom-0 left-0 p-8 md:p-12 z-20 w-full">
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -82,7 +93,7 @@ function SupplierProfile() {
                                     </div>
                                     <div className="space-y-1">
                                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 mb-2">Verified Supplier</Badge>
-                                        <h1 className="text-3xl md:text-5xl font-black text-white font-headline leading-none uppercase">{shop?.shopName || supplier.companyName || 'Industrial Supplier'}</h1>
+                                        <h1 className="text-3xl md:text-5xl font-black text-white font-headline leading-none uppercase">{name}</h1>
                                         <div className="flex items-center gap-2 text-slate-300 font-bold text-sm">
                                             <Globe className="h-4 w-4" /> {supplier.industrial_category || 'Industrial Sector'}
                                         </div>
@@ -147,8 +158,8 @@ function SupplierProfile() {
                                     </div>
                                     <div className="space-y-1">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Company Node</p>
-                                        <p className="text-xs font-bold">{supplier.email || 'locked@tc.co.za'}</p>
-                                        <p className="text-xs font-mono text-muted-foreground">{supplier.phone || supplier.mobile || '0XX XXX XXXX'}</p>
+                                        <p className="text-xs font-bold">{email}</p>
+                                        <p className="text-xs font-mono text-muted-foreground">{phone}</p>
                                     </div>
                                     <div className="space-y-1 pt-2">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Logistics Node</p>
@@ -165,7 +176,7 @@ function SupplierProfile() {
                                 </CardFooter>
                             </Card>
 
-                            <div className="p-6 rounded-2xl bg-green-50 border border-green-100 space-y-3">
+                            <div className="p-6 rounded-2xl bg-green-50 border border-green-100 space-y-3 text-left">
                                 <div className="flex items-center gap-2">
                                     <CheckCircle2 className="h-5 w-5 text-green-600" />
                                     <span className="font-black text-[10px] uppercase text-green-700 tracking-widest">Trust Signal</span>
@@ -180,8 +191,4 @@ function SupplierProfile() {
              </div>
         </div>
     );
-}
-
-export default function SupplierProfilePage() {
-    return <SupplierProfile />;
 }
