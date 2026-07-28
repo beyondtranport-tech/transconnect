@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const defaultPlans = [
     {
@@ -138,13 +139,13 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
           <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Add Plan</Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl text-left text-foreground">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>{plan ? 'Edit' : 'Add New'} Membership Tier</DialogTitle>
           <DialogDescription>Define the core commercial limits for this tier.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
             <div className="grid grid-cols-2 gap-4">
                 <FormField name="id" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
@@ -202,15 +203,14 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                     <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Max Finance Apps</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
                 )} />
             </div>
-
-            <DialogFooter className="pt-6 border-t text-left">
-              <Button type="submit" disabled={isLoading} className="w-full font-bold">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                Save Tier Logic
-              </Button>
-            </DialogFooter>
           </form>
         </Form>
+        <DialogFooter className="p-6 pt-2 border-t text-left">
+          <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isLoading} className="w-full font-bold">
+            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            Save Tier Logic
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
@@ -262,11 +262,11 @@ export default function PricingManagement() {
     <div className="space-y-6 text-left text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="text-left">
-            <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
+            <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left text-foreground"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
             <CardDescription className="text-left">Manage the outcome-based pricing for the 3 core industrial tiers.</CardDescription>
         </div>
         <div className="flex gap-2 text-left">
-            <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-left">
+            <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-left text-foreground">
                 {isSeeding ? <Loader2 className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4 text-primary" />}
                 Reset to Core Model
             </Button>
@@ -274,7 +274,7 @@ export default function PricingManagement() {
         </div>
       </div>
 
-      <Card className="text-left">
+      <Card className="text-left text-foreground">
         <CardContent className="pt-6 text-left">
             {isLoading ? (
             <div className="flex justify-center p-20 text-left"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
