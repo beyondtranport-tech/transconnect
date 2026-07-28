@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -13,8 +13,13 @@ import * as React from 'react';
 
 /**
  * CORE MEMBERSHIP TIERS: Basic, Standard, Premium
- * Integrated with incremental Intelligence Scans as the value driver.
+ * Simplified view focusing on 5 key industrial metrics.
  */
+
+const formatLimit = (val: number) => {
+    if (val === 999999) return 'Unlimited';
+    return val.toLocaleString();
+};
 
 export default function MembershipPage() {
   const { user } = useUser();
@@ -29,10 +34,7 @@ export default function MembershipPage() {
 
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
-    return dbPlans.map(p => ({
-        ...p,
-        price: typeof p.price === 'number' ? p.price : (p.price?.monthly || 0)
-    })).sort((a,b) => a.price - b.price);
+    return [...dbPlans].sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
   return (
@@ -40,10 +42,10 @@ export default function MembershipPage() {
       <div className="container mx-auto px-4 py-16 md:py-24 text-left">
         
         <div className="text-center max-w-3xl mx-auto mb-20 text-left md:text-center">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Ecosystem Access</Badge>
-          <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none">Power Tiers.</h1>
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Commercial Tiers</Badge>
+          <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none">Scale Your <br/><span className="text-primary">Industrial Node</span>.</h1>
           <p className="mt-6 text-xl text-muted-foreground leading-relaxed font-medium">
-            Scale your industrial capacity. From forensic intelligence to total market dominance.
+            Simplified outcome-based pricing. Choose the tier that matches your monthly transaction volume.
           </p>
         </div>
 
@@ -61,7 +63,7 @@ export default function MembershipPage() {
                     )}>
                         {plan.isPopular && (
                             <div className="bg-primary text-white text-[10px] font-black uppercase tracking-widest py-1 px-8 absolute top-4 -right-8 rotate-45 shadow-sm">
-                                Best Value
+                                Most Active
                             </div>
                         )}
                         <CardHeader className="p-8 pb-4 text-left">
@@ -73,34 +75,54 @@ export default function MembershipPage() {
                         
                         <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left">
                             <div className="py-6 border-y border-slate-100">
-                                <div className="flex items-baseline gap-1.5 text-left text-foreground">
+                                <div className="flex items-baseline gap-1.5 text-left text-foreground text-foreground">
                                     <span className="text-4xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
                                     <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">/ month</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-2 text-primary font-black uppercase text-[11px] tracking-widest">
-                                    <Zap className="h-4 w-4 fill-current" />
-                                    {plan.searchLimit === 999999 ? 'Unlimited' : plan.searchLimit} Registry Scans
+                            <div className="space-y-5">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Monthly Allowances</h4>
+                                
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px]">
+                                        <Search className="h-4 w-4 text-primary" /> Intelligence
+                                    </div>
+                                    <span className="font-black text-slate-900">{formatLimit(plan.intelligenceQueries)} Queries</span>
                                 </div>
-                                <ul className="space-y-3 text-left">
-                                    {(plan.features || []).map((featKey: string) => {
-                                        // Simple lookup for feature labels based on keys
-                                        const label = featKey.split(':')[1]?.replace(/_/g, ' ') || featKey;
-                                        return (
-                                            <li key={featKey} className="flex items-start gap-3 text-left">
-                                                <Check className="h-4 w-4 shrink-0 mt-0.5 text-primary" />
-                                                <span className="text-xs font-bold text-slate-700 uppercase tracking-tight text-left">{label}</span>
-                                            </li>
-                                        )
-                                    })}
-                                </ul>
+
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px]">
+                                        <Store className="h-4 w-4 text-primary" /> Digital Shop
+                                    </div>
+                                    <span className="font-black text-slate-900">{formatLimit(plan.shopProducts)} Products</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px]">
+                                        <PackageSearch className="h-4 w-4 text-primary" /> Loads Mall
+                                    </div>
+                                    <span className="font-black text-slate-900">{formatLimit(plan.loadsLimit)} Loads</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px]">
+                                        <ShoppingCart className="h-4 w-4 text-primary" /> Buy & Sell
+                                    </div>
+                                    <span className="font-black text-slate-900">{formatLimit(plan.vehiclesLimit)} Vehicles</span>
+                                </div>
+
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px]">
+                                        <Landmark className="h-4 w-4 text-primary" /> Finance
+                                    </div>
+                                    <span className="font-black text-slate-900">{formatLimit(plan.financeApplications)} Apps</span>
+                                </div>
                             </div>
                         </CardContent>
                         
                         <CardFooter className="p-8 bg-slate-50 border-t">
-                            <Button asChild className={cn("w-full h-12 font-black uppercase tracking-widest shadow-md group text-white", !plan.isPopular && "bg-slate-800 hover:bg-slate-700")}>
+                            <Button asChild className={cn("w-full h-14 font-black uppercase tracking-widest shadow-md group text-white", !plan.isPopular && "bg-slate-800 hover:bg-slate-700")}>
                                 <Link href={`/checkout/${plan.id}`}>
                                     Activate {plan.id} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                 </Link>
@@ -111,14 +133,14 @@ export default function MembershipPage() {
             </div>
         )}
 
-        <div className="mt-32 max-w-4xl mx-auto p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
+        <div className="mt-32 max-w-4xl mx-auto p-12 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-foreground">
             <div className="absolute top-0 right-0 p-12 opacity-5"><ShieldCheck className="h-40 w-40 text-primary" /></div>
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-                <div className="flex-1 space-y-4">
-                    <Badge className="bg-primary/20 text-primary border-none">Handshake Verified</Badge>
-                    <h3 className="text-3xl font-black uppercase tracking-tight">The Data Dividend.</h3>
+                <div className="flex-1 space-y-4 text-left">
+                    <Badge className="bg-primary/20 text-primary border-none font-bold uppercase">Handshake Model</Badge>
+                    <h3 className="text-3xl font-black uppercase tracking-tight text-white">Earn Back Your Membership.</h3>
                     <p className="text-slate-400 leading-relaxed text-sm">
-                        Registration is always free. By establishing your node, you contribute to the community's intelligence. As you operate and share data, you earn reward points that can reduce your membership costs by up to 50%.
+                        As you contribute verified data and refer peers, you earn reward points. High-engagement nodes can reduce their monthly overheads by up to 50% through the platform's loyalty dividend.
                     </p>
                 </div>
                 <Button asChild variant="outline" className="h-14 px-10 border-white/20 text-white hover:bg-white/10 font-bold uppercase tracking-widest">
