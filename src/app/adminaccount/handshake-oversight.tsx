@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, Handshake, Zap, Clock, ArrowRight, RefreshCcw, CheckCircle, XCircle, Search, Filter, Info, AlertTriangle, TrendingUp, Save } from 'lucide-react';
+import { Loader2, Handshake, Zap, Clock, ArrowRight, RefreshCcw, CheckCircle, XCircle, Search, Filter, Info, AlertTriangle, TrendingUp, Save, Edit } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import Link from 'next/link';
 
 async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -192,7 +193,7 @@ export default function HandshakeOversight() {
         <div className="space-y-8 text-left text-foreground">
             <div className="flex justify-between items-end">
                 <div className="text-left text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Handshake className="h-8 w-8 text-primary" />
                         Handshake Oversight
                     </h1>
