@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
             }
 
             case 'getGlobalSearchLogs': {
-                // Ensure index is created: Collection Group 'searchLogs', Field 'timestamp' DESC
+                // Ensure index is created: Collection Group 'searchLogs', Fields: 'type' ASC, 'timestamp' DESC
                 const snap = await db.collectionGroup('searchLogs')
+                    .orderBy('type', 'asc')
                     .orderBy('timestamp', 'desc')
                     .limit(200)
                     .get();
