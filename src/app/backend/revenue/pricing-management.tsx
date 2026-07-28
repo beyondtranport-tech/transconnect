@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -118,13 +119,14 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       
-      const dataToSave = { ...values, updatedAt: { _methodName: 'serverTimestamp' } };
+      const planId = values.id.trim().toLowerCase();
+      const dataToSave = { ...values, id: planId, updatedAt: { _methodName: 'serverTimestamp' } };
 
       const response = await fetch('/api/updateConfigDoc', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          path: `memberships/${values.id.toLowerCase()}`,
+          path: `memberships/${planId}`,
           data: dataToSave
         }),
       });
@@ -247,12 +249,13 @@ export default function PricingManagement() {
         if (!token) throw new Error("Auth failed.");
 
         for (const plan of defaultPlans) {
+            const planId = plan.id.trim().toLowerCase();
             await fetch('/api/updateConfigDoc', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    path: `memberships/${plan.id.toLowerCase()}`,
-                    data: { ...plan, updatedAt: { _methodName: 'serverTimestamp' } }
+                    path: `memberships/${planId}`,
+                    data: { ...plan, id: planId, updatedAt: { _methodName: 'serverTimestamp' } }
                 }),
             });
         }
@@ -271,13 +274,17 @@ export default function PricingManagement() {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Authentication failed.");
 
+        // Use the exact document ID for the path
         const response = await fetch('/api/deleteConfigDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `memberships/${planId.toLowerCase()}` }),
+            body: JSON.stringify({ path: `memberships/${planId}` }),
         });
 
-        if (!response.ok) throw new Error("Deletion failed.");
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.error || "Deletion failed.");
+        }
 
         toast({ title: "Plan Deleted", description: "The membership tier has been removed from the ledger." });
         forceRefresh();
@@ -342,18 +349,18 @@ export default function PricingManagement() {
                                             {isDeleting === plan.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
                                         </Button>
                                     </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Membership Plan?</AlertDialogTitle>
-                                            <AlertDialogDescription>
+                                    <AlertDialogContent className="text-left">
+                                        <AlertDialogHeader className="text-left">
+                                            <AlertDialogTitle className="text-left">Delete Membership Plan?</AlertDialogTitle>
+                                            <AlertDialogDescription className="text-left">
                                                 This will remove "{plan.name}" from the commercial registry. Existing subscribers will not be affected, but new signups will no longer see this tier.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
-                                        <AlertDialogFooter>
+                                        <AlertDialogFooter className="text-left">
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                             <AlertDialogAction 
                                                 onClick={() => handleDelete(plan.id)}
-                                                className={buttonVariants({ variant: 'destructive' })}
+                                                className={cn(buttonVariants({ variant: 'destructive' }), "font-bold")}
                                             >
                                                 Delete Plan
                                             </AlertDialogAction>
