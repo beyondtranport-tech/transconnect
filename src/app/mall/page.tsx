@@ -23,6 +23,8 @@ const marketplaceImage = placeholderImages.find(p => p.id === 'marketplace-divis
 const techImage = placeholderImages.find(p => p.id === 'tech-division')!;
 const tiresImage = placeholderImages.find(p => p.id === 'product-tires')!;
 const saAuctionMallImage = placeholderImages.find(p => p.id === 'sa-auction-mall')!;
+const partsImage = placeholderImages.find(p => p.id === 'mall-division')!;
+const efficientWarehouseImage = placeholderImages.find(p => p.id === 'value-efficiency')!;
 
 const malls = [
     {
@@ -40,7 +42,7 @@ const malls = [
         icon: Warehouse,
         href: "/mall/warehouse",
         id: "warehouse",
-        image: placeholderImages.find(p => p.id === 'mall-division')!,
+        image: efficientWarehouseImage,
         badge: "Storage Nodes"
     },
     {
@@ -67,7 +69,8 @@ const malls = [
         icon: Building2,
         href: "/mall/supplier",
         id: "supplier",
-        image: tiresImage,
+        image: partsImage,
+        badge: "Truck Parts"
     },
     {
         name: "Finance Mall",
@@ -277,4 +280,3 @@ export default function MallPage() {
         </div>
     )
 }
-
