@@ -42,7 +42,7 @@ service cloud.firestore {
     }
 
     // --- CRITICAL ENGINE RULES ---
-    // Rule Sync ID: 2026-03-16T17:15:00Z
+    // Rule Sync ID: 2026-03-16T18:00:00Z
 
     match /engagementPings/{pingId} {
       allow list, get: if isSignedIn();
@@ -61,8 +61,7 @@ service cloud.firestore {
       allow write: if isAdmin();
       
       match /vouches/{vouchId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn(); 
+        allow read, write: if isSignedIn();
       }
       match /reviews/{reviewId} {
         allow read: if true;
@@ -77,8 +76,7 @@ service cloud.firestore {
       allow write: if isAdmin();
       
       match /vouches/{vouchId} {
-        allow read: if isSignedIn();
-        allow create: if isSignedIn(); 
+        allow read, write: if isSignedIn();
       }
       match /{allSub=**} { allow read, write: if isAdmin(); }
     }
@@ -117,33 +115,19 @@ service cloud.firestore {
     }
 
     match /companies/{companyId} {
-      allow read: if isSignedIn() && (isMember(companyId) || isAdmin()); 
+      allow get, list: if isSignedIn() && (isMember(companyId) || isAdmin()); 
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // Sub-collections require explicit list/read permissions
-      match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
-      match /transactions/{id} { allow read, list: if isMember(companyId); }
-      match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
-      match /enquiries/{id} { allow read, write, list: if isMember(companyId); }
-      match /quotes/{id} { allow read, write, list: if isMember(companyId); }
-      match /tasks/{id} { allow read, write, list: if isMember(companyId); }
-      match /payoutRequests/{id} { allow read, write, list: if isMember(companyId); }
-      match /searchLogs/{id} { allow read, write, list: if isMember(companyId); }
-      match /facilities/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
-      match /staff/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
-      match /brokerAgreements/{id} { allow read, write, list: if isMember(companyId); }
-      
-      match /shops/{shopId} { 
-        allow read: if true; 
-        allow write: if isMember(companyId); 
-        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
-        match /agreements/{agId} { allow read, write: if isMember(companyId); }
+      // Explicitly allow list on all subcollections for members/admins
+      match /{collectionName}/{id} {
+        allow read, list: if isMember(companyId);
+        allow write: if isAdmin() || (isMember(companyId) && collectionName in ['enquiries', 'quotes', 'tasks', 'brokerAgreements', 'shops', 'products']);
       }
-
-      match /vehicleListings/{id} {
-          allow read: if true;
-          allow write: if isMember(companyId);
+      
+      // Recursive match for deep subcollections (like products inside shops)
+      match /{allSub=**} {
+        allow read, list, write: if isAdmin();
       }
     }
 
