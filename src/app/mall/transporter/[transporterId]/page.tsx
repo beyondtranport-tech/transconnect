@@ -1,21 +1,20 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck, Info, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck, Info } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 /**
- * DYNAMIC TRANSPORTER PROFILE
- * Reconstructs the profile from either verified partners or discovered leads.
+ * DYNAMIC TRANSPORTER PROFILE V2
+ * High-fidelity record reconstruction from multiple registry sources.
  */
 export default function TransporterProfilePage() {
     const params = useParams();
@@ -38,9 +37,8 @@ export default function TransporterProfilePage() {
 
     const transporter = partner || lead;
     
-    // Robust loading check: Wait while either is loading, 
-    // or if we have refs but no data and loading hasn't flipped to false yet.
-    const isLoading = isPartnerLoading || isLeadLoading || (!transporter && (isPartnerLoading === undefined || isLeadLoading === undefined));
+    // SAFE LOADING STATE: Wait until all registry hooks report completion.
+    const isLoading = isPartnerLoading || isLeadLoading;
     const isActuallyNotFound = !isLoading && !transporter;
 
     if (isLoading) {
@@ -69,7 +67,6 @@ export default function TransporterProfilePage() {
                 </Button>
 
                 <div className="max-w-6xl mx-auto border-none rounded-[2rem] overflow-hidden shadow-2xl bg-white text-left">
-                    {/* Header */}
                     <div className="relative h-64 md:h-80 bg-slate-900">
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10" />
                         <div className="absolute bottom-0 left-0 p-8 md:p-12 z-20 w-full">
@@ -93,10 +90,9 @@ export default function TransporterProfilePage() {
                         </div>
                     </div>
 
-                    {/* Content */}
                     <div className="p-8 md:p-12 grid md:grid-cols-3 gap-12 text-left">
                         <div className="md:col-span-2 space-y-10 text-left">
-                            <div className="space-y-4">
+                            <div className="space-y-4 text-left">
                                 <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                                     <ShieldCheck className="h-6 w-6 text-primary" />
                                     Technical Profile
@@ -137,7 +133,7 @@ export default function TransporterProfilePage() {
                                 <CardContent className="p-6 space-y-4">
                                     <div className="space-y-1 text-left">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">MD / Decision Maker</p>
-                                        <p className="font-bold text-foreground">{transporter.contactPerson || transporter.ceo?.name || transporter.marketingManager?.name || 'Identity Protected'}</p>
+                                        <p className="font-bold text-foreground">{transporter.marketingManager?.name || transporter.ceo?.name || transporter.contactPerson || 'Identity Protected'}</p>
                                     </div>
                                     {email && (
                                         <div className="space-y-1 text-left">
@@ -155,14 +151,6 @@ export default function TransporterProfilePage() {
                                             </div>
                                         </div>
                                     )}
-                                    {transporter.website && (
-                                        <div className="space-y-1 text-left">
-                                            <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Official Domain</p>
-                                            <a href={transporter.website.startsWith('http') ? transporter.website : `https://${transporter.website}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs font-bold text-blue-600 hover:underline">
-                                                <Globe className="h-3.5 w-3.5" /> {transporter.website}
-                                            </a>
-                                        </div>
-                                    )}
                                 </CardContent>
                                 <CardFooter className="bg-slate-50 border-t p-6">
                                     <Button className="w-full font-black uppercase text-xs tracking-widest gap-2">
@@ -170,14 +158,6 @@ export default function TransporterProfilePage() {
                                     </Button>
                                 </CardFooter>
                             </Card>
-
-                            <Alert className="bg-primary/5 border-primary/20">
-                                <Info className="h-4 w-4 text-primary" />
-                                <AlertTitle className="font-bold text-xs uppercase text-primary">Grid Standing</AlertTitle>
-                                <AlertDescription className="text-[10px] text-muted-foreground leading-relaxed mt-1">
-                                    This node is monitored for responsiveness. Initiating a handshake logs a forensic signal for both parties.
-                                </AlertDescription>
-                            </Alert>
                         </div>
                     </div>
                 </div>

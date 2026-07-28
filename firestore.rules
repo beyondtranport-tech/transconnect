@@ -19,8 +19,10 @@ service cloud.firestore {
     }
 
     // --- CRITICAL ENGINE RULES ---
+    // Deployment Identifier: 2026-03-16T14:45:00Z
 
     match /engagementPings/{pingId} {
+      // Explicitly allow list/get for all signed-in users (filtering happens in app/API)
       allow list, get: if isSignedIn();
       allow write: if isAdmin();
     }
@@ -127,7 +129,7 @@ service cloud.firestore {
     match /{path=**}/adCampaigns/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isSignedIn(); }
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }

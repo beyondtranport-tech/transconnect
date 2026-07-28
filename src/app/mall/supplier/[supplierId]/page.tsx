@@ -13,8 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 /**
- * DYNAMIC SUPPLIER PROFILE
- * Reconstructs the profile from Shops, Partners, or discovered Leads.
+ * DYNAMIC SUPPLIER PROFILE V2
+ * High-fidelity record reconstruction from Shops, Partners, or discovered Leads.
  */
 export default function SupplierProfilePage() {
     const params = useParams();
@@ -22,13 +22,11 @@ export default function SupplierProfilePage() {
     const supplierId = params.supplierId as string;
     const firestore = useFirestore();
 
-    // 1. Try to fetch as a published Shop
     const shopRef = useMemoFirebase(() => {
         if (!firestore || !supplierId) return null;
         return doc(firestore, 'shops', supplierId);
     }, [firestore, supplierId]);
     
-    // 2. Fallback to Registry Partner/Lead record
     const partnerRef = useMemoFirebase(() => {
         if (!firestore || !supplierId) return null;
         return doc(firestore, 'partners', supplierId);
@@ -51,9 +49,8 @@ export default function SupplierProfilePage() {
     
     const supplier = shop || partner || lead;
 
-    // Robust loading check: Wait while either is loading, 
-    // or if we have refs but no data and loading hasn't flipped to false yet.
-    const isLoading = isShopLoading || isPartnerLoading || isLeadLoading || areProductsLoading || (!supplier && (isShopLoading === undefined || isPartnerLoading === undefined));
+    // SAFE LOADING STATE: Wait until all registry hooks report completion.
+    const isLoading = isShopLoading || isPartnerLoading || isLeadLoading || areProductsLoading;
     const isActuallyNotFound = !isLoading && !supplier;
 
     if (isLoading) {
@@ -81,7 +78,6 @@ export default function SupplierProfilePage() {
                 </Button>
 
                 <div className="max-w-6xl mx-auto border-none rounded-[2rem] overflow-hidden shadow-2xl bg-white text-left">
-                    {/* Header */}
                     <div className="relative h-64 md:h-80 bg-slate-900">
                          {shop?.heroBannerUrl && <Image src={shop.heroBannerUrl} alt={name} fill className="object-cover opacity-50" />}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10" />
@@ -114,7 +110,7 @@ export default function SupplierProfilePage() {
                                     Professional Standing
                                 </h2>
                                 <p className="text-lg leading-relaxed text-slate-600 whitespace-pre-wrap italic">
-                                    {shop?.shopDescription || supplier.minedServiceWording || supplier.notes || "This supplier is a verified participant in the South African transport grid. Specialist in industrial parts and services."}
+                                    {shop?.shopDescription || supplier.minedServiceWording || supplier.notes || "This supplier is a verified participant in the South African transport grid."}
                                 </p>
                             </div>
 
@@ -122,7 +118,7 @@ export default function SupplierProfilePage() {
 
                             {products && products.length > 0 && (
                                 <div className="space-y-6">
-                                    <h3 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
+                                    <h3 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2 text-left">
                                         <Package className="h-6 w-6 text-primary" />
                                         Available Inventory
                                     </h3>
@@ -148,8 +144,8 @@ export default function SupplierProfilePage() {
 
                         <div className="space-y-8 text-left">
                             <Card className="shadow-lg border-primary/10 overflow-hidden bg-white">
-                                <CardHeader className="bg-slate-50 border-b p-6">
-                                    <CardTitle className="text-sm font-black uppercase tracking-widest">Registry Node Details</CardTitle>
+                                <CardHeader className="bg-slate-50 border-b p-6 text-left text-foreground">
+                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-left">Registry Node Details</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-6 space-y-4">
                                     <div className="space-y-1">
@@ -161,13 +157,6 @@ export default function SupplierProfilePage() {
                                         <p className="text-xs font-bold">{email}</p>
                                         <p className="text-xs font-mono text-muted-foreground">{phone}</p>
                                     </div>
-                                    <div className="space-y-1 pt-2">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Logistics Node</p>
-                                        <p className="text-xs text-slate-500 leading-tight flex items-start gap-2">
-                                            <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
-                                            {supplier.address || 'Operational Hub Verified'}
-                                        </p>
-                                    </div>
                                 </CardContent>
                                 <CardFooter className="bg-slate-50 border-t p-6">
                                     <Button className="w-full font-black uppercase text-xs tracking-widest gap-2">
@@ -175,16 +164,6 @@ export default function SupplierProfilePage() {
                                     </Button>
                                 </CardFooter>
                             </Card>
-
-                            <div className="p-6 rounded-2xl bg-green-50 border border-green-100 space-y-3 text-left">
-                                <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                                    <span className="font-black text-[10px] uppercase text-green-700 tracking-widest">Trust Signal</span>
-                                </div>
-                                <p className="text-xs text-green-800 leading-relaxed font-medium">
-                                    This supplier has established a secure handshake with the industrial matching engine.
-                                </p>
-                            </div>
                         </div>
                     </div>
                 </div>

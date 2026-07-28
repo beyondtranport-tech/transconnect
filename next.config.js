@@ -5,7 +5,7 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@opentelemetry/instrumentation', 'require-in-the-middle'],
   },
   reactStrictMode: true,
-  // Cache-busting identifier for build synchronization: 2026-03-15T12:15:00Z
+  // Cache-busting Identifier: 2026-03-16T15:00:00Z - FORCING REBUILD
   images: {
     remotePatterns: [
       {
