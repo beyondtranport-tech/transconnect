@@ -16,7 +16,8 @@ import * as React from 'react';
  * Simplified view focusing on 5 key industrial metrics.
  */
 
-const formatLimit = (val: number) => {
+const formatLimit = (val: number | undefined | null) => {
+    if (val === undefined || val === null) return '0';
     if (val === 999999) return 'Unlimited';
     return val.toLocaleString();
 };
@@ -75,7 +76,7 @@ export default function MembershipPage() {
                         
                         <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left">
                             <div className="py-6 border-y border-slate-100">
-                                <div className="flex items-baseline gap-1.5 text-left text-foreground text-foreground">
+                                <div className="flex items-baseline gap-1.5 text-left text-foreground">
                                     <span className="text-4xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
                                     <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">/ month</span>
                                 </div>
