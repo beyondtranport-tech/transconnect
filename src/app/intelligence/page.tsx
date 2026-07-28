@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { provinces } from '@/lib/geodata';
 import { 
     Database, Search, MapPin, ShieldCheck, Loader2, ArrowRight, Lock, Navigation, 
-    Sparkles, Info, Landmark, Truck, Building2, Table as TableIcon, ThumbsUp, ShieldAlert, Zap 
+    Sparkles, Info, Landmark, Truck, Building2, Table as TableIcon, ThumbsUp, ShieldAlert, Zap, CheckCircle2 
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,7 @@ import { useRouter } from 'next/navigation';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supplierCategories } from '@/app/adminaccount/marketing/discovery-engine';
+import Image from 'next/image';
 
 const servicesMap = [
     { id: 'all', label: 'All Services' },
@@ -112,7 +113,7 @@ function RegistrySearch({ type }: { type: 'transporter' | 'supplier' | 'finance'
                 })
             });
             
-            toast({ title: "Engagement Logged", description: "Identity verification initiated." });
+            toast({ title: "Engagement Logged", description: "Direct communication node established." });
             
             if (type === 'transporter') router.push(`/mall/transporter/${res.id}`);
             else if (type === 'supplier') router.push(`/mall/supplier/${res.id}`);
@@ -121,6 +122,66 @@ function RegistrySearch({ type }: { type: 'transporter' | 'supplier' | 'finance'
             toast({ variant: 'destructive', title: "Error", description: e.message });
         } finally {
             setIsEngaging(null);
+        }
+    };
+
+    const handleVouch = async (targetId: string) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to vouch for community data." });
+            router.push('/signin');
+            return;
+        }
+        setIsVouching(targetId);
+        try {
+            const token = await getClientSideAuthToken();
+            const res = await fetch('/api/vouch', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetId, collection: 'partners' })
+            });
+            const result = await res.json();
+            if (result.success) {
+                toast({ title: "Verification Recorded" });
+                handleSearch(); 
+            }
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Error" });
+        } finally {
+            setIsVouching(null);
+        }
+    };
+
+    const handleClaim = async (targetId: string) => {
+        if (!user) {
+            toast({ variant: 'destructive', title: "Sign-in Required", description: "Sign in to claim your node." });
+            router.push('/signin');
+            return;
+        }
+
+        const balance = user.companyData?.availableBalance || 0;
+        if (balance < 10) {
+            toast({ variant: 'destructive', title: "Low Balance", description: "R10 required in wallet." });
+            router.push('/account?view=wallet');
+            return;
+        }
+
+        setIsClaiming(targetId);
+        try {
+            const token = await getClientSideAuthToken();
+            const res = await fetch('/api/claimNode', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ targetId, collection: 'partners' })
+            });
+            const result = await res.json();
+            if (result.success) {
+                toast({ title: "Node Claimed!" });
+                handleSearch();
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Claim Failed", description: e.message });
+        } finally {
+            setIsClaiming(null);
         }
     };
 
@@ -209,15 +270,15 @@ function RegistrySearch({ type }: { type: 'transporter' | 'supplier' | 'finance'
                         <Table>
                             <TableHeader className="bg-slate-900 hover:bg-slate-900">
                                 <TableRow className="border-none">
-                                    <TableHead className="text-white font-bold uppercase text-[9px] tracking-widest py-4">Entity Identity</TableHead>
-                                    <TableHead className="text-white font-bold uppercase text-[9px] tracking-widest py-4">Operational Hub</TableHead>
-                                    <TableHead className="text-white font-bold uppercase text-[9px] tracking-widest py-4">Stakeholder Lead</TableHead>
+                                    <TableHead className="text-white font-bold uppercase text-[9px] tracking-widest py-4 text-left">Entity Identity</TableHead>
+                                    <TableHead className="text-white font-bold uppercase text-[9px] tracking-widest py-4 text-left">Operational Hub</TableHead>
+                                    <TableHead className="text-white font-bold uppercase text-[9px] tracking-widest py-4 text-left">Stakeholder Lead</TableHead>
                                     <TableHead className="text-white font-bold uppercase text-[9px] tracking-widest py-4 text-right">Handshake</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {results.map((res) => (
-                                    <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors">
+                                    <TableRow key={res.id} className="group hover:bg-slate-50 transition-colors text-left">
                                         <TableCell className="py-4">
                                             <div className="flex flex-col text-left">
                                                 <span className="font-black text-sm text-slate-900">{res.companyName}</span>
@@ -253,12 +314,12 @@ function RegistrySearch({ type }: { type: 'transporter' | 'supplier' | 'finance'
                     </Card>
 
                     {!isPaid && results.length > 0 && (
-                        <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto mt-12 overflow-hidden relative">
+                        <Card className="bg-slate-900 text-white border-none shadow-2xl p-10 text-center max-w-2xl mx-auto mt-12 overflow-hidden relative text-left">
                             <div className="absolute top-0 right-0 p-8 opacity-5"><ShieldCheck className="h-32 w-32" /></div>
                             <div className="relative z-10 flex flex-col items-center">
                                 <div className="bg-primary/20 p-4 rounded-full w-fit mb-6"><Lock className="h-10 w-10 text-primary" /></div>
-                                <h3 className="text-3xl font-black font-headline mb-4 uppercase leading-none">Unlock Absolute Transparency</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                <h3 className="text-3xl font-black font-headline mb-4 uppercase leading-none text-white">Unlock Absolute Transparency</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-white">
                                     You are viewing a restricted subset of the industrial grid. Upgrade to <strong>Intelligence Access</strong> to remove data blurring and access direct MD/CEO lines for 22,000+ verified records.
                                 </p>
                                 <Button asChild size="lg" className="w-full h-14 px-12 text-lg font-black uppercase tracking-tight shadow-xl shadow-primary/20">
@@ -278,9 +339,9 @@ export default function IndustrialIntelligenceHub() {
         <div className="bg-slate-50 min-h-screen text-left text-foreground">
             <section className="bg-slate-900 text-white py-20 text-center">
                 <div className="container mx-auto px-4">
-                    <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-[10px] font-black uppercase tracking-widest">Master Intelligence Hub</Badge>
-                    <h1 className="text-4xl md:text-7xl font-black font-headline text-white leading-none uppercase text-center">Industrial <br/><span className="text-primary">Intelligence</span>.</h1>
-                    <p className="mt-6 text-xl text-slate-300 max-w-2xl mx-auto font-medium text-center text-white">The central terminal for South African logistics data. Map capacity, suppliers, and capital through the forensic grid.</p>
+                    <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-[10px] font-black uppercase tracking-widest text-white">Master Intelligence Hub</Badge>
+                    <h1 className="text-4xl md:text-7xl font-black font-headline text-white leading-none uppercase text-white">Industrial <br/><span className="text-primary">Intelligence</span>.</h1>
+                    <p className="mt-6 text-xl text-slate-300 max-w-2xl mx-auto font-medium text-white">The central terminal for South African logistics data. Map capacity, suppliers, and capital through the forensic grid.</p>
                 </div>
             </section>
 
@@ -307,9 +368,9 @@ export default function IndustrialIntelligenceHub() {
             <section className="py-24 bg-white border-t">
                 <div className="container mx-auto px-4">
                     <div className="max-w-4xl mx-auto grid md:grid-cols-2 gap-16 items-center text-left">
-                        <div className="space-y-6 text-left">
+                        <div className="space-y-6 text-left text-foreground">
                             <div className="bg-primary/10 p-3 rounded-xl w-fit"><ShieldCheck className="h-8 w-8 text-primary" /></div>
-                            <h3 className="text-3xl font-black uppercase font-headline">Verified Data Fidelity.</h3>
+                            <h3 className="text-3xl font-black uppercase font-headline text-slate-900">Verified Data Fidelity.</h3>
                             <p className="text-lg text-muted-foreground leading-relaxed">
                                 Our data is not scraped; it is reconstructed. By stitching fragments from multiple directories, social hubs, and official CIPC records, we provide the most accurate industrial map in South Africa.
                             </p>
