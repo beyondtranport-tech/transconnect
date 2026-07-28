@@ -237,7 +237,7 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type: queryType, limit: searchLimit = 100 } = payload;
-                const limitNum = Number(searchLimit);
+                const limitNum = parseInt(String(searchLimit), 10) || 100;
                 const collectionName = (queryType === 'lead') ? 'leads' : 'partners';
                 let q: any = db.collection(collectionName);
                 if (collectionName === 'partners' && queryType !== 'all') {
@@ -345,7 +345,7 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { type: rType, limit: rLimit = 100, term = '' } = payload;
                 const normalizedTerm = term.toLowerCase().trim();
-                const limitNum = Number(rLimit);
+                const limitNum = parseInt(String(rLimit), 10) || 100;
                 
                 // 1. SCAN PARTNERS
                 let pQuery: any = db.collection('partners');

@@ -33,7 +33,7 @@ import { getClientSideAuthToken } from '@/firebase';
 
 /**
  * MARKETING PAGE TERMINAL
- * Build Identifier: 2026-03-15T22:45:00Z (Hardened Integer Casting)
+ * Build Identifier: 2026-03-15T23:05:00Z (Hardened Registry Index Resolution)
  */
 
 // Content components using absolute paths
