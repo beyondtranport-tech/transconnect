@@ -1,24 +1,25 @@
+
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
-import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck, Info } from "lucide-react";
+import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck, Handshake, Zap, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { getClientSideAuthToken } from '@/firebase';
 
-/**
- * DYNAMIC TRANSPORTER PROFILE V2.1
- * Fixed initial frame flicker to resolve false-positive 404 errors.
- */
 export default function TransporterProfilePage() {
     const params = useParams();
     const router = useRouter();
+    const { toast } = useToast();
     const transporterId = params?.transporterId as string;
     const firestore = useFirestore();
+    const [isEngaging, setIsEngaging] = useState(false);
 
     const partnerRef = useMemoFirebase(() => {
         if (!firestore || !transporterId) return null;
@@ -34,11 +35,44 @@ export default function TransporterProfilePage() {
     const { data: lead, isLoading: isLeadLoading } = useDoc(leadRef);
 
     const transporter = partner || lead;
-    
-    // ROBUST LOADING CHECK: We must wait for BOTH sources to finish loading 
-    // before we can ever say "not found".
     const isLoading = isPartnerLoading || isLeadLoading;
     const isActuallyNotFound = !isLoading && !transporter;
+
+    const handleInitiateHandshake = async () => {
+        if (!transporter) return;
+        setIsEngaging(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) {
+                router.push(`/signin?redirect=/mall/transporter/${transporterId}`);
+                return;
+            }
+
+            const response = await fetch('/api/recordEngagement', {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ 
+                    targetId: transporterId, 
+                    targetName: transporter.companyName || 'Haulier',
+                    targetType: partner ? 'partner' : 'lead'
+                })
+            });
+
+            if (!response.ok) throw new Error("Handshake failed.");
+
+            toast({ 
+                title: "Handshake Initiated!", 
+                description: "The haulier has been notified and the connection is logged in your dashboard." 
+            });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Error", description: e.message });
+        } finally {
+            setIsEngaging(false);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -70,7 +104,7 @@ export default function TransporterProfilePage() {
                 <div className="max-w-6xl mx-auto border-none rounded-[2rem] overflow-hidden shadow-2xl bg-white text-left">
                     <div className="relative h-64 md:h-80 bg-slate-900">
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent z-10" />
-                        <div className="absolute bottom-0 left-0 p-8 md:p-12 z-20 w-full">
+                        <div className="absolute bottom-0 left-0 p-8 md:p-12 z-20 w-full text-white">
                             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                                 <div className="flex items-center gap-6">
                                     <div className="bg-white p-4 rounded-3xl shadow-xl">
@@ -84,7 +118,13 @@ export default function TransporterProfilePage() {
                                         </div>
                                     </div>
                                 </div>
-                                <Button className="h-14 px-10 font-black uppercase tracking-tight shadow-xl shadow-primary/20 text-white" size="lg">
+                                <Button 
+                                    className="h-14 px-10 font-black uppercase tracking-tight shadow-xl shadow-primary/20 text-white" 
+                                    size="lg"
+                                    onClick={handleInitiateHandshake}
+                                    disabled={isEngaging}
+                                >
+                                    {isEngaging ? <Loader2 className="mr-2 animate-spin" /> : <Handshake className="mr-2 h-6 w-6" />}
                                     Initiate Handshake
                                 </Button>
                             </div>
@@ -137,7 +177,7 @@ export default function TransporterProfilePage() {
                                         <p className="font-bold text-foreground">{transporter.marketingManager?.name || transporter.ceo?.name || transporter.contactPerson || 'Identity Protected'}</p>
                                     </div>
                                     {email && (
-                                        <div className="space-y-1 text-left text-foreground">
+                                        <div className="space-y-1 text-left">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct E-mail</p>
                                             <div className="flex items-center gap-2 text-xs font-bold text-primary">
                                                 <Mail className="h-3.5 w-3.5" /> {email}
@@ -145,7 +185,7 @@ export default function TransporterProfilePage() {
                                         </div>
                                     )}
                                     {phone && (
-                                        <div className="space-y-1 text-left text-foreground">
+                                        <div className="space-y-1 text-left">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct Line</p>
                                             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                                                 <Phone className="h-3.5 w-3.5" /> {phone}
@@ -154,8 +194,8 @@ export default function TransporterProfilePage() {
                                     )}
                                 </CardContent>
                                 <CardFooter className="bg-slate-50 border-t p-6">
-                                    <Button className="w-full font-black uppercase text-xs tracking-widest gap-2">
-                                        <Mail className="h-3.5 w-3.5" /> Direct RFQ
+                                    <Button className="w-full font-black uppercase text-xs tracking-widest gap-2" variant="outline" onClick={handleInitiateHandshake}>
+                                        <Zap className="h-3.5 w-3.5 text-primary" /> Activate Node
                                     </Button>
                                 </CardFooter>
                             </Card>

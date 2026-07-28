@@ -3,12 +3,13 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
+import sgMail from '@sendgrid/mail';
 
 /**
- * DUAL-ENGAGEMENT LOGGING API
- * Records the 'Select to Engage' action for both parties.
- * 1. Logs for the Engager (Audit/History).
- * 2. Logs for the Target (Lead Notification/Conversion Trigger).
+ * DUAL-ENGAGEMENT LOGGING API (Handshake Terminal)
+ * 1. Logs for the Engager (History).
+ * 2. Logs for the Target (Engagement Ping).
+ * 3. TRIGGERS LOOP CLOSURE: Emails the target based on their standing.
  */
 export async function POST(req: NextRequest) {
   const { app, error: initError } = getAdminApp();
@@ -32,27 +33,26 @@ export async function POST(req: NextRequest) {
     if (!companyId) return NextResponse.json({ success: false, error: 'Profile required' }, { status: 403 });
 
     const companySnap = await db.collection('companies').doc(companyId).get();
-    const companyName = companySnap.data()?.companyName || 'A Member';
+    const companyName = companySnap.data()?.companyName || 'A Verified Member';
 
     const batch = db.batch();
 
-    // 1. LOG FOR THE ENGAGER: Track what they looked at
+    // 1. LOG FOR THE ENGAGER
     const engagerLogRef = db.collection('companies').doc(companyId).collection('searchLogs').doc();
     batch.set(engagerLogRef, {
         id: engagerLogRef.id,
-        type: 'engagement_initiated',
+        type: 'handshake_initiated',
         targetId,
         targetName,
         timestamp: FieldValue.serverTimestamp(),
-        details: `Successfully engaged with ${targetName}.`
+        details: `Successfully initiated a handshake with ${targetName}.`
     });
 
-    // 2. LOG FOR THE TARGET: Create the "Blind Lead" conversion trigger
-    // We log this in a global pings collection that we can query for the target company
+    // 2. LOG FOR THE TARGET (The Ping)
     const pingRef = db.collection('engagementPings').doc();
     batch.set(pingRef, {
         id: pingRef.id,
-        targetId: targetId, // This is the ID in the partners/leads collection
+        targetId: targetId, 
         targetType: targetType,
         engagerId: companyId,
         engagerName: companyName,
@@ -60,30 +60,74 @@ export async function POST(req: NextRequest) {
         status: 'unread'
     });
 
-    // 3. UPDATE THE REGISTRY RECORD: Increment the visibility counter
-    const recordRef = db.collection(targetType === 'lead' ? 'leads' : 'partners').doc(targetId);
+    // 3. UPDATE THE REGISTRY RECORD
+    const recordCol = targetType === 'lead' ? 'leads' : 'partners';
+    const recordRef = db.collection(recordCol).doc(targetId);
+    
+    const rSnap = await recordRef.get();
+    const rData = rSnap.data();
+    const currentEngagements = (rData?.engagementCount || 0) + 1;
+
     batch.set(recordRef, {
         engagementCount: FieldValue.increment(1),
         lastEngagedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
-    // 4. LOG AUDIT: System level tracking
-    const auditRef = db.collection('auditLogs').doc();
-    batch.set(auditRef, {
-        action: 'registry_engagement',
-        details: `${companyName} engaged with ${targetName}.`,
-        userId: uid,
-        companyId: companyId,
-        targetId: targetId,
-        timestamp: FieldValue.serverTimestamp()
-    });
+    // 4. CLOSING THE LOOP: TRIGGER MESSAGING
+    if (process.env.SENDGRID_API_KEY && rData?.email) {
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        
+        const isClaimedMember = !!rData.companyId || rData.isClaimed;
+        const baseUrl = 'https://logisticsflow.co.za';
+        
+        let subject = "";
+        let html = "";
+
+        if (isClaimedMember) {
+            // OPTION A: Targeted at registered members
+            subject = `Logistics Flow: New Handshake Request from ${companyName}`;
+            html = `
+                <div style="font-family: sans-serif; max-width: 600px; color: #334155;">
+                    <h2 style="color: #228B22;">New Handshake Request!</h2>
+                    <p>A verified member, <strong>${companyName}</strong>, has just selected your industrial node to initiate a handshake.</p>
+                    <p style="margin: 20px 0;">Sign in to your dashboard to view their profile, technical requirements, and direct contact details.</p>
+                    <a href="${baseUrl}/signin" style="display: inline-block; background: #228B22; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Enter Commerce Command &rarr;</a>
+                </div>
+            `;
+        } else {
+            // OPTION B: Targeted at discovered leads (Sales Loop)
+            subject = `Logistics Flow: Your profile is generating industrial heat.`;
+            html = `
+                <div style="font-family: sans-serif; max-width: 600px; color: #334155;">
+                    <h2 style="color: #228B22;">Data Intelligence Alert</h2>
+                    <p>Our industrial matching engine has recorded <strong>${currentEngagements} "Select to Engage" actions</strong> for your business profile this week.</p>
+                    <p>Verified decision-makers are actively looking for your services in the grid, but your node is currently <strong>Unclaimed</strong>, which prevents these handshakes from reaching your desk.</p>
+                    <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                        <p style="margin: 0; font-size: 14px;"><strong>Target Action:</strong> Establish your digital standing for <strong>R10/mo</strong> to unlock your Inbound Interest Ledger and see exactly who is searching for you.</p>
+                    </div>
+                    <a href="${baseUrl}/opt-in/${targetId}" style="display: inline-block; background: #228B22; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Claim Your Forensic Node &rarr;</a>
+                </div>
+            `;
+        }
+
+        try {
+            await sgMail.send({
+                to: rData.email,
+                from: 'michael@logisticsflow.co.za',
+                subject,
+                html
+            });
+        } catch (mailErr) {
+            console.error("Loop closure email failed:", mailErr);
+        }
+    }
 
     await batch.commit();
     return NextResponse.json({ success: true });
 
   } catch (error: any) {
-    console.error("Engagement Recording Error:", error);
+    console.error("Handshake Terminal Error:", error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
