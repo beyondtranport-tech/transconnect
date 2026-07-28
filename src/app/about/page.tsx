@@ -1,9 +1,7 @@
-
 'use client';
 
 import Image from "next/image";
 import data from "@/lib/placeholder-images.json";
-import { Card, CardContent } from "@/components/ui/card";
 import { 
   CheckCircle, 
   ArrowRight, 
@@ -14,366 +12,156 @@ import {
   Handshake, 
   Award, 
   Activity, 
-  Sparkles, 
-  Search, 
   Target,
   UserCheck,
   FileCheck,
-  Star,
-  Trophy,
-  Coins,
-  Percent,
-  TrendingDown,
-  ShieldCheck,
-  Banknote,
   Truck,
   Building,
-  Fingerprint,
-  Wrench,
-  Users,
-  Briefcase,
-  UserCheck2,
   BrainCircuit,
-  Loader2
+  Loader2,
+  ShieldCheck,
+  Landmark
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import React, { useMemo } from "react";
-import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
-import featuresData from '@/lib/features.json';
-import { doc } from 'firebase/firestore';
-import { cn } from "@/lib/utils";
+import React from "react";
+import { useUser } from "@/firebase";
 
 const { placeholderImages } = data;
-const { featureSections } = featuresData;
 const aboutHeroImage = placeholderImages.find(p => p.id === 'about-hero');
 
 export default function AboutPage() {
   const { user } = useUser();
-  const firestore = useFirestore();
   const ctaLink = user ? '/account' : '/join';
-
-  // FETCH EXPLICIT DIVIDEND REWARDS CONFIG
-  const configRef = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return doc(firestore, 'configuration', 'dividendTiers');
-  }, [firestore]);
-  const { data: dividendConfig, isLoading: isConfigLoading } = useDoc<any>(configRef);
-
-  // RESOLVE LOYALTY FEATURES FROM THE REGISTRY
-  const resolveFeatureNames = (featureKeys: string[] = []) => {
-    const allFlatFeatures = featureSections.flatMap(s => s.features);
-    return featureKeys.map(fKey => {
-        const found = allFlatFeatures.find(feat => feat.key === fKey);
-        return found ? found.name : fKey;
-    });
-  };
 
   return (
     <div className="bg-background text-left text-foreground">
-        {/* HERO SECTION */}
-        <section className="relative w-full h-64 md:h-96 bg-slate-950 text-white">
+        {/* HERO SECTION - THE MISSION */}
+        <section className="relative w-full h-80 bg-slate-900 text-white flex items-center">
             {aboutHeroImage && (
                 <Image
                     src={aboutHeroImage.imageUrl}
-                    alt={aboutHeroImage.description}
+                    alt="Industry Map"
                     fill
-                    className="object-cover opacity-40"
+                    className="object-cover opacity-20"
                     priority
-                    data-ai-hint="freight trucks"
                 />
             )}
-            <div className="relative h-full flex flex-col items-center justify-center text-center text-white z-10 p-4">
-                <Badge className="bg-primary/20 text-primary border-primary/30 mb-6 py-1.5 px-6 font-black uppercase tracking-widest text-[10px]">Industrial Infrastructure</Badge>
-                <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-center text-white uppercase">Data Foundation. Transactional Engine.</h1>
-                <p className="mt-4 text-lg md:text-xl max-w-3xl text-slate-300 text-center text-white mx-auto">Logistics Flow is a Data-as-a-Service ecosystem built to map, optimize, and fund the South African transport grid.</p>
+            <div className="container relative mx-auto px-4 text-left z-10">
+                <Badge className="bg-primary text-white mb-6 py-1 px-4 font-black uppercase tracking-widest text-[10px] border-none">The Industrial Brain</Badge>
+                <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tighter text-white uppercase leading-none">Solving the <br/>Information <span className="text-primary">Divide</span>.</h1>
+                <p className="mt-6 text-xl max-w-2xl text-slate-300 leading-relaxed font-medium text-left">Logistics Flow is a Data-as-a-Service company. We don't drive trucks; we provide the intelligence to make them more profitable.</p>
             </div>
         </section>
 
-        {/* SECTION 1: THE INTELLIGENCE MECHANISM */}
+        {/* HOW IT WORKS - THREE PILLARS */}
         <section className="py-24 bg-white border-b">
-            <div className="container mx-auto px-4 text-left">
-                <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="container mx-auto px-4">
+                <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
+                    <h2 className="text-3xl md:text-5xl font-black font-headline text-slate-900 uppercase text-center">The 3 Pillars of Flow</h2>
+                    <p className="text-lg text-muted-foreground leading-relaxed text-center">
+                        We provide the map, the engine, and the fuel to scale your industrial footprint.
+                    </p>
+                </div>
+
+                <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto">
+                    {/* DISCOVERY */}
                     <div className="space-y-6 text-left">
-                        <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner text-left"><Activity className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-4xl font-black font-headline text-foreground leading-tight text-left uppercase">The Intelligence Mechanism</h3>
-                        <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                            We don't just list your business; we actively monitor market demand. Our proprietary **Inbound Interest Ledger** records every time a verified decision-maker selects your profile to engage.
+                        <div className="bg-slate-100 p-5 rounded-3xl w-fit"><Database className="h-10 w-10 text-primary" /></div>
+                        <h3 className="text-2xl font-black uppercase text-slate-900">1. Discovery</h3>
+                        <p className="text-muted-foreground leading-relaxed text-left">
+                            Our AI discovery engine has mapped the South African transport grid. We bypass gatekeepers to provide you with the direct lines to decision-makers across 22,000 verified records.
                         </p>
-                        <div className="space-y-6 text-left">
-                            <div className="flex gap-4 items-start text-left">
-                                <Target className="h-6 w-6 text-primary shrink-0 mt-1" />
-                                <div className="text-left">
-                                    <p className="font-bold">High-Intent Signal Tracking</p>
-                                    <p className="text-sm text-muted-foreground">Identify exactly which companies are seeking your capacity or products before they even call you.</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 items-start text-left">
-                                <Search className="h-6 w-6 text-primary shrink-0 mt-1" />
-                                <div className="text-left">
-                                    <p className="font-bold">Forensic Lead Capture</p>
-                                    <p className="text-sm text-muted-foreground">Unlock "Blind Leads" waiting on your dashboard through our Intelligence Access tier.</p>
-                                </div>
-                            </div>
-                        </div>
-                        <Button asChild className="h-12 px-8 font-black uppercase text-xs tracking-widest text-white">
-                            <Link href={ctaLink}>Activate Your Sales Node</Link>
-                        </Button>
+                        <ul className="space-y-2 pt-2 text-left">
+                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Forensic CRM Registry</li>
+                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Verified Mobile Numbers</li>
+                        </ul>
                     </div>
-                    <div className="relative aspect-square rounded-3xl overflow-hidden shadow-2xl border-8 border-slate-50">
-                         <Image
-                            src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=1000"
-                            alt="Data Analytics"
-                            fill
-                            className="object-cover"
-                            data-ai-hint="data visualization"
-                        />
-                    </div>
-                </div>
-            </div>
-        </section>
 
-        {/* SECTION 2: THE DIGITAL BRANCH */}
-        <section className="py-24 bg-slate-950 text-white border-b">
-            <div className="container mx-auto px-4 text-left">
-                <div className="grid md:grid-cols-2 gap-16 items-center">
-                    <div className="md:order-2 space-y-6 text-left">
-                        <div className="bg-primary/10 p-4 rounded-2xl w-fit shadow-inner text-left"><Store className="h-10 w-10 text-primary"/></div>
-                        <h3 className="text-4xl font-black font-headline text-white leading-tight text-left uppercase">Your Digital Branch</h3>
-                        <p className="text-lg text-slate-300 leading-relaxed text-left">
-                            Bypass generic marketplaces. Establish a high-fidelity digital branch mapped directly to the industrial grid. Your node is the engine that powers your presence in our specialized malls.
+                    {/* MATCHING */}
+                    <div className="space-y-6 text-left">
+                        <div className="bg-slate-100 p-5 rounded-3xl w-fit"><BrainCircuit className="h-10 w-10 text-primary" /></div>
+                        <h3 className="text-2xl font-black uppercase text-slate-900">2. Matching</h3>
+                        <p className="text-muted-foreground leading-relaxed text-left">
+                            We match your specific fleet capacity or spare parts catalog with high-intent demand in real-time. Our matching engine eliminates the friction of manual cold-calling.
                         </p>
-                        <div className="space-y-6 text-left">
-                            <div className="flex gap-4 items-start text-left">
-                                <Database className="h-6 w-6 text-primary shrink-0 mt-1" />
-                                <div className="text-left">
-                                    <p className="font-bold uppercase text-xs tracking-widest text-white">List fleet capacity, pallet positions, or technical spares catalogues.</p>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 items-start text-left text-foreground">
-                                <FileCheck className="h-6 w-6 text-primary shrink-0 mt-1" />
-                                <div className="text-left">
-                                    <p className="font-bold uppercase text-xs tracking-widest text-white">Standardized handshake tools including OTPs and automated invoicing.</p>
-                                </div>
-                            </div>
-                        </div>
+                         <ul className="space-y-2 pt-2 text-left">
+                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> AI Freight Matching</li>
+                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Digital Node Handshakes</li>
+                        </ul>
                     </div>
-                    <div className="md:order-1 relative aspect-video rounded-3xl overflow-hidden shadow-2xl border-4 border-white/10">
-                        <Image
-                            src={placeholderImages.find(p => p.id === 'mall-division')!.imageUrl}
-                            alt="Digital Engine"
-                            fill
-                            className="object-cover"
-                            data-ai-hint="futuristic logistics"
-                        />
+
+                    {/* CAPITAL */}
+                    <div className="space-y-6 text-left">
+                        <div className="bg-slate-100 p-5 rounded-3xl w-fit"><Landmark className="h-10 w-10 text-primary" /></div>
+                        <h3 className="text-2xl font-black uppercase text-slate-900">3. Capital</h3>
+                        <p className="text-muted-foreground leading-relaxed text-left">
+                            Data is the best collateral. By analyzing your platform activity and standing, our funding division can provide asset finance and working capital where traditional banks fail.
+                        </p>
+                         <ul className="space-y-2 pt-2 text-left">
+                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> In-House Business Loans</li>
+                            <li className="flex items-center gap-2 text-xs font-bold text-slate-700 uppercase tracking-tight text-left"><CheckCircle className="h-4 w-4 text-primary" /> Asset Growth Funding</li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </section>
 
-        {/* SECTION 3: THE INFORMATION DIVIDEND (SYNCED REWARDS) */}
-        <section className="py-24 bg-white border-b">
-            <div className="container mx-auto px-4 text-left">
-                <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-                    <div className="bg-primary/10 p-4 rounded-2xl w-fit mx-auto shadow-inner"><Award className="h-10 w-10 text-primary"/></div>
-                    <h3 className="text-4xl font-black font-headline text-foreground uppercase tracking-tight text-center">The Information Dividend</h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-center">
-                        Information is the oxygen of industrial growth. We reward contribution. By helping us map the "Registry of Truth", you unlock access to specialized tools and membership reductions.
-                    </p>
-                </div>
-
-                {isConfigLoading ? (
-                    <div className="flex flex-col items-center justify-center p-20 gap-4">
-                        <Loader2 className="animate-spin h-10 w-10 text-primary" />
-                        <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Syncing Rewards Ledger...</p>
-                    </div>
-                ) : (
-                    <div className="grid lg:grid-cols-3 gap-8 mb-16 text-left">
-                        {/* BRONZE TIER */}
-                        <TierCard 
-                            title="Bronze" 
-                            points="0 - 999 pts" 
-                            tier="01" 
-                            color="orange"
-                            features={resolveFeatureNames(dividendConfig?.bronze)} 
-                        />
-
-                        {/* SILVER TIER */}
-                        <TierCard 
-                            title="Silver" 
-                            points="1,000 - 4,999 pts" 
-                            tier="02" 
-                            color="slate"
-                            features={resolveFeatureNames(dividendConfig?.silver)}
-                            isTarget
-                        />
-
-                        {/* GOLD TIER */}
-                        <TierCard 
-                            title="Gold" 
-                            points="5,000+ pts" 
-                            tier="03" 
-                            color="yellow"
-                            features={resolveFeatureNames(dividendConfig?.gold)}
-                            isPremium
-                        />
-                    </div>
-                )}
-            </div>
-        </section>
-
-        {/* SECTION 4: THE PARTNERSHIP ECOSYSTEM */}
-        <section className="py-24 bg-slate-50 border-b">
-            <div className="container mx-auto px-4 text-left">
-                <div className="max-w-4xl mx-auto text-center mb-16 space-y-4">
-                    <div className="bg-amber-100 p-4 rounded-2xl w-fit mx-auto shadow-inner"><Handshake className="h-10 w-10 text-amber-600"/></div>
-                    <h3 className="text-4xl font-black font-headline text-foreground uppercase tracking-tight text-center">The Partnership Ecosystem</h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-center">
-                        Your industry reach is a measurable digital asset. We empower both individuals and businesses to monetize their existing networks within the grid.
-                    </p>
-                </div>
-
-                <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto text-left">
-                    {/* PATH A: DIGITAL ASSOCIATES (ISA) */}
-                    <Card className="border-none shadow-xl bg-white p-10 flex flex-col h-full text-left">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="bg-primary/10 p-3 rounded-xl"><UserCheck2 className="h-8 w-8 text-primary" /></div>
-                            <div className="text-left">
-                                <h4 className="text-xl font-black uppercase text-foreground">Digital Associates (ISA)</h4>
-                                <Badge variant="secondary" className="mt-1 font-bold text-[9px] uppercase tracking-widest bg-slate-100">For Individuals</Badge>
-                            </div>
-                        </div>
-                        <div className="space-y-6 flex-grow text-left">
-                            <p className="text-sm text-muted-foreground leading-relaxed text-left">
-                                Designed for owner-drivers and industry professionals. Establish your node for **Free** to monetize your daily connections.
-                            </p>
-                            <div className="p-5 bg-slate-50 rounded-2xl space-y-4 text-left">
-                                <div className="flex items-start gap-3">
-                                    <BrainCircuit className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                                    <p className="text-xs font-bold text-foreground">Human Capital Mappers: <span className="font-medium text-muted-foreground">While ISA nodes do not host commercial shops, you serve as the primary feeders for our talent registry—earning rewards for mapping the workforce grid.</span></p>
-                                </div>
-                                <div className="flex items-start gap-3 text-left">
-                                    <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                                    <p className="text-xs font-bold text-foreground">Free AI Studio: <span className="font-medium text-muted-foreground">Access our 4K video generators to create high-converting recruitment assets at zero overhead.</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        <Button asChild variant="outline" className="mt-8 h-12 w-full font-black uppercase text-[10px] tracking-widest border-2">
-                            <Link href="/incentives">Join ISA Network</Link>
+        {/* SYNDICATE POWER */}
+        <section className="py-24 bg-slate-50">
+            <div className="container mx-auto px-4">
+                <div className="grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+                    <div className="space-y-6 text-left">
+                        <Badge className="bg-amber-100 text-amber-700 border-none px-4 py-1 font-black uppercase tracking-widest text-[10px]">The Efficiency Syndicate</Badge>
+                        <h3 className="text-4xl md:text-5xl font-black font-headline text-slate-900 leading-none uppercase text-left">Collective <br/>Buying Power.</h3>
+                        <p className="text-xl text-muted-foreground leading-relaxed text-left">
+                            Logistics Flow acts as a community syndicate. We negotiate massive discounts with national suppliers for tires, parts, and fuel, passing that value directly to our members.
+                        </p>
+                        <Button asChild size="lg" className="h-14 px-10 font-black uppercase shadow-xl text-white">
+                            <Link href="/pricing">View Savings Tiers <ArrowRight className="ml-2 h-5 w-5" /></Link>
                         </Button>
-                    </Card>
-
-                    {/* PATH B: STRATEGIC BUSINESS PARTNERS */}
-                    <Card className="border-none shadow-xl bg-slate-900 text-white p-10 flex flex-col h-full text-left">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="bg-primary/20 p-3 rounded-xl"><Building className="h-8 w-8 text-primary" /></div>
-                            <div className="text-left">
-                                <h4 className="text-xl font-black uppercase text-white">Strategic Business Partners</h4>
-                                <Badge variant="outline" className="mt-1 font-bold text-[9px] uppercase tracking-widest border-primary text-primary">For Entities</Badge>
+                    </div>
+                    <div className="bg-slate-900 rounded-[3rem] p-12 text-white shadow-2xl text-left relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10"><Zap className="h-40 w-40 text-primary" /></div>
+                        <h4 className="text-primary font-black text-xs uppercase tracking-[0.2em] mb-8 text-left">Verified Impact</h4>
+                        <div className="space-y-8 relative z-10 text-left">
+                            <div className="space-y-1 text-left">
+                                <p className="text-4xl font-black text-white text-left">7.5%</p>
+                                <p className="text-xs text-slate-400 font-bold uppercase text-left">Avg. Maintenance Cost Reduction</p>
+                            </div>
+                            <div className="space-y-1 text-left">
+                                <p className="text-4xl font-black text-white text-left">12%</p>
+                                <p className="text-xs text-slate-400 font-bold uppercase text-left">Increase in Fleet Utilization</p>
+                            </div>
+                            <div className="space-y-1 text-left">
+                                <p className="text-4xl font-black text-white text-left">24hr</p>
+                                <p className="text-xs text-slate-400 font-bold uppercase text-left">Avg. Response on funding Enquiries</p>
                             </div>
                         </div>
-                        <div className="space-y-6 flex-grow text-left">
-                            <p className="text-sm text-slate-400 leading-relaxed text-left">
-                                For industrial entities (Suppliers, Depots, Agencies) with existing client networks. Digitalize your customer base to unlock a perpetual revenue engine.
-                            </p>
-                            <div className="p-5 bg-white/5 rounded-2xl space-y-4 text-left">
-                                <div className="flex items-start gap-3">
-                                    <Zap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                                    <p className="text-xs font-bold text-white">Passive Revenue Flow: <span className="font-medium text-slate-400">Earn a recurring percentage of every membership fee and transaction commission generated by your referred node network.</span></p>
-                                </div>
-                                <div className="flex items-start gap-3 text-left">
-                                    <Activity className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                                    <p className="text-xs font-bold text-white">Adoption Tracking: <span className="font-medium text-slate-400">Monitor your network's platform engagement in real-time through your dedicated partner terminal.</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        <Button asChild className="mt-8 h-12 w-full font-black uppercase text-[10px] tracking-widest shadow-lg text-white">
-                            <Link href="/incentives">Apply for Partnership</Link>
-                        </Button>
-                    </Card>
+                    </div>
                 </div>
             </div>
         </section>
 
-        {/* SECTION 5: THE EARNING PATHWAY */}
-        <section className="py-24 bg-white text-center">
+        {/* FINAL TRUST BAR */}
+        <section className="py-24 bg-white">
             <div className="container mx-auto px-4 text-center">
-                <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-                    <h2 className="text-4xl font-black font-headline text-foreground text-center uppercase">The Earning Pathway</h2>
-                    <p className="text-lg text-muted-foreground text-center">
-                        Our most successful members don't just use the data—they help build the registry and get paid in return.
+                <div className="max-w-2xl mx-auto space-y-8">
+                    <div className="bg-slate-100 p-4 rounded-full w-fit mx-auto"><ShieldCheck className="h-10 w-10 text-slate-600" /></div>
+                    <h3 className="text-2xl font-black uppercase text-slate-900 text-center">A Trusted Industrial Partner.</h3>
+                    <p className="text-muted-foreground leading-relaxed text-center">
+                        Logistics Flow is a secure, closed-loop network. We do not sell data; we optimize industrial capacity. Our team has over 25 years of experience in financing and scaling South African transport businesses.
                     </p>
-                </div>
-                <div className="grid md:grid-cols-3 gap-8 text-left">
-                    <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left text-foreground">
-                            <Database className="h-10 w-10 text-primary group-hover:text-white" />
-                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Data as an Asset</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">Contribute your verified fleet or supplier data to earn reward points and de-risk your business for funders.</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left text-foreground">
-                            <Zap className="h-10 w-10 text-primary group-hover:text-white fill-current" />
-                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">High-Intent Matches</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">We match your specific fleet capabilities with incoming freight requirements in the Loads Mall.</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-slate-50 border-none shadow-lg group hover:bg-primary transition-colors text-left">
-                        <CardContent className="p-8 space-y-4 text-left text-foreground">
-                            <UserCheck className="h-10 w-10 text-primary group-hover:text-white" />
-                            <h3 className="text-xl font-bold group-hover:text-white uppercase tracking-tight text-left text-foreground">Trusted Handshake</h3>
-                            <p className="text-sm text-muted-foreground group-hover:text-white/80 leading-relaxed text-left">We verify identities to ensure you're transacting with real business owners, not middlemen.</p>
-                        </CardContent>
-                    </Card>
-                </div>
-                <div className="mt-16 text-center">
-                    <Button asChild size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl text-white text-center">
-                        <Link href={ctaLink}>Establish My Digital standing <ArrowRight className="ml-2 h-5 w-5"/></Link>
-                    </Button>
+                    <div className="pt-8 text-center">
+                        <Button asChild size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl text-white">
+                            <Link href={ctaLink}>Establish My Standing</Link>
+                        </Button>
+                    </div>
                 </div>
             </div>
         </section>
     </div>
   );
-}
-
-function TierCard({ title, points, tier, color, features = [], isTarget = false, isPremium = false }: any) {
-    return (
-        <Card className={cn(
-            "p-8 space-y-6 transition-all text-left",
-            isPremium ? "border-none bg-slate-900 text-white shadow-xl" : 
-            isTarget ? "border-primary border-2 bg-primary/5 shadow-2xl relative" :
-            "border-none bg-slate-50 shadow-sm hover:shadow-xl"
-        )}>
-            {isTarget && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-4 py-1 shadow-lg text-white">Target Status</Badge>
-                </div>
-            )}
-            <div className="flex justify-between items-start text-left">
-                <Badge className={cn(
-                    "border-none uppercase font-black text-[10px] tracking-widest",
-                    color === 'orange' ? 'bg-orange-100 text-orange-800' :
-                    color === 'yellow' ? 'bg-yellow-500/20 text-yellow-500' :
-                    'bg-slate-200 text-slate-800'
-                )}>Tier {tier}</Badge>
-                <span className={cn("text-sm font-bold", isPremium ? "text-slate-500" : "text-muted-foreground")}>{points}</span>
-            </div>
-            <h4 className={cn("text-3xl font-black uppercase text-left", isPremium ? "text-white" : "text-slate-900")}>{title}</h4>
-            <Separator className={isPremium ? "bg-white/10" : ""} />
-            <div className="space-y-4 text-left">
-                {features.length > 0 ? features.map((feat: string, i: number) => (
-                    <div key={i} className="flex items-center gap-3">
-                        <div className="bg-primary/10 p-1.5 rounded-full"><Percent className="h-4 w-4 text-primary" /></div>
-                        <p className={cn("text-xs font-bold uppercase tracking-tight leading-tight", isPremium ? "text-white" : "")}>{feat}</p>
-                    </div>
-                )) : (
-                    <p className="text-xs text-muted-foreground italic text-left">Rewards pending activation.</p>
-                )}
-            </div>
-        </Card>
-    );
 }

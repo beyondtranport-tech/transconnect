@@ -5,30 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { 
   ArrowRight, 
-  CheckCircle2, 
-  Database, 
   Truck, 
   Landmark, 
   Building2, 
   Zap, 
-  Scale, 
-  Handshake, 
   Fingerprint, 
-  FileCheck, 
-  Banknote, 
   ShieldCheck, 
-  ShoppingCart, 
-  Network, 
-  Sparkles, 
-  Star, 
   Users, 
-  Briefcase, 
-  Store, 
-  Award,
+  TrendingUp,
   Lock,
   Search,
-  ShieldAlert,
-  UserCheck
+  AlertTriangle,
+  ArrowDown,
+  CheckCircle2
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -38,8 +27,6 @@ import { useState } from "react";
 import * as gtag from '@/lib/gtag';
 import { HomeIntentModal } from "@/app/home-intent-modal";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
 
 const { placeholderImages } = data;
 const heroImage = placeholderImages.find(p => p.id === 'hero-home');
@@ -60,303 +47,156 @@ export default function HomePage() {
     <div className="bg-background text-left text-foreground">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
-      {/* HERO SECTION */}
-      <section className="relative w-full h-[85vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
-        <div className="absolute inset-0 z-0 opacity-20">
-           {heroImage && <Image src={heroImage.imageUrl} alt="Logistics Background" fill className="object-cover" priority data-ai-hint="truck highway night" />}
+      {/* HERO SECTION - THE PAIN HOOK */}
+      <section className="relative w-full h-[90vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
+        <div className="absolute inset-0 z-0 opacity-30">
+           {heroImage && <Image src={heroImage.imageUrl} alt="Industrial Background" fill className="object-cover" priority data-ai-hint="truck highway night" />}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-slate-950/80 to-slate-950" />
 
         <div className="container relative z-10 mx-auto px-4 text-center">
-            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-xs font-black uppercase tracking-[0.2em]">Data Foundation • Transactional Engine</Badge>
-            <h1 className="text-5xl md:text-8xl font-black font-headline leading-tight mb-6 tracking-tighter text-center text-white">Map the Grid.<br/>Execute the <span className="text-primary">Flow</span>.</h1>
-            <p className="text-lg md:text-2xl text-slate-300 max-w-3xl mx-auto mb-10 leading-relaxed text-center text-white">Logistics Flow is a data-as-a-service company. We provide the forensic map of the industry, and the transactional engine to fund and move it.</p>
-            <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Button size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl text-white" onClick={handleJoinClick}>
-                    Establish Handshake <ArrowRight className="ml-2 h-5 w-5" />
+            <h1 className="text-5xl md:text-8xl font-black font-headline leading-[0.9] mb-8 tracking-tighter text-center text-white uppercase italic">
+                Stop Operating <br/>In The <span className="text-primary">Dark</span>.
+            </h1>
+            <p className="text-lg md:text-2xl text-slate-300 max-w-2xl mx-auto mb-12 leading-relaxed text-center text-white font-medium">
+                The South African transport industry is built on "Who you know." <br/>
+                We've mapped the entire 22,000+ member registry so you can stop guessing and start growing.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-6">
+                <Button size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-widest shadow-2xl bg-primary hover:bg-primary/90 text-white border-b-4 border-green-800 active:border-b-0 transition-all" onClick={handleJoinClick}>
+                    Establish Handshake <ArrowRight className="ml-2 h-6 w-6" />
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-16 px-12 text-lg font-black uppercase tracking-tight border-white/20 hover:bg-white/10 text-white">
-                    <Link href="/pricing">Explore Industrial Nodes</Link>
+                    <Link href="#the-pain">Why visibility matters</Link>
                 </Button>
+            </div>
+            <div className="mt-16 animate-bounce opacity-30">
+                <ArrowDown className="mx-auto h-8 w-8" />
             </div>
         </div>
       </section>
 
-      {/* THE 4-LAYER ARCHITECTURE GRID */}
-      <section className="py-24 bg-white border-b">
-        <div className="container mx-auto px-4 text-left">
-            <div className="max-w-4xl mx-auto text-center mb-20 space-y-4">
-                <Badge variant="outline" className="border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest px-4">Platform Blueprint</Badge>
-                <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 tracking-tight text-center">The Industrial Grid Architecture</h2>
-                <p className="text-lg text-muted-foreground leading-relaxed text-center">
-                    Logistics Flow is built in four modular layers. Establish your <strong>Foundation</strong> in the registry, then activate specialized intelligence nodes to plug into the grid.
+      {/* THE PAIN POINTS - IDENTIFYING WITH THE USER */}
+      <section id="the-pain" className="py-24 bg-white">
+        <div className="container mx-auto px-4">
+            <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
+                <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 tracking-tight text-center uppercase">The Industry is Broken.</h2>
+                <p className="text-xl text-muted-foreground leading-relaxed text-center">
+                    If you aren't visible to the right people, you're paying a "Silence Tax" every day.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto text-left">
-                <Card className="bg-slate-50 border-2 border-slate-100 p-8 flex flex-col h-full hover:border-primary/20 transition-all text-left text-foreground">
-                    <div className="flex items-center gap-3 mb-6 text-left">
-                        <div className="bg-slate-200 p-2 rounded-lg text-left text-foreground"><Fingerprint className="h-5 w-5 text-slate-600" /></div>
-                        <span className="font-black text-[10px] uppercase tracking-widest text-slate-500">Layer 1</span>
-                    </div>
-                    <h3 className="text-xl font-black mb-2 text-left">Node Ownership</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left">Bind your digital identity to the registry. Verification and reputation management foundation.</p>
-                    <div className="mt-auto text-left">
-                        <p className="font-black text-primary text-xl text-left">R10 <span className="text-[10px] text-muted-foreground font-bold">/ MONTH</span></p>
-                    </div>
-                </Card>
-
-                <Card className="bg-primary/5 border-2 border-primary/20 p-8 flex flex-col h-full hover:border-primary transition-all text-left">
-                    <div className="flex items-center gap-3 mb-6 text-left">
-                        <div className="bg-primary/10 p-2 rounded-lg text-left"><Database className="h-5 w-5 text-primary" /></div>
-                        <span className="font-black text-[10px] uppercase tracking-widest text-primary">Layer 2</span>
-                    </div>
-                    <h3 className="text-xl font-black mb-2 text-left">Registry Intelligence</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left">Unlock the global map. Full direct contact details for 22,000+ verified decision makers.</p>
-                    <div className="mt-auto text-left">
-                        <p className="font-black text-primary text-xl text-left">R100 <span className="text-[10px] text-muted-foreground font-bold">/ MONTH</span></p>
-                    </div>
-                </Card>
-
-                <Card className="bg-amber-50 border-2 border-amber-200 p-8 flex flex-col h-full hover:border-amber-400 transition-all text-left">
-                    <div className="flex items-center gap-3 mb-6 text-left">
-                        <div className="bg-amber-100 p-2 rounded-lg text-left"><Zap className="h-5 w-5 text-amber-600" /></div>
-                        <span className="font-black text-[10px] uppercase tracking-widest text-amber-600 text-left">Layer 3</span>
-                    </div>
-                    <h3 className="text-xl font-black mb-2 text-left">Mall Intelligence</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left">Deep-data access to detailed records within specific industrial malls (Fleet specs, Catalogs, Loads).</p>
-                    <div className="mt-auto text-left">
-                        <Badge variant="outline" className="border-amber-200 text-amber-700 font-bold uppercase text-[9px] text-left">Earning Nodes</Badge>
-                    </div>
-                </Card>
-
-                <Card className="bg-blue-50 border-2 border-blue-200 p-8 flex flex-col h-full hover:border-blue-400 transition-all text-left">
-                    <div className="flex items-center gap-3 mb-6 text-left">
-                        <div className="bg-blue-100 p-2 rounded-lg text-left"><Scale className="h-5 w-5 text-blue-600" /></div>
-                        <span className="font-black text-[10px] uppercase tracking-widest text-blue-600 text-left">Layer 4</span>
-                    </div>
-                    <h3 className="text-xl font-black mb-2 text-left">Transactional Tiers</h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed mb-8 text-left">The Engine. Operational memberships to create shops, process handshakes, and conclude deals.</p>
-                    <div className="mt-auto text-left">
-                        <Badge variant="outline" className="border-blue-200 text-blue-700 font-bold uppercase text-[9px] text-left">Operational</Badge>
-                    </div>
-                </Card>
-            </div>
-        </div>
-      </section>
-
-      {/* INTELLIGENCE REGISTRIES */}
-      <section className="py-24 bg-slate-50 border-b">
-        <div className="container mx-auto px-4">
-            <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto text-left">
-                {/* TRANSPORTER */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
                 <div className="space-y-6 text-left">
-                    <div className="bg-primary/10 p-4 rounded-2xl w-fit text-left"><Truck className="h-10 w-10 text-primary" /></div>
-                    <h3 className="text-3xl font-black font-headline uppercase text-left">Transporter intelligence</h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Access a massive database of verified South African hauliers. From long-haul refrigerated fleets to local distribution experts, we provide the map to your next reliable capacity partner.
+                    <div className="bg-red-50 p-4 rounded-2xl w-fit"><AlertTriangle className="h-10 w-10 text-red-600" /></div>
+                    <h3 className="text-2xl font-black uppercase text-slate-900">Empty Miles</h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                        Dropping a load in Durban but coming back empty to Jo'burg? That's profit bleeding out of your tank because the right broker couldn't find your truck in the dark.
                     </p>
-                    <div className="space-y-3 text-left">
-                        <p className="flex items-center gap-3 font-bold text-slate-700 text-left"><CheckCircle2 className="h-5 w-5 text-primary" /> Verified RC1 Compliance Data</p>
-                        <p className="flex items-center gap-3 font-bold text-slate-700 text-left"><CheckCircle2 className="h-5 w-5 text-primary" /> Direct Line to CEO/MD Leadership</p>
-                    </div>
-                    <Button asChild variant="outline" className="h-12 px-8 font-black uppercase text-xs tracking-widest text-left">
-                        <Link href="/intelligence/transporter">Search Haulier Registry</Link>
-                    </Button>
                 </div>
-
-                {/* SUPPLIER */}
                 <div className="space-y-6 text-left">
-                    <div className="bg-primary/10 p-4 rounded-2xl w-fit text-left"><Building2 className="h-10 w-10 text-primary" /></div>
-                    <h3 className="text-3xl font-black font-headline uppercase text-left">Supplier intelligence</h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Our AI discovery engine has cataloged the entire independent supplier ecosystem. Every niche, from differentials to engine overrides, is represented in our forensic database.
+                    <div className="bg-red-50 p-4 rounded-2xl w-fit"><Lock className="h-10 w-10 text-red-600" /></div>
+                    <h3 className="text-2xl font-black uppercase text-slate-900">Locked Capital</h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                        Traditional banks don't understand the logistics grid. They see a balance sheet; we see your operational pulse. Without visibility, you stay under-funded.
                     </p>
-                    <div className="bg-slate-900 text-white p-4 rounded-xl text-left">
-                        <p className="text-primary font-black text-xl text-left">22,480 Verified Records</p>
-                        <p className="text-[10px] uppercase text-slate-400 font-bold text-left">Direct Decision-Maker Access</p>
-                    </div>
-                    <Button asChild variant="outline" className="h-12 px-8 font-black uppercase text-xs tracking-widest text-left">
-                        <Link href="/intelligence/supplier">Search Supplier Registry</Link>
-                    </Button>
                 </div>
-
-                {/* CAPITAL */}
                 <div className="space-y-6 text-left">
-                    <div className="bg-primary/10 p-4 rounded-2xl w-fit text-left"><Landmark className="h-10 w-10 text-primary" /></div>
-                    <h3 className="text-3xl font-black font-headline uppercase text-left">Capital intelligence</h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Stop applying to deaf ears. Our Capital Intelligence portal connects your operational performance data with specialized lenders who actually understand the trucking business.
+                    <div className="bg-red-50 p-4 rounded-2xl w-fit"><Users className="h-10 w-10 text-red-600" /></div>
+                    <h3 className="text-2xl font-black uppercase text-slate-900">The Gatekeepers</h3>
+                    <p className="text-muted-foreground leading-relaxed">
+                        Spending hours trying to find the MD or Owner of a supplier? We bypass the switchboard and give you the direct line to decision-makers.
                     </p>
-                    <div className="flex items-center gap-2 text-left">
-                        <Badge className="bg-primary text-white border-none px-3 font-black text-[10px] uppercase tracking-widest">85 Active Funding Partners</Badge>
-                    </div>
-                    <Button asChild variant="outline" className="h-12 px-8 font-black uppercase text-xs tracking-widest text-left">
-                        <Link href="/funding">Explore Funding</Link>
-                    </Button>
-                </div>
-
-                {/* HUMAN CAPITAL */}
-                <div className="space-y-6 text-left">
-                    <div className="bg-primary/10 p-4 rounded-2xl w-fit text-left"><Users className="h-10 w-10 text-primary" /></div>
-                    <h3 className="text-3xl font-black font-headline uppercase text-left">Human Capital intelligence</h3>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Breaking the recruitment constraint. Connect with verified talent across the South African logistics landscape. Our soon-to-launch jobs board will source roles directly from our community member base.
-                    </p>
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <div className="text-left">
-                            <p className="font-bold text-sm text-left">For Applicants</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Access premium jobs board for R100/mo.</p>
-                        </div>
-                        <div className="text-left">
-                            <p className="font-bold text-sm text-left">For Employers</p>
-                            <p className="text-[10px] text-muted-foreground leading-tight">Fill roles via vetted talent pool.</p>
-                        </div>
-                    </div>
-                    <Button asChild variant="outline" className="h-12 px-8 font-black uppercase text-xs tracking-widest text-left">
-                        <Link href="/intelligence/human-capital">Explore Human Capital</Link>
-                    </Button>
                 </div>
             </div>
         </div>
       </section>
 
-      {/* DATA PRIVACY */}
-      <section className="py-24 bg-white border-b">
-          <div className="container mx-auto px-4">
-              <div className="max-w-4xl mx-auto space-y-12 text-left">
-                  <div className="text-left space-y-4">
-                    <h2 className="text-4xl font-black font-headline text-slate-900 text-left">Absolute Data Privacy</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        While we give you the map to the industry, your own business data remains under your absolute control.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-                      <div className="space-y-3 text-left">
-                          <div className="bg-slate-100 p-2 rounded-lg w-fit text-left"><ShieldAlert className="h-6 w-6 text-slate-600" /></div>
-                          <h4 className="font-black text-sm uppercase tracking-tight text-left">Registry Access Shield</h4>
-                          <p className="text-xs text-muted-foreground leading-relaxed text-left">We verify every human identity before granting access to forensic contact data.</p>
-                      </div>
-                      <div className="space-y-3 text-left">
-                          <div className="bg-slate-100 p-2 rounded-lg w-fit text-left"><Scale className="h-6 w-6 text-slate-600" /></div>
-                          <h4 className="font-black text-sm uppercase tracking-tight text-left">Zero Data Resale</h4>
-                          <p className="text-xs text-muted-foreground leading-relaxed text-left">We never sell member contact lists. Introduction is only via direct request.</p>
-                      </div>
-                      <div className="space-y-3 text-left">
-                          <div className="bg-slate-100 p-2 rounded-lg w-fit text-left"><FileCheck className="h-6 w-6 text-slate-600" /></div>
-                          <h4 className="font-black text-sm uppercase tracking-tight text-left">POPI Compliant Ledger</h4>
-                          <p className="text-xs text-muted-foreground leading-relaxed text-left">Every interaction is logged on a secure, encrypted digital registry.</p>
-                      </div>
-                  </div>
-              </div>
-          </div>
-      </section>
-
-      {/* INTELLIGENCE ACCESS TIER */}
-      <section className="py-24 bg-slate-950 text-white">
-          <div className="container mx-auto px-4">
-              <div className="max-w-4xl mx-auto">
-                  <Card className="bg-slate-900 border-2 border-primary/30 rounded-[3rem] p-12 shadow-2xl relative overflow-hidden text-left">
-                      <div className="absolute top-0 right-0 p-10 opacity-10">
-                          <Database className="h-40 w-40 text-primary" />
-                      </div>
-                      <div className="relative z-10 flex flex-col md:flex-row items-center gap-12 text-left">
-                          <div className="flex-1 space-y-6 text-left">
-                              <Badge className="bg-primary/20 text-primary border-primary/30 px-4 py-1 font-black uppercase text-[10px] tracking-widest">Gateway Node</Badge>
-                              <h3 className="text-4xl md:text-5xl font-black font-headline text-white leading-tight text-left">Intelligence Access Tier</h3>
-                              <p className="text-2xl font-black text-primary text-left">R100 <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">/ per month</span></p>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 gap-x-8 pt-4 text-left">
-                                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-left"><CheckCircle2 className="h-4 w-4 text-primary" /> Unlimited Registry Search</div>
-                                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-left"><CheckCircle2 className="h-4 w-4 text-primary" /> Direct CEO/MD Contacts</div>
-                                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-left"><CheckCircle2 className="h-4 w-4 text-primary" /> Verified Mobile Numbers</div>
-                                  <div className="flex items-center gap-2 text-xs font-bold uppercase text-left"><CheckCircle2 className="h-4 w-4 text-primary" /> Publish Your Shop Profile</div>
-                              </div>
-                              <Button asChild size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl w-full sm:w-auto text-white">
-                                  <Link href="/checkout/intelligence">Unlock The Registry</Link>
-                              </Button>
-                          </div>
-                      </div>
-                  </Card>
-              </div>
-          </div>
-      </section>
-
-      {/* PASSIVE REVENUE ENGINE (ISA) */}
-      <section className="py-24 bg-white border-b">
+      {/* THE PROMISE - WHAT WE DO */}
+      <section className="py-24 bg-slate-50 border-y">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="lg:order-2 space-y-6 text-left text-foreground">
-                    <div className="bg-amber-100 p-3 rounded-2xl w-fit text-left"><Zap className="h-10 w-10 text-amber-600 fill-amber-600" /></div>
-                    <h2 className="text-4xl font-black font-headline text-slate-900 leading-tight text-left uppercase">The Passive Revenue Engine</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left text-foreground">
-                        The transport industry thrives on relationships. Our **ISA (Independent Sales Agent)** framework allows you to monetize your influence. By digitalizing your network into our grid, you build a recurring annuity stream.
-                    </p>
-                    <div className="p-6 bg-slate-900 text-white rounded-3xl space-y-4 shadow-xl text-left text-white">
-                        <div className="flex justify-between items-center text-left text-white">
-                            <span className="text-xs font-black uppercase tracking-widest text-slate-400 text-left">ISA Base Share</span>
-                            <span className="text-xl font-black text-primary text-left">30%</span>
-                        </div>
-                        <Separator className="bg-white/10" />
-                        <p className="text-xs text-slate-400 text-left">Earn a recurring percentage of every membership fee and a transactional split on all Mall activity generated by your referred nodes.</p>
-                    </div>
-                    <Button asChild className="h-12 px-8 font-black uppercase text-xs tracking-widest text-white shadow-lg" variant="default">
-                        <Link href="/incentives">View ISA Offer</Link>
-                    </Button>
+                <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white">
+                    <Image 
+                        src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1000" 
+                        alt="Logistics Efficiency" 
+                        fill 
+                        className="object-cover" 
+                        data-ai-hint="modern warehouse"
+                    />
                 </div>
-                <div className="lg:order-1 relative aspect-square max-w-md mx-auto">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full animate-pulse" />
-                    <div className="relative z-10 bg-white p-10 rounded-[3rem] shadow-2xl border border-slate-100 flex flex-col items-center justify-center text-center">
-                        <Handshake className="h-16 w-16 text-primary mb-6" />
-                        <h3 className="text-2xl font-black mb-2 text-foreground">Network Monetization</h3>
-                        <p className="text-sm text-muted-foreground text-center">Turn your existing industry contacts into a high-fidelity revenue engine.</p>
+                <div className="space-y-8 text-left">
+                    <Badge className="bg-primary/10 text-primary border-none py-1 px-4 font-black uppercase tracking-widest text-[10px]">The Solution</Badge>
+                    <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 leading-[0.95] uppercase">We Provide <br/>The Signal.</h2>
+                    <p className="text-xl text-muted-foreground leading-relaxed">
+                        Logistics Flow is a Data-as-a-Service ecosystem. We map 22,000+ industrial entities so you can find capacity, source parts at syndicate rates, and access in-house funding.
+                    </p>
+                    <div className="space-y-4">
+                        <div className="flex items-start gap-4">
+                            <div className="bg-primary p-1 rounded-full mt-1 text-white"><CheckCircle2 className="h-5 w-5" /></div>
+                            <p className="font-bold text-slate-700">Direct Access to 5,400+ Verified Hauliers</p>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="bg-primary p-1 rounded-full mt-1 text-white"><CheckCircle2 className="h-5 w-5" /></div>
+                            <p className="font-bold text-slate-700">Syndicate Pricing on Tires, Spares & Fuel</p>
+                        </div>
+                        <div className="flex items-start gap-4">
+                            <div className="bg-primary p-1 rounded-full mt-1 text-white"><CheckCircle2 className="h-5 w-5" /></div>
+                            <p className="font-bold text-slate-700">25 Years of specialized industrial funding expertise</p>
+                        </div>
                     </div>
+                    <Button asChild size="lg" className="h-16 px-10 font-black uppercase tracking-widest shadow-xl text-white">
+                        <Link href="/about">How it works <ArrowRight className="ml-2 h-5 w-5"/></Link>
+                    </Button>
                 </div>
             </div>
         </div>
       </section>
 
-      {/* DATA AS CURRENCY (REWARDS) */}
-      <section className="py-24 bg-slate-50 border-b">
-        <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-16 text-left">
-                <div className="flex-1 space-y-6 text-left text-foreground">
-                    <div className="bg-primary/10 p-3 rounded-2xl w-fit text-left"><Award className="h-10 w-10 text-primary" /></div>
-                    <h2 className="text-4xl font-black font-headline leading-tight text-left uppercase">Data as a Platform Currency</h2>
-                    <p className="text-lg text-muted-foreground leading-relaxed text-left">
-                        Don't want to pay cash for Intelligence? Our **Rewards Ledger** allows you to trade verified industrial data for platform access.
-                    </p>
-                    <div className="grid grid-cols-2 gap-4 text-left">
-                        <div className="p-4 bg-white border-2 border-primary/20 rounded-2xl">
-                            <p className="font-black text-primary text-xl text-left">+50 pts</p>
-                            <p className="text-[10px] uppercase text-slate-500 font-bold text-left">Per RC1 Contribution</p>
-                        </div>
-                        <div className="p-4 bg-white border-2 border-primary/20 rounded-2xl text-left">
-                            <p className="font-black text-primary text-xl text-left">+20 pts</p>
-                            <p className="text-[10px] uppercase text-slate-500 font-bold text-left">Per Verified Supplier Log</p>
-                        </div>
-                    </div>
-                    <Button asChild size="lg" className="h-12 px-10 font-black uppercase text-xs tracking-widest shadow-xl text-white">
-                        <Link href="/contribute">Start Earning Points</Link>
-                    </Button>
+      {/* SIMPLIFIED PRICING PREVIEW */}
+      <section className="py-24 bg-slate-900 text-white">
+          <div className="container mx-auto px-4">
+                <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
+                    <h2 className="text-4xl md:text-6xl font-black font-headline text-white tracking-tight uppercase">Pick Your Path.</h2>
+                    <p className="text-lg text-slate-400">No complex layers. Just two simple ways to engage with the grid.</p>
                 </div>
-                <div className="relative h-64 w-64 shrink-0">
-                    <div className="absolute inset-0 border-4 border-primary/20 rounded-full animate-[spin_10s_linear_infinite]" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <Star className="h-24 w-24 text-primary fill-primary animate-pulse" />
-                    </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                    <Card className="bg-slate-800 border-white/10 p-10 flex flex-col h-full text-white">
+                        <div className="bg-primary/20 p-4 rounded-2xl w-fit mb-6"><Search className="h-10 w-10 text-primary" /></div>
+                        <h3 className="text-3xl font-black uppercase mb-2">The Map</h3>
+                        <p className="text-slate-400 mb-8">Access the registry. See the direct MD/CEO contacts for 22,000+ businesses.</p>
+                        <div className="mt-auto">
+                            <p className="text-4xl font-black text-white mb-6">R100 <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">/ Month</span></p>
+                            <Button asChild className="w-full h-14 font-black uppercase tracking-widest bg-white text-black hover:bg-slate-200 shadow-xl">
+                                <Link href="/checkout/intelligence">Unlock the Map</Link>
+                            </Button>
+                        </div>
+                    </Card>
+
+                    <Card className="bg-primary border-none p-10 flex flex-col h-full text-white shadow-2xl ring-4 ring-primary/30 ring-offset-8 ring-offset-slate-900">
+                        <div className="bg-white/20 p-4 rounded-2xl w-fit mb-6"><Zap className="h-10 w-10 text-white" /></div>
+                        <h3 className="text-3xl font-black uppercase mb-2">The Engine</h3>
+                        <p className="text-green-100 mb-8">Full transactional access. Post loads, create your shop, and apply for in-house finance.</p>
+                        <div className="mt-auto">
+                            <p className="text-4xl font-black text-white mb-6">R500 <span className="text-xs text-green-200 font-bold uppercase tracking-widest">/ Month</span></p>
+                            <Button asChild className="w-full h-14 font-black uppercase tracking-widest bg-slate-900 text-white hover:bg-slate-800 shadow-xl">
+                                <Link href="/checkout/standard">Activate the Engine</Link>
+                            </Button>
+                        </div>
+                    </Card>
                 </div>
-            </div>
-        </div>
+          </div>
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-32 bg-background">
+      <section className="py-32 bg-white">
             <div className="container mx-auto px-4 text-center">
-                <h2 className="text-4xl md:text-7xl font-black font-headline text-slate-900 tracking-tighter text-center uppercase">Ready to plug into the grid?</h2>
-                <p className="mt-8 text-xl max-w-2xl mx-auto text-muted-foreground leading-relaxed text-center">Join thousands of industry professionals who have moved from fragmented manual processes to a high-velocity digital ecosystem.</p>
-                <div className="mt-12 flex justify-center gap-6">
-                     <Button size="lg" className="h-16 px-16 text-lg font-black uppercase shadow-2xl text-white" onClick={handleJoinClick}>
-                        Join for Free <ArrowRight className="ml-2 h-5 w-5" />
+                <h2 className="text-4xl md:text-7xl font-black font-headline text-slate-900 tracking-tighter text-center uppercase leading-none mb-8">Stop guessing.<br/>Start Flowing.</h2>
+                <p className="text-xl max-w-xl mx-auto text-muted-foreground leading-relaxed mb-12">Join the community that is turning industrial relationships into a measurable digital asset.</p>
+                <div className="flex justify-center">
+                     <Button size="lg" className="h-16 px-16 text-lg font-black uppercase shadow-2xl text-white bg-primary hover:bg-primary/90" onClick={handleJoinClick}>
+                        Join for Free <ArrowRight className="ml-2 h-6 w-6" />
                     </Button>
                 </div>
             </div>
