@@ -1,11 +1,9 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
 import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { Truck, CheckCircle, MapPin, Loader2, ArrowLeft, Globe, Phone, Mail, ShieldCheck, Info } from "lucide-react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { notFound, useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -13,8 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 /**
- * DYNAMIC TRANSPORTER PROFILE V2
- * High-fidelity record reconstruction from multiple registry sources.
+ * DYNAMIC TRANSPORTER PROFILE V2.1
+ * Fixed initial frame flicker to resolve false-positive 404 errors.
  */
 export default function TransporterProfilePage() {
     const params = useParams();
@@ -37,7 +35,8 @@ export default function TransporterProfilePage() {
 
     const transporter = partner || lead;
     
-    // SAFE LOADING STATE: Wait until all registry hooks report completion.
+    // ROBUST LOADING CHECK: We must wait for BOTH sources to finish loading 
+    // before we can ever say "not found".
     const isLoading = isPartnerLoading || isLeadLoading;
     const isActuallyNotFound = !isLoading && !transporter;
 
@@ -53,6 +52,8 @@ export default function TransporterProfilePage() {
     if (isActuallyNotFound) {
         notFound();
     }
+    
+    if (!transporter) return null;
 
     const name = transporter.companyName || `${transporter.firstName || ''} ${transporter.lastName || ''}`.trim() || 'Industrial Record';
     const email = transporter.email || transporter.marketingManager?.email || transporter.ceo?.email;
@@ -91,8 +92,8 @@ export default function TransporterProfilePage() {
                     </div>
 
                     <div className="p-8 md:p-12 grid md:grid-cols-3 gap-12 text-left">
-                        <div className="md:col-span-2 space-y-10 text-left">
-                            <div className="space-y-4 text-left">
+                        <div className="md:col-span-2 space-y-10 text-left text-foreground">
+                            <div className="space-y-4">
                                 <h2 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                                     <ShieldCheck className="h-6 w-6 text-primary" />
                                     Technical Profile
@@ -125,7 +126,7 @@ export default function TransporterProfilePage() {
                             </div>
                         </div>
 
-                        <div className="space-y-8 text-left">
+                        <div className="space-y-8 text-left text-foreground">
                             <Card className="shadow-lg border-primary/10 overflow-hidden bg-white">
                                 <CardHeader className="bg-slate-50 border-b p-6">
                                     <CardTitle className="text-sm font-black uppercase tracking-widest text-left">Contact Node</CardTitle>
@@ -136,7 +137,7 @@ export default function TransporterProfilePage() {
                                         <p className="font-bold text-foreground">{transporter.marketingManager?.name || transporter.ceo?.name || transporter.contactPerson || 'Identity Protected'}</p>
                                     </div>
                                     {email && (
-                                        <div className="space-y-1 text-left">
+                                        <div className="space-y-1 text-left text-foreground">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct E-mail</p>
                                             <div className="flex items-center gap-2 text-xs font-bold text-primary">
                                                 <Mail className="h-3.5 w-3.5" /> {email}
@@ -144,7 +145,7 @@ export default function TransporterProfilePage() {
                                         </div>
                                     )}
                                     {phone && (
-                                        <div className="space-y-1 text-left">
+                                        <div className="space-y-1 text-left text-foreground">
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Direct Line</p>
                                             <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                                                 <Phone className="h-3.5 w-3.5" /> {phone}

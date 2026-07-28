@@ -56,7 +56,8 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // FIX: Start in loading state if a reference is provided to prevent UI glitches
+  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedTargetRefOrQuery);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -92,7 +93,6 @@ export function useCollection<T = any>(
       (err: FirestoreError) => {
         if (!isMounted) return;
         
-        // This logic extracts the path from either a ref or a query
         const path: string =
           memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
@@ -107,21 +107,19 @@ export function useCollection<T = any>(
         setData(null);
         setIsLoading(false);
 
-        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
     return () => {
       isMounted = false;
-      // Defensive: try/catch the unsubscribe to prevent crashes if the SDK enters a bad state.
       try {
         unsubscribe();
       } catch (e) {
         console.warn("Firestore listener failed to clean up cleanly:", e);
       }
     };
-  }, [memoizedTargetRefOrQuery, refreshKey]); // Re-run if the target or refresh key changes.
+  }, [memoizedTargetRefOrQuery, refreshKey]);
 
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     console.warn('Warning: A Firestore query was passed to useCollection without being memoized. This can cause infinite render loops.');

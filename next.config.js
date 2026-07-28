@@ -5,7 +5,7 @@ const nextConfig = {
     serverComponentsExternalPackages: ['@opentelemetry/instrumentation', 'require-in-the-middle'],
   },
   reactStrictMode: true,
-  // Cache-busting Identifier: 2026-03-16T15:00:00Z - FORCING REBUILD
+  // Cache-busting Identifier: 2026-03-16T15:30:00Z - FORCING REBUILD TO CLEAR PERMISSIONS
   images: {
     remotePatterns: [
       {

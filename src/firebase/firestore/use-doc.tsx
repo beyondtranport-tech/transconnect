@@ -42,7 +42,8 @@ export function useDoc<T = any>(
   type StateDataType = WithId<T> | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  // FIX: Start in loading state if a reference is provided to prevent 404 flickers
+  const [isLoading, setIsLoading] = useState<boolean>(!!memoizedDocRef);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -93,14 +94,13 @@ export function useDoc<T = any>(
 
     return () => {
       isMounted = false;
-      // Defensive: try/catch the unsubscribe to prevent crashes if the SDK enters a bad state.
       try {
         unsubscribe();
       } catch (e) {
         console.warn("Firestore listener failed to clean up cleanly:", e);
       }
     };
-  }, [memoizedDocRef, refreshKey]); // Re-run if the ref or refresh key changes.
+  }, [memoizedDocRef, refreshKey]);
 
   return { data, isLoading, error, forceRefresh };
 }
