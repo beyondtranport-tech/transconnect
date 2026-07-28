@@ -17,14 +17,14 @@ const featuredPartners = [
     { 
         id: "metro-dispatch",
         name: "Metro Dispatch", 
-        focus: "Urban & Same-Day Delivery",
+        focus: "Urban Fixed-Body Delivery",
         rating: 4.9,
         image: placeholderImages.find(p => p.id === 'tech-division'),
     },
     { 
         id: "nationwide-connect",
         name: "Nationwide Connect", 
-        focus: "Inter-Provincial Network",
+        focus: "Inter-Provincial Spoke Network",
         rating: 4.7,
         image: placeholderImages.find(p => p.id === 'hero-home'),
     },
@@ -43,7 +43,7 @@ export default function DistributionMallPage() {
     };
 
     return (
-        <div>
+        <div className="text-left text-foreground">
             <section className="relative w-full h-80 bg-card">
                 {courierImage && (
                     <Image
@@ -58,7 +58,7 @@ export default function DistributionMallPage() {
                 <div className="absolute inset-0 bg-black/60" />
                 <div className="relative h-full flex flex-col items-center justify-center text-center text-primary-foreground z-10 p-4">
                     <h1 className="text-4xl md:text-5xl font-bold font-headline">Distribution Mall</h1>
-                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Optimize your logistics by partnering with specialized distribution networks.</p>
+                    <p className="mt-4 text-lg md:text-xl max-w-3xl">Optimize final-mile logistics with specialized fixed-body courier networks.</p>
                 </div>
             </section>
             
@@ -67,7 +67,7 @@ export default function DistributionMallPage() {
                      <div className="text-center max-w-3xl mx-auto mb-12">
                         <h2 className="text-3xl md:text-4xl font-bold font-headline">Distribution Partners</h2>
                         <p className="mt-4 text-lg text-muted-foreground">
-                            Leverage established networks for final-mile, regional, and national distribution to improve efficiency and reach.
+                            Leverage established fixed-body networks for final-mile, regional, and national distribution to improve urban efficiency.
                         </p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -107,7 +107,7 @@ export default function DistributionMallPage() {
                     </div>
                     <div className="text-center mt-16">
                         <Button size="lg" onClick={() => {if (!process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID) return; gtag.event({ action: 'join_distribution_click', category: 'Distribution Mall', label: 'Footer CTA', value: 0 })}}>
-                            Join Our Distribution Network
+                            Join Our Fixed-Body Network
                         </Button>
                     </div>
                 </div>

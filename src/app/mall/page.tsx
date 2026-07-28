@@ -56,7 +56,7 @@ const malls = [
     },
     {
         name: "Distribution Mall",
-        description: "Pain: Final-mile delivery in urban centers is slow and expensive. Solution: Utilize inner-city spoke networks for specialized local collection and delivery.",
+        description: "Pain: Final-mile delivery in urban centers is slow and expensive. Solution: Utilize inner-city fixed-body courier networks for specialized local collection and delivery.",
         icon: Network,
         href: "/mall/distribution",
         id: "distribution",
@@ -143,7 +143,7 @@ export default function MallPage() {
             case 'distribution':
                 config = {
                     title: "Distribution Mall Intent",
-                    description: "Are you sourcing local urban delivery, or listing an inner-city fleet?",
+                    description: "Are you sourcing local urban delivery, or listing an inner-city fixed-body fleet?",
                     primary: { label: "I need local Spokes", description: "Source final-mile capacity.", action: buyerAction },
                     secondary: { label: "I am a Distributor", description: "List your local delivery fleet.", action: () => showIncentive(user ? '/account?view=shop' : '/join?role=distributor', 'Distributor') }
                 };
