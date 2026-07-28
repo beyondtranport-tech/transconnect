@@ -18,8 +18,31 @@ service cloud.firestore {
       );
     }
 
+    /**
+     * IS MEMBER / OWNER CHECK
+     */
+    function isMember(cid) {
+      return isAdmin() || (
+        isSignedIn() && 
+        cid != null && (
+          (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId == cid) ||
+          (exists(/databases/$(database)/documents/companies/$(cid)) && 
+           get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
+        )
+      );
+    }
+
+    function isSaleParticipant(sale) {
+        return isSignedIn() && (
+            isAdmin() || 
+            sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
+            sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
+        );
+    }
+
     // --- CRITICAL ENGINE RULES ---
-    // Deployment Identifier: 2026-03-16T14:45:00Z
+    // Rule Sync ID: 2026-03-16T17:15:00Z
 
     match /engagementPings/{pingId} {
       allow list, get: if isSignedIn();
@@ -89,37 +112,50 @@ service cloud.firestore {
       allow create: if isSignedIn(); 
       
       match /{allSub=**} {
-        allow read, write: if isSignedIn() && request.auth.uid == userId;
+        allow read, write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
       }
     }
 
     match /companies/{companyId} {
-      allow read: if isSignedIn(); 
+      allow read: if isSignedIn() && (isMember(companyId) || isAdmin()); 
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      match /supportMessages/{id} { allow read, write, list: if isSignedIn(); }
-      match /transactions/{id} { allow read, list: if isSignedIn(); }
-      match /walletPayments/{id} { allow read, write, list: if isSignedIn(); }
-      match /enquiries/{id} { allow read, write, list: if isSignedIn(); }
-      match /quotes/{id} { allow read, write, list: if isSignedIn(); }
-      match /tasks/{id} { allow read, write, list: if isSignedIn(); }
-      match /payoutRequests/{id} { allow read, write, list: if isSignedIn(); }
-      match /searchLogs/{id} { allow read, write, list: if isSignedIn(); }
-      match /facilities/{id} { allow read, list: if isSignedIn(); allow write: if isAdmin(); }
-      match /staff/{id} { allow read, list: if isSignedIn(); allow write: if isAdmin(); }
-      match /brokerAgreements/{id} { allow read, write, list: if isSignedIn(); }
+      // Sub-collections require explicit list/read permissions
+      match /supportMessages/{id} { allow read, write, list: if isMember(companyId); }
+      match /transactions/{id} { allow read, list: if isMember(companyId); }
+      match /walletPayments/{id} { allow read, write, list: if isMember(companyId); }
+      match /enquiries/{id} { allow read, write, list: if isMember(companyId); }
+      match /quotes/{id} { allow read, write, list: if isMember(companyId); }
+      match /tasks/{id} { allow read, write, list: if isMember(companyId); }
+      match /payoutRequests/{id} { allow read, write, list: if isMember(companyId); }
+      match /searchLogs/{id} { allow read, write, list: if isMember(companyId); }
+      match /facilities/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /staff/{id} { allow read, list: if isMember(companyId); allow write: if isAdmin(); }
+      match /brokerAgreements/{id} { allow read, write, list: if isMember(companyId); }
       
       match /shops/{shopId} { 
         allow read: if true; 
-        allow write: if isSignedIn(); 
-        match /products/{prodId} { allow read: if true; allow write: if isSignedIn(); }
-        match /agreements/{agId} { allow read, write: if isSignedIn(); }
+        allow write: if isMember(companyId); 
+        match /products/{prodId} { allow read: if true; allow write: if isMember(companyId); }
+        match /agreements/{agId} { allow read, write: if isMember(companyId); }
       }
 
       match /vehicleListings/{id} {
           allow read: if true;
-          allow write: if isSignedIn();
+          allow write: if isMember(companyId);
+      }
+    }
+
+    match /sales/{saleId} {
+      allow read: if isSignedIn() && (isAdmin() || isSaleParticipant(resource.data));
+      allow write: if isAdmin() || (isSignedIn() && (
+        (!exists(/databases/$(database)/documents/sales/$(saleId)) && request.resource.data.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId) ||
+        isSaleParticipant(resource.data)
+      ));
+      
+      match /messages/{id} {
+        allow read, write: if isSignedIn() && (isAdmin() || isSaleParticipant(get(/databases/$(database)/documents/sales/$(saleId)).data));
       }
     }
 
@@ -128,8 +164,8 @@ service cloud.firestore {
     match /{path=**}/adCampaigns/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
-    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isSignedIn(); }
-    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/vehicleListings/{id} { allow read: if true; allow write: if isAdmin() || isSignedIn(); }
+    match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin() || isSignedIn(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
 
