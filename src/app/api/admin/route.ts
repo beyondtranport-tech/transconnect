@@ -237,12 +237,13 @@ export async function POST(req: NextRequest) {
 
             case 'getPartnersByType': {
                 const { type: queryType, limit: searchLimit = 100 } = payload;
+                const limitNum = Number(searchLimit);
                 const collectionName = (queryType === 'lead') ? 'leads' : 'partners';
                 let q: any = db.collection(collectionName);
                 if (collectionName === 'partners' && queryType !== 'all') {
                     q = q.where('type', '==', queryType);
                 }
-                const snap = await q.orderBy('updatedAt', 'desc').limit(searchLimit).get();
+                const snap = await q.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -344,13 +345,14 @@ export async function POST(req: NextRequest) {
             case 'searchRegistry': {
                 const { type: rType, limit: rLimit = 100, term = '' } = payload;
                 const normalizedTerm = term.toLowerCase().trim();
+                const limitNum = Number(rLimit);
                 
                 // 1. SCAN PARTNERS
                 let pQuery: any = db.collection('partners');
                 if (rType !== 'all') {
                     pQuery = pQuery.where('type', '==', rType);
                 }
-                const pSnap = await pQuery.orderBy('updatedAt', 'desc').limit(rLimit).get();
+                const pSnap = await pQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const pResults = pSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Member' }));
 
                 // 2. SCAN LEADS
@@ -366,7 +368,7 @@ export async function POST(req: NextRequest) {
                     const roleTerm = roleMap[rType] || rType;
                     lQuery = lQuery.where('role', '==', roleTerm);
                 }
-                const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(rLimit).get();
+                const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const lResults = lSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
                 // 3. MERGE & SORT
@@ -385,7 +387,7 @@ export async function POST(req: NextRequest) {
                     return dateB - dateA;
                 });
 
-                return NextResponse.json({ success: true, data: serializeData(combined.slice(0, rLimit)) });
+                return NextResponse.json({ success: true, data: serializeData(combined.slice(0, limitNum)) });
             }
 
             default: 
