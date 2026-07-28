@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ArrowRight, ShoppingBasket, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Recycle, Wrench, Scale, Handshake, Zap } from "lucide-react";
+import { ArrowRight, Building2, Truck, Landmark, PackageSearch, Store, Network, Warehouse, Scale, Zap, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import data from "@/lib/placeholder-images.json";
@@ -21,10 +21,10 @@ const mallHeroImage = placeholderImages.find(p => p.id === 'mall-division');
 const fundingImage = placeholderImages.find(p => p.id === 'funding-division')!;
 const marketplaceImage = placeholderImages.find(p => p.id === 'marketplace-division')!;
 const techImage = placeholderImages.find(p => p.id === 'tech-division')!;
-const tiresImage = placeholderImages.find(p => p.id === 'product-tires')!;
 const saAuctionMallImage = placeholderImages.find(p => p.id === 'sa-auction-mall')!;
 const partsImage = placeholderImages.find(p => p.id === 'mall-division')!;
 const efficientWarehouseImage = placeholderImages.find(p => p.id === 'value-efficiency')!;
+const courierImage = placeholderImages.find(p => p.id === 'distribution-courier')!;
 
 const malls = [
     {
@@ -60,7 +60,7 @@ const malls = [
         icon: Network,
         href: "/mall/distribution",
         id: "distribution",
-        image: placeholderImages.find(p => p.id === 'tech-home')!,
+        image: courierImage!,
         badge: "Urban Spokes"
     },
     {

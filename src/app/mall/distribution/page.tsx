@@ -11,7 +11,7 @@ import * as gtag from '@/lib/gtag';
 
 const { placeholderImages } = data;
 
-const distributionMallImage = placeholderImages.find(p => p.id === 'tech-home');
+const courierImage = placeholderImages.find(p => p.id === 'distribution-courier');
 
 const featuredPartners = [
     { 
@@ -45,14 +45,14 @@ export default function DistributionMallPage() {
     return (
         <div>
             <section className="relative w-full h-80 bg-card">
-                {distributionMallImage && (
+                {courierImage && (
                     <Image
-                        src={distributionMallImage.imageUrl}
+                        src={courierImage.imageUrl}
                         alt="Distribution Mall"
                         fill
                         className="object-cover"
                         priority
-                        data-ai-hint={distributionMallImage.imageHint}
+                        data-ai-hint={courierImage.imageHint}
                     />
                 )}
                 <div className="absolute inset-0 bg-black/60" />
