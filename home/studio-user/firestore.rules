@@ -45,7 +45,7 @@ service cloud.firestore {
     }
 
     // --- CRITICAL ENGINE RULES ---
-    // Rule Sync ID: 2026-03-17T09:00:00Z
+    // Rule Sync ID: 2026-03-17T11:30:00Z
 
     match /engagementPings/{pingId} {
       allow list, get: if isSignedIn();
@@ -122,20 +122,11 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // Explicitly allow read/list on all subcollections for authorized members and admins
+      // Recursive match for all subcollections (transactions, staff, etc.)
       match /{allSub=**} {
         allow read, list: if isMember(companyId) || isAdmin();
-        allow write: if isAdmin();
+        allow write: if isAdmin() || (isMember(companyId) && allSub.split('/')[0] in ['enquiries', 'quotes', 'tasks', 'brokerAgreements', 'shops', 'products', 'supportMessages', 'walletPayments']);
       }
-      
-      // Granular sub-collection write rules
-      match /enquiries/{id} { allow write: if isMember(companyId); }
-      match /quotes/{id} { allow write: if isMember(companyId); }
-      match /tasks/{id} { allow write: if isMember(companyId); }
-      match /brokerAgreements/{id} { allow write: if isMember(companyId); }
-      match /shops/{id} { allow write: if isMember(companyId); }
-      match /products/{id} { allow write: if isMember(companyId); }
-      match /supportMessages/{id} { allow write: if isMember(companyId); }
     }
 
     match /sales/{saleId} {
