@@ -166,6 +166,13 @@ export default function HomePage() {
                             </div>
                         </div>
                     </div>
+                    <div className="pt-8">
+                        <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest gap-2 bg-primary hover:bg-primary/90 text-white border-none shadow-xl">
+                            <Link href="/mall">
+                                <Search className="h-5 w-5" /> Access Intelligence Layer
+                            </Link>
+                        </Button>
+                    </div>
                 </div>
                 <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-slate-800">
                     <Image 
@@ -198,7 +205,7 @@ export default function HomePage() {
                         <p className="text-sm text-muted-foreground">Unlock deeper discounts on tires and fuel as your transaction volume grows.</p>
                     </Card>
                     <Card className="p-8 border-2 border-slate-100 shadow-sm">
-                        <Handshake className="h-10 w-10 text-primary mb-4" />
+                        <Badge variant="outline" className="border-primary text-primary mb-4">Integrity</Badge>
                         <h4 className="font-black uppercase mb-2">Node Equity</h4>
                         <p className="text-sm text-muted-foreground">Every referral and verified data contribution builds your platform standing.</p>
                     </Card>
