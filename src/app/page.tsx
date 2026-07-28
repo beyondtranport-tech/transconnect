@@ -6,18 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { 
   ArrowRight, 
   Truck, 
-  Landmark, 
-  Building2, 
+  Store, 
+  ShoppingBasket,
   Zap, 
-  Fingerprint, 
-  ShieldCheck, 
-  Users, 
+  Handshake, 
   TrendingUp,
-  Lock,
   Search,
-  AlertTriangle,
+  CheckCircle2,
   ArrowDown,
-  CheckCircle2
+  PackageSearch,
+  Landmark
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -47,27 +45,28 @@ export default function HomePage() {
     <div className="bg-background text-left text-foreground">
       <HomeIntentModal isOpen={isModalOpen} onOpenChange={setIsModalOpen} />
       
-      {/* HERO SECTION - THE PAIN HOOK */}
+      {/* HERO SECTION - COMMERCE FIRST */}
       <section className="relative w-full h-[90vh] flex items-center justify-center overflow-hidden bg-slate-950 text-white">
-        <div className="absolute inset-0 z-0 opacity-30">
-           {heroImage && <Image src={heroImage.imageUrl} alt="Industrial Background" fill className="object-cover" priority data-ai-hint="truck highway night" />}
+        <div className="absolute inset-0 z-0 opacity-40">
+           {heroImage && <Image src={heroImage.imageUrl} alt="Industrial Commerce" fill className="object-cover" priority data-ai-hint="truck harbor loading" />}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/50 via-slate-950/80 to-slate-950" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/70 to-slate-950" />
 
         <div className="container relative z-10 mx-auto px-4 text-center">
-            <h1 className="text-5xl md:text-8xl font-black font-headline leading-[0.9] mb-8 tracking-tighter text-center text-white uppercase italic">
-                Stop Operating <br/>In The <span className="text-primary">Dark</span>.
+            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-[10px] font-black uppercase tracking-widest">The Industrial Commerce Engine</Badge>
+            <h1 className="text-5xl md:text-8xl font-black font-headline leading-[0.9] mb-8 tracking-tighter text-center text-white uppercase">
+                Sell More. <br/>Find Work. <span className="text-primary">Fast.</span>
             </h1>
             <p className="text-lg md:text-2xl text-slate-300 max-w-2xl mx-auto mb-12 leading-relaxed text-center text-white font-medium">
-                The South African transport industry is built on "Who you know." <br/>
-                We've mapped the entire 22,000+ member registry so you can stop guessing and start growing.
+                Logistics Flow is where the South African transport industry trades. <br/>
+                We connect your shop, your fleet, and your capacity to a verified grid of high-intent buyers.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-6">
                 <Button size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-widest shadow-2xl bg-primary hover:bg-primary/90 text-white border-b-4 border-green-800 active:border-b-0 transition-all" onClick={handleJoinClick}>
-                    Establish Handshake <ArrowRight className="ml-2 h-6 w-6" />
+                    Open Your digital Branch <ArrowRight className="ml-2 h-6 w-6" />
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-16 px-12 text-lg font-black uppercase tracking-tight border-white/20 hover:bg-white/10 text-white">
-                    <Link href="#the-pain">Why visibility matters</Link>
+                    <Link href="/mall">Browse the Malls</Link>
                 </Button>
             </div>
             <div className="mt-16 animate-bounce opacity-30">
@@ -76,127 +75,114 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* THE PAIN POINTS - IDENTIFYING WITH THE USER */}
-      <section id="the-pain" className="py-24 bg-white">
-        <div className="container mx-auto px-4">
-            <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-                <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 tracking-tight text-center uppercase">The Industry is Broken.</h2>
-                <p className="text-xl text-muted-foreground leading-relaxed text-center">
-                    If you aren't visible to the right people, you're paying a "Silence Tax" every day.
-                </p>
-            </div>
+      {/* CORE MECHANISM - THE TRANSACTIONAL VALUE */}
+      <section className="py-24 bg-white">
+        <div className="container mx-auto px-4 text-left">
+            <div className="max-w-4xl mx-auto space-y-12">
+                <div className="space-y-4">
+                    <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 tracking-tight uppercase">The Power to Transact.</h2>
+                    <p className="text-xl text-muted-foreground leading-relaxed">
+                        We've built the digital infrastructure to remove the friction from industrial sales. No more cold calls, no more payment uncertainty.
+                    </p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
-                <div className="space-y-6 text-left">
-                    <div className="bg-red-50 p-4 rounded-2xl w-fit"><AlertTriangle className="h-10 w-10 text-red-600" /></div>
-                    <h3 className="text-2xl font-black uppercase text-slate-900">Empty Miles</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                        Dropping a load in Durban but coming back empty to Jo'burg? That's profit bleeding out of your tank because the right broker couldn't find your truck in the dark.
-                    </p>
-                </div>
-                <div className="space-y-6 text-left">
-                    <div className="bg-red-50 p-4 rounded-2xl w-fit"><Lock className="h-10 w-10 text-red-600" /></div>
-                    <h3 className="text-2xl font-black uppercase text-slate-900">Locked Capital</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                        Traditional banks don't understand the logistics grid. They see a balance sheet; we see your operational pulse. Without visibility, you stay under-funded.
-                    </p>
-                </div>
-                <div className="space-y-6 text-left">
-                    <div className="bg-red-50 p-4 rounded-2xl w-fit"><Users className="h-10 w-10 text-red-600" /></div>
-                    <h3 className="text-2xl font-black uppercase text-slate-900">The Gatekeepers</h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                        Spending hours trying to find the MD or Owner of a supplier? We bypass the switchboard and give you the direct line to decision-makers.
-                    </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Card className="p-8 border-none shadow-xl bg-slate-50 text-left">
+                        <Store className="h-10 w-10 text-primary mb-4" />
+                        <h3 className="text-2xl font-black uppercase mb-2">Digital Shops</h3>
+                        <p className="text-muted-foreground">List your parts and services in a verified mall. Reach 5,400+ hauliers who are actively maintaining fleets.</p>
+                    </Card>
+                    <Card className="p-8 border-none shadow-xl bg-slate-50 text-left">
+                        <PackageSearch className="h-10 w-10 text-primary mb-4" />
+                        <h3 className="text-2xl font-black uppercase mb-2">The Load Board</h3>
+                        <p className="text-muted-foreground">Post freight or find loads in real-time. We bridge the gap between shippers and vetted transporters.</p>
+                    </Card>
                 </div>
             </div>
         </div>
       </section>
 
-      {/* THE PROMISE - WHAT WE DO */}
-      <section className="py-24 bg-slate-50 border-y">
+      {/* INTELLIGENCE AS A BOOSTER */}
+      <section className="py-24 bg-slate-900 text-white">
         <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
-                <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white">
-                    <Image 
-                        src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1000" 
-                        alt="Logistics Efficiency" 
-                        fill 
-                        className="object-cover" 
-                        data-ai-hint="modern warehouse"
-                    />
-                </div>
                 <div className="space-y-8 text-left">
-                    <Badge className="bg-primary/10 text-primary border-none py-1 px-4 font-black uppercase tracking-widest text-[10px]">The Solution</Badge>
-                    <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 leading-[0.95] uppercase">We Provide <br/>The Signal.</h2>
-                    <p className="text-xl text-muted-foreground leading-relaxed">
-                        Logistics Flow is a Data-as-a-Service ecosystem. We map 22,000+ industrial entities so you can find capacity, source parts at syndicate rates, and access in-house funding.
+                    <Badge className="bg-primary/20 text-primary border-none py-1 px-4 font-black uppercase tracking-widest text-[10px]">Commerce Enhanced</Badge>
+                    <h2 className="text-4xl md:text-6xl font-black font-headline text-white leading-[0.95] uppercase">Trading <br/>with <span className="text-primary">Eyes Open</span>.</h2>
+                    <p className="text-xl text-slate-400 leading-relaxed">
+                        Intelligence isn't our product—it's how we make you more successful. By mapping the grid, we give you the data to sell faster and fund your growth.
                     </p>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <div className="flex items-start gap-4">
-                            <div className="bg-primary p-1 rounded-full mt-1 text-white"><CheckCircle2 className="h-5 w-5" /></div>
-                            <p className="font-bold text-slate-700">Direct Access to 5,400+ Verified Hauliers</p>
+                            <div className="bg-primary/20 p-2 rounded-lg text-primary"><Search className="h-6 w-6" /></div>
+                            <div>
+                                <p className="font-bold text-white uppercase text-sm">Lead Discovery</p>
+                                <p className="text-slate-400 text-sm">Identify exactly who is buying and who owns the budget.</p>
+                            </div>
                         </div>
                         <div className="flex items-start gap-4">
-                            <div className="bg-primary p-1 rounded-full mt-1 text-white"><CheckCircle2 className="h-5 w-5" /></div>
-                            <p className="font-bold text-slate-700">Syndicate Pricing on Tires, Spares & Fuel</p>
+                            <div className="bg-primary/20 p-2 rounded-lg text-primary"><Zap className="h-6 w-6 fill-current" /></div>
+                            <div>
+                                <p className="font-bold text-white uppercase text-sm">AI Matching</p>
+                                <p className="text-slate-400 text-sm">Our engine proactively connects your stock with the right truck.</p>
+                            </div>
                         </div>
                         <div className="flex items-start gap-4">
-                            <div className="bg-primary p-1 rounded-full mt-1 text-white"><CheckCircle2 className="h-5 w-5" /></div>
-                            <p className="font-bold text-slate-700">25 Years of specialized industrial funding expertise</p>
+                            <div className="bg-primary/20 p-2 rounded-lg text-primary"><Landmark className="h-6 w-6" /></div>
+                            <div>
+                                <p className="font-bold text-white uppercase text-sm">Verified Capital</p>
+                                <p className="text-slate-400 text-sm">Use your platform activity to unlock in-house asset finance.</p>
+                            </div>
                         </div>
                     </div>
-                    <Button asChild size="lg" className="h-16 px-10 font-black uppercase tracking-widest shadow-xl text-white">
-                        <Link href="/about">How it works <ArrowRight className="ml-2 h-5 w-5"/></Link>
-                    </Button>
+                </div>
+                <div className="relative aspect-square rounded-[3rem] overflow-hidden shadow-2xl border-8 border-slate-800">
+                    <Image 
+                        src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&q=80&w=1000" 
+                        alt="Logistics Flow Data" 
+                        fill 
+                        className="object-cover opacity-80" 
+                        data-ai-hint="digital industrial map"
+                    />
                 </div>
             </div>
         </div>
       </section>
 
-      {/* SIMPLIFIED PRICING PREVIEW */}
-      <section className="py-24 bg-slate-900 text-white">
-          <div className="container mx-auto px-4">
-                <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
-                    <h2 className="text-4xl md:text-6xl font-black font-headline text-white tracking-tight uppercase">Pick Your Path.</h2>
-                    <p className="text-lg text-slate-400">No complex layers. Just two simple ways to engage with the grid.</p>
-                </div>
+      {/* REWARDS & LOYALTY - THE REVEAL */}
+      <section className="py-24 bg-white">
+          <div className="container mx-auto px-4 text-center">
+                <h2 className="text-4xl md:text-6xl font-black font-headline text-slate-900 tracking-tight uppercase mb-4">Rewarding Every Handshake.</h2>
+                <p className="text-lg text-muted-foreground mb-16 max-w-2xl mx-auto">As you transact, you earn. Our loyalty and rewards programs are baked into the core commerce workflow.</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-                    <Card className="bg-slate-800 border-white/10 p-10 flex flex-col h-full text-white">
-                        <div className="bg-primary/20 p-4 rounded-2xl w-fit mb-6"><Search className="h-10 w-10 text-primary" /></div>
-                        <h3 className="text-3xl font-black uppercase mb-2">The Map</h3>
-                        <p className="text-slate-400 mb-8">Access the registry. See the direct MD/CEO contacts for 22,000+ businesses.</p>
-                        <div className="mt-auto">
-                            <p className="text-4xl font-black text-white mb-6">R100 <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">/ Month</span></p>
-                            <Button asChild className="w-full h-14 font-black uppercase tracking-widest bg-white text-black hover:bg-slate-200 shadow-xl">
-                                <Link href="/checkout/intelligence">Unlock the Map</Link>
-                            </Button>
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto text-left">
+                    <Card className="p-8 border-2 border-slate-100 shadow-sm">
+                        <TrendingUp className="h-10 w-10 text-primary mb-4" />
+                        <h4 className="font-black uppercase mb-2">Dividends</h4>
+                        <p className="text-sm text-muted-foreground">A share of platform success returned to the most active nodes.</p>
                     </Card>
-
-                    <Card className="bg-primary border-none p-10 flex flex-col h-full text-white shadow-2xl ring-4 ring-primary/30 ring-offset-8 ring-offset-slate-900">
-                        <div className="bg-white/20 p-4 rounded-2xl w-fit mb-6"><Zap className="h-10 w-10 text-white" /></div>
-                        <h3 className="text-3xl font-black uppercase mb-2">The Engine</h3>
-                        <p className="text-green-100 mb-8">Full transactional access. Post loads, create your shop, and apply for in-house finance.</p>
-                        <div className="mt-auto">
-                            <p className="text-4xl font-black text-white mb-6">R500 <span className="text-xs text-green-200 font-bold uppercase tracking-widest">/ Month</span></p>
-                            <Button asChild className="w-full h-14 font-black uppercase tracking-widest bg-slate-900 text-white hover:bg-slate-800 shadow-xl">
-                                <Link href="/checkout/standard">Activate the Engine</Link>
-                            </Button>
-                        </div>
+                    <Card className="p-8 border-2 border-slate-100 shadow-sm">
+                        <Badge className="bg-green-100 text-green-700 mb-4">Loyalty</Badge>
+                        <h4 className="font-black uppercase mb-2">Syndicate Rates</h4>
+                        <p className="text-sm text-muted-foreground">Unlock deeper discounts on tires and fuel as your transaction volume grows.</p>
+                    </Card>
+                    <Card className="p-8 border-2 border-slate-100 shadow-sm">
+                        <Handshake className="h-10 w-10 text-primary mb-4" />
+                        <h4 className="font-black uppercase mb-2">Node Equity</h4>
+                        <p className="text-sm text-muted-foreground">Every referral and verified data contribution builds your platform standing.</p>
                     </Card>
                 </div>
           </div>
       </section>
 
       {/* FINAL CTA */}
-      <section className="py-32 bg-white">
+      <section className="py-32 bg-slate-50 border-t">
             <div className="container mx-auto px-4 text-center">
-                <h2 className="text-4xl md:text-7xl font-black font-headline text-slate-900 tracking-tighter text-center uppercase leading-none mb-8">Stop guessing.<br/>Start Flowing.</h2>
-                <p className="text-xl max-w-xl mx-auto text-muted-foreground leading-relaxed mb-12">Join the community that is turning industrial relationships into a measurable digital asset.</p>
+                <h2 className="text-4xl md:text-7xl font-black font-headline text-slate-900 tracking-tighter text-center uppercase leading-none mb-8">Ready to <br/>Transact?</h2>
+                <p className="text-xl max-w-xl mx-auto text-muted-foreground leading-relaxed mb-12">Sign up for free and establish your digital branch in the South African logistics grid.</p>
                 <div className="flex justify-center">
                      <Button size="lg" className="h-16 px-16 text-lg font-black uppercase shadow-2xl text-white bg-primary hover:bg-primary/90" onClick={handleJoinClick}>
-                        Join for Free <ArrowRight className="ml-2 h-6 w-6" />
+                        Establish Handshake <ArrowRight className="ml-2 h-6 w-6" />
                     </Button>
                 </div>
             </div>

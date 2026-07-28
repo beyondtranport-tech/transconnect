@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -12,8 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import * as React from 'react';
 
 /**
- * SIMPLIFIED PRICING MODEL
- * Two primary paths for the user: Intelligence or Transactional.
+ * CORE MEMBERSHIP PATHS
+ * Framed around "Finding Leads" (Intelligence) and "Active Trading" (Operator).
  */
 
 export default function MembershipPage() {
@@ -35,41 +35,40 @@ export default function MembershipPage() {
     })).sort((a,b) => a.price - b.price);
   }, [dbPlans]);
 
-  // Simplify into two main tiers for marketing
   const intelligencePlan = plans.find(p => p.id === 'intelligence' || p.price === 100);
   const corePlan = plans.find(p => p.id === 'standard' || p.price === 500);
 
   return (
     <div className="bg-background min-h-screen text-left text-foreground">
-      <div className="container mx-auto px-4 py-16 md:py-24">
+      <div className="container mx-auto px-4 py-16 md:py-24 text-left">
         
         {/* HEADER SECTION */}
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Node Activation</Badge>
-          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-foreground uppercase italic leading-none text-center">Intelligence <br/>That Pays.</h1>
-          <p className="mt-6 text-xl text-muted-foreground leading-relaxed text-center font-medium">
-            Activate your digital standing in the industrial grid. Choose the path that matches your growth goals.
+        <div className="text-center max-w-3xl mx-auto mb-20 text-left md:text-center">
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Commercial Access</Badge>
+          <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tight text-foreground uppercase leading-none">One Hub. <br/>Two Paths.</h1>
+          <p className="mt-6 text-xl text-muted-foreground leading-relaxed font-medium">
+            Choose how you want to engage with the industrial grid. Start by finding leads or launch your full digital branch.
           </p>
         </div>
 
         {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                 <Loader2 className="animate-spin h-12 w-12 text-primary mx-auto" />
-                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground text-center">Mapping Pricing Tiers...</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Synchronizing Pricing Ledger...</p>
             </div>
         ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 max-w-5xl mx-auto items-stretch text-left">
                 
-                {/* 1. THE MAP (INTELLIGENCE) */}
+                {/* 1. LEAD DISCOVERY (INTELLIGENCE) */}
                 {intelligencePlan && (
                     <Card className="flex flex-col shadow-2xl transition-all duration-300 relative border-none overflow-hidden h-full bg-white text-left">
                         <CardHeader className="p-10 pb-8 text-left bg-slate-50 border-b">
                             <div className="bg-muted p-4 rounded-2xl w-fit mb-6 text-left shadow-inner">
-                                <Database className="h-8 w-8 text-primary" />
+                                <Search className="h-8 w-8 text-primary" />
                             </div>
-                            <CardTitle className="text-3xl font-black tracking-tight text-left uppercase">The Map</CardTitle>
+                            <CardTitle className="text-3xl font-black tracking-tight text-left uppercase">Lead Discovery</CardTitle>
                             <CardDescription className="mt-2 text-lg font-bold text-slate-500 leading-relaxed text-left">
-                                {intelligencePlan.description}
+                                Find exactly who to sell to. The map to 22,000+ verified industrial stakeholders.
                             </CardDescription>
                             <div className="pt-10 text-left">
                                 <div className="flex items-baseline gap-1.5 text-left text-foreground">
@@ -79,48 +78,44 @@ export default function MembershipPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow p-10 space-y-6 text-left">
-                            <ul className="space-y-5 text-left">
-                                <li className="flex items-start gap-4 text-left">
+                            <ul className="space-y-5 text-left text-foreground">
+                                <li className="flex items-start gap-4 text-left text-foreground">
                                     <Check className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight text-left">Full direct Line to 22,000+ CEO/MDs</span>
+                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight text-left">Reveal Direct MD/CEO Contacts</span>
                                 </li>
-                                <li className="flex items-start gap-4 text-left">
+                                <li className="flex items-start gap-4 text-left text-foreground">
                                     <Check className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight text-left">Unlimited Registry Search</span>
+                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight text-left">Unlimited Forensic Search</span>
                                 </li>
-                                <li className="flex items-start gap-4 text-left">
+                                <li className="flex items-start gap-4 text-left text-foreground">
                                     <Check className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight text-left">Verified Mobile Numbers</span>
-                                </li>
-                                <li className="flex items-start gap-4 opacity-50 text-left">
-                                    <Check className="h-5 w-5 shrink-0 mt-0.5 text-slate-300" />
-                                    <span className="text-sm font-medium text-slate-400 line-through text-left">Access Earning Mall Nodes</span>
+                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight text-left">Verified Mobile & Email Data</span>
                                 </li>
                             </ul>
                         </CardContent>
                         <CardFooter className="p-10 pt-0 text-left">
                             <Button asChild className="w-full h-16 text-lg font-black uppercase tracking-widest shadow-xl group text-white border-b-4 border-green-800 active:border-b-0">
                                 <Link href={`/checkout/intelligence`}>
-                                    Unlock the Map <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                                    Activate Discovery <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                                 </Link>
                             </Button>
                         </CardFooter>
                     </Card>
                 )}
 
-                {/* 2. THE ENGINE (TRANSACTIONAL) */}
+                {/* 2. ACTIVE TRADING (OPERATOR) */}
                 {corePlan && (
                     <Card className="flex flex-col shadow-2xl transition-all duration-300 relative border-none overflow-hidden h-full bg-slate-900 text-white text-left ring-8 ring-primary/20">
                         <div className="absolute top-0 right-0 bg-primary text-white px-8 py-2 text-[10px] font-black uppercase tracking-widest rounded-bl-3xl z-20 shadow-lg">
-                            Recommended Path
+                            Most Powerful
                         </div>
                         <CardHeader className="p-10 pb-8 text-left bg-slate-950 border-b border-white/5">
                             <div className="bg-primary/20 p-4 rounded-2xl w-fit mb-6 text-left border border-primary/30">
-                                <Zap className="h-8 w-8 text-primary fill-current" />
+                                <ShoppingBasket className="h-8 w-8 text-primary fill-current" />
                             </div>
-                            <CardTitle className="text-3xl font-black tracking-tight text-left uppercase text-white">The Engine</CardTitle>
+                            <CardTitle className="text-3xl font-black tracking-tight text-left uppercase text-white">Active Trading</CardTitle>
                             <CardDescription className="mt-2 text-lg font-bold text-slate-400 leading-relaxed text-left">
-                                {corePlan.description}
+                                Launch your digital branch. Transact, post loads, and access growth capital.
                             </CardDescription>
                             <div className="pt-10 text-left">
                                 <div className="flex items-baseline gap-1.5 text-left text-white">
@@ -130,29 +125,29 @@ export default function MembershipPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow p-10 space-y-6 text-left">
-                            <ul className="space-y-5 text-left">
+                            <ul className="space-y-5 text-left text-foreground">
                                 <li className="flex items-start gap-4 text-left">
                                     <Check className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">Full access to all industrial Malls</span>
+                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">Publish Professional Shop Profile</span>
                                 </li>
                                 <li className="flex items-start gap-4 text-left">
                                     <Check className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">AI Matching Engine Enabled</span>
+                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">Full access to Load & Carrier Boards</span>
                                 </li>
                                 <li className="flex items-start gap-4 text-left">
                                     <Check className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">Direct Path to in-house Funding</span>
+                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">Direct Path to In-House Funding</span>
                                 </li>
                                 <li className="flex items-start gap-4 text-left">
                                     <Check className="h-5 w-5 shrink-0 mt-0.5 text-primary" />
-                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">Create & Publish Shop Profile</span>
+                                    <span className="text-sm font-bold text-slate-100 uppercase tracking-tight text-left">AI Content & Branding Studio</span>
                                 </li>
                             </ul>
                         </CardContent>
                         <CardFooter className="p-10 pt-0 text-left">
                             <Button asChild className="w-full h-16 text-lg font-black uppercase tracking-widest shadow-xl group text-white bg-primary hover:bg-primary/90 border-b-4 border-green-800 active:border-b-0">
                                 <Link href={`/checkout/standard`}>
-                                    Activate the Engine <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                                    Activate My Node <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                                 </Link>
                             </Button>
                         </CardFooter>
@@ -161,17 +156,32 @@ export default function MembershipPage() {
             </div>
         )}
 
-        {/* REWARDS FOOTER */}
-        <div className="mt-32 max-w-3xl mx-auto p-12 border-4 border-dashed rounded-[3rem] bg-muted/20 text-center">
-            <ShieldCheck className="h-12 w-12 text-primary mx-auto mb-6" />
-            <h3 className="text-3xl font-black uppercase tracking-tight mb-4 text-center">Zero Cash Activation</h3>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-8 text-center">
-                If you choose not to pay with ZAR, you can pay with **Data**. <br/>
-                Contribute your verified fleet data (RC1) to earn points and activate any node for free.
-            </p>
-            <Button asChild variant="outline" size="lg" className="font-black uppercase tracking-widest border-2">
-                <Link href="/contribute">Contribute & Earn</Link>
-            </Button>
+        {/* CONNECT ADD-ONS SECTION */}
+        <div className="mt-32 max-w-5xl mx-auto space-y-10 text-left text-foreground">
+             <div className="text-left space-y-2 text-foreground">
+                <h3 className="text-2xl font-black uppercase text-foreground">The Connect Boosters</h3>
+                <p className="text-muted-foreground">Enhance your membership with optional boosters revealed through your transaction workflow.</p>
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                <Card className="p-6 border-2 border-slate-100 shadow-sm text-left">
+                    <Badge className="bg-primary/10 text-primary mb-4">Loyalty</Badge>
+                    <h4 className="font-bold text-lg mb-2">The Loyalty Plan</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4">Unlock community-negotiated discounts on tires, fuel, and parts.</p>
+                    <Link href="/connect/loyalty" className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-1">Learn More <ArrowRight className="h-3 w-3"/></Link>
+                </Card>
+                <Card className="p-6 border-2 border-slate-100 shadow-sm text-left">
+                    <Badge className="bg-primary/10 text-primary mb-4">Rewards</Badge>
+                    <h4 className="font-bold text-lg mb-2">The Rewards Plan</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4">Earn points on every transaction and redeem for fuel or services.</p>
+                    <Link href="/connect/rewards" className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-1">Learn More <ArrowRight className="h-3 w-3"/></Link>
+                </Card>
+                <Card className="p-6 border-2 border-slate-100 shadow-sm text-left">
+                    <Badge className="bg-primary/10 text-primary mb-4">Revenue</Badge>
+                    <h4 className="font-bold text-lg mb-2">The Actions Plan</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed mb-4">Monetize your network by earning recurring revenue from referrals.</p>
+                    <Link href="/connect/actions" className="text-xs font-bold uppercase tracking-widest text-primary flex items-center gap-1">Learn More <ArrowRight className="h-3 w-3"/></Link>
+                </Card>
+             </div>
         </div>
       </div>
     </div>

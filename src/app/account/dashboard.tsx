@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Award, Gem, Loader2, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck, ImageIcon, ExternalLink, MousePointer2, UserPlus, Info, Gift, CheckCircle2 } from "lucide-react";
+import { Award, Gem, Loader2, ArrowRight, Sparkles, Wallet, ShieldAlert, Star, CheckCircle, ShieldCheck, Landmark, Globe, Zap, Link as LinkIcon, Copy, Lock, Truck, ImageIcon, ExternalLink, MousePointer2, UserPlus, Info, Gift, CheckCircle2, ShoppingBasket, PackageSearch } from "lucide-react";
 import { doc, collection, query, limit, where, orderBy } from 'firebase/firestore';
 import Link from 'next/link';
 import { useMemo } from 'react';
@@ -19,7 +18,6 @@ import Image from 'next/image';
 
 /**
  * MEMBER VOUCHER VAULT
- * Displays active welcome gifts for paid members.
  */
 function VoucherVault({ isPaid }: { isPaid: boolean }) {
     const firestore = useFirestore();
@@ -43,7 +41,7 @@ function VoucherVault({ isPaid }: { isPaid: boolean }) {
                     <div className="text-left">
                         <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
                             <Gift className="h-5 w-5 text-primary" />
-                            Voucher Vault
+                            Loyalty: Voucher Vault
                         </CardTitle>
                         <CardDescription className="text-slate-400">Your activated community welcome gifts.</CardDescription>
                     </div>
@@ -63,7 +61,7 @@ function VoucherVault({ isPaid }: { isPaid: boolean }) {
                                 variant={isPaid ? "default" : "secondary"}
                                 onClick={() => isPaid ? toast({ title: "Voucher Redeemed", description: "The supplier has been notified to establish the handshake." }) : null}
                             >
-                                {isPaid ? <><CheckCircle2 className="h-4 w-4" /> Redeem Gift</> : <><Lock className="h-4 w-4" /> intelligence Access Required</>}
+                                {isPaid ? <><CheckCircle2 className="h-4 w-4" /> Redeem Gift</> : <><Lock className="h-4 w-4" /> Operator Plan Required</>}
                             </Button>
                         </div>
                     ))}
@@ -73,12 +71,12 @@ function VoucherVault({ isPaid }: { isPaid: boolean }) {
                              <div className="bg-amber-500/10 p-3 rounded-full mb-2">
                                 <Lock className="h-6 w-6 text-amber-600" />
                             </div>
-                            <h4 className="text-xl font-black text-foreground">Gifts Restricted</h4>
-                            <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 leading-relaxed">
-                                Establish your Intelligence Access handshake for R100/mo to instantly unlock over **R500 in community value**.
+                            <h4 className="text-xl font-black text-foreground">Loyalty Rewards Restricted</h4>
+                            <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 leading-relaxed text-center">
+                                Active trading nodes instantly unlock over **R500 in community value**. Establish your Operator handshake today.
                             </p>
                             <Button asChild size="sm" className="mt-4 font-black uppercase text-[10px] tracking-widest h-10 px-8 shadow-xl">
-                                <Link href="/checkout/intelligence">Claim My Gifts Now</Link>
+                                <Link href="/checkout/standard">Activate Active Trading</Link>
                             </Button>
                         </div>
                     )}
@@ -115,10 +113,10 @@ function EngagementYieldModule({ companyId, isPaid }: { companyId: string, isPai
         )}>
             <CardHeader className="bg-slate-900 text-white p-6">
                 <div className="flex justify-between items-center">
-                    <div className="text-left">
+                    <div className="text-left text-white">
                         <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
-                            <Zap className="h-5 w-5 text-primary" />
-                            Engagement Yield Audit
+                            <Search className="h-5 w-5 text-primary" />
+                            Sales intelligence Ledger
                         </CardTitle>
                         <CardDescription className="text-slate-400">High-intent traffic recorded on your digital node.</CardDescription>
                     </div>
@@ -130,9 +128,9 @@ function EngagementYieldModule({ companyId, isPaid }: { companyId: string, isPai
                     <div className="divide-y text-left">
                         {pings.map((ping) => (
                             <div key={ping.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-3 text-left">
-                                    <div className="bg-primary/10 p-2 rounded-full"><UserPlus className="h-4 w-4 text-primary" /></div>
-                                    <div className="text-left text-foreground">
+                                <div className="flex items-center gap-3 text-left text-foreground">
+                                    <div className="bg-primary/10 p-2 rounded-full text-foreground"><UserPlus className="h-4 w-4 text-primary" /></div>
+                                    <div className="text-left">
                                         <p className={cn("text-sm font-bold", !isPaid && "blur-sm select-none")}>
                                             {isPaid ? ping.engagerName : "Forensic Lead Hidden"}
                                         </p>
@@ -149,12 +147,12 @@ function EngagementYieldModule({ companyId, isPaid }: { companyId: string, isPai
                              <div className="bg-amber-500/10 p-3 rounded-full mb-2 text-center text-foreground">
                                 <Lock className="h-6 w-6 text-amber-600" />
                             </div>
-                            <h4 className="text-xl font-black text-foreground">Sales Leads Restricted</h4>
+                            <h4 className="text-xl font-black text-foreground">Lead Details Restricted</h4>
                             <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 leading-relaxed text-center">
-                                <strong>{pings.length} companies</strong> have engaged with your profile. Establish Intelligence Access to reveal their identities.
+                                <strong>{pings.length} companies</strong> have selected your profile to engage. Upgrade to an intelligence plan to reveal their identities.
                             </p>
                             <Button asChild size="sm" className="mt-4 font-black uppercase text-[10px] tracking-widest h-10 px-8 shadow-xl">
-                                <Link href="/checkout/intelligence">Unlock Leads Now</Link>
+                                <Link href="/checkout/intelligence">Unlock Discovery Leads</Link>
                             </Button>
                         </div>
                     )}
@@ -174,12 +172,6 @@ export default function AccountDashboard() {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    const isAdmin = user && (
-        user.email === 'beyondtransport@gmail.com' || 
-        user.email === 'mkoton100@gmail.com' || 
-        user.email === 'michael@logisticsflow.co.za'
-    );
-
     const userDocRef = useMemoFirebase(() => {
         if (!firestore || !user?.uid) return null;
         return doc(firestore, 'users', user.uid);
@@ -192,10 +184,10 @@ export default function AccountDashboard() {
         return doc(firestore, 'companies', userData.companyId);
     }, [firestore, userData?.companyId]);
 
-    const { data: companyData, isLoading: isCompanyLoading, error } = useDoc(companyDocRef);
+    const { data: companyData, isLoading: isCompanyLoading } = useDoc(companyDocRef);
 
-    const isPaid = companyData?.membershipId !== 'free' && !!companyData?.membershipId;
-    const audience = companyData?.shopType || userData?.declaredPosition || 'all';
+    const isPaidIntelligence = ['intelligence', 'standard', 'premium'].includes(companyData?.membershipId || '');
+    const isPaidOperator = ['standard', 'premium'].includes(companyData?.membershipId || '');
     
     const loyaltyTier = companyData?.loyaltyTier || 'bronze';
     const tierColors: {[key: string]: string} = {
@@ -205,17 +197,6 @@ export default function AccountDashboard() {
     };
 
     const isAssociate = userData?.declaredPosition === 'associate' || user?.role === 'associate';
-    const isLender = userData?.declaredPosition === 'lender' || user?.role === 'lender' || companyData?.declaredRole === 'lender';
-    
-    const referralLink = useMemo(() => {
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://studio--ecosystem-hub.us-central1.hosted.app';
-        return `${baseUrl}/join?ref=${userData?.companyId || 'SYSTEM'}`;
-    }, [userData?.companyId]);
-
-    const copyReferral = () => {
-        navigator.clipboard.writeText(referralLink);
-        toast({ title: "Referral Link Copied!" });
-    };
 
     if (isUserLoading || (user && isCompanyLoading)) {
         return <div className="flex justify-center items-center py-40 w-full"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
@@ -225,60 +206,78 @@ export default function AccountDashboard() {
 
     return (
         <div className="w-full space-y-8 text-left text-foreground">
-            <div className="text-left">
-                <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
-                <p className="text-lg text-muted-foreground">Welcome back, {userData?.firstName || 'Member'}!</p>
+            <div className="flex justify-between items-end">
+                <div className="text-left text-foreground">
+                    <h1 className="text-3xl md:text-4xl font-black font-headline uppercase tracking-tight">Commerce Command</h1>
+                    <p className="text-lg text-muted-foreground font-medium">Welcome back, {userData?.firstName || 'Member'}!</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button asChild variant="outline" size="sm" className="font-bold">
+                        <Link href="/mall"><ShoppingBasket className="mr-2 h-4 w-4 text-primary" /> Malls</Link>
+                    </Button>
+                    <Button asChild size="sm" className="font-bold shadow-md">
+                        <Link href="/account?view=shop"><Store className="mr-2 h-4 w-4" /> My Digital Branch</Link>
+                    </Button>
+                </div>
             </div>
 
-            {/* ACTIVATION HOOK: VOUCHER VAULT */}
-            <VoucherVault isPaid={isPaid} />
-
-            {/* ENGAGEMENT PINGS MODULE */}
+            {/* REVEAL: SALES INTELLIGENCE */}
             {userData?.companyId && (
-                <EngagementYieldModule companyId={userData.companyId} isPaid={isPaid} />
+                <EngagementYieldModule companyId={userData.companyId} isPaid={isPaidIntelligence} />
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left">
-                <Card className="text-left text-foreground">
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Wallet Available</CardTitle>
-                         <Wallet className="h-4 w-4 text-muted-foreground" />
+            {/* REVEAL: LOYALTY DIVIDEND */}
+            <VoucherVault isPaid={isPaidOperator} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left text-foreground">
+                <Card className="text-left text-foreground border-none shadow-lg bg-white">
+                    <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
+                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Available Wallet</CardTitle>
+                         <Wallet className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent className="text-left">
-                        <div className="text-2xl font-bold">{formatCurrency(companyData?.availableBalance)}</div>
-                         <Button asChild variant="link" size="sm" className="p-0 h-auto">
-                            <Link href="/account?view=wallet">Manage Wallet</Link>
+                        <div className="text-2xl font-black">{formatCurrency(companyData?.availableBalance)}</div>
+                         <Button asChild variant="link" size="sm" className="p-0 h-auto font-bold text-primary">
+                            <Link href="/account?view=wallet">Manage Payouts &rarr;</Link>
                         </Button>
                     </CardContent>
                 </Card>
 
-                <Card className="text-left text-foreground">
+                <Card className="text-left text-foreground border-none shadow-lg bg-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Loyalty Status</CardTitle>
-                        <Award className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Loyalty Standing</CardTitle>
+                        <Award className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent className="text-left">
-                        <div className="text-2xl font-bold flex items-center gap-2">
-                            <span className={cn("px-2 py-1 rounded-md text-base", tierColors[loyaltyTier])}>{loyaltyTier.charAt(0).toUpperCase() + loyaltyTier.slice(1)}</span>
-                            <span>{companyData?.rewardPoints || 0} Points</span>
+                        <div className="text-2xl font-black flex items-center gap-2">
+                            <Badge className={cn("capitalize border-none", tierColors[loyaltyTier])}>{loyaltyTier}</Badge>
+                            <span>{companyData?.rewardPoints || 0} pts</span>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="text-left text-foreground">
+                <Card className="text-left text-foreground border-none shadow-lg bg-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium">Membership</CardTitle>
-                        <Gem className="h-4 w-4 text-muted-foreground" />
+                        <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Membership Node</CardTitle>
+                        <Gem className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent className="text-left">
-                        <div className="text-2xl font-bold capitalize text-primary">{companyData?.membershipId || 'Free'}</div>
-                        {!isPaid && <Button asChild variant="link" size="sm" className="p-0 h-auto"><Link href="/pricing">Upgrade Plan</Link></Button>}
+                        <div className="text-2xl font-black capitalize text-primary">{companyData?.membershipId || 'Free'}</div>
+                        <Button asChild variant="link" size="sm" className="p-0 h-auto font-bold text-primary">
+                            <Link href="/pricing">Upgrade Tier &rarr;</Link>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>
 
-            {!isAssociate && !isLender && (
+            {!isAssociate && (
                 <div className="space-y-8 text-left text-foreground">
+                    <div className="flex items-center gap-4 text-left">
+                        <h2 className="text-xl font-black uppercase tracking-widest flex items-center gap-2">
+                            <PackageSearch className="h-5 w-5 text-primary" /> Active Handshakes
+                        </h2>
+                        <Separator className="flex-1" />
+                    </div>
                     <QuotesCard />
                     <EnquiriesCard />
                 </div>
