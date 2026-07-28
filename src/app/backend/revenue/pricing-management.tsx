@@ -32,6 +32,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
 
 const defaultPlans = [
     {
@@ -164,7 +166,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 text-left">
                 <FormField name="id" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
                         <FormLabel>Plan ID (Lowercase)</FormLabel>
@@ -179,7 +181,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                 )} />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4 text-left">
                  <FormField name="price" control={form.control} render={({ field }) => (
                     <FormItem className="text-left col-span-1">
                         <FormLabel>Monthly Price (R)</FormLabel>
