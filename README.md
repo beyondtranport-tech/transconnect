@@ -18,7 +18,7 @@ git add .
 ### Step 2: Save Your Changes
 Commit your changes with a descriptive message.
 ```bash
-git commit -m "Forensic V13: Automated Engagement & Runtime Fixes"
+git commit -m "Manual Backup: [Description of your changes]"
 ```
 
 ### Step 3: Push Your Backup to GitHub
@@ -27,7 +27,23 @@ This uploads your saved changes to your remote repository.
 git push
 ```
 
-*Note: If prompted for credentials, follow the guide in `docs/git-auth-troubleshooting.md` to use a GitHub Personal Access Token (PAT).*
+---
+
+## Restoring Latest Code (Syncing with GitHub)
+
+If your environment is out of sync or you want to fetch the latest code pushed to the repository, use these commands:
+
+### Update Existing Project
+```bash
+git pull
+npm install
+```
+
+### Restore Into a Fresh Project
+If you have created a new blank project and want to clone your code into it:
+1. Copy your GitHub Repository URL.
+2. Run: `git clone [YOUR_REPO_URL] .` (Note the dot at the end).
+3. Run: `npm install`
 
 ---
 
