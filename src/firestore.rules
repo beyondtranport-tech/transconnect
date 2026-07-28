@@ -20,7 +20,6 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * High-speed resilient verification for mission-critical paths.
      */
     function isMember(cid) {
       return isAdmin() || (
@@ -42,13 +41,15 @@ service cloud.firestore {
         );
     }
 
-    // --- COLLECTION RULES ---
+    // --- CRITICAL ENGINE RULES ---
 
     match /engagementPings/{pingId} {
-      // Allow any signed-in user to see pings (restricted by query in app code), and admins full access
-      allow read: if isSignedIn();
+      // Explicitly allow list/get for all signed-in users (filtering happens in app query)
+      allow list, get: if isSignedIn();
       allow write: if isAdmin();
     }
+
+    // --- COLLECTION RULES ---
 
     match /partners/{partnerId} {
       allow get: if true; 
@@ -80,16 +81,20 @@ service cloud.firestore {
 
     match /configuration/{allPaths=**} {
       allow read: if true;
+      allow write: if isAdmin();
     }
     
     match /memberships/{membershipId} {
       allow get, list: if true;
+      allow write: if isAdmin();
     }
+
     match /shops/{shopId} { 
       allow read: if true; 
       match /products/{prodId} { allow read: if true; }
       match /agreements/{agId} { allow read: if true; }
     }
+
     match /visitors/{visitorId} {
       allow read, write: if true;
     }
