@@ -176,7 +176,7 @@ export default function HomePage() {
                     </div>
                     <div className="pt-8 text-left">
                         <Button asChild size="lg" className="h-14 px-10 font-black uppercase tracking-widest gap-2 bg-primary hover:bg-primary/90 text-white border-none shadow-xl text-center">
-                            <Link href="/mall">
+                            <Link href="/intelligence">
                                 <Search className="h-5 w-5 text-white" /> Access Intelligence Layer
                             </Link>
                         </Button>
