@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -52,8 +53,10 @@ import {
   Network,
   PackageSearch,
   Building,
+  Search,
+  SearchCode
 } from 'lucide-react';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -80,6 +83,8 @@ import MemberSuccessEngine from '@/app/backend/member-success-engine';
 import FundingDivisionContent from '@/app/backend/funding-division-content';
 import ShopsList from '@/app/backend/shops-list';
 import DividendManagement from '@/app/adminaccount/dividend-management';
+import HandshakeOversight from '@/app/adminaccount/handshake-oversight';
+import SearchIntelligence from '@/app/backend/search-intelligence';
 
 // Admin oversight components
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -163,6 +168,8 @@ function BackendContent() {
       case 'support-inbox': return <SupportChatInbox />;
       case 'finance-mall': return <FundingDivisionContent mode="market" />;
       case 'loads-oversight': return <LoadsOversight />;
+      case 'handshake-oversight': return <HandshakeOversight />;
+      case 'search-intelligence': return <SearchIntelligence />;
       case 'supplier-mall': return <ShopsList />;
       case 'transport-oversight': return <TransportOversight />;
       case 'distribution-oversight': return <DistributionOversight />;
@@ -216,6 +223,7 @@ function BackendContent() {
     'commissions-malls', 'commissions-isa', 'incentives-sales'
   ].includes(activeView);
   const isPlatformSettingsActive = ['permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'].includes(activeView);
+  const isIntelligenceActive = ['handshake-oversight', 'search-intelligence'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -244,6 +252,22 @@ function BackendContent() {
                     <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'reconciliation'} onClick={() => navigate('reconciliation')}><Scale />Bank Reconciliation</SidebarMenuSubButton></SidebarMenuSubItem>
                   </SidebarMenuSub>
                 </SidebarMenuItem>
+            </SidebarGroup>
+
+            <SidebarGroup>
+                <SidebarGroupLabel>Forensic Intelligence</SidebarGroupLabel>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Handshake Oversight" isActive={activeView === 'handshake-oversight'} onClick={() => navigate('handshake-oversight')}>
+                            <Handshake className="text-primary" /><span>Deal introductions</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Search Intelligence" isActive={activeView === 'search-intelligence'} onClick={() => navigate('search-intelligence')}>
+                            <SearchCode className="text-primary" /><span>Search Analytics</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
             </SidebarGroup>
 
             <SidebarGroup>

@@ -75,6 +75,33 @@ export async function POST(req: NextRequest) {
                 });
             }
 
+            case 'getGlobalSearchLogs': {
+                const snap = await db.collectionGroup('searchLogs')
+                    .orderBy('timestamp', 'desc')
+                    .limit(200)
+                    .get();
+                
+                const results = await Promise.all(snap.docs.map(async (d) => {
+                    const data = d.data();
+                    const companyId = d.ref.parent.parent?.id;
+                    let companyName = "Unknown Member";
+                    
+                    if (companyId) {
+                        const cSnap = await db.collection('companies').doc(companyId).get();
+                        companyName = cSnap.data()?.companyName || companyName;
+                    }
+
+                    return {
+                        id: d.id,
+                        ...data,
+                        companyId,
+                        companyName
+                    };
+                }));
+
+                return NextResponse.json({ success: true, data: serializeData(results) });
+            }
+
             case 'updateHandshakeResult': {
                 const { pingId, status, result } = payload;
                 await db.collection('engagementPings').doc(pingId).update({
