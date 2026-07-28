@@ -60,8 +60,8 @@ export default function HomePage() {
                 Sell More. <br/>Find Work. <span className="text-primary">Fast.</span>
             </h1>
             <p className="text-lg md:text-2xl text-slate-300 max-w-2xl mx-auto mb-12 leading-relaxed text-center text-white font-medium">
-                Logistics Flow is where the South African transport industry trades. <br/>
-                We connect your shop, your fleet, and your capacity to a verified grid of high-intent buyers.
+                Logistics Flow is where the South African logistics sector trades. <br/>
+                We connect your digital shop, your fleet, and your capacity to a verified community of verified high-intent buyers.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-6">
                 <Button size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-widest shadow-2xl bg-primary hover:bg-primary/90 text-white border-b-4 border-green-800 active:border-b-0 transition-all" onClick={handleJoinClick}>
