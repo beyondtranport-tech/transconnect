@@ -37,13 +37,15 @@ service cloud.firestore {
     function isSaleParticipant(sale) {
         return isSignedIn() && (
             isAdmin() || 
-            sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
-            sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
+            (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+                sale.buyerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId || 
+                sale.sellerId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.companyId
+            ))
         );
     }
 
     // --- CRITICAL ENGINE RULES ---
-    // Rule Sync ID: 2026-03-16T19:00:00Z
+    // Rule Sync ID: 2026-03-17T09:00:00Z
 
     match /engagementPings/{pingId} {
       allow list, get: if isSignedIn();
@@ -120,16 +122,20 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // Explicitly allow list on all subcollections for members/admins
-      match /{collectionName}/{id} {
+      // Explicitly allow read/list on all subcollections for authorized members and admins
+      match /{allSub=**} {
         allow read, list: if isMember(companyId) || isAdmin();
-        allow write: if isAdmin() || (isMember(companyId) && collectionName in ['enquiries', 'quotes', 'tasks', 'brokerAgreements', 'shops', 'products']);
+        allow write: if isAdmin();
       }
       
-      // Recursive match for deep subcollections (like products inside shops)
-      match /{allSub=**} {
-        allow read, list, write: if isAdmin();
-      }
+      // Granular sub-collection write rules
+      match /enquiries/{id} { allow write: if isMember(companyId); }
+      match /quotes/{id} { allow write: if isMember(companyId); }
+      match /tasks/{id} { allow write: if isMember(companyId); }
+      match /brokerAgreements/{id} { allow write: if isMember(companyId); }
+      match /shops/{id} { allow write: if isMember(companyId); }
+      match /products/{id} { allow write: if isMember(companyId); }
+      match /supportMessages/{id} { allow write: if isMember(companyId); }
     }
 
     match /sales/{saleId} {
