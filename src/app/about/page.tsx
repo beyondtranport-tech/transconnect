@@ -40,7 +40,7 @@ export default function AboutPage() {
   return (
     <div className="bg-background text-left text-foreground">
         {/* HERO SECTION - THE MISSION */}
-        <section className="relative w-full h-96 bg-slate-900 text-white flex items-center">
+        <section className="relative w-full h-96 bg-slate-900 text-white flex items-center justify-center">
             {aboutHeroImage && (
                 <Image
                     src={aboutHeroImage.imageUrl}
@@ -50,10 +50,10 @@ export default function AboutPage() {
                     priority
                 />
             )}
-            <div className="container relative mx-auto px-4 text-left z-10">
+            <div className="container relative mx-auto px-4 text-center z-10 flex flex-col items-center">
                 <Badge className="bg-primary text-white mb-6 py-1 px-4 font-black uppercase tracking-widest text-[10px] border-none">The Commerce Engine</Badge>
-                <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tighter text-white uppercase leading-none">The Industrial <br/><span className="text-primary">Ecosystem</span>.</h1>
-                <p className="mt-6 text-xl max-w-2xl text-slate-300 leading-relaxed font-medium text-left">We provide the digital infrastructure to connect, verify, and transact in the South African transport industry.</p>
+                <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tighter text-white uppercase leading-none text-center">The Industrial <br/><span className="text-primary">Ecosystem</span>.</h1>
+                <p className="mt-6 text-xl max-w-3xl mx-auto text-slate-300 leading-relaxed font-medium text-center">We provide the digital infrastructure to connect, verify, and transact in the South African transport industry.</p>
             </div>
         </section>
 
