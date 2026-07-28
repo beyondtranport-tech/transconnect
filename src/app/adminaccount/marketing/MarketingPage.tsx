@@ -33,7 +33,7 @@ import { getClientSideAuthToken } from '@/firebase';
 
 /**
  * MARKETING PAGE TERMINAL
- * Build Identifier: 2026-03-15T12:15:00Z (ChunkLoad Sync)
+ * Build Identifier: 2026-03-15T13:45:00Z (Forensic Sync)
  */
 
 // Content components using absolute paths
@@ -257,7 +257,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
         else if (audience === 'associates') apiType = 'associate';
         else if (audience === 'finance') apiType = 'finance';
         
-        const result = await performAdminAction(token, 'getPartnersByType', { type: apiType, limit: 100 });
+        const result = await performAdminAction(token, 'searchRegistry', { type: apiType, limit: 100 });
         setPartners(result.data || []);
         
     } catch (e: any) {

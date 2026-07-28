@@ -91,7 +91,6 @@ export async function POST(req: NextRequest) {
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),
-                    // Reset tracking for new step
                     lastOpenedAt: null,
                     lastAccessedAt: null
                 };
@@ -136,7 +135,6 @@ export async function POST(req: NextRequest) {
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),
-                    // Reset tracking for fresh outreach
                     lastOpenedAt: null,
                     lastAccessedAt: null
                 });
@@ -154,8 +152,6 @@ export async function POST(req: NextRequest) {
             case 'logCommunication': {
                 const { partnerId, type, subject, notes, collection: colOverride } = payload;
                 
-                // FORENSIC COLLECTION DETECTION
-                // Ensure we are updating the correct record even if the UI guess is wrong
                 let colName = colOverride;
                 if (!colName) {
                     const pSnap = await db.collection('partners').doc(partnerId).get();
@@ -179,7 +175,6 @@ export async function POST(req: NextRequest) {
                     lastOutreachSubject: subject,
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp(),
-                    // IMPORTANT: Reset tracking on manual send so next open is attributed correctly
                     lastOpenedAt: null,
                     lastAccessedAt: null
                 }, { merge: true });
@@ -207,7 +202,7 @@ export async function POST(req: NextRequest) {
                 const batch = db.batch();
                 leadIds.forEach((id: string) => {
                     batch.update(db.collection(colName).doc(id), {
-                        enhancementMethod: 'V9-Batch',
+                        enhancementMethod: 'V13-Batch',
                         lastEnrichedAt: FieldValue.serverTimestamp(),
                         status: 'contacted',
                         updatedAt: FieldValue.serverTimestamp()
@@ -347,14 +342,56 @@ export async function POST(req: NextRequest) {
             }
 
             case 'searchRegistry': {
-                const { type: rType, limit: rLimit = 100 } = payload;
-                const colName = (rType === 'driver' || rType === 'transporter' || rType === 'supplier' || rType === 'finance' || rType === 'distributor' || rType === 'warehouse') ? 'partners' : 'leads';
-                let q: any = db.collection(colName);
-                if (colName === 'partners' && rType !== 'all') {
-                    q = q.where('type', '==', rType);
+                const { type: rType, limit: rLimit = 100, term = '' } = payload;
+                
+                // UNIFIED SEARCH LOGIC V13.5
+                // Search both 'leads' and 'partners' collections and merge results
+                
+                const normalizedTerm = term.toLowerCase().trim();
+                
+                // 1. SCAN PARTNERS
+                let pQuery: any = db.collection('partners');
+                if (rType !== 'all') {
+                    pQuery = pQuery.where('type', '==', rType);
                 }
-                const snap = await q.orderBy('updatedAt', 'desc').limit(rLimit).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+                const pSnap = await pQuery.orderBy('updatedAt', 'desc').limit(rLimit).get();
+                const pResults = pSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Member' }));
+
+                // 2. SCAN LEADS
+                let lQuery: any = db.collection('leads');
+                // Leads use 'role' instead of 'type' for industrial classification
+                if (rType !== 'all') {
+                    const roleMap: Record<string, string> = {
+                        'transporter': 'Transporter',
+                        'supplier': 'Supplier',
+                        'driver': 'Driver',
+                        'finance': 'Funder',
+                        'associate': 'Associate'
+                    };
+                    const roleTerm = roleMap[rType] || rType;
+                    lQuery = lQuery.where('role', '==', roleTerm);
+                }
+                const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(rLimit).get();
+                const lResults = lSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Lead' }));
+
+                // 3. MERGE, FILTER BY SEARCH TERM & SORT
+                let combined = [...pResults, ...lResults];
+                
+                if (normalizedTerm) {
+                    combined = combined.filter(item => {
+                        const name = (item.companyName || item.firstName || '').toLowerCase();
+                        const email = (item.email || '').toLowerCase();
+                        return name.includes(normalizedTerm) || email.includes(normalizedTerm);
+                    });
+                }
+
+                combined.sort((a, b) => {
+                    const dateA = a.updatedAt?.toDate ? a.updatedAt.toDate().getTime() : 0;
+                    const dateB = b.updatedAt?.toDate ? b.updatedAt.toDate().getTime() : 0;
+                    return dateB - dateA;
+                });
+
+                return NextResponse.json({ success: true, data: serializeData(combined.slice(0, rLimit)) });
             }
 
             default: 

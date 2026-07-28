@@ -135,15 +135,15 @@ function TransporterDialog({ open, onOpenChange, partner, onSave, targetType }: 
                     <Building className="h-4 w-4" /> Core Entity Identity
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="e.g. jhtrucking.co.za" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="companyName" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
+                  <FormField control={form.control} name="website" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="e.g. jhtrucking.co.za" /></FormControl></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl><FormMessage /></FormItem> )} />
-                  <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="email" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>General Company Email</FormLabel><FormControl><Input {...field} value={field.value || ''} type="text" className="bg-white border-2" placeholder="info@..." /></FormControl></FormItem> )} />
+                  <FormField control={form.control} name="phone" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Company Landline</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="011..." /></FormControl></FormItem> )} />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem> )} />
+                  <FormField control={form.control} name="mobile" render={({ field }) => ( <FormItem className="text-left text-foreground"><FormLabel>Personal Mobile (Principal)</FormLabel><FormControl><Input placeholder="+27 82..." {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem> )} />
                   <FormField control={form.control} name="status" render={({ field }) => ( 
                     <FormItem className="text-left">
                         <FormLabel>Pipeline Status</FormLabel>
@@ -446,8 +446,7 @@ export default function TransporterManagement() {
           <Button variant="ghost" size="icon" onClick={() => setDialog({ type: 'delete', data: row.original })}><Trash2 className="h-4 w-4 text-destructive" /></Button>
         </div>
       ) },
-    ];
-    return cols.filter(c => visibleColumns[c.id as string] || visibleColumns[c.accessorKey as string]);
+    ].filter(c => visibleColumns[c.id as string] || visibleColumns[c.accessorKey as string]);
   }, [fetchData, handleEngage, visibleColumns]);
 
   async function handleDeleteRecord() {
