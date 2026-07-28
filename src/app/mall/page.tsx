@@ -102,6 +102,7 @@ export default function MallPage() {
     const [modalConfig, setModalConfig] = useState<ModalConfig | null>(null);
     const [incentiveStep, setIncentiveStep] = useState<IncentiveStep | null>(null);
     const [showIncentiveStep, setShowIncentiveStep] = useState(false);
+    const [selectedMallImage, setSelectedMallImage] = useState<any>(null);
 
     const showIncentive = (href: string, role: string) => {
         setIncentiveStep({
@@ -182,8 +183,9 @@ export default function MallPage() {
         return config as ModalConfig;
     }
 
-    const handleExploreClick = (mallId: string, href: string) => {
-        const config = createModalConfig(mallId, href);
+    const handleExploreClick = (mall: any) => {
+        const config = createModalConfig(mall.id, mall.href);
+        setSelectedMallImage(mall.image);
         setModalConfig(config);
         setIsModalOpen(true);
         setShowIncentiveStep(false);
@@ -198,6 +200,7 @@ export default function MallPage() {
                 incentiveStep={incentiveStep}
                 showIncentiveStep={showIncentiveStep}
                 setShowIncentiveStep={setShowIncentiveStep}
+                headerImage={selectedMallImage}
             />
 
             <section className="relative w-full h-80 bg-slate-900">
@@ -229,8 +232,8 @@ export default function MallPage() {
                             const solution = parts[1]?.trim();
 
                             return (
-                                <div key={mall.name} className="grid md:grid-cols-2 gap-8 items-stretch border-2 p-8 rounded-3xl hover:shadow-2xl transition-all bg-card group text-left">
-                                    <div className="relative aspect-video rounded-2xl overflow-hidden bg-muted flex items-center justify-center shadow-inner">
+                                <div key={mall.name} className="grid md:grid-cols-2 gap-8 items-stretch border-2 p-8 rounded-3xl hover:shadow-2xl transition-all bg-card group text-left overflow-hidden">
+                                    <div className="relative h-48 md:h-full rounded-2xl overflow-hidden bg-muted flex items-center justify-center shadow-inner">
                                         <Image
                                             src={mall.image.imageUrl}
                                             alt={mall.name}
@@ -261,7 +264,7 @@ export default function MallPage() {
                                                 </p>
                                             </div>
                                         </div>
-                                        <Button onClick={() => handleExploreClick(mall.id, mall.href)} className="w-full h-11 font-bold shadow-md mt-4">
+                                        <Button onClick={() => handleExploreClick(mall)} className="w-full h-11 font-bold shadow-md mt-4">
                                             Enter Mall <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </div>
@@ -274,3 +277,4 @@ export default function MallPage() {
         </div>
     )
 }
+
