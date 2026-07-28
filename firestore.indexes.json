@@ -20,6 +20,14 @@
       "collectionId": "leads",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "updatedAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionId": "leads",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "updatedAt", "order": "DESCENDING" }
       ]
