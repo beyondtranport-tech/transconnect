@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -7,7 +8,7 @@ import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Trash2, Eye, EyeOff, Layers, Info, Zap, Search, Store, PackageSearch } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Trash2, Eye, EyeOff, Layers, Info, Search, Store, PackageSearch, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -126,7 +127,11 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       const updated = current.includes(featureKey) 
         ? current.filter(f => f !== featureKey)
         : [...current, featureKey];
-      form.setValue('features', updated, { shouldDirty: true, shouldValidate: true });
+      form.setValue('features', updated, { 
+          shouldDirty: true, 
+          shouldValidate: true,
+          shouldTouch: true 
+      });
   };
 
   const onSubmit = async (values: PlanFormValues) => {
@@ -244,19 +249,19 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                             <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[9px] font-black uppercase tracking-tight">Intel Queries</FormLabel>
-                                    <FormControl><Input type="number" {...field} className="h-9 font-mono" /></FormControl>
+                                    <FormControl><Input type="number" {...field} className="h-9 font-mono border-2" /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField name="shopProducts" control={form.control} render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[9px] font-black uppercase tracking-tight">Catalogue Slots</FormLabel>
-                                    <FormControl><Input type="number" {...field} className="h-9 font-mono" /></FormControl>
+                                    <FormControl><Input type="number" {...field} className="h-9 font-mono border-2" /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField name="loadsLimit" control={form.control} render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[9px] font-black uppercase tracking-tight">Max Loads/Mo</FormLabel>
-                                    <FormControl><Input type="number" {...field} className="h-9 font-mono" /></FormControl>
+                                    <FormControl><Input type="number" {...field} className="h-9 font-mono border-2" /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -273,21 +278,19 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                         {section.features.map((feature) => (
                                             <div 
                                                 key={feature.key} 
-                                                className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-all text-left cursor-pointer"
-                                                onClick={() => handleFeatureToggle(feature.key)}
+                                                className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-all text-left"
                                             >
                                                 <Checkbox
                                                     id={`feature-${feature.key}`}
                                                     checked={watchedFeatures.includes(feature.key)}
-                                                    onCheckedChange={() => {}} 
+                                                    onCheckedChange={() => handleFeatureToggle(feature.key)} 
                                                 />
-                                                <label 
+                                                <Label 
                                                     htmlFor={`feature-${feature.key}`}
                                                     className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1"
-                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     {feature.name}
-                                                </label>
+                                                </Label>
                                             </div>
                                         ))}
                                     </div>
