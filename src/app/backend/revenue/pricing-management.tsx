@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Trash2, Eye, EyeOff, Layers, Info, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Trash2, Eye, EyeOff, Layers, Info, Zap, Search, Store, PackageSearch } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -79,8 +79,9 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     }
   });
 
-  // Watch features to ensure re-renders on change
   const watchedFeatures = form.watch('features') || [];
+  const planId = form.watch('id')?.toLowerCase();
+  const isCore = coreIds.includes(planId);
   
   useEffect(() => {
     if (isOpen) {
@@ -121,9 +122,10 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
   }, [isOpen, plan, form]);
 
   const handleFeatureToggle = (featureKey: string) => {
-      const updated = watchedFeatures.includes(featureKey) 
-        ? watchedFeatures.filter(f => f !== featureKey)
-        : [...watchedFeatures, featureKey];
+      const current = form.getValues('features') || [];
+      const updated = current.includes(featureKey) 
+        ? current.filter(f => f !== featureKey)
+        : [...current, featureKey];
       form.setValue('features', updated, { shouldDirty: true, shouldValidate: true });
   };
 
@@ -133,12 +135,12 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       
-      const planId = values.id.trim().toLowerCase();
-      const finalType = coreIds.includes(planId) ? 'access' : values.type;
+      const finalPlanId = values.id.trim().toLowerCase();
+      const finalType = coreIds.includes(finalPlanId) ? 'access' : values.type;
       
       const dataToSave = { 
           ...values, 
-          id: planId, 
+          id: finalPlanId, 
           type: finalType,
           updatedAt: { _methodName: 'serverTimestamp' } 
       };
@@ -147,14 +149,14 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          path: `memberships/${planId}`,
+          path: `memberships/${finalPlanId}`,
           data: dataToSave
         }),
       });
 
       if (!response.ok) throw new Error("Failed to save plan.");
       
-      toast({ title: 'Commercial Ledger Synchronized', description: `${values.name} logic has been updated in the grid.` });
+      toast({ title: 'Commercial Protocol Synced', description: `${values.name} has been updated.` });
       onSave();
       setIsOpen(false);
     } catch (e: any) {
@@ -170,36 +172,33 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         {plan ? (
           <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
         ) : (
-          <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Add Node</Button>
+          <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Create Node</Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
         <DialogHeader className="p-6 pb-2 text-left">
-          <DialogTitle className="text-2xl font-black uppercase tracking-tight">{plan ? 'Audit' : 'Create'} {form.watch('type') === 'access' ? 'Access Tier' : 'Data Silo'}</DialogTitle>
-          <DialogDescription className="text-left text-foreground">Define commercial boundaries and B2B valuation for this node.</DialogDescription>
+          <DialogTitle className="text-2xl font-black uppercase tracking-tight">{plan ? 'Audit' : 'Initialize'} {form.watch('type') === 'access' ? 'Access Tier' : 'Data Silo'}</DialogTitle>
+          <DialogDescription className="text-left text-foreground">Define commercial boundaries and B2B valuation for this digital node.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
-                <FormField name="type" control={form.control} render={({ field }) => {
-                    const isCore = coreIds.includes(form.watch('id')?.toLowerCase());
-                    return (
-                        <FormItem className="text-left">
-                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Protocol Classification</FormLabel>
-                            <Select onValueChange={field.onChange} value={isCore ? 'access' : field.value}>
-                                <FormControl>
-                                    <SelectTrigger className="bg-white border-2" disabled={isCore}>
-                                        <SelectValue placeholder="Select type..." />
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="access">Access Control (Member Tier)</SelectItem>
-                                    <SelectItem value="data_silo">Proprietary Data Silo (B2B)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </FormItem>
-                    );
-                }} />
+                <FormField name="type" control={form.control} render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Protocol Classification</FormLabel>
+                        <Select onValueChange={field.onChange} value={isCore ? 'access' : field.value}>
+                            <FormControl>
+                                <SelectTrigger className="bg-white border-2" disabled={isCore}>
+                                    <SelectValue placeholder="Select type..." />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="access">Access Control (Member Tier)</SelectItem>
+                                <SelectItem value="data_silo">Proprietary Data Silo (B2B)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
                  <FormField name="name" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Node Label</FormLabel>
@@ -224,14 +223,14 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                 <FormField name="isActive" control={form.control} render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel className="cursor-pointer text-primary font-bold text-xs uppercase">Active</FormLabel>
+                        <FormLabel className="cursor-pointer text-primary font-bold text-xs uppercase text-left">Active</FormLabel>
                     </FormItem>
                 )} />
             </div>
 
             <FormField name="description" control={form.control} render={({ field }) => (
               <FormItem className="text-left">
-                  <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Value Proposition (Public Desc)</FormLabel>
+                  <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Public Value Proposition</FormLabel>
                   <FormControl><Textarea {...field} className="bg-white border-2 leading-relaxed" /></FormControl>
               </FormItem>
             )} />
@@ -280,12 +279,12 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                                 <Checkbox
                                                     id={`feature-${feature.key}`}
                                                     checked={watchedFeatures.includes(feature.key)}
-                                                    onCheckedChange={() => {}} // Driven by div onClick
+                                                    onCheckedChange={() => {}} 
                                                 />
                                                 <label 
                                                     htmlFor={`feature-${feature.key}`}
                                                     className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1"
-                                                    onClick={(e) => e.preventDefault()}
+                                                    onClick={(e) => e.stopPropagation()}
                                                 >
                                                     {feature.name}
                                                 </label>
@@ -312,7 +311,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         <DialogFooter className="p-6 pt-2 border-t text-left">
           <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isLoading} className="w-full h-12 font-black uppercase tracking-widest shadow-lg text-white">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Synchronize Commercial Protocol
+            Save Protocol Node
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -430,7 +429,7 @@ export default function PricingManagement() {
                     <AlertDialogContent className="text-left text-foreground">
                         <AlertDialogHeader>
                             <AlertDialogTitle className="text-left text-foreground">Expunge Node Protocol?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-left text-foreground">
+                            <AlertDialogDescription className="text-left text-foreground text-left">
                                 This will permanently delete the commercial definition for "{row.original.name}". This action cannot be undone.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -461,7 +460,7 @@ export default function PricingManagement() {
       <div className="space-y-16 text-left">
         <div className="space-y-6 text-left">
             <div className="flex items-center gap-4 border-l-4 border-primary pl-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black uppercase tracking-tight text-left">1. Access Control Tiers</h3>
                     <p className="text-sm text-muted-foreground text-left">Core memberships that manage navigation and usage boundaries.</p>
                 </div>
@@ -475,7 +474,7 @@ export default function PricingManagement() {
 
         <div className="space-y-6 text-left text-foreground">
              <div className="flex items-center gap-4 border-l-4 border-slate-900 pl-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h3 className="text-xl font-black uppercase tracking-tight text-left">2. Proprietary Data Silos</h3>
                     <p className="text-sm text-muted-foreground text-left">B2B intelligence silos deactivated for public view. Sold via institutional handshake.</p>
                 </div>
@@ -493,7 +492,7 @@ export default function PricingManagement() {
             <div className="relative z-10 flex items-start gap-6 text-left">
                 <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
                 <div className="space-y-2 text-left">
-                    <h4 className="text-xl font-black uppercase text-left">Commercial Ledger Protection</h4>
+                    <h4 className="text-xl font-black uppercase text-left text-white">Commercial Ledger Protection</h4>
                     <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left">
                         Core plans (Basic, Standard, Premium, Intelligence) are hard-coded to the Access Tiers section to prevent accidental misclassification. Data Silos are reserved for B2B intelligence modules and remain hidden from the public-facing /pricing terminal.
                     </p>
