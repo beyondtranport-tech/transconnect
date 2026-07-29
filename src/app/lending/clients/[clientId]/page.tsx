@@ -6,7 +6,7 @@ import { useDoc, useFirestore, useMemoFirebase, useCollection, getClientSideAuth
 import { collection, doc, query, where } from 'firebase/firestore';
 import { 
     Loader2, User, ArrowLeft, Building, Mail, Phone, Hash, Globe, Banknote, 
-    FileSignature, Truck, ShieldCheck, Zap, Sparkles, BarChart3, AlertTriangle, SearchCode 
+    FileSignature, Truck, ShieldCheck, Zap, Sparkles, BarChart3, AlertTriangle, SearchCode, Landmark 
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
