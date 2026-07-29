@@ -9,7 +9,7 @@ import {
 import { Database, Zap, Fingerprint, Scale, ArrowRight, Search, Landmark, Truck, Building2, Users, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import Link from "next/link";
 import React from "react";
 

@@ -240,7 +240,7 @@ export default function PricingManagement() {
                 </AlertDialogTrigger>
                 <AlertDialogContent className="text-left text-foreground">
                     <AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left text-foreground">Expunge Node Protocol?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Permanent deletion of "{row.original.name}".</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground"><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} className={buttonVariants({ variant: 'destructive' })}>Delete Node</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogFooter className="text-left text-foreground"><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} className={buttonVariants({ border: 'destructive' })}>Delete Node</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>

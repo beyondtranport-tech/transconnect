@@ -117,6 +117,6 @@ const enrichPartnerFlow = ai.defineFlow(
         technicalManager: null, 
         ceo: null, 
         primaryContactRole: 'marketingManager' as const 
-    };
+    } as EnrichPartnerOutput;
   }
 );
