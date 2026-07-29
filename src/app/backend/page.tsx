@@ -49,7 +49,8 @@ import {
   PackageSearch,
   Building,
   SearchCode,
-  Database
+  Database,
+  ListTodo
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -125,9 +126,9 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com' && user.email !== 'michael@logisticsflow.co.za')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest text-center">Verifying Admin Permissions...</p>
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+                <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest">Verifying Admin Permissions...</p>
             </div>
         );
     }
