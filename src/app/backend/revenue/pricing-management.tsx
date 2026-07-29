@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -83,7 +84,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     const updated = current.includes(featureKey) 
         ? current.filter(f => f !== featureKey) 
         : [...current, featureKey];
-    methods.setValue('features', updated, { shouldDirty: true });
+    methods.setValue('features', updated, { shouldDirty: true, shouldValidate: true });
   };
 
   const onSubmit = async (values: PlanFormValues) => {
@@ -174,7 +175,13 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                                 checked={watchedFeatures.includes(feature.key)}
                                                 onCheckedChange={() => handleFeatureToggle(feature.key)} 
                                             />
-                                            <Label htmlFor={`feat-${planId}-${feature.key}`} className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1">{feature.name}</Label>
+                                            <Label 
+                                                htmlFor={`feat-${planId}-${feature.key}`} 
+                                                className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {feature.name}
+                                            </Label>
                                         </div>
                                     ))}
                                 </div>
@@ -228,7 +235,9 @@ export default function PricingManagement() {
         <div className="text-right flex justify-end gap-1">
             <PlanDialog plan={row.original} onSave={forceRefresh} />
             <AlertDialog>
-                <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button></AlertDialogTrigger>
+                <AlertDialogTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                </AlertDialogTrigger>
                 <AlertDialogContent className="text-left text-foreground">
                     <AlertDialogHeader><AlertDialogTitle className="text-left">Expunge Node Protocol?</AlertDialogTitle><AlertDialogDescription className="text-left">Permanent deletion of "{row.original.name}".</AlertDialogDescription></AlertDialogHeader>
                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} className={buttonVariants({ variant: 'destructive' })}>Delete Node</AlertDialogAction></AlertDialogFooter>
@@ -274,3 +283,4 @@ export default function PricingManagement() {
     </div>
   );
 }
+
