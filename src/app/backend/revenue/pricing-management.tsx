@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -8,7 +7,7 @@ import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Database, ShieldCheck, Zap, Info, Eye, EyeOff, Layers, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Database, ShieldCheck, Zap, Info, Eye, EyeOff, Layers, Trash2, CheckCircle2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +22,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Label } from '@/components/ui/label';
+import featuresData from '@/lib/features.json';
 
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
@@ -36,6 +37,7 @@ const planSchema = z.object({
   loadsLimit: z.coerce.number().min(0),
   vehiclesLimit: z.coerce.number().min(0),
   financeApplications: z.coerce.number().min(0),
+  features: z.array(z.string()).default([]),
   isPopular: z.boolean().default(false),
   isActive: z.boolean().default(true),
 });
@@ -66,6 +68,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             loadsLimit: plan?.loadsLimit || 0,
             vehiclesLimit: plan?.vehiclesLimit || 0,
             financeApplications: plan?.financeApplications || 0,
+            features: plan?.features || [],
             isPopular: plan?.isPopular || false,
             isActive: plan?.isActive !== false,
         });
@@ -79,8 +82,6 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       if (!token) throw new Error("Authentication failed.");
       
       const planId = values.id.trim().toLowerCase();
-      
-      // SELF-HEALING: Core identifiers MUST be classify as 'access'
       const finalType = coreIds.includes(planId) ? 'access' : values.type;
       
       const dataToSave = { 
@@ -120,13 +121,13 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
           <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Add Node</Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
+      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle>{plan ? 'Audit' : 'Create'} {form.watch('type') === 'access' ? 'Access Tier' : 'Data Silo'}</DialogTitle>
           <DialogDescription>Define the commercial boundaries and B2B valuation for this node.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8">
             <div className="grid grid-cols-2 gap-4 text-left">
                 <FormField name="type" control={form.control} render={({ field }) => {
                     const isCore = coreIds.includes(form.watch('id')?.toLowerCase());
@@ -185,32 +186,72 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             )} />
 
             {(form.watch('type') === 'access' || coreIds.includes(form.watch('id')?.toLowerCase())) && (
-                <div className="space-y-4 text-left">
-                    <Separator />
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Usage Boundaries (Limits)</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
-                        <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
-                            <FormItem className="text-left">
-                                <FormLabel className="text-[9px] font-black uppercase tracking-tight">Intel Queries</FormLabel>
-                                <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
-                            </FormItem>
-                        )} />
-                        <FormField name="shopProducts" control={form.control} render={({ field }) => (
-                            <FormItem className="text-left">
-                                <FormLabel className="text-[9px] font-black uppercase tracking-tight">Catalogue Slots</FormLabel>
-                                <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
-                            </FormItem>
-                        )} />
-                        <FormField name="loadsLimit" control={form.control} render={({ field }) => (
-                            <FormItem className="text-left">
-                                <FormLabel className="text-[9px] font-black uppercase tracking-tight">Max Loads/Mo</FormLabel>
-                                <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
-                            </FormItem>
-                        )} />
+                <>
+                    <div className="space-y-4 text-left">
+                        <Separator />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Usage Boundaries (Limits)</h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
+                            <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-[9px] font-black uppercase tracking-tight">Intel Queries</FormLabel>
+                                    <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField name="shopProducts" control={form.control} render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-[9px] font-black uppercase tracking-tight">Catalogue Slots</FormLabel>
+                                    <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField name="loadsLimit" control={form.control} render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-[9px] font-black uppercase tracking-tight">Max Loads/Mo</FormLabel>
+                                    <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                                </FormItem>
+                            )} />
+                        </div>
                     </div>
-                </div>
+
+                    <div className="space-y-6 text-left">
+                        <Separator />
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Platform Capabilities</h4>
+                        <div className="grid grid-cols-1 gap-6">
+                            {featuresData.featureSections.map((section) => (
+                                <div key={section.name} className="space-y-3">
+                                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">{section.name}</Label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2">
+                                        {section.features.map((feature) => (
+                                            <FormField
+                                                key={feature.key}
+                                                name="features"
+                                                control={form.control}
+                                                render={({ field }) => (
+                                                    <div className="flex items-center space-x-2 p-2 border rounded-xl hover:bg-slate-50 transition-all cursor-pointer" onClick={() => {
+                                                        const current = field.value || [];
+                                                        if (current.includes(feature.key)) {
+                                                            field.onChange(current.filter(v => v !== feature.key));
+                                                        } else {
+                                                            field.onChange([...current, feature.key]);
+                                                        }
+                                                    }}>
+                                                        <Checkbox
+                                                            checked={field.value?.includes(feature.key)}
+                                                            onCheckedChange={() => {}} // Controlled by wrapper div
+                                                        />
+                                                        <span className="text-[10px] font-bold uppercase tracking-tight">{feature.name}</span>
+                                                    </div>
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </>
             )}
-            <div className="pt-2">
+            
+            <div className="pt-4">
                 <FormField name="id" control={form.control} render={({ field }) => (
                   <FormItem className="text-left">
                       <FormLabel className="text-[10px] font-black uppercase text-muted-foreground ml-1">Protocol Identifier (Immutable ID)</FormLabel>
@@ -357,8 +398,8 @@ export default function PricingManagement() {
   ];
 
   return (
-    <div className="space-y-12 text-left text-foreground">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
+    <div className="space-y-12 text-left text-base text-foreground">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
         <div className="text-left text-foreground">
             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-left">
                 <Layers className="text-primary h-8 w-8"/> 
@@ -370,29 +411,29 @@ export default function PricingManagement() {
       </div>
 
       <div className="space-y-16 text-left">
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left">
             <div className="flex items-center gap-4 border-l-4 border-primary pl-4 text-left">
-                <div className="text-left text-foreground">
+                <div className="text-left">
                     <h3 className="text-xl font-black uppercase tracking-tight">1. Access Control Tiers</h3>
                     <p className="text-sm text-muted-foreground">Core memberships that manage navigation and usage boundaries.</p>
                 </div>
             </div>
-            <Card className="border-none shadow-xl bg-white text-left text-foreground">
-                <CardContent className="pt-6 text-left text-foreground">
+            <Card className="border-none shadow-xl bg-white text-left">
+                <CardContent className="pt-6 text-left">
                     {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={accessTiers} />}
                 </CardContent>
             </Card>
         </div>
 
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left">
              <div className="flex items-center gap-4 border-l-4 border-slate-900 pl-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black uppercase tracking-tight">2. Proprietary Data Silos</h3>
                     <p className="text-sm text-muted-foreground">B2B intelligence silos deactivated for public view. Sold via institutional handshake.</p>
                 </div>
             </div>
-            <Card className="border-none shadow-xl bg-white text-left text-foreground">
-                <CardContent className="pt-6 text-left text-foreground">
+            <Card className="border-none shadow-xl bg-white text-left">
+                <CardContent className="pt-6 text-left">
                     {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
                 </CardContent>
             </Card>

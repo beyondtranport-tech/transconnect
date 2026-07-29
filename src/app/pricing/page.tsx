@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch, AlertCircle, Lock } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch, AlertCircle, Lock, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
@@ -11,6 +10,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from '@/components/ui/separator';
 import * as React from 'react';
+import featuresData from '@/lib/features.json';
 
 /**
  * ACCESS CONTROL TIERS
@@ -28,7 +28,6 @@ export default function MembershipPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
-  // FETCH ALL - Filtering happens in memory for maximum resilience with prototype data
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return query(collection(firestore, 'memberships'));
@@ -39,27 +38,28 @@ export default function MembershipPage() {
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
     
-    // TRIPLE ENGINE ACCESS LOGIC: Core IDs or 'access' type
     const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
     
     return [...dbPlans]
         .filter(p => {
-            // Must be active
             if (p.isActive === false) return false;
-            
             const isCore = coreIds.includes(p.id?.toLowerCase());
             const isAccessType = p.type === 'access';
-            
             return isCore || isAccessType;
         })
         .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
+  // Flatten features for lookup
+  const allFeatures = React.useMemo(() => {
+      return featuresData.featureSections.flatMap(s => s.features);
+  }, []);
+
   return (
     <div className="bg-background min-h-screen text-left text-foreground">
       <div className="container mx-auto px-4 py-16 md:py-24 text-left">
         
-        <div className="text-center max-w-3xl mx-auto mb-20 text-left md:text-center">
+        <div className="text-center max-w-3xl mx-auto mb-20 space-y-4 text-center">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Node Access Control</Badge>
           <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none text-center">Activate Your <br/><span className="text-primary">Ecosystem Node</span>.</h1>
           <p className="mt-6 text-xl text-muted-foreground leading-relaxed font-medium text-center">
@@ -91,7 +91,7 @@ export default function MembershipPage() {
                             </CardDescription>
                         </CardHeader>
                         
-                        <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left text-foreground">
+                        <CardContent className="p-8 pt-0 flex-grow space-y-8 text-left text-foreground">
                             <div className="py-6 border-y border-slate-100 text-left text-foreground">
                                 <div className="flex items-baseline gap-1.5 text-left text-foreground">
                                     <span className="text-4xl font-black text-slate-900 tracking-tighter text-left">{formatCurrency(plan.price).split('.')[0]}</span>
@@ -99,42 +99,46 @@ export default function MembershipPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-5 text-left text-foreground">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary text-left">Node Access & limits</h4>
+                            <div className="space-y-4 text-left text-foreground">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary text-left">Included Capabilities</h4>
+                                <ul className="space-y-2 text-left">
+                                    {(plan.features || []).map((featureKey: string) => {
+                                        const feature = allFeatures.find(f => f.key === featureKey);
+                                        return (
+                                            <li key={featureKey} className="flex items-center gap-2 text-xs font-bold text-slate-700 text-left">
+                                                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                                                {feature?.name || featureKey}
+                                            </li>
+                                        );
+                                    })}
+                                    {(!plan.features || plan.features.length === 0) && (
+                                        <li className="text-xs text-muted-foreground italic text-left">Standard platform access.</li>
+                                    )}
+                                </ul>
+                            </div>
+
+                            <div className="space-y-5 text-left text-foreground pt-4 border-t border-dashed">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-left">Usage Boundaries</h4>
                                 
                                 <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <Search className="h-4 w-4 text-primary" /> intelligence
+                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px] text-left">
+                                        <Search className="h-3.5 w-3.5 text-primary" /> intelligence
                                     </div>
-                                    <span className="font-black text-slate-900 text-left">{formatLimit(plan.intelligenceQueries)} Queries</span>
+                                    <span className="font-black text-slate-900 text-xs text-left">{formatLimit(plan.intelligenceQueries)} Queries</span>
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <Store className="h-4 w-4 text-primary" /> Shop Products
+                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px] text-left">
+                                        <Store className="h-3.5 w-3.5 text-primary" /> Shop Products
                                     </div>
-                                    <span className="font-black text-slate-900 text-left">{formatLimit(plan.shopProducts)} Products</span>
+                                    <span className="font-black text-slate-900 text-xs text-left">{formatLimit(plan.shopProducts)} Products</span>
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left text-foreground">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <PackageSearch className="h-4 w-4 text-primary" /> Clearing Limit
+                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px] text-left">
+                                        <PackageSearch className="h-3.5 w-3.5 text-primary" /> Clearing Limit
                                     </div>
-                                    <span className="font-black text-slate-900 text-left">{formatLimit(plan.loadsLimit)} Loads</span>
-                                </div>
-
-                                <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <ShoppingCart className="h-4 w-4 text-primary" /> Marketplace
-                                    </div>
-                                    <span className="font-black text-slate-900 text-left">{formatLimit(plan.vehiclesLimit)} Vehicles</span>
-                                </div>
-
-                                <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <Landmark className="h-4 w-4 text-primary" /> Capital Division
-                                    </div>
-                                    <span className="font-black text-slate-900 text-left">{formatLimit(plan.financeApplications)} Apps</span>
+                                    <span className="font-black text-slate-900 text-xs text-left">{formatLimit(plan.loadsLimit)} Loads</span>
                                 </div>
                             </div>
                         </CardContent>
