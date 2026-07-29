@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -18,6 +17,7 @@ import {
 import {
   LogOut,
   Loader2,
+  LayoutDashboard,
   Calculator,
   Banknote,
   Landmark,
@@ -35,7 +35,8 @@ import {
   Camera,
   ShieldCheck,
   Zap,
-  Sparkles
+  Sparkles,
+  Globe
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -51,12 +52,12 @@ import React from 'react';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // --- Dynamic Imports ---
-const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
-const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
+const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
+const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
+const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
+const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
+const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
+const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
 
 function LendingPortalContent() {
   const router = useRouter();
@@ -95,7 +96,12 @@ function LendingPortalContent() {
   }, [activeView]);
 
   if (isUserLoading || !user) {
-    return <div className="flex justify-center items-center py-40"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
+    return (
+        <div className="flex flex-col justify-center items-center py-40 gap-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Authenticating Portal Access...</p>
+        </div>
+    );
   }
 
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
@@ -166,7 +172,7 @@ function LendingPortalContent() {
 
 export default function LendingPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)]"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-foreground"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
       <LendingPortalContent />
     </Suspense>
   );
