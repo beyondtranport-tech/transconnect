@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch, AlertCircle } from 'lucide-react';
+import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch, AlertCircle, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
@@ -29,11 +29,11 @@ export default function MembershipPage() {
 
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // Filter for Active Access Tiers only. Data Silos are hidden.
+    // Fetch all active plans. We filter for 'access' logic in memory to ensure 
+    // ID-based core tiers are always visible.
     return query(
         collection(firestore, 'memberships'), 
-        where('isActive', '==', true),
-        where('type', '==', 'access')
+        where('isActive', '==', true)
     );
   }, [firestore]);
   
@@ -41,7 +41,13 @@ export default function MembershipPage() {
 
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
-    return [...dbPlans].sort((a,b) => (a.price || 0) - (b.price || 0));
+    
+    // TRIPLE ENGINE ACCESS LOGIC: Core IDs or 'access' type
+    const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
+    
+    return [...dbPlans]
+        .filter(p => p.type === 'access' || coreIds.includes(p.id?.toLowerCase()))
+        .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
   return (
@@ -73,14 +79,14 @@ export default function MembershipPage() {
                                 Standard Choice
                             </div>
                         )}
-                        <CardHeader className="p-8 pb-4 text-left text-foreground text-foreground text-foreground text-foreground">
+                        <CardHeader className="p-8 pb-4 text-left text-foreground">
                             <CardTitle className="text-2xl font-black tracking-tight text-left uppercase text-foreground">{plan.name}</CardTitle>
                             <CardDescription className="mt-2 text-sm font-bold text-slate-500 leading-relaxed text-left min-h-[40px]">
                                 {plan.description}
                             </CardDescription>
                         </CardHeader>
                         
-                        <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left text-foreground text-foreground">
+                        <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left text-foreground">
                             <div className="py-6 border-y border-slate-100 text-left text-foreground">
                                 <div className="flex items-baseline gap-1.5 text-left text-foreground">
                                     <span className="text-4xl font-black text-slate-900 tracking-tighter text-left">{formatCurrency(plan.price).split('.')[0]}</span>
@@ -105,7 +111,7 @@ export default function MembershipPage() {
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.shopProducts)} Products</span>
                                 </div>
 
-                                <div className="flex items-center justify-between text-sm group text-left text-foreground text-foreground">
+                                <div className="flex items-center justify-between text-sm group text-left text-foreground">
                                     <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
                                         <PackageSearch className="h-4 w-4 text-primary" /> Clearing Limit
                                     </div>

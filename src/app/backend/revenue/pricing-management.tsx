@@ -50,6 +50,8 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     resolver: zodResolver(planSchema),
   });
   
+  const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
+
   useEffect(() => {
     if (isOpen) {
         form.reset({
@@ -57,7 +59,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             name: plan?.name || '',
             description: plan?.description || '',
             price: plan?.price || 0,
-            type: plan?.type || (['basic', 'standard', 'premium', 'intelligence'].includes(plan?.id) ? 'access' : 'data_silo'),
+            type: plan?.type || (coreIds.includes(plan?.id?.toLowerCase()) ? 'access' : 'data_silo'),
             intelligenceQueries: plan?.intelligenceQueries || 0,
             shopProducts: plan?.shopProducts || 0,
             loadsLimit: plan?.loadsLimit || 0,
@@ -76,7 +78,16 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       if (!token) throw new Error("Authentication failed.");
       
       const planId = values.id.trim().toLowerCase();
-      const dataToSave = { ...values, id: planId, updatedAt: { _methodName: 'serverTimestamp' } };
+      
+      // SELF-HEALING: Core identifiers MUST be classify as 'access'
+      const finalType = coreIds.includes(planId) ? 'access' : values.type;
+      
+      const dataToSave = { 
+          ...values, 
+          id: planId, 
+          type: finalType,
+          updatedAt: { _methodName: 'serverTimestamp' } 
+      };
 
       const response = await fetch('/api/updateConfigDoc', {
         method: 'POST',
@@ -265,16 +276,18 @@ export default function PricingManagement() {
     }
   };
 
+  const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
+
   const accessTiers = useMemo(() => {
       return (plans || [])
-        .filter(p => p.type === 'access' || ['basic', 'standard', 'premium', 'intelligence'].includes(p.id?.toLowerCase()))
+        .filter(p => p.type === 'access' || coreIds.includes(p.id?.toLowerCase()))
         .sort((a,b) => a.price - b.price);
   }, [plans]);
 
   const dataSilos = useMemo(() => {
       return (plans || [])
         .filter(p => {
-            const isCore = ['basic', 'standard', 'premium', 'intelligence'].includes(p.id?.toLowerCase());
+            const isCore = coreIds.includes(p.id?.toLowerCase());
             return p.type === 'data_silo' && !isCore;
         })
         .sort((a,b) => a.price - b.price);
