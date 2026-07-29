@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Database, ShieldCheck, Zap, BarChart3, SearchCode, Lock, Filter, RefreshCcw, Loader2, Info } from 'lucide-react';
+import { Database, ShieldCheck, Zap, BarChart3, SearchCode, Lock, RefreshCcw, Loader2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -71,7 +71,7 @@ export default function DataHarvestOversight() {
                     <p className="text-muted-foreground mt-1">Strategic oversight of the platform's harvested, cleaned, and anonymized industrial IP.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" className="gap-2 font-bold h-10">
+                    <Button variant="outline" className="gap-2 font-bold h-10" onClick={() => {}}>
                         <RefreshCcw className="h-4 w-4" /> Sync Silos
                     </Button>
                 </div>
@@ -121,7 +121,11 @@ export default function DataHarvestOversight() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6">
-                    <DataTable columns={columns} data={harvestLog} />
+                    {isLoading ? (
+                         <div className="flex justify-center p-12 text-center text-foreground">
+                            <Loader2 className="animate-spin h-8 w-8 text-primary mx-auto" />
+                         </div>
+                    ) : <DataTable columns={columns} data={harvestLog} />}
                 </CardContent>
             </Card>
 
@@ -129,15 +133,15 @@ export default function DataHarvestOversight() {
                 <div className="absolute top-0 right-0 p-8 opacity-5"><Lock className="h-40 w-40" /></div>
                 <div className="relative z-10 space-y-6 text-left">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-primary/20 rounded-lg"><Info className="h-6 w-6 text-primary" /></div>
-                        <h3 className="text-2xl font-black uppercase tracking-tight">The "Secret Sauce" Architecture</h3>
+                        <div className="p-2 bg-primary/20 rounded-lg text-left"><Info className="h-6 w-6 text-primary" /></div>
+                        <h3 className="text-2xl font-black uppercase tracking-tight text-left">The "Secret Sauce" Architecture</h3>
                     </div>
                     <p className="text-slate-400 text-sm leading-relaxed max-w-3xl text-left">
                         This vault is the engine for our 3rd Aspect: **Data Sales**. While the frontend manages commerce, the backend silently harvests anonymized market signals. Once cleaned and grouped into segment-specific bundles, this data becomes our most valuable resellable asset for institutional analysts and global logistics consultants.
                     </p>
                     <div className="flex gap-3 text-left">
-                        <Badge className="bg-primary/20 text-primary border-none">Anonymization Layer Active</Badge>
-                        <Badge className="bg-primary/20 text-primary border-none">IP Shield Engaged</Badge>
+                        <Badge className="bg-primary/20 text-primary border-none text-left">Anonymization Layer Active</Badge>
+                        <Badge className="bg-primary/20 text-primary border-none text-left">IP Shield Engaged</Badge>
                     </div>
                 </div>
             </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -21,7 +20,6 @@ import {
   LogOut,
   Loader2,
   TrendingUp,
-  User,
   LayoutDashboard,
   Settings,
   Users,
@@ -29,10 +27,8 @@ import {
   Activity,
   Wrench,
   Wallet,
-  ListTodo,
   Store,
   Lock,
-  Star,
   Award,
   Banknote,
   Handshake,
@@ -46,18 +42,16 @@ import {
   ArrowRightLeft,
   Globe,
   Truck,
-  ClipboardList,
   ShoppingCart,
   HelpCircle,
   Warehouse,
   Network,
   PackageSearch,
   Building,
-  Search,
   SearchCode,
   Database
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, useEffect, Suspense, useCallback } from 'react';
@@ -87,7 +81,6 @@ import DividendManagement from '@/app/adminaccount/dividend-management';
 import HandshakeOversight from '@/app/adminaccount/handshake-oversight';
 import SearchIntelligence from '@/app/backend/search-intelligence';
 import DataHarvestOversight from '@/app/backend/data-harvest-oversight';
-import InvestorOffer from '@/app/backend/investor-offer';
 
 // Admin oversight components
 const LoadsOversight = dynamic(() => import('@/app/adminaccount/loads-oversight'), { ssr: false, loading: () => <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto my-20" /> });
@@ -132,7 +125,7 @@ function AdminAuthGuard({ children }: { children: React.ReactNode }) {
 
     if (isUserLoading || !user || (user.email !== 'mkoton100@gmail.com' && user.email !== 'beyondtransport@gmail.com' && user.email !== 'michael@logisticsflow.co.za')) {
         return (
-            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)]">
+            <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
                 <p className="mt-4 text-muted-foreground font-black uppercase text-[10px] tracking-widest text-center">Verifying Admin Permissions...</p>
             </div>
@@ -174,7 +167,6 @@ function BackendContent() {
       case 'handshake-oversight': return <HandshakeOversight />;
       case 'search-intelligence': return <SearchIntelligence />;
       case 'data-harvest': return <DataHarvestOversight />;
-      case 'investor-offer': return <InvestorOffer />;
       case 'supplier-mall': return <ShopsList />;
       case 'transport-oversight': return <TransportOversight />;
       case 'distribution-oversight': return <DistributionOversight />;
@@ -212,7 +204,7 @@ function BackendContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex justify-center items-center min-h-[calc(100vh-8rem)]">
+        <div className="flex justify-center items-center py-20">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
@@ -228,7 +220,7 @@ function BackendContent() {
     'commissions-malls', 'commissions-isa', 'incentives-sales'
   ].includes(activeView);
   const isPlatformSettingsActive = ['permissions', 'action-plan', 'loyalty-plan', 'rewards-plan', 'tasks', 'settings-bank'].includes(activeView);
-  const isIntelligenceActive = ['handshake-oversight', 'search-intelligence', 'data-harvest', 'investor-offer'].includes(activeView);
+  const isIntelligenceActive = ['handshake-oversight', 'search-intelligence', 'data-harvest'].includes(activeView);
 
   return (
     <AdminAuthGuard>
@@ -275,11 +267,6 @@ function BackendContent() {
                     <SidebarMenuItem>
                         <SidebarMenuButton tooltip="The Data Vault" isActive={activeView === 'data-harvest'} onClick={() => navigate('data-harvest')}>
                             <Database className="text-primary" /><span>Data Harvest IP</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Investor Pitch" isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}>
-                            <TrendingUp className="text-primary" /><span>The Data Pitch</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
@@ -373,7 +360,7 @@ function BackendContent() {
               <Avatar className="h-10 w-10">
                   <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col truncate text-left text-foreground">
+              <div className="flex flex-col truncate text-left text-foreground text-left text-foreground">
                   <span className="text-sm font-medium text-sidebar-foreground truncate text-left">
                   {user.displayName || 'Admin'}
                   </span>

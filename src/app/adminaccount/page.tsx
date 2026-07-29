@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -104,9 +103,6 @@ import SocialStudio from '@/app/adminaccount/social-studio';
 import EngagementPipeline from '@/app/adminaccount/marketing/EngagementPipeline';
 import DividendManagement from '@/app/adminaccount/dividend-management';
 import HandshakeOversight from '@/app/adminaccount/handshake-oversight';
-import DataHarvestOversight from '@/app/backend/data-harvest-oversight';
-import SearchIntelligence from '@/app/backend/search-intelligence';
-import InvestorOffer from '@/app/backend/investor-offer';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -202,9 +198,6 @@ function AdminAccountContent() {
       case 'ads-oversight': return <AdsOversight />;
       case 'guides': return <AdminGuides />;
       case 'engagement-pipeline': return <EngagementPipeline />;
-      case 'data-harvest': return <DataHarvestOversight />;
-      case 'search-intelligence': return <SearchIntelligence />;
-      case 'investor-offer': return <InvestorOffer />;
       default: return <AdminDashboardContent />;
     }
   }, [activeView]);
@@ -284,15 +277,6 @@ function AdminAccountContent() {
                   </SidebarMenuSub>
               </SidebarMenuItem>
 
-               <SidebarMenuItem>
-                  <SidebarMenuButton tooltip="Intelligence" isActive={['search-intelligence', 'data-harvest', 'investor-offer'].includes(activeView)}><Database /><span>Forensic IP</span></SidebarMenuButton>
-                  <SidebarMenuSub>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'data-harvest'} onClick={() => navigate('data-harvest')}><Database className="h-3.5 w-3.5 mr-2" />The Data Vault</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'search-intelligence'} onClick={() => navigate('search-intelligence')}><SearchCode className="h-3.5 w-3.5 mr-2" />Search Analytics</SidebarMenuSubButton></SidebarMenuSubItem>
-                      <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'investor-offer'} onClick={() => navigate('investor-offer')}><TrendingUp className="h-3.5 w-3.5 mr-2" />Investor Pitch</SidebarMenuSubButton></SidebarMenuSubItem>
-                  </SidebarMenuSub>
-              </SidebarMenuItem>
-
               <SidebarMenuItem>
                   <SidebarMenuButton tooltip="Social" isActive={isSocialActive}><Share2 /><span>Social Studio</span></SidebarMenuButton>
                   <SidebarMenuSub>
@@ -345,7 +329,7 @@ function AdminAccountContent() {
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left text-foreground">
+            <div className="flex flex-col truncate text-left text-foreground text-left text-foreground">
                 <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
                 <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>
