@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -78,9 +77,12 @@ export async function verifyAdmin(req: NextRequest) {
     
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(token);
-    const isAdmin = decodedToken.email === 'mkoton100@gmail.com' || 
-                    decodedToken.email === 'beyondtransport@gmail.com' ||
-                    decodedToken.email === 'michael@logisticsflow.co.za' ||
+    
+    const adminUids = ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'];
+    const adminEmails = ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'];
+
+    const isAdmin = adminEmails.includes(decodedToken.email || '') || 
+                    adminUids.includes(decodedToken.uid) ||
                     decodedToken.admin === true;
 
     if (!isAdmin) {

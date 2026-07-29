@@ -50,7 +50,8 @@ import {
   Building,
   SearchCode,
   Database,
-  ListTodo
+  ListTodo,
+  Star
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -106,6 +107,7 @@ import RewardsManagement from '@/app/backend/rewards-management';
 import PlatformTasks from '@/app/backend/platform-tasks';
 import PlatformSettingsContent from '@/app/backend/platform-settings';
 import AdminGuides from '../adminaccount/guides';
+import EngagementPipeline from '@/app/adminaccount/marketing/EngagementPipeline';
 
 function AdminAuthGuard({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -194,6 +196,7 @@ function BackendContent() {
       case 'tasks': return <PlatformTasks />;
       case 'settings-bank': return <PlatformSettingsContent />;
       case 'guides': return <AdminGuides />;
+      case 'engagement-pipeline': return <EngagementPipeline />;
       default: return <AdminDashboardContent />;
     }
   }, [activeView, memberId]);

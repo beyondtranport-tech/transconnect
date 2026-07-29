@@ -39,7 +39,7 @@ service cloud.firestore {
     }
 
     // --- GLOBAL ADMIN OVERRIDE (PRIORITY 1) ---
-    // Rule Sync ID: 2026-03-17T15:30:00Z - FORCING RECURSIVE ADMIN ACCESS
+    // Rule Sync ID: 2026-03-17T16:00:00Z - FORCING RECURSIVE ADMIN ACCESS
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
