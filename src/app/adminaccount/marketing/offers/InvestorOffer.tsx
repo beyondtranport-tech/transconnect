@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp, Handshake, Database, Zap, ShieldCheck, Search, ArrowRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Handshake, Database, Zap, ShieldCheck, Search, ArrowRight, Info } from 'lucide-react';
 import React from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -121,7 +121,7 @@ export default function InvestorOffer() {
                     <h4 className="text-xl font-black uppercase text-left">Ready for a Deep Dive?</h4>
                     <p className="text-muted-foreground text-left">Access our complete 48-month data valuation model.</p>
                 </div>
-                <Button size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl">
+                <Button size="lg" className="h-16 px-12 text-lg font-black uppercase tracking-tight shadow-xl text-white">
                     Request Full Prospectus <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
             </CardFooter>

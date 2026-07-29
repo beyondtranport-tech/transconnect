@@ -169,13 +169,22 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Capacity Constraints (Allowances)</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
                         <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
-                            <FormItem className="text-left"><FormLabel className="text-[9px] uppercase font-black">Intel Queries</FormLabel><FormControl><Input type="number" {...field} className="h-9" /></FormControl></FormItem>
+                            <FormItem className="text-left">
+                                <FormLabel className="text-[9px] uppercase font-black">Intel Queries</FormLabel>
+                                <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                            </FormItem>
                         )} />
                         <FormField name="shopProducts" control={form.control} render={({ field }) => (
-                            <FormItem className="text-left"><FormLabel className="text-[9px] uppercase font-black">Shop Products</FormLabel><FormControl><Input type="number" {...field} className="h-9" /></FormControl></FormItem>
+                            <FormItem className="text-left">
+                                <FormLabel className="text-[9px] uppercase font-black">Shop Products</FormLabel>
+                                <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                            </FormItem>
                         )} />
                         <FormField name="loadsLimit" control={form.control} render={({ field }) => (
-                            <FormItem className="text-left"><FormLabel className="text-[9px] uppercase font-black">Max Loads</FormLabel><FormControl><Input type="number" {...field} className="h-9" /></FormControl></FormItem>
+                            <FormItem className="text-left">
+                                <FormLabel className="text-[9px] uppercase font-black">Max Loads</FormLabel>
+                                <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                            </FormItem>
                         )} />
                     </div>
                 </div>
