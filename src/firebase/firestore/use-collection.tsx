@@ -56,7 +56,6 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  // FIX: Start in loading state if a reference is provided to prevent UI glitches
   const [isLoading, setIsLoading] = useState<boolean>(!!memoizedTargetRefOrQuery);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -71,6 +70,22 @@ export function useCollection<T = any>(
       setIsLoading(false);
       setError(null);
       return;
+    }
+
+    // FORENSIC GUARD: Prevent root-level listening which triggers permission errors.
+    const getPath = () => {
+        if (memoizedTargetRefOrQuery.type === 'collection') {
+            return (memoizedTargetRefOrQuery as CollectionReference).path;
+        }
+        return (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+    };
+
+    const path = getPath();
+    if (!path || path === "/" || path === "") {
+        console.warn("useCollection: Blocked root or empty path listener.");
+        setData(null);
+        setIsLoading(false);
+        return;
     }
 
     setIsLoading(true);
@@ -93,14 +108,11 @@ export function useCollection<T = any>(
       (err: FirestoreError) => {
         if (!isMounted) return;
         
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
-            ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+        const errorPath: string = getPath();
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',
-          path,
+          path: errorPath || '/',
         });
 
         setError(contextualError);

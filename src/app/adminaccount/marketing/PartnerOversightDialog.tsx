@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -74,7 +73,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const parentCollection = isLead ? 'leads' : 'partners';
 
     const logsQuery = useMemoFirebase(() => {
-        if (!firestore || !partner?.id || partner.id === '' || !isOpen) return null;
+        // DEFENSIVE: Ensure all path segments are present before constructing query.
+        if (!firestore || !partner?.id || !isOpen || !parentCollection) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'communications'), 
             orderBy('timestamp', 'desc'),
@@ -84,7 +84,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { data: logs, isLoading: isLoadingLogs } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
-        if (!firestore || !partner?.id || partner.id === '' || !isOpen) return null;
+        // DEFENSIVE: Ensure all path segments are present before constructing query.
+        if (!firestore || !partner?.id || !isOpen || !parentCollection) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'tasks'), 
             orderBy('createdAt', 'desc'),
@@ -180,7 +181,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                     <Clock className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 text-left text-foreground text-foreground">
+            <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 text-left text-foreground">
                 <DialogHeader className="p-6 border-b bg-muted/30">
                     <div className="flex justify-between items-start text-left">
                         <div className="text-left text-foreground">
@@ -209,7 +210,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                 </DialogHeader>
 
                 <div className="flex-1 overflow-y-auto p-8 space-y-10 bg-slate-50/50 text-left">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                         <div className="space-y-4 text-left text-foreground">
                             <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                                 <Users className="h-4 w-4 text-primary"/>
@@ -264,7 +265,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         </div>
                     </div>
 
-                    <div className="space-y-4 text-left text-foreground text-foreground">
+                    <div className="space-y-4 text-left text-foreground">
                         <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                             <BookOpen className="h-4 w-4 text-primary"/>
                             Technical Intelligence Extraction
@@ -287,7 +288,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
 
                     <Separator />
 
-                    <div className="space-y-6 text-left text-foreground text-foreground">
+                    <div className="space-y-6 text-left text-foreground">
                         <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left">
                             <Activity className="h-4 w-4 text-primary"/>
                             Relationship Timeline & Engagement

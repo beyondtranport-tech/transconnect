@@ -11,7 +11,7 @@ service cloud.firestore {
 
     /**
      * IS ADMIN CHECK (PRIORITY 1)
-     * High-priority administrative override for platform oversight.
+     * High-priority administrative override for absolute platform oversight.
      */
     function isAdmin() {
       return isSignedIn() && (
@@ -22,6 +22,7 @@ service cloud.firestore {
     }
 
     // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
+    // This must come first to ensure admins bypass all subsequent constraints.
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
