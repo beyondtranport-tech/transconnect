@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,7 +57,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             name: plan?.name || '',
             description: plan?.description || '',
             price: plan?.price || 0,
-            type: plan?.type || (['basic', 'standard', 'premium'].includes(plan?.id) ? 'access' : 'data_silo'),
+            type: plan?.type || (['basic', 'standard', 'premium', 'intelligence'].includes(plan?.id) ? 'access' : 'data_silo'),
             intelligenceQueries: plan?.intelligenceQueries || 0,
             shopProducts: plan?.shopProducts || 0,
             loadsLimit: plan?.loadsLimit || 0,
@@ -244,16 +245,15 @@ export default function PricingManagement() {
     }
   };
 
-  // REINSTATEMENT LOGIC: Resilient filtering for Access Tiers (Basic, Standard, Premium)
   const accessTiers = useMemo(() => {
       return (plans || [])
-        .filter(p => p.type === 'access' || ['basic', 'standard', 'premium'].includes(p.id))
+        .filter(p => p.type === 'access' || ['basic', 'standard', 'premium', 'intelligence'].includes(p.id))
         .sort((a,b) => a.price - b.price);
   }, [plans]);
 
   const dataSilos = useMemo(() => {
       return (plans || [])
-        .filter(p => p.type === 'data_silo' || (p.id.includes('intelligence') && !['basic', 'standard', 'premium'].includes(p.id)))
+        .filter(p => p.type === 'data_silo' || (p.id.includes('intelligence') && !['basic', 'standard', 'premium', 'intelligence'].includes(p.id)))
         .sort((a,b) => a.price - b.price);
   }, [plans]);
 
@@ -309,23 +309,21 @@ export default function PricingManagement() {
       </div>
 
       <div className="space-y-16 text-left">
-        {/* SECTION 1: ACCESS CONTROL */}
         <div className="space-y-6 text-left text-foreground">
             <div className="flex items-center gap-4 border-l-4 border-primary pl-4 text-left">
                 <div className="text-left text-foreground">
                     <h3 className="text-xl font-black uppercase tracking-tight">1. Access Control Tiers</h3>
-                    <p className="text-sm text-muted-foreground">Reinstated core memberships (Basic, Standard, Premium) that manage navigation boundaries.</p>
+                    <p className="text-sm text-muted-foreground">Core memberships (Basic, Standard, Premium) that manage navigation boundaries.</p>
                 </div>
             </div>
             <Card className="border-none shadow-xl bg-white text-left text-foreground">
-                <CardContent className="pt-6 text-left">
-                    {isLoading ? <div className="flex justify-center p-20 text-foreground"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={accessTiers} />}
+                <CardContent className="pt-6 text-left text-foreground">
+                    {isLoading ? <div className="flex justify-center p-20 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={accessTiers} />}
                 </CardContent>
             </Card>
         </div>
 
-        {/* SECTION 2: DATA SILOS */}
-        <div className="space-y-6 text-left">
+        <div className="space-y-6 text-left text-foreground">
              <div className="flex items-center gap-4 border-l-4 border-slate-900 pl-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black uppercase tracking-tight">2. Proprietary Data Silos</h3>
@@ -334,20 +332,20 @@ export default function PricingManagement() {
             </div>
             <Card className="border-none shadow-xl bg-white text-left text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center p-20 text-foreground text-foreground"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
+                    {isLoading ? <div className="flex justify-center p-20 text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
                 </CardContent>
             </Card>
         </div>
       </div>
 
       <div className="p-10 bg-slate-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden text-left text-foreground text-foreground">
-            <div className="absolute top-0 right-0 p-12 opacity-5"><Zap className="h-40 w-40 text-primary" /></div>
+            <div className="absolute top-0 right-0 p-12 opacity-5 text-foreground text-foreground"><Zap className="h-40 w-40 text-primary" /></div>
             <div className="relative z-10 flex items-start gap-6 text-left text-white">
                 <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
-                <div className="space-y-2 text-left text-white">
-                    <h4 className="text-xl font-black uppercase text-left">Commercial Reinstatement Applied</h4>
+                <div className="space-y-2 text-left text-white text-white">
+                    <h4 className="text-xl font-black uppercase text-left text-white">Commercial Reinstatement Applied</h4>
                     <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left">
-                        The "Access" tiers have been identified using both explicit type mapping and ID-based fallback. This ensures the Basic, Standard, and Premium plans remain visible in the ledger for operational management, while Intelligence modules are properly segregated as high-margin Data Silos.
+                        Intelligence Access has been reclassified as a core Access Tier. This ensures that Basic, Standard, and Premium plans remain visible in the ledger for operational management, while specific B2B modules are segregated as high-margin Data Silos.
                     </p>
                 </div>
             </div>

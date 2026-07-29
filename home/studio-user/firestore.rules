@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -12,7 +13,6 @@ service cloud.firestore {
     /**
      * IS ADMIN CHECK (PRIORITY 1)
      * High-priority administrative override for absolute platform oversight.
-     * Hard-coded UIDs and Emails for maximum reliability in prototype.
      */
     function isAdmin() {
       return isSignedIn() && (
@@ -20,6 +20,11 @@ service cloud.firestore {
         request.auth.token.email in ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'] ||
         (request.auth.token.get('admin', false) == true)
       );
+    }
+
+    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
     }
 
     /**
@@ -35,12 +40,6 @@ service cloud.firestore {
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
-    }
-
-    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
-    // Grants recursive read/write across the entire tree if isAdmin() is true.
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
     }
 
     // --- COLLECTION SPECIFIC RULES ---
@@ -123,14 +122,9 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    // Specifically grant list permission for financial ledgers
     match /{path=**}/transactions/{id} { 
         allow list, get: if isAdmin() || isMember(path.split('/')[1]); 
         allow write: if isAdmin(); 
-    }
-    match /{path=**}/walletPayments/{id} { 
-        allow list, get: if isAdmin() || isMember(path.split('/')[1]); 
-        allow write: if isAdmin() || isMember(path.split('/')[1]); 
     }
     
     match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
