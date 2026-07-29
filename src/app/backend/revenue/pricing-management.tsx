@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -41,6 +42,8 @@ const planSchema = z.object({
 
 type PlanFormValues = z.infer<typeof planSchema>;
 
+const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
+
 function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,8 +53,6 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     resolver: zodResolver(planSchema),
   });
   
-  const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
-
   useEffect(() => {
     if (isOpen) {
         form.reset({
@@ -127,22 +128,26 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
             <div className="grid grid-cols-2 gap-4 text-left">
-                <FormField name="type" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left">
-                        <FormLabel>Protocol Classification</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                                <SelectTrigger className="bg-white border-2">
-                                    <SelectValue placeholder="Select type..." />
-                                </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="access">Access Control (Member Tier)</SelectItem>
-                                <SelectItem value="data_silo">Proprietary Data Silo (B2B)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </FormItem>
-                )} />
+                <FormField name="type" control={form.control} render={({ field }) => {
+                    const isCore = coreIds.includes(form.watch('id')?.toLowerCase());
+                    return (
+                        <FormItem className="text-left">
+                            <FormLabel>Protocol Classification</FormLabel>
+                            <Select onValueChange={field.onChange} value={isCore ? 'access' : field.value}>
+                                <FormControl>
+                                    <SelectTrigger className="bg-white border-2" disabled={isCore}>
+                                        <SelectValue placeholder="Select type..." />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="access">Access Control (Member Tier)</SelectItem>
+                                    <SelectItem value="data_silo">Proprietary Data Silo (B2B)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {isCore && <p className="text-[9px] text-primary font-bold uppercase mt-1">Core Plan: Forced to Access Tier</p>}
+                        </FormItem>
+                    );
+                }} />
                  <FormField name="name" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
                         <FormLabel>Node Label</FormLabel>
@@ -179,7 +184,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
               </FormItem>
             )} />
 
-            {form.watch('type') === 'access' && (
+            {(form.watch('type') === 'access' || coreIds.includes(form.watch('id')?.toLowerCase())) && (
                 <div className="space-y-4 text-left">
                     <Separator />
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Usage Boundaries (Limits)</h4>
@@ -275,8 +280,6 @@ export default function PricingManagement() {
         toast({ variant: 'destructive', title: "Delete Failed" });
     }
   };
-
-  const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
 
   const accessTiers = useMemo(() => {
       return (plans || [])

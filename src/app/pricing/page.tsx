@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch, AlertCircle, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from '@/components/ui/separator';
@@ -27,14 +28,10 @@ export default function MembershipPage() {
   const { user } = useUser();
   const firestore = useFirestore();
 
+  // FETCH ALL - Filtering happens in memory for maximum resilience with prototype data
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    // Fetch all active plans. We filter for 'access' logic in memory to ensure 
-    // ID-based core tiers are always visible.
-    return query(
-        collection(firestore, 'memberships'), 
-        where('isActive', '==', true)
-    );
+    return query(collection(firestore, 'memberships'));
   }, [firestore]);
   
   const { data: dbPlans, isLoading } = useCollection(membershipsQuery);
@@ -46,7 +43,15 @@ export default function MembershipPage() {
     const coreIds = ['basic', 'standard', 'premium', 'intelligence'];
     
     return [...dbPlans]
-        .filter(p => p.type === 'access' || coreIds.includes(p.id?.toLowerCase()))
+        .filter(p => {
+            // Must be active
+            if (p.isActive === false) return false;
+            
+            const isCore = coreIds.includes(p.id?.toLowerCase());
+            const isAccessType = p.type === 'access';
+            
+            return isCore || isAccessType;
+        })
         .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
