@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -14,12 +13,13 @@ import * as React from 'react';
 
 /**
  * ACCESS CONTROL TIERS
- * Public facing page showing ONLY 'access' type plans from the ledger.
+ * Public facing page showing core Access tiers (Basic, Standard, Premium).
+ * Data Silos are hidden for B2B resale only.
  */
 
 const formatLimit = (val: number | undefined | null) => {
     if (val === undefined || val === null) return '0';
-    if (val === 999999) return 'Unlimited';
+    if (val === 999999 || val >= 9000) return 'Unlimited';
     return val.toLocaleString();
 };
 
@@ -73,7 +73,7 @@ export default function MembershipPage() {
                                 Standard Choice
                             </div>
                         )}
-                        <CardHeader className="p-8 pb-4 text-left text-foreground">
+                        <CardHeader className="p-8 pb-4 text-left text-foreground text-foreground text-foreground text-foreground">
                             <CardTitle className="text-2xl font-black tracking-tight text-left uppercase text-foreground">{plan.name}</CardTitle>
                             <CardDescription className="mt-2 text-sm font-bold text-slate-500 leading-relaxed text-left min-h-[40px]">
                                 {plan.description}
@@ -81,8 +81,8 @@ export default function MembershipPage() {
                         </CardHeader>
                         
                         <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left text-foreground text-foreground">
-                            <div className="py-6 border-y border-slate-100 text-left text-foreground text-foreground">
-                                <div className="flex items-baseline gap-1.5 text-left text-foreground text-foreground">
+                            <div className="py-6 border-y border-slate-100 text-left text-foreground">
+                                <div className="flex items-baseline gap-1.5 text-left text-foreground">
                                     <span className="text-4xl font-black text-slate-900 tracking-tighter text-left">{formatCurrency(plan.price).split('.')[0]}</span>
                                     <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest text-left">/ month</span>
                                 </div>
@@ -105,7 +105,7 @@ export default function MembershipPage() {
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.shopProducts)} Products</span>
                                 </div>
 
-                                <div className="flex items-center justify-between text-sm group text-left">
+                                <div className="flex items-center justify-between text-sm group text-left text-foreground text-foreground">
                                     <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
                                         <PackageSearch className="h-4 w-4 text-primary" /> Clearing Limit
                                     </div>
@@ -113,14 +113,14 @@ export default function MembershipPage() {
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left text-foreground">
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
                                         <ShoppingCart className="h-4 w-4 text-primary" /> Marketplace
                                     </div>
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.vehiclesLimit)} Vehicles</span>
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left text-foreground">
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
                                         <Landmark className="h-4 w-4 text-primary" /> Capital Division
                                     </div>
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.financeApplications)} Apps</span>
@@ -128,7 +128,7 @@ export default function MembershipPage() {
                             </div>
                         </CardContent>
                         
-                        <CardFooter className="p-8 bg-slate-50 border-t text-left text-foreground text-foreground">
+                        <CardFooter className="p-8 bg-slate-50 border-t text-left text-foreground">
                             <Button asChild className={cn("w-full h-14 font-black uppercase tracking-widest shadow-md group text-white", !plan.isPopular && "bg-slate-800 hover:bg-slate-700")}>
                                 <Link href={`/checkout/${plan.id}`}>
                                     Activate Access <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -143,15 +143,15 @@ export default function MembershipPage() {
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
                 <h3 className="text-xl font-bold">Access Matrix Standby</h3>
                 <p className="text-sm text-muted-foreground mt-2 px-8">
-                    The platform core access tiers are being updated. Please check back in a few moments.
+                    The platform core access tiers are being synchronized. Please check back in a few moments.
                 </p>
             </div>
         )}
 
-        <div className="mt-32 max-w-4xl mx-auto p-12 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-foreground text-foreground">
+        <div className="mt-32 max-w-4xl mx-auto p-12 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-foreground">
             <div className="absolute top-0 right-0 p-12 opacity-5"><ShieldCheck className="h-40 w-40 text-primary" /></div>
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 text-left text-foreground">
-                <div className="flex-1 space-y-4 text-left text-white">
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 text-left text-white">
+                <div className="flex-1 space-y-4 text-left">
                     <Badge className="bg-primary/20 text-primary border-none font-bold uppercase text-left">The Data Dividend</Badge>
                     <h3 className="text-3xl font-black uppercase tracking-tight text-white text-left">Own the Industrial Flow.</h3>
                     <p className="text-slate-400 leading-relaxed text-sm text-left">
