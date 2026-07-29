@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState } from 'react';
@@ -11,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 export function DeepPersonalizationButton({ partner, audience }: { partner: any, audience: string }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -75,10 +75,10 @@ export function DeepPersonalizationButton({ partner, audience }: { partner: any,
                                     <Zap className="h-16 w-16 text-amber-600 opacity-50" />
                                 </div>
                                 <div className="space-y-2">
-                                    <h3 className="text-xl font-bold">Ready to Analyze Evidence</h3>
-                                    <p className="text-sm text-muted-foreground max-w-sm">The agent will ingest the mined sitemap data to identify a specific pain point.</p>
+                                    <h3 className="text-xl font-bold text-foreground">Ready to Analyze Evidence</h3>
+                                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">The agent will ingest the mined sitemap data to identify a specific pain point.</p>
                                 </div>
-                                <Button size="lg" className="bg-amber-600 hover:bg-amber-700 font-bold h-14 px-12" onClick={handleGenerate} disabled={isGenerating}>
+                                <Button size="lg" className="bg-amber-600 hover:bg-amber-700 font-bold h-14 px-12 text-white" onClick={handleGenerate} disabled={isGenerating}>
                                     {isGenerating ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2" />}
                                     Analyze & Generate Deep Narrative
                                 </Button>
@@ -120,7 +120,7 @@ export function DeepPersonalizationButton({ partner, audience }: { partner: any,
 
                     <DialogFooter className="p-6 border-t bg-slate-50">
                         {result && (
-                            <Button className="w-full h-12 font-bold gap-2" onClick={() => { navigator.clipboard.writeText(result.personalizedEmail.body); toast({ title: "Copied to Clipboard" }); }}>
+                            <Button className="w-full h-12 font-bold gap-2 text-white" onClick={() => { navigator.clipboard.writeText(result.personalizedEmail.body); toast({ title: "Copied to Clipboard" }); }}>
                                 <ClipboardCheck className="h-5 w-5" />
                                 Copy Selected Narrative
                             </Button>

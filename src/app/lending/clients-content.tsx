@@ -1,11 +1,10 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, Download, Upload, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -16,7 +15,7 @@ import { EditClientWizard } from './edit-client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DebtorDiscoveryEngine from './debtor-discovery';
 import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
-import { downloadDataAsCSV } from '@/lib/utils';
+import { cn, downloadDataAsCSV } from '@/lib/utils';
 import AudienceCommunicationsTable from '@/app/adminaccount/marketing/AudienceCommunicationsTable';
 
 // API Helper
