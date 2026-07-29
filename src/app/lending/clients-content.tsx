@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, Download, Upload, Zap } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, Download, Upload, Zap, Search } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -15,8 +15,16 @@ import { EditClientWizard } from './edit-client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DebtorDiscoveryEngine from './debtor-discovery';
 import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
-import { cn, downloadDataAsCSV } from '@/lib/utils';
+import { cn, downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
 import AudienceCommunicationsTable from '@/app/adminaccount/marketing/AudienceCommunicationsTable';
+
+// Forensic AI Tool Imports
+import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
+import { DeepPersonalizationButton } from '@/app/adminaccount/marketing/DeepPersonalizationButton';
+import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
+import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
+import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -81,8 +89,7 @@ export default function ClientsContent() {
 
     const handleSaveSuccess = () => {
         forceRefresh();
-        setView('list');
-        setSelectedClient(null);
+        handleBackToList();
     };
 
     const handleDelete = async () => {
@@ -107,25 +114,44 @@ export default function ClientsContent() {
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.name}</span>
-                    <span className="text-[10px] text-muted-foreground font-mono uppercase text-left">{row.original.code || row.original.id}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                        <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary uppercase font-black">Node Verified</Badge>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.code || row.original.id}</span>
+                    </div>
                 </div>
             )
         },
-        { accessorKey: 'contactPerson', header: 'Contact Person' },
-        { accessorKey: 'email', header: 'Email' },
+        { 
+            header: 'Data Fidelity', 
+            cell: ({row}) => (
+                <div className="flex items-center gap-1.5">
+                    {row.original.website ? <Globe className="h-3.5 w-3.5 text-primary" /> : <Globe className="h-3.5 w-3.5 text-muted-foreground opacity-20" />}
+                    {row.original.email ? <Zap className="h-3.5 w-3.5 text-amber-500 fill-current" /> : <Zap className="h-3.5 w-3.5 text-muted-foreground opacity-20" />}
+                </div>
+            )
+        },
         { 
             accessorKey: 'status', 
             header: 'Status', 
             cell: ({ row }) => <Badge className="capitalize text-[10px] font-black">{row.original.status}</Badge>
         },
-        { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+        { id: 'actions', header: <div className="text-right">Forensic Actions</div>, cell: ({ row }) => (
             <div className="flex justify-end items-center gap-1 text-left">
+                {/* DEEP RESEARCH & PERSO TOOLS */}
+                <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
+                <DeepPersonalizationButton partner={row.original} audience="debtors" />
+                <AddCommunicationLogDialog partnerId={row.original.id} collection="lendingClients" onLogAdded={forceRefresh} />
+                <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.name} />
+                <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
+                
+                <Separator orientation="vertical" className="h-4 mx-1" />
+                
                 <Button asChild variant="ghost" size="icon"><Link href={`/lending/clients/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setClientToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         ) },
-    ], []);
+    ], [forceRefresh]);
     
     if (view === 'wizard') {
         return <EditClientWizard client={selectedClient} onSave={handleSaveSuccess} onBack={handleBackToList} />;
@@ -147,7 +173,7 @@ export default function ClientsContent() {
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Users className="h-8 w-8 text-primary" />
                         Client & Debtor Portfolio
@@ -169,12 +195,12 @@ export default function ClientsContent() {
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="registry" className="mt-8 space-y-6 text-left">
+                <TabsContent value="registry" className="mt-8 space-y-6 text-left text-foreground">
                     <Card className="border-none shadow-xl bg-white text-left">
                         <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
                             <div className="text-left">
                                 <CardTitle className="text-lg font-bold text-left">Master Portfolio</CardTitle>
-                                <CardDescription className="text-left">Verified entities currently active in the lending system.</CardDescription>
+                                <CardDescription className="text-left text-foreground">Verified entities currently active in the lending system.</CardDescription>
                             </div>
                             <div className="flex gap-2 text-left">
                                 <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
@@ -204,11 +230,11 @@ export default function ClientsContent() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="discovery" className="mt-8 text-left">
+                <TabsContent value="discovery" className="mt-8 text-left text-foreground">
                     <DebtorDiscoveryEngine />
                 </TabsContent>
 
-                <TabsContent value="oversight" className="mt-8 text-left">
+                <TabsContent value="oversight" className="mt-8 text-left text-foreground">
                     <Card className="border-none shadow-xl bg-white text-left">
                         <CardHeader className="border-b bg-muted/10 text-left">
                             <CardTitle className="text-lg font-bold text-left">Engagement Audit Trail</CardTitle>

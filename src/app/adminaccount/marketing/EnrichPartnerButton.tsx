@@ -29,7 +29,7 @@ export function EnrichPartnerButton({ partner, onUpdate }: { partner: any, onUpd
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    const companyName = partner.companyName || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
+    const companyName = partner.companyName || partner.name || partner.trading_name || `${partner.firstName} ${partner.lastName}` || 'Unnamed Entity';
 
     const getPrompt = () => {
         return `ACT AS AN ELITE SOUTH AFRICAN INDUSTRIAL RESEARCH AGENT (V13.1 - INDUCTIVE SCAVENGER).
@@ -71,9 +71,13 @@ RETURN ONLY A RAW JSON OBJECT. NO MARKDOWN. NO CODE BLOCKS. NO PREAMBLE.
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Session expired.");
 
+            const isLead = partner.source === 'Lead' || !partner.type || partner.type === 'lead';
+            const isLending = partner.source === 'Debtor' || partner.entryType === 'Debtor';
+
             await performAdminAction(token, 'logForensicInitiated', { 
                 partnerId: partner.id,
-                isLead: !partner.type || partner.type === 'lead'
+                isLead,
+                isLending
             });
 
             toast({ title: "V13.1 Scavenger Prompt Ready", description: "Prioritizing Facebook Bio and aggressive stakeholder resolution." });

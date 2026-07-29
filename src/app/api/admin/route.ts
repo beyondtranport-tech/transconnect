@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -68,7 +67,8 @@ export async function POST(req: NextRequest) {
             }
 
             case 'bulkSaveLendingClients': {
-                const { clients } = payload;
+                const { partners } = payload; // Support both naming conventions
+                const clients = partners || payload.clients || [];
                 const batch = db.batch();
                 clients.forEach((c: any) => {
                     const ref = db.collection('lendingClients').doc(c.id || db.collection('lendingClients').doc().id);
@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
                         ...c, 
                         id: ref.id, 
                         status: c.status || 'draft',
+                        source: c.source || 'AI Discovery',
                         updatedAt: FieldValue.serverTimestamp() 
                     }, { merge: true });
                 });
@@ -96,6 +97,42 @@ export async function POST(req: NextRequest) {
                 const ref = db.collection('lendingClients').doc(client.id || db.collection('lendingClients').doc().id);
                 await ref.set({ ...client, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
                 return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'logForensicInitiated': {
+                const { partnerId, isLead, isLending } = payload;
+                const collection = isLending ? 'lendingClients' : (isLead ? 'leads' : 'partners');
+                const ref = db.collection(collection).doc(partnerId);
+                await ref.update({
+                    forensicAnalysisStatus: 'initiated',
+                    lastForensicAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() })) });
+            }
+
+            case 'getAudienceCommunications': {
+                const { type } = payload;
+                let collectionName = 'partners';
+                if (type === 'lead') collectionName = 'leads';
+                if (type === 'debtor') collectionName = 'lendingClients';
+
+                const partnersSnap = await db.collection(collectionName).get();
+                const promises = partnersSnap.docs.map(p => db.collection(`${collectionName}/${p.id}/communications`).get());
+                const results = await Promise.all(promises);
+                
+                const allLogs: any[] = [];
+                results.forEach((snap, idx) => {
+                    const partner = partnersSnap.docs[idx].data();
+                    snap.docs.forEach(d => allLogs.push({ ...d.data(), partnerName: partner.companyName || partner.firstName, partnerType: partner.type }));
+                });
+
+                return NextResponse.json({ success: true, data: serializeData(allLogs.sort((a,b) => b.timestamp - a.timestamp)) });
             }
 
             case 'deleteLendingPartner': {
@@ -131,10 +168,17 @@ export async function POST(req: NextRequest) {
                 const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const lResults = lSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
-                let combined = [...pResults, ...lResults];
+                // Debtor/Lending Support
+                let dResults: any[] = [];
+                if (rType === 'debtor' || rType === 'all') {
+                    const dSnap = await db.collection('lendingClients').orderBy('updatedAt', 'desc').limit(limitNum).get();
+                    dResults = dSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Debtor', entryType: 'Debtor' }));
+                }
+
+                let combined = [...pResults, ...lResults, ...dResults];
                 if (term) {
                     const norm = term.toLowerCase().trim();
-                    combined = combined.filter(item => (item.companyName || item.firstName || '').toLowerCase().includes(norm));
+                    combined = combined.filter(item => (item.companyName || item.firstName || item.name || '').toLowerCase().includes(norm));
                 }
                 combined.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
                 return NextResponse.json({ success: true, data: serializeData(combined.slice(0, limitNum)) });
@@ -157,7 +201,6 @@ export async function POST(req: NextRequest) {
                     senderId: decodedToken.uid
                 });
                 
-                // Update outreach status on parent
                 await db.collection(col).doc(partnerId).update({
                     lastOutreachAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,

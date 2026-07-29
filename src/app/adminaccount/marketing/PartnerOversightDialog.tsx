@@ -69,11 +69,11 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { toast } = useToast();
     const firestore = useFirestore();
 
-    const isLead = !partner.type || partner.type === 'lead';
-    const parentCollection = isLead ? 'leads' : 'partners';
+    const isLead = partner.source === 'Lead' || !partner.type || partner.type === 'lead';
+    const isLending = partner.source === 'Debtor' || partner.entryType === 'Debtor';
+    const parentCollection = isLending ? 'lendingClients' : (isLead ? 'leads' : 'partners');
 
     const logsQuery = useMemoFirebase(() => {
-        // DEFENSIVE: Ensure all path segments are present before constructing query.
         if (!firestore || !partner?.id || !isOpen || !parentCollection) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'communications'), 
@@ -84,7 +84,6 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
     const { data: logs, isLoading: isLoadingLogs } = useCollection(logsQuery);
 
     const tasksQuery = useMemoFirebase(() => {
-        // DEFENSIVE: Ensure all path segments are present before constructing query.
         if (!firestore || !partner?.id || !isOpen || !parentCollection) return null;
         return query(
             collection(firestore, parentCollection, partner.id, 'tasks'), 
@@ -174,6 +173,8 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
         }
     };
 
+    const name = partner.companyName || partner.name || `${partner.firstName || ''} ${partner.lastName || ''}`.trim() || 'Record';
+
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
@@ -187,11 +188,11 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                         <div className="text-left text-foreground">
                             <DialogTitle className="text-2xl font-black flex items-center gap-2 text-left">
                                 <Clock className="h-6 w-6 text-primary" />
-                                Oversight: {partner.companyName || `${partner.firstName || ''} ${partner.lastName || ''}`.trim() || 'Record'}
+                                Oversight: {name}
                             </DialogTitle>
                             <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">{parentCollection.slice(0,-1)} Registry</Badge>
-                                <span className="text-xs text-muted-foreground text-left">• {partner.industrial_category || 'Industrial'}</span>
+                                <Badge variant="outline" className="text-[10px] font-black uppercase border-primary/30 text-primary">{parentCollection.replace('lendingClients', 'debtor').replace('leads', 'lead').replace('partners', 'partner')} Registry</Badge>
+                                <span className="text-xs text-muted-foreground text-left">• {partner.industrial_category || partner.category || 'Industrial'}</span>
                             </div>
                         </div>
                         <div className="space-y-2 text-right">
@@ -249,7 +250,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                             <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Company Email</p>
                                             <div className="flex items-center gap-1.5 text-xs font-bold text-foreground text-left">
                                                 <Mail className="h-3 w-3" />
-                                                <span className="truncate">{partner.email || "N/A"}</span>
+                                                <span className="truncate">{partner.email || partner.marketingManager?.email || "N/A"}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -257,7 +258,7 @@ export function PartnerOversightDialog({ partner, onUpdate }: { partner: any, on
                                         <p className="text-[9px] font-black uppercase text-muted-foreground tracking-tighter">Physical Operational Node</p>
                                         <div className="flex items-start gap-1.5 text-xs text-foreground leading-tight text-left">
                                             <MapPin className="h-3 w-3 shrink-0 mt-0.5" />
-                                            <span>{partner.address || "No verified address recorded."}</span>
+                                            <span>{partner.address || partner.physicalAddress || "No verified address recorded."}</span>
                                         </div>
                                     </div>
                                 </CardContent>
