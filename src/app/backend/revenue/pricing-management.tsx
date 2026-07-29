@@ -1,14 +1,14 @@
+
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Trash2, Layers, Zap, Info, Package, Truck, ShoppingCart, Landmark, Store, PackageSearch, Eye, EyeOff } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Trash2, Layers, Zap, Info, Database, ShieldCheck, Lock, Eye, EyeOff, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +19,6 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { cn, formatCurrency } from '@/lib/utils';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
@@ -35,53 +34,12 @@ import {
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 
-const defaultPlans = [
-    {
-        id: 'basic',
-        name: 'Basic Membership',
-        price: 100,
-        description: 'Establish forensic visibility in the industrial grid.',
-        intelligenceQueries: 100,
-        shopProducts: 5,
-        loadsLimit: 2,
-        vehiclesLimit: 1,
-        financeApplications: 2,
-        isPopular: false,
-        isActive: true
-    },
-    {
-        id: 'standard',
-        name: 'Standard Membership',
-        price: 500,
-        description: 'The core commerce engine for active industrial trading.',
-        intelligenceQueries: 1000,
-        shopProducts: 50,
-        loadsLimit: 20,
-        vehiclesLimit: 5,
-        financeApplications: 10,
-        isPopular: true,
-        isActive: true
-    },
-    {
-        id: 'premium',
-        name: 'Premium Membership',
-        price: 1000,
-        description: 'Maximum dominance with unlimited industrial power.',
-        intelligenceQueries: 999999,
-        shopProducts: 999999,
-        loadsLimit: 999999,
-        vehiclesLimit: 999999,
-        financeApplications: 999999,
-        isPopular: false,
-        isActive: true
-    }
-];
-
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().min(0, 'Price must be 0 or more'),
+  type: z.enum(['access', 'data_silo']).default('access'),
   intelligenceQueries: z.coerce.number().min(0),
   shopProducts: z.coerce.number().min(0),
   loadsLimit: z.coerce.number().min(0),
@@ -109,6 +67,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             name: plan?.name || '',
             description: plan?.description || '',
             price: plan?.price || 0,
+            type: plan?.type || 'access',
             intelligenceQueries: plan?.intelligenceQueries || 0,
             shopProducts: plan?.shopProducts || 0,
             loadsLimit: plan?.loadsLimit || 0,
@@ -140,7 +99,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 
       if (!response.ok) throw new Error("Failed to save plan.");
       
-      toast({ title: 'Plan Saved!', description: `${values.name} is now live.` });
+      toast({ title: 'Ledger Updated!', description: `${values.name} logic has been synchronized.` });
       onSave();
       setIsOpen(false);
     } catch (e: any) {
@@ -156,27 +115,33 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         {plan ? (
           <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
         ) : (
-          <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Add Plan</Button>
+          <Button className="gap-2"><PlusCircle className="h-4 w-4" /> Add Record</Button>
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
         <DialogHeader className="p-6 pb-2">
-          <DialogTitle>{plan ? 'Edit' : 'Add New'} Membership Tier</DialogTitle>
-          <DialogDescription>Define the core commercial limits for this tier.</DialogDescription>
+          <DialogTitle>{plan ? 'Audit' : 'Create'} {form.watch('type') === 'access' ? 'Access Tier' : 'Data Silo'}</DialogTitle>
+          <DialogDescription>Define the commercial boundaries for this industrial node.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
             <div className="grid grid-cols-2 gap-4 text-left">
-                <FormField name="id" control={form.control} render={({ field }) => (
+                <FormField name="type" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
-                        <FormLabel>Plan ID (Lowercase)</FormLabel>
-                        <FormControl><Input {...field} disabled={!!plan} placeholder="e.g. basic" /></FormControl>
+                        <FormLabel>Protocol Classification</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger className="bg-white border-2"><SelectValue /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="access">Access Control (Frontend)</SelectItem>
+                                <SelectItem value="data_silo">Data Silo (B2B Hidden)</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </FormItem>
                 )} />
                  <FormField name="name" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
-                        <FormLabel>Public Name</FormLabel>
-                        <FormControl><Input {...field} /></FormControl>
+                        <FormLabel>Internal Ledger Name</FormLabel>
+                        <FormControl><Input {...field} className="bg-white border-2" /></FormControl>
                     </FormItem>
                 )} />
             </div>
@@ -184,57 +149,53 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             <div className="grid grid-cols-3 gap-4 text-left">
                  <FormField name="price" control={form.control} render={({ field }) => (
                     <FormItem className="text-left col-span-1">
-                        <FormLabel>Monthly Price (R)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormLabel>Yield Price (R)</FormLabel>
+                        <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
                     </FormItem>
                 )} />
                 <FormField name="isPopular" control={form.control} render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left col-span-1">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel className="cursor-pointer">Mark as Popular</FormLabel>
+                        <FormLabel className="cursor-pointer">Highlight Node</FormLabel>
                     </FormItem>
                 )} />
                 <FormField name="isActive" control={form.control} render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left col-span-1">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel className="cursor-pointer text-primary font-bold">Publicly Active</FormLabel>
+                        <FormLabel className="cursor-pointer text-primary font-bold">In-Market Active</FormLabel>
                     </FormItem>
                 )} />
             </div>
 
             <FormField name="description" control={form.control} render={({ field }) => (
               <FormItem className="text-left">
-                  <FormLabel>Pitch Description</FormLabel>
-                  <FormControl><Textarea {...field} /></FormControl>
-              </FormItem>
+                  <FormLabel>Forensic Description</FormLabel>
+                  <FormControl><Textarea {...field} className="bg-white border-2" /></FormItem>
             )} />
 
-            <Separator />
-            <h4 className="text-xs font-black uppercase tracking-widest text-primary text-left">Outcome Metrics (Limits)</h4>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
-                <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Intel Queries</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                )} />
-                <FormField name="shopProducts" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Shop Products</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                )} />
-                <FormField name="loadsLimit" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Max Loads</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                )} />
-                <FormField name="vehiclesLimit" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Max Vehicles</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                )} />
-                <FormField name="financeApplications" control={form.control} render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel className="text-[10px] uppercase font-bold">Max Finance Apps</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
-                )} />
-            </div>
+            {form.watch('type') === 'access' && (
+                <>
+                    <Separator />
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Capacity Constraints (Allowances)</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
+                        <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
+                            <FormItem className="text-left"><FormLabel className="text-[9px] uppercase font-black">Intel Queries</FormLabel><FormControl><Input type="number" {...field} className="h-9" /></FormControl></FormItem>
+                        )} />
+                        <FormField name="shopProducts" control={form.control} render={({ field }) => (
+                            <FormItem className="text-left"><FormLabel className="text-[9px] uppercase font-black">Shop Products</FormLabel><FormControl><Input type="number" {...field} className="h-9" /></FormControl></FormItem>
+                        )} />
+                        <FormField name="loadsLimit" control={form.control} render={({ field }) => (
+                            <FormItem className="text-left"><FormLabel className="text-[9px] uppercase font-black">Max Loads</FormLabel><FormControl><Input type="number" {...field} className="h-9" /></FormControl></FormItem>
+                        )} />
+                    </div>
+                </>
+            )}
           </form>
         </Form>
         <DialogFooter className="p-6 pt-2 border-t text-left">
-          <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isLoading} className="w-full font-bold">
+          <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isLoading} className="w-full h-12 font-black uppercase tracking-widest shadow-lg">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            Save Tier Logic
+            Sync Protocol to Ledger
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -245,7 +206,6 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 export default function PricingManagement() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [isSeeding, setIsSeeding] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const membershipsQuery = useMemoFirebase(() => {
@@ -255,38 +215,11 @@ export default function PricingManagement() {
   
   const { data: plans, isLoading, forceRefresh } = useCollection(membershipsQuery);
 
-  const handleSeed = async () => {
-    setIsSeeding(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Auth failed.");
-
-        for (const plan of defaultPlans) {
-            const planId = plan.id.trim();
-            await fetch('/api/updateConfigDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    path: `memberships/${planId}`,
-                    data: { ...plan, id: planId, updatedAt: { _methodName: 'serverTimestamp' } }
-                }),
-            });
-        }
-        toast({ title: "Core Tiers Seeded", description: "Basic, Standard, and Premium tiers are now active." });
-        forceRefresh();
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: "Seeding Failed", description: e.message });
-    } finally {
-        setIsSeeding(false);
-    }
-  };
-
   const handleToggleActive = async (plan: any) => {
     try {
         const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-
-        const response = await fetch('/api/updateConfigDoc', {
+        if (!token) return;
+        await fetch('/api/updateConfigDoc', {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -294,45 +227,15 @@ export default function PricingManagement() {
                 data: { isActive: !plan.isActive, updatedAt: { _methodName: 'serverTimestamp' } }
             }),
         });
-
-        if (!response.ok) throw new Error("Failed to update status.");
-        toast({ title: plan.isActive ? "Plan Disabled" : "Plan Activated" });
+        toast({ title: plan.isActive ? "Node Hidden" : "Node Published" });
         forceRefresh();
     } catch (e: any) {
-        toast({ variant: 'destructive', title: "Status Update Failed", description: e.message });
+        toast({ variant: 'destructive', title: "Update Failed" });
     }
   };
 
-  const handleDelete = async (planId: string) => {
-    setIsDeleting(planId);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Authentication failed.");
-
-        const response = await fetch('/api/deleteConfigDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: `memberships/${planId}` }),
-        });
-
-        if (!response.ok) {
-            const errorResult = await response.json();
-            throw new Error(errorResult.error || "Deletion failed.");
-        }
-
-        toast({ title: "Plan Deleted", description: "The membership tier has been removed from the ledger." });
-        forceRefresh();
-    } catch (e: any) {
-        toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
-    } finally {
-        setIsDeleting(null);
-    }
-  };
-
-  const sortedPlans = useMemo(() => {
-    if (!plans) return [];
-    return [...plans].sort((a,b) => a.price - b.price);
-  }, [plans]);
+  const accessTiers = useMemo(() => (plans || []).filter(p => p.type !== 'data_silo').sort((a,b) => a.price - b.price), [plans]);
+  const dataSilos = useMemo(() => (plans || []).filter(p => p.type === 'data_silo').sort((a,b) => a.price - b.price), [plans]);
 
   const columns: ColumnDef<any>[] = [
     { 
@@ -349,86 +252,80 @@ export default function PricingManagement() {
     },
     { 
         accessorKey: 'name', 
-        header: 'Plan Name',
-        cell: ({ row }) => <div className="font-bold capitalize">{row.original.name}</div>,
+        header: 'Label',
+        cell: ({ row }) => <div className="font-bold text-slate-900">{row.original.name}</div>,
     },
     { 
         accessorKey: 'price', 
-        header: 'Price',
+        header: 'Yield (R)',
         cell: ({ row }) => <span className="font-mono font-bold text-primary">{formatCurrency(row.original.price)}</span> 
     },
     { 
-        header: 'Allowances (I / S / L / V / F)',
-        cell: ({row}) => (
-            <div className="flex gap-2 font-mono text-[10px] text-muted-foreground">
-                <span>{row.original.intelligenceQueries}</span> /
-                <span>{row.original.shopProducts}</span> /
-                <span>{row.original.loadsLimit}</span> /
-                <span>{row.original.vehiclesLimit}</span> /
-                <span>{row.original.financeApplications}</span>
-            </div>
-        )
+        header: 'Silo Description',
+        cell: ({row}) => <span className="text-xs text-muted-foreground truncate max-w-[300px]">{row.original.description}</span>
     },
     {
         id: 'actions',
-        header: <div className="text-right">Actions</div>,
+        header: <div className="text-right">Audit</div>,
         cell: ({ row }) => (
             <div className="text-right flex justify-end gap-1">
                 <PlanDialog plan={row.original} onSave={forceRefresh} />
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={isDeleting === row.original.id}>
-                            {isDeleting === row.original.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive" />}
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="text-left">
-                        <AlertDialogHeader className="text-left">
-                            <AlertDialogTitle className="text-left">Delete Membership Plan?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-left text-foreground">
-                                This will remove "{row.original.name}" from the commercial registry. Existing subscribers will not be affected, but new signups will no longer see this tier.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="text-left">
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                                onClick={() => handleDelete(row.original.id)}
-                                className={cn(buttonVariants({ variant: 'destructive' }), "font-bold")}
-                            >
-                                Delete Plan
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
         )
     }
   ];
 
   return (
-    <div className="space-y-6 text-left text-foreground">
+    <div className="space-y-12 text-left text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="text-left">
-            <CardTitle className="text-2xl font-black font-headline flex items-center gap-2 text-left text-foreground text-foreground"><Layers className="text-primary"/> Membership Tier Ledger</CardTitle>
-            <CardDescription className="text-left">Manage visibility and outcome-based pricing for the core industrial tiers.</CardDescription>
+            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-left text-foreground">
+                <Layers className="text-primary h-8 w-8"/> 
+                Commercial Node Ledger
+            </CardTitle>
+            <CardDescription className="text-left text-lg">Define access boundaries for members and B2B pricing for proprietary data silos.</CardDescription>
         </div>
-        <div className="flex gap-2 text-left text-foreground">
-            <Button variant="outline" onClick={handleSeed} disabled={isSeeding || isLoading} className="gap-2 text-left text-foreground">
-                {isSeeding ? <Loader2 className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4 text-primary" />}
-                Reset to Core Model
-            </Button>
-            <PlanDialog onSave={forceRefresh} />
+        <PlanDialog onSave={forceRefresh} />
+      </div>
+
+      <div className="space-y-12 text-left">
+        <div className="space-y-6 text-left">
+            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 ml-1 text-left">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+                1. Access Control Tiers (Frontend)
+            </h3>
+            <Card className="border-none shadow-xl bg-white text-left">
+                <CardContent className="pt-6 text-left">
+                    {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={accessTiers} />}
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="space-y-6 text-left">
+             <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 ml-1 text-left text-foreground">
+                <Database className="h-4 w-4 text-primary" />
+                2. Data Silos (B2B Proprietary)
+            </h3>
+            <Card className="border-none shadow-xl bg-white text-left text-foreground">
+                <CardContent className="pt-6 text-left text-foreground">
+                    {isLoading ? <div className="flex justify-center p-20 text-left"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
+                </CardContent>
+            </Card>
         </div>
       </div>
 
-      <Card className="text-left text-foreground">
-        <CardContent className="pt-6 text-left">
-            {isLoading ? (
-            <div className="flex justify-center p-20 text-left"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>
-            ) : (
-                <DataTable columns={columns} data={sortedPlans} />
-            )}
-        </CardContent>
-      </Card>
+      <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 p-12 opacity-5"><Zap className="h-40 w-40 text-primary" /></div>
+            <div className="relative z-10 flex items-start gap-6 text-left">
+                <div className="bg-primary/20 p-4 rounded-3xl"><Info className="h-8 w-8 text-primary" /></div>
+                <div className="space-y-2 text-left text-white">
+                    <h4 className="text-xl font-black uppercase text-left">Strategic Note: Data vs Access</h4>
+                    <p className="text-slate-400 text-sm leading-relaxed max-w-3xl text-left">
+                        "Access" tiers are for our active membership community and are visible on the public frontend. "Data Silos" represent our deep-mined industrial IP and are deactivated for public view. These will be sold exclusively via direct B2B handshakes to institutional partners.
+                    </p>
+                </div>
+            </div>
+      </div>
     </div>
   );
 }

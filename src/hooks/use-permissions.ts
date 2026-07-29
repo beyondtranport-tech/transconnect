@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser } from '@/firebase';
@@ -34,7 +35,8 @@ export type Resource =
     'account' |
     'direct-contacts' |
     'ads' |
-    'human-capital';
+    'human-capital' |
+    'data-harvest';
 
 const permissionHierarchy: { [key in Action]: Action[] } = {
     manage: ['create', 'view', 'edit', 'delete', 'publish', 'transact'],
@@ -47,8 +49,8 @@ const permissionHierarchy: { [key in Action]: Action[] } = {
 };
 
 /**
- * INTELLIGENCE NODE PERMISSIONS
- * Enforces granular access control for specialized Mall Intelligence.
+ * NODE & ACCESS PERMISSIONS
+ * Enforces boundaries for the Triple Engine model: Access vs Data Silos.
  */
 export function usePermissions() {
     const { user, isUserLoading } = useUser();
@@ -72,13 +74,14 @@ export function usePermissions() {
         
         const companyData = user.companyData || {};
         const membershipId = companyData.membershipId || 'free';
-        const isPaidFoundation = membershipId === 'intelligence' || membershipId === 'premium';
         
-        // ASSOCIATE OVERRIDE: Associates get free Studio and Registry access to empower recruitment
+        // FOUNDATION TIERS: Renamed from intelligence to 'Access Control'
+        const hasAccessTier = ['basic', 'standard', 'premium', 'intelligence'].includes(membershipId);
+        
         const isAssociate = user.declaredPosition === 'associate' || user.role === 'associate' || companyData.declaredRole === 'associate';
 
-        // 1. Foundation Permissions (Directory Access)
-        if (isPaidFoundation || isAssociate) {
+        // 1. Core Access Permissions
+        if (hasAccessTier || isAssociate) {
             perms.add('view:direct-contacts');
             perms.add('view:account');
             perms.add('view:wallet');
@@ -88,12 +91,12 @@ export function usePermissions() {
             perms.add('create:enquiries');
             perms.add('manage:staff');
             perms.add('manage:ads');
-            perms.add('view:marketing-studio'); // Grant Studio access
+            perms.add('view:marketing-studio');
             perms.add('view:human-capital');
             perms.add('create:human-capital');
         }
 
-        // 2. Specialized Mall Intelligence Nodes
+        // 2. Data Silo Subscriptions (B2B Logic)
         if (companyData.hasLoadsPlan) {
             perms.add('view:loads');
             perms.add('transact:loads');
@@ -102,24 +105,12 @@ export function usePermissions() {
             perms.add('view:warehouseMall');
             perms.add('transact:warehouseMall');
         }
-        if (companyData.hasFinancePlan) {
-            perms.add('view:financeMall');
-        }
         if (companyData.hasBuySellPlan) {
             perms.add('view:buySellMall');
             perms.add('transact:buySellMall');
         }
-        if (companyData.hasDistributionPlan) {
-            perms.add('view:distributionMall');
-        }
-        if (companyData.hasTransporterPlan) {
-            perms.add('view:transporterMall');
-        }
-        if (companyData.hasSupplierPlan) {
-            perms.add('view:supplierMall');
-        }
-
-        // 3. Generic Role-Based Setup (Prevent shop creation for associates)
+        
+        // 3. Operational Presence
         if (companyData.shopId && !isAssociate) {
             perms.add('edit:shop');
             perms.add('publish:shop');

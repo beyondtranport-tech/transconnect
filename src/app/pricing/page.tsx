@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -5,15 +6,15 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Check, ArrowRight, Loader2, Zap, ShieldCheck, Database, Search, LayoutDashboard, ShoppingBasket, Star, Truck, ShoppingCart, Landmark, Store, PackageSearch, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from '@/components/ui/separator';
 import * as React from 'react';
 
 /**
- * CORE MEMBERSHIP TIERS: Basic, Standard, Premium
- * Respects the 'isActive' flag set in the backend ledger.
+ * ACCESS CONTROL TIERS
+ * Public facing page showing ONLY 'access' type plans from the ledger.
  */
 
 const formatLimit = (val: number | undefined | null) => {
@@ -28,17 +29,19 @@ export default function MembershipPage() {
 
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'memberships'));
+    // Filter for Active Access Tiers only. Data Silos are hidden.
+    return query(
+        collection(firestore, 'memberships'), 
+        where('isActive', '==', true),
+        where('type', '==', 'access')
+    );
   }, [firestore]);
   
   const { data: dbPlans, isLoading } = useCollection(membershipsQuery);
 
   const plans = React.useMemo(() => {
     if (!dbPlans) return [];
-    // Filter for active plans only
-    return [...dbPlans]
-        .filter(p => p.isActive !== false)
-        .sort((a,b) => (a.price || 0) - (b.price || 0));
+    return [...dbPlans].sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
   return (
@@ -46,17 +49,17 @@ export default function MembershipPage() {
       <div className="container mx-auto px-4 py-16 md:py-24 text-left">
         
         <div className="text-center max-w-3xl mx-auto mb-20 text-left md:text-center">
-          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Commercial Tiers</Badge>
-          <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none text-center">Scale Your <br/><span className="text-primary">Industrial Node</span>.</h1>
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Node Access Control</Badge>
+          <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none text-center">Activate Your <br/><span className="text-primary">Ecosystem Node</span>.</h1>
           <p className="mt-6 text-xl text-muted-foreground leading-relaxed font-medium text-center">
-            Simplified outcome-based pricing. Choose the tier that matches your monthly transaction volume.
+            Choose the access tier that matches your monthly transaction volume. Secure your digital standing in the grid.
           </p>
         </div>
 
         {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                 <Loader2 className="animate-spin h-12 w-12 text-primary mx-auto" />
-                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Commercial Ledger...</p>
+                <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Access Matrix...</p>
             </div>
         ) : plans.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch text-left text-foreground">
@@ -67,7 +70,7 @@ export default function MembershipPage() {
                     )}>
                         {plan.isPopular && (
                             <div className="bg-primary text-white text-[10px] font-black uppercase tracking-widest py-1 px-8 absolute top-4 -right-8 rotate-45 shadow-sm">
-                                Most Active
+                                Standard Choice
                             </div>
                         )}
                         <CardHeader className="p-8 pb-4 text-left text-foreground">
@@ -77,58 +80,58 @@ export default function MembershipPage() {
                             </CardDescription>
                         </CardHeader>
                         
-                        <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left text-foreground">
-                            <div className="py-6 border-y border-slate-100 text-left">
-                                <div className="flex items-baseline gap-1.5 text-left text-foreground">
+                        <CardContent className="p-8 pt-0 flex-grow space-y-6 text-left text-foreground text-foreground">
+                            <div className="py-6 border-y border-slate-100 text-left text-foreground text-foreground">
+                                <div className="flex items-baseline gap-1.5 text-left text-foreground text-foreground">
                                     <span className="text-4xl font-black text-slate-900 tracking-tighter text-left">{formatCurrency(plan.price).split('.')[0]}</span>
                                     <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest text-left">/ month</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-5 text-left">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary text-left">Monthly Allowances</h4>
+                            <div className="space-y-5 text-left text-foreground">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary text-left">Node Access & limits</h4>
                                 
                                 <div className="flex items-center justify-between text-sm group text-left">
                                     <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <Search className="h-4 w-4 text-primary" /> Intelligence
+                                        <Search className="h-4 w-4 text-primary" /> intelligence
                                     </div>
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.intelligenceQueries)} Queries</span>
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left">
                                     <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <Store className="h-4 w-4 text-primary" /> Digital Shop
+                                        <Store className="h-4 w-4 text-primary" /> Shop Products
                                     </div>
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.shopProducts)} Products</span>
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left">
                                     <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <PackageSearch className="h-4 w-4 text-primary" /> Loads Mall
+                                        <PackageSearch className="h-4 w-4 text-primary" /> Clearing Limit
                                     </div>
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.loadsLimit)} Loads</span>
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <ShoppingCart className="h-4 w-4 text-primary" /> Buy & Sell
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left text-foreground">
+                                        <ShoppingCart className="h-4 w-4 text-primary" /> Marketplace
                                     </div>
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.vehiclesLimit)} Vehicles</span>
                                 </div>
 
                                 <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left">
-                                        <Landmark className="h-4 w-4 text-primary" /> Finance
+                                    <div className="flex items-center gap-2 text-slate-600 font-bold uppercase text-[11px] text-left text-foreground">
+                                        <Landmark className="h-4 w-4 text-primary" /> Capital Division
                                     </div>
                                     <span className="font-black text-slate-900 text-left">{formatLimit(plan.financeApplications)} Apps</span>
                                 </div>
                             </div>
                         </CardContent>
                         
-                        <CardFooter className="p-8 bg-slate-50 border-t text-left text-foreground">
+                        <CardFooter className="p-8 bg-slate-50 border-t text-left text-foreground text-foreground">
                             <Button asChild className={cn("w-full h-14 font-black uppercase tracking-widest shadow-md group text-white", !plan.isPopular && "bg-slate-800 hover:bg-slate-700")}>
                                 <Link href={`/checkout/${plan.id}`}>
-                                    Activate {plan.name} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                    Activate Access <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                 </Link>
                             </Button>
                         </CardFooter>
@@ -138,30 +141,25 @@ export default function MembershipPage() {
         ) : (
             <div className="max-w-md mx-auto text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
-                <h3 className="text-xl font-bold">Ledger Initialization Required</h3>
+                <h3 className="text-xl font-bold">Access Matrix Standby</h3>
                 <p className="text-sm text-muted-foreground mt-2 px-8">
-                    The platform core tiers have not been seeded in the database. Please visit the Admin Backend to reset the commercial model.
+                    The platform core access tiers are being updated. Please check back in a few moments.
                 </p>
-                {user?.email === 'michael@logisticsflow.co.za' && (
-                    <Button asChild variant="outline" className="mt-6 font-bold">
-                        <Link href="/adminaccount?view=pricing-memberships">Go to Backend Ledger</Link>
-                    </Button>
-                )}
             </div>
         )}
 
-        <div className="mt-32 max-w-4xl mx-auto p-12 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
+        <div className="mt-32 max-w-4xl mx-auto p-12 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-foreground text-foreground">
             <div className="absolute top-0 right-0 p-12 opacity-5"><ShieldCheck className="h-40 w-40 text-primary" /></div>
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 text-left text-foreground">
-                <div className="flex-1 space-y-4 text-left">
-                    <Badge className="bg-primary/20 text-primary border-none font-bold uppercase text-left">Handshake Model</Badge>
-                    <h3 className="text-3xl font-black uppercase tracking-tight text-white text-left">Earn Back Your Membership.</h3>
+                <div className="flex-1 space-y-4 text-left text-white">
+                    <Badge className="bg-primary/20 text-primary border-none font-bold uppercase text-left">The Data Dividend</Badge>
+                    <h3 className="text-3xl font-black uppercase tracking-tight text-white text-left">Own the Industrial Flow.</h3>
                     <p className="text-slate-400 leading-relaxed text-sm text-left">
-                        As you contribute verified data and refer peers, you earn reward points. High-engagement nodes can reduce their monthly overheads by up to 50% through the platform's loyalty dividend.
+                        We harvest operational signals to secure collective discounts. As you contribute data and refer verified peers, you earn reward points that reduce your Access fees by up to 50%.
                     </p>
                 </div>
                 <Button asChild variant="outline" className="h-14 px-10 border-white/20 text-white hover:bg-white/10 font-bold uppercase tracking-widest text-left">
-                    <Link href="/join">Establish Free Node</Link>
+                    <Link href="/join">Establish Node</Link>
                 </Button>
             </div>
         </div>
