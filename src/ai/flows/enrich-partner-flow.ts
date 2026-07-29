@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview High-fidelity Industrial Research Agent V13.1.
@@ -103,6 +102,19 @@ const enrichPartnerFlow = ai.defineFlow(
         }
     });
     
-    return extraction.output || { email: null, phone: null, mobile: null, website: null, address: null, industrial_category: null, minedServiceWording: null, marketingManager: null, operationsManager: null, technicalManager: null, ceo: null, primaryContactRole: 'marketingManager' };
+    return (extraction.output as EnrichPartnerOutput) || { 
+        email: null, 
+        phone: null, 
+        mobile: null, 
+        website: null, 
+        address: null, 
+        industrial_category: null, 
+        minedServiceWording: null, 
+        marketingManager: null, 
+        operationsManager: null, 
+        technicalManager: null, 
+        ceo: null, 
+        primaryContactRole: 'marketingManager' as const 
+    };
   }
 );
