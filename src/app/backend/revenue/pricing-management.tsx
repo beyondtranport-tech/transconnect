@@ -1,18 +1,18 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useForm, useFormContext } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Database, ShieldCheck, Zap, Info, Eye, EyeOff, Layers, Trash2, CheckCircle2 } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Database, ShieldCheck, Zap, Info, Eye, EyeOff, Layers, Trash2, CheckCircle2, Wrench } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query } from 'firebase/firestore';
+import { collection, query, doc } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -53,25 +53,58 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 
   const form = useForm<PlanFormValues>({
     resolver: zodResolver(planSchema),
+    defaultValues: {
+        id: '',
+        name: '',
+        description: '',
+        price: 0,
+        type: 'access',
+        intelligenceQueries: 0,
+        shopProducts: 0,
+        loadsLimit: 0,
+        vehiclesLimit: 0,
+        financeApplications: 0,
+        features: [],
+        isPopular: false,
+        isActive: true,
+    }
   });
   
   useEffect(() => {
     if (isOpen) {
-        form.reset({
-            id: plan?.id || '',
-            name: plan?.name || '',
-            description: plan?.description || '',
-            price: plan?.price || 0,
-            type: plan?.type || (coreIds.includes(plan?.id?.toLowerCase()) ? 'access' : 'data_silo'),
-            intelligenceQueries: plan?.intelligenceQueries || 0,
-            shopProducts: plan?.shopProducts || 0,
-            loadsLimit: plan?.loadsLimit || 0,
-            vehiclesLimit: plan?.vehiclesLimit || 0,
-            financeApplications: plan?.financeApplications || 0,
-            features: plan?.features || [],
-            isPopular: plan?.isPopular || false,
-            isActive: plan?.isActive !== false,
-        });
+        if (plan) {
+            form.reset({
+                id: plan.id,
+                name: plan.name,
+                description: plan.description,
+                price: plan.price,
+                type: plan.type || (coreIds.includes(plan.id.toLowerCase()) ? 'access' : 'data_silo'),
+                intelligenceQueries: plan.intelligenceQueries || 0,
+                shopProducts: plan.shopProducts || 0,
+                loadsLimit: plan.loadsLimit || 0,
+                vehiclesLimit: plan.vehiclesLimit || 0,
+                financeApplications: plan.financeApplications || 0,
+                features: plan.features || [],
+                isPopular: plan.isPopular || false,
+                isActive: plan.isActive !== false,
+            });
+        } else {
+            form.reset({
+                id: '',
+                name: '',
+                description: '',
+                price: 0,
+                type: 'access',
+                intelligenceQueries: 0,
+                shopProducts: 0,
+                loadsLimit: 0,
+                vehiclesLimit: 0,
+                financeApplications: 0,
+                features: [],
+                isPopular: false,
+                isActive: true,
+            });
+        }
     }
   }, [isOpen, plan, form]);
 
@@ -110,6 +143,14 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleFeatureToggle = (featureKey: string) => {
+      const current = form.getValues('features') || [];
+      const updated = current.includes(featureKey) 
+        ? current.filter(f => f !== featureKey)
+        : [...current, featureKey];
+      form.setValue('features', updated, { shouldDirty: true, shouldValidate: true });
   };
 
   return (
@@ -220,31 +261,22 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                 <div key={section.name} className="space-y-3 text-left">
                                     <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">{section.name}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2 text-left">
-                                        {section.features.map((feature) => (
-                                            <FormField
-                                                key={feature.key}
-                                                name="features"
-                                                control={form.control}
-                                                render={({ field }) => (
-                                                    <div className="flex items-center space-x-2 p-2 border rounded-xl hover:bg-slate-50 transition-all cursor-pointer text-left" onClick={() => {
-                                                        const current = field.value || [];
-                                                        if (current.includes(feature.key)) {
-                                                            field.onChange(current.filter(v => v !== feature.key));
-                                                        } else {
-                                                            field.onChange([...current, feature.key]);
-                                                        }
-                                                    }}>
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value?.includes(feature.key)}
-                                                                onCheckedChange={() => {}}
-                                                            />
-                                                        </FormControl>
-                                                        <span className="text-[10px] font-bold uppercase tracking-tight">{feature.name}</span>
-                                                    </div>
-                                                )}
-                                            />
-                                        ))}
+                                        {section.features.map((feature) => {
+                                            const isChecked = (form.watch('features') || []).includes(feature.key);
+                                            return (
+                                                <div 
+                                                    key={feature.key} 
+                                                    className="flex items-center space-x-2 p-2 border rounded-xl hover:bg-slate-50 transition-all cursor-pointer text-left" 
+                                                    onClick={() => handleFeatureToggle(feature.key)}
+                                                >
+                                                    <Checkbox
+                                                        checked={isChecked}
+                                                        onCheckedChange={() => {}} // handled by parent div for better mobile click target
+                                                    />
+                                                    <span className="text-[10px] font-bold uppercase tracking-tight">{feature.name}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             ))}
