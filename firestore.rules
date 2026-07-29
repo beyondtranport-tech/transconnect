@@ -21,6 +21,11 @@ service cloud.firestore {
       );
     }
 
+    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+
     /**
      * IS MEMBER / OWNER CHECK
      */
@@ -34,11 +39,6 @@ service cloud.firestore {
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
-    }
-
-    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
     }
 
     // --- COLLECTION SPECIFIC RULES ---
@@ -121,7 +121,7 @@ service cloud.firestore {
     }
 
     // --- COLLECTION GROUP RULES ---
-    match /{path=**}/loads/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /{path=**}/transactions/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
     match /{path=**}/adCampaigns/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/shops/{id} { allow read: if true; allow write: if isAdmin(); }
     match /{path=**}/products/{id} { allow read: if true; allow write: if isAdmin(); }
@@ -129,6 +129,5 @@ service cloud.firestore {
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin() || isSignedIn(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
-    match /{path=**}/transactions/{id} { allow read, list: if isSignedIn() && (isAdmin() || isMember(path.split('/')[1])); }
   }
 }

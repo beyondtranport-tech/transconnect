@@ -95,6 +95,10 @@ service cloud.firestore {
       match /agreements/{agId} { allow read: if true; }
     }
 
+    match /parents/{parentId} {
+      allow read, write: if true;
+    }
+
     match /visitors/{visitorId} {
       allow read, write: if true;
     }

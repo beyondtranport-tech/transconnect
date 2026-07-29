@@ -1,14 +1,13 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Database, ShieldCheck, Zap, Info, Eye, EyeOff, Layers } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Database, ShieldCheck, Zap, Info, Eye, EyeOff, Layers, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required (e.g., "basic")'),
@@ -75,7 +75,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       const token = await getClientSideAuthToken();
       if (!token) throw new Error("Authentication failed.");
       
-      const planId = values.id.trim();
+      const planId = values.id.trim().toLowerCase();
       const dataToSave = { ...values, id: planId, updatedAt: { _methodName: 'serverTimestamp' } };
 
       const response = await fetch('/api/updateConfigDoc', {
@@ -245,15 +245,38 @@ export default function PricingManagement() {
     }
   };
 
+  const handleDeletePlan = async (planId: string) => {
+    try {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        
+        const response = await fetch('/api/deleteConfigDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: `memberships/${planId}` }),
+        });
+        
+        if (!response.ok) throw new Error("Delete failed.");
+        
+        toast({ title: "Node Expunged", description: "The plan has been removed from the ledger." });
+        forceRefresh();
+    } catch (e: any) {
+        toast({ variant: 'destructive', title: "Delete Failed" });
+    }
+  };
+
   const accessTiers = useMemo(() => {
       return (plans || [])
-        .filter(p => p.type === 'access' || ['basic', 'standard', 'premium', 'intelligence'].includes(p.id))
+        .filter(p => p.type === 'access' || ['basic', 'standard', 'premium', 'intelligence'].includes(p.id?.toLowerCase()))
         .sort((a,b) => a.price - b.price);
   }, [plans]);
 
   const dataSilos = useMemo(() => {
       return (plans || [])
-        .filter(p => p.type === 'data_silo' || (p.id.includes('intelligence') && !['basic', 'standard', 'premium', 'intelligence'].includes(p.id)))
+        .filter(p => {
+            const isCore = ['basic', 'standard', 'premium', 'intelligence'].includes(p.id?.toLowerCase());
+            return p.type === 'data_silo' && !isCore;
+        })
         .sort((a,b) => a.price - b.price);
   }, [plans]);
 
@@ -273,7 +296,12 @@ export default function PricingManagement() {
     { 
         accessorKey: 'name', 
         header: 'Commercial Label',
-        cell: ({ row }) => <div className="font-bold text-slate-900">{row.original.name}</div>,
+        cell: ({ row }) => (
+            <div className="flex flex-col">
+                <div className="font-bold text-slate-900">{row.original.name}</div>
+                <span className="text-[9px] font-mono uppercase text-muted-foreground">{row.original.id}</span>
+            </div>
+        ),
     },
     { 
         accessorKey: 'price', 
@@ -282,7 +310,7 @@ export default function PricingManagement() {
     },
     { 
         header: 'Forensic Description',
-        cell: ({row}) => <span className="text-xs text-muted-foreground truncate max-w-[300px]">{row.original.description}</span>
+        cell: ({row}) => <span className="text-xs text-muted-foreground truncate max-w-[200px]">{row.original.description}</span>
     },
     {
         id: 'actions',
@@ -290,6 +318,23 @@ export default function PricingManagement() {
         cell: ({ row }) => (
             <div className="text-right flex justify-end gap-1">
                 <PlanDialog plan={row.original} onSave={forceRefresh} />
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Expunge Node Protocol?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete the commercial definition for "{row.original.name}". This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeletePlan(row.original.id)} className={buttonVariants({ variant: 'destructive' })}>Delete Node</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         )
     }
@@ -313,12 +358,12 @@ export default function PricingManagement() {
             <div className="flex items-center gap-4 border-l-4 border-primary pl-4 text-left">
                 <div className="text-left text-foreground">
                     <h3 className="text-xl font-black uppercase tracking-tight">1. Access Control Tiers</h3>
-                    <p className="text-sm text-muted-foreground">Core memberships (Basic, Standard, Premium) that manage navigation boundaries.</p>
+                    <p className="text-sm text-muted-foreground">Core memberships that manage navigation and usage boundaries.</p>
                 </div>
             </div>
             <Card className="border-none shadow-xl bg-white text-left text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center p-20 text-foreground text-foreground text-foreground"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={accessTiers} />}
+                    {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={accessTiers} />}
                 </CardContent>
             </Card>
         </div>
@@ -332,20 +377,20 @@ export default function PricingManagement() {
             </div>
             <Card className="border-none shadow-xl bg-white text-left text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center p-20 text-foreground text-foreground text-foreground text-foreground"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
+                    {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
                 </CardContent>
             </Card>
         </div>
       </div>
 
-      <div className="p-10 bg-slate-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden text-left text-foreground text-foreground">
-            <div className="absolute top-0 right-0 p-12 opacity-5 text-foreground text-foreground"><Zap className="h-40 w-40 text-primary" /></div>
-            <div className="relative z-10 flex items-start gap-6 text-left text-white">
+      <div className="p-10 bg-slate-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 p-12 opacity-5"><Zap className="h-40 w-40 text-primary" /></div>
+            <div className="relative z-10 flex items-start gap-6 text-left">
                 <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
-                <div className="space-y-2 text-left text-white text-white">
-                    <h4 className="text-xl font-black uppercase text-left text-white">Commercial Reinstatement Applied</h4>
+                <div className="space-y-2 text-left">
+                    <h4 className="text-xl font-black uppercase text-left">Commercial Ledger Protection</h4>
                     <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left">
-                        Intelligence Access has been reclassified as a core Access Tier. This ensures that Basic, Standard, and Premium plans remain visible in the ledger for operational management, while specific B2B modules are segregated as high-margin Data Silos.
+                        Core plans (Basic, Standard, Premium, Intelligence) are hard-coded to the Access Tiers section to prevent accidental misclassification. Data Silos are reserved for B2B intelligence modules and remain hidden from the public-facing /pricing terminal.
                     </p>
                 </div>
             </div>

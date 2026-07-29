@@ -156,7 +156,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                     <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Company Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="website" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Website URL</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" placeholder="https://..." /></FormControl></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                     <FormField control={form.control} name="firstName" render={({ field }) => (<FormItem className="text-left"><FormLabel>Primary Contact First Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
@@ -213,7 +213,7 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
                     <div className={cn("space-y-4 p-6 rounded-2xl border transition-all text-left text-foreground", form.watch('primaryContactRole') === 'ceo' ? "bg-primary/5 border-primary shadow-md" : "bg-slate-50 border-slate-200 shadow-inner")}>
                         <div className="flex items-center justify-between">
-                            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
+                            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground text-foreground">
                                 <UserCircle className="h-4 w-4" /> CEO / Principal
                             </h4>
                             <FormField control={form.control} name="primaryContactRole" render={({ field }) => (
@@ -268,8 +268,8 @@ function LeadDialog({ open, onOpenChange, lead, onSave, defaultValues }: { open:
 
             <Separator />
 
-            <div className="space-y-4 text-left text-foreground text-foreground text-foreground">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground text-foreground text-foreground">
+            <div className="space-y-4 text-left text-foreground text-foreground text-foreground text-foreground">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                     <Sparkles className="h-4 w-4" /> Technical Profile
                 </h4>
                 <FormField control={form.control} name="minedServiceWording" render={({ field }) => ( 
