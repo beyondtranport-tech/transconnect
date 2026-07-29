@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
                 .limit(20)
                 .get();
 
-            return NextResponse.json({ success: true, data: serializeData(pingsSnap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            return NextResponse.json({ success: true, data: serializeData(pingsSnap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
         }
 
         if (!isAdmin) throw new Error("Forbidden: Admin access required.");
@@ -71,19 +70,18 @@ export async function POST(req: NextRequest) {
                     .get();
                 return NextResponse.json({ 
                     success: true, 
-                    data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) 
+                    data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) 
                 });
             }
 
             case 'getGlobalSearchLogs': {
-                // Ensure index is created: Collection Group 'searchLogs', Fields: 'type' ASC, 'timestamp' DESC
                 const snap = await db.collectionGroup('searchLogs')
                     .orderBy('type', 'asc')
                     .orderBy('timestamp', 'desc')
                     .limit(200)
                     .get();
                 
-                const results = await Promise.all(snap.docs.map(async (d) => {
+                const results = await Promise.all(snap.docs.map(async (d: QueryDocumentSnapshot) => {
                     const data = d.data();
                     const companyId = d.ref.parent.parent?.id;
                     let companyName = "Unknown Member";
@@ -140,8 +138,8 @@ export async function POST(req: NextRequest) {
                     .get();
 
                 const results = [
-                    ...leadsSnap.docs.map(d => ({ id: d.id, ...d.data(), type: 'lead' })),
-                    ...partnersSnap.docs.map(d => ({ id: d.id, ...d.data(), type: 'partner' }))
+                    ...leadsSnap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data(), type: 'lead' })),
+                    ...partnersSnap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data(), type: 'partner' }))
                 ];
 
                 return NextResponse.json({ success: true, data: serializeData(results) });
@@ -266,7 +264,7 @@ export async function POST(req: NextRequest) {
                     q = q.where('type', '==', queryType);
                 }
                 const snap = await q.orderBy('updatedAt', 'desc').limit(limitNum).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))) });
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getMembers': {
@@ -344,7 +342,7 @@ export async function POST(req: NextRequest) {
                 let pQuery: any = db.collection('partners');
                 if (rType !== 'all') pQuery = pQuery.where('type', '==', rType);
                 const pSnap = await pQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
-                const pResults = pSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Member' }));
+                const pResults = pSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Member' }));
 
                 let lQuery: any = db.collection('leads');
                 if (rType !== 'all') {
@@ -352,7 +350,7 @@ export async function POST(req: NextRequest) {
                     lQuery = lQuery.where('role', '==', roleMap[rType] || rType);
                 }
                 const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
-                const lResults = lSnap.docs.map(d => ({ ...d.data(), id: d.id, source: 'Lead' }));
+                const lResults = lSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
                 let combined = [...pResults, ...lResults];
                 if (normalizedTerm) {

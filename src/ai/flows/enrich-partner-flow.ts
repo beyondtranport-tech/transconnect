@@ -95,14 +95,16 @@ const enrichPartnerFlow = ai.defineFlow(
         4. FRAGMENT STITCHING: Combine data from all snippets (Directories, Social, LinkedIn) to eliminate nulls.
         5. MANDATE: Resolve all 4 management roles: CEO, Marketing, Operations, and Technical.
         
-        MANDATE: Return RAW JSON only.`,
+        MATE: Return RAW JSON only.`,
         prompt: `PERFORM THE V13.1 INDUCTIVE HUNT FOR "${company}" USING THIS SEARCH EVIDENCE:\n\n${allContent}`,
         output: {
             schema: EnrichPartnerOutputSchema
         }
     });
     
-    return (extraction.output as EnrichPartnerOutput) || { 
+    const result = extraction.output as EnrichPartnerOutput;
+    
+    return result || { 
         email: null, 
         phone: null, 
         mobile: null, 
