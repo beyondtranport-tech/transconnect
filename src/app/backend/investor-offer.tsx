@@ -1,13 +1,13 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { DollarSign, TrendingUp, Handshake, AppWindow, DatabaseZap, Zap, ShieldCheck, Search, Database } from 'lucide-react';
+import { DollarSign, TrendingUp, Handshake, AppWindow, DatabaseZap, Zap, ShieldCheck, Search, Database, ArrowRight } from 'lucide-react';
 import React from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
 
 /**
  * THE TRIPLE ENGINE PITCH
@@ -17,7 +17,7 @@ export default function InvestorOffer() {
     return (
         <div className="space-y-12 text-left text-foreground">
             <div className="text-left space-y-4">
-                <Badge className="bg-primary/10 text-primary border-primary/20 py-1 px-4 font-black uppercase tracking-widest text-[10px]">Strategic Opportunity</Badge>
+                <Badge className="bg-primary/10 text-primary border-primary/20 py-1.5 px-4 font-black uppercase tracking-widest text-[10px]">Strategic Opportunity</Badge>
                 <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter uppercase leading-[0.9]">The Triple Engine <br/>of <span className="text-primary">Logistics Flow</span>.</h1>
                 <p className="text-xl text-muted-foreground max-w-3xl leading-relaxed">
                     We are not just a marketplace. We are a **Data-as-a-Service (DaaS)** ecosystem built on three interconnected value layers that transform industrial constraints into proprietary IP.
