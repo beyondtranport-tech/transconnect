@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Database, ShieldCheck, Zap, Info, Eye, EyeOff, Layers, Trash2, CheckCircle2, Wrench } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Trash2, Eye, EyeOff, Layers, Info } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { cn, formatCurrency } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
@@ -108,6 +107,14 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     }
   }, [isOpen, plan, form]);
 
+  const handleFeatureToggle = (featureKey: string) => {
+      const current = form.getValues('features') || [];
+      const updated = current.includes(featureKey) 
+        ? current.filter(f => f !== featureKey)
+        : [...current, featureKey];
+      form.setValue('features', updated, { shouldDirty: true, shouldValidate: true });
+  };
+
   const onSubmit = async (values: PlanFormValues) => {
     setIsLoading(true);
     try {
@@ -135,7 +142,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 
       if (!response.ok) throw new Error("Failed to save plan.");
       
-      toast({ title: 'Ledger Updated!', description: `${values.name} logic has been synchronized.` });
+      toast({ title: 'Commercial Ledger Synchronized', description: `${values.name} logic has been updated in the grid.` });
       onSave();
       setIsOpen(false);
     } catch (e: any) {
@@ -143,14 +150,6 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFeatureToggle = (featureKey: string) => {
-      const current = form.getValues('features') || [];
-      const updated = current.includes(featureKey) 
-        ? current.filter(f => f !== featureKey)
-        : [...current, featureKey];
-      form.setValue('features', updated, { shouldDirty: true, shouldValidate: true });
   };
 
   return (
@@ -163,18 +162,18 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle>{plan ? 'Audit' : 'Create'} {form.watch('type') === 'access' ? 'Access Tier' : 'Data Silo'}</DialogTitle>
-          <DialogDescription>Define the commercial boundaries and B2B valuation for this node.</DialogDescription>
+        <DialogHeader className="p-6 pb-2 text-left">
+          <DialogTitle className="text-2xl font-black uppercase tracking-tight">{plan ? 'Audit' : 'Create'} {form.watch('type') === 'access' ? 'Access Tier' : 'Data Silo'}</DialogTitle>
+          <DialogDescription className="text-left">Define commercial boundaries and B2B valuation for this node.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8 text-left">
             <div className="grid grid-cols-2 gap-4 text-left">
                 <FormField name="type" control={form.control} render={({ field }) => {
                     const isCore = coreIds.includes(form.watch('id')?.toLowerCase());
                     return (
                         <FormItem className="text-left">
-                            <FormLabel>Protocol Classification</FormLabel>
+                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Protocol Classification</FormLabel>
                             <Select onValueChange={field.onChange} value={isCore ? 'access' : field.value}>
                                 <FormControl>
                                     <SelectTrigger className="bg-white border-2" disabled={isCore}>
@@ -186,14 +185,13 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                     <SelectItem value="data_silo">Proprietary Data Silo (B2B)</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {isCore && <p className="text-[9px] text-primary font-bold uppercase mt-1">Core Plan: Forced to Access Tier</p>}
                         </FormItem>
                     );
                 }} />
                  <FormField name="name" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
-                        <FormLabel>Node Label</FormLabel>
-                        <FormControl><Input {...field} className="bg-white border-2" /></FormControl>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Node Label</FormLabel>
+                        <FormControl><Input {...field} className="bg-white border-2 font-bold" /></FormControl>
                     </FormItem>
                 )} />
             </div>
@@ -201,28 +199,28 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             <div className="grid grid-cols-3 gap-4 text-left">
                  <FormField name="price" control={form.control} render={({ field }) => (
                     <FormItem className="text-left">
-                        <FormLabel>Yield Price (R)</FormLabel>
-                        <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Yield Price (R)</FormLabel>
+                        <FormControl><Input type="number" {...field} className="bg-white border-2 font-mono" /></FormControl>
                     </FormItem>
                 )} />
                 <FormField name="isPopular" control={form.control} render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel className="cursor-pointer text-sm">Highlight Node</FormLabel>
+                        <FormLabel className="cursor-pointer text-xs font-bold uppercase">Highlight</FormLabel>
                     </FormItem>
                 )} />
                 <FormField name="isActive" control={form.control} render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel className="cursor-pointer text-primary font-bold text-sm">Active in Grid</FormLabel>
+                        <FormLabel className="cursor-pointer text-primary font-bold text-xs uppercase">Active</FormLabel>
                     </FormItem>
                 )} />
             </div>
 
             <FormField name="description" control={form.control} render={({ field }) => (
               <FormItem className="text-left">
-                  <FormLabel>Value Proposition (Forensic Description)</FormLabel>
-                  <FormControl><Textarea {...field} className="bg-white border-2" /></FormControl>
+                  <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Value Proposition (Public Desc)</FormLabel>
+                  <FormControl><Textarea {...field} className="bg-white border-2 leading-relaxed" /></FormControl>
               </FormItem>
             )} />
 
@@ -235,19 +233,19 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                             <FormField name="intelligenceQueries" control={form.control} render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[9px] font-black uppercase tracking-tight">Intel Queries</FormLabel>
-                                    <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                                    <FormControl><Input type="number" {...field} className="h-9 font-mono" /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField name="shopProducts" control={form.control} render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[9px] font-black uppercase tracking-tight">Catalogue Slots</FormLabel>
-                                    <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                                    <FormControl><Input type="number" {...field} className="h-9 font-mono" /></FormControl>
                                 </FormItem>
                             )} />
                             <FormField name="loadsLimit" control={form.control} render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[9px] font-black uppercase tracking-tight">Max Loads/Mo</FormLabel>
-                                    <FormControl><Input type="number" {...field} className="h-9" /></FormControl>
+                                    <FormControl><Input type="number" {...field} className="h-9 font-mono" /></FormControl>
                                 </FormItem>
                             )} />
                         </div>
@@ -256,7 +254,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                     <div className="space-y-6 text-left">
                         <Separator />
                         <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Platform Capabilities</h4>
-                        <div className="grid grid-cols-1 gap-6">
+                        <div className="grid grid-cols-1 gap-6 text-left">
                             {featuresData.featureSections.map((section) => (
                                 <div key={section.name} className="space-y-3 text-left">
                                     <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">{section.name}</Label>
@@ -266,14 +264,19 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                             return (
                                                 <div 
                                                     key={feature.key} 
-                                                    className="flex items-center space-x-2 p-2 border rounded-xl hover:bg-slate-50 transition-all cursor-pointer text-left" 
-                                                    onClick={() => handleFeatureToggle(feature.key)}
+                                                    className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-all text-left" 
                                                 >
                                                     <Checkbox
+                                                        id={`feature-${feature.key}`}
                                                         checked={isChecked}
-                                                        onCheckedChange={() => {}} // handled by parent div for better mobile click target
+                                                        onCheckedChange={() => handleFeatureToggle(feature.key)}
                                                     />
-                                                    <span className="text-[10px] font-bold uppercase tracking-tight">{feature.name}</span>
+                                                    <label 
+                                                        htmlFor={`feature-${feature.key}`}
+                                                        className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1"
+                                                    >
+                                                        {feature.name}
+                                                    </label>
                                                 </div>
                                             );
                                         })}
@@ -289,7 +292,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                 <FormField name="id" control={form.control} render={({ field }) => (
                   <FormItem className="text-left">
                       <FormLabel className="text-[10px] font-black uppercase text-muted-foreground ml-1">Protocol Identifier (Immutable ID)</FormLabel>
-                      <FormControl><Input {...field} disabled={!!plan} className="h-8 font-mono text-xs" /></FormControl>
+                      <FormControl><Input {...field} disabled={!!plan} className="h-8 font-mono text-xs bg-slate-50" /></FormControl>
                   </FormItem>
                 )} />
             </div>
@@ -433,7 +436,7 @@ export default function PricingManagement() {
 
   return (
     <div className="space-y-12 text-left text-base text-foreground">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
         <div className="text-left">
             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-left">
                 <Layers className="text-primary h-8 w-8"/> 
@@ -444,12 +447,12 @@ export default function PricingManagement() {
         <PlanDialog onSave={forceRefresh} />
       </div>
 
-      <div className="space-y-16 text-left">
+      <div className="space-y-16 text-left text-foreground">
         <div className="space-y-6 text-left">
             <div className="flex items-center gap-4 border-l-4 border-primary pl-4 text-left">
                 <div className="text-left">
-                    <h3 className="text-xl font-black uppercase tracking-tight">1. Access Control Tiers</h3>
-                    <p className="text-sm text-muted-foreground">Core memberships that manage navigation and usage boundaries.</p>
+                    <h3 className="text-xl font-black uppercase tracking-tight text-left">1. Access Control Tiers</h3>
+                    <p className="text-sm text-muted-foreground text-left">Core memberships that manage navigation and usage boundaries.</p>
                 </div>
             </div>
             <Card className="border-none shadow-xl bg-white text-left">
@@ -462,8 +465,8 @@ export default function PricingManagement() {
         <div className="space-y-6 text-left">
              <div className="flex items-center gap-4 border-l-4 border-slate-900 pl-4 text-left">
                 <div className="text-left">
-                    <h3 className="text-xl font-black uppercase tracking-tight">2. Proprietary Data Silos</h3>
-                    <p className="text-sm text-muted-foreground">B2B intelligence silos deactivated for public view. Sold via institutional handshake.</p>
+                    <h3 className="text-xl font-black uppercase tracking-tight text-left">2. Proprietary Data Silos</h3>
+                    <p className="text-sm text-muted-foreground text-left text-foreground">B2B intelligence silos deactivated for public view. Sold via institutional handshake.</p>
                 </div>
             </div>
             <Card className="border-none shadow-xl bg-white text-left">
@@ -474,8 +477,8 @@ export default function PricingManagement() {
         </div>
       </div>
 
-      <div className="p-10 bg-slate-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden text-left text-foreground">
-            <div className="absolute top-0 right-0 p-12 opacity-5"><Zap className="h-40 w-40 text-primary" /></div>
+      <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
+            <div className="absolute top-0 right-0 p-12 opacity-5 text-left"><Zap className="h-40 w-40 text-primary" /></div>
             <div className="relative z-10 flex items-start gap-6 text-left">
                 <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
                 <div className="space-y-2 text-left">
@@ -489,3 +492,4 @@ export default function PricingManagement() {
     </div>
   );
 }
+

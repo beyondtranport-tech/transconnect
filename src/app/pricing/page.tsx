@@ -12,12 +12,6 @@ import { Separator } from '@/components/ui/separator';
 import * as React from 'react';
 import featuresData from '@/lib/features.json';
 
-/**
- * ACCESS CONTROL TIERS
- * Public facing page showing core Access tiers (Basic, Standard, Premium).
- * Data Silos are hidden for B2B resale only.
- */
-
 const formatLimit = (val: number | undefined | null) => {
     if (val === undefined || val === null) return '0';
     if (val === 999999 || val >= 9000) return 'Unlimited';
@@ -50,7 +44,6 @@ export default function MembershipPage() {
         .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [dbPlans]);
 
-  // Flatten features for lookup
   const allFeatures = React.useMemo(() => {
       return featuresData.featureSections.flatMap(s => s.features);
   }, []);
@@ -59,7 +52,7 @@ export default function MembershipPage() {
     <div className="bg-background min-h-screen text-left text-foreground">
       <div className="container mx-auto px-4 py-16 md:py-24 text-left">
         
-        <div className="text-center max-w-3xl mx-auto mb-20 space-y-4 text-center">
+        <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
           <Badge className="mb-4 bg-primary/10 text-primary border-primary/20 font-bold uppercase tracking-widest px-4 py-1">Node Access Control</Badge>
           <h1 className="text-4xl md:text-7xl font-black font-headline tracking-tight text-foreground uppercase leading-none text-center">Activate Your <br/><span className="text-primary">Ecosystem Node</span>.</h1>
           <p className="mt-6 text-xl text-muted-foreground leading-relaxed font-medium text-center">
@@ -68,12 +61,12 @@ export default function MembershipPage() {
         </div>
 
         {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
+            <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                 <Loader2 className="animate-spin h-12 w-12 text-primary mx-auto" />
                 <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Synchronizing Access Matrix...</p>
             </div>
         ) : plans.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch text-left text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto items-stretch text-left">
                 {plans.map((plan) => (
                     <Card key={plan.id} className={cn(
                         "flex flex-col shadow-xl transition-all duration-300 relative border-none overflow-hidden h-full bg-white text-left",
@@ -84,22 +77,22 @@ export default function MembershipPage() {
                                 Standard Choice
                             </div>
                         )}
-                        <CardHeader className="p-8 pb-4 text-left text-foreground">
-                            <CardTitle className="text-2xl font-black tracking-tight text-left uppercase text-foreground">{plan.name}</CardTitle>
+                        <CardHeader className="p-8 pb-4 text-left">
+                            <CardTitle className="text-2xl font-black tracking-tight text-left uppercase">{plan.name}</CardTitle>
                             <CardDescription className="mt-2 text-sm font-bold text-slate-500 leading-relaxed text-left min-h-[40px]">
                                 {plan.description}
                             </CardDescription>
                         </CardHeader>
                         
-                        <CardContent className="p-8 pt-0 flex-grow space-y-8 text-left text-foreground">
-                            <div className="py-6 border-y border-slate-100 text-left text-foreground">
-                                <div className="flex items-baseline gap-1.5 text-left text-foreground">
-                                    <span className="text-4xl font-black text-slate-900 tracking-tighter text-left">{formatCurrency(plan.price).split('.')[0]}</span>
-                                    <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest text-left">/ month</span>
+                        <CardContent className="p-8 pt-0 flex-grow space-y-8 text-left">
+                            <div className="py-6 border-y border-slate-100 text-left">
+                                <div className="flex items-baseline gap-1.5 text-left">
+                                    <span className="text-4xl font-black text-slate-900 tracking-tighter">{formatCurrency(plan.price).split('.')[0]}</span>
+                                    <span className="text-slate-400 font-black uppercase text-[10px] tracking-widest">/ month</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 text-left text-foreground">
+                            <div className="space-y-4 text-left">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary text-left">Included Capabilities</h4>
                                 <ul className="space-y-2 text-left">
                                     {(plan.features || []).map((featureKey: string) => {
@@ -117,33 +110,33 @@ export default function MembershipPage() {
                                 </ul>
                             </div>
 
-                            <div className="space-y-5 text-left text-foreground pt-4 border-t border-dashed">
+                            <div className="space-y-5 text-left pt-4 border-t border-dashed">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-left">Usage Boundaries</h4>
                                 
-                                <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px] text-left">
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px]">
                                         <Search className="h-3.5 w-3.5 text-primary" /> intelligence
                                     </div>
-                                    <span className="font-black text-slate-900 text-xs text-left">{formatLimit(plan.intelligenceQueries)} Queries</span>
+                                    <span className="font-black text-slate-900 text-xs">{formatLimit(plan.intelligenceQueries)} Queries</span>
                                 </div>
 
-                                <div className="flex items-center justify-between text-sm group text-left">
-                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px] text-left">
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px]">
                                         <Store className="h-3.5 w-3.5 text-primary" /> Shop Products
                                     </div>
-                                    <span className="font-black text-slate-900 text-xs text-left">{formatLimit(plan.shopProducts)} Products</span>
+                                    <span className="font-black text-slate-900 text-xs">{formatLimit(plan.shopProducts)} Products</span>
                                 </div>
 
-                                <div className="flex items-center justify-between text-sm group text-left text-foreground">
-                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px] text-left">
+                                <div className="flex items-center justify-between text-sm group">
+                                    <div className="flex items-center gap-2 text-slate-500 font-bold uppercase text-[9px]">
                                         <PackageSearch className="h-3.5 w-3.5 text-primary" /> Clearing Limit
                                     </div>
-                                    <span className="font-black text-slate-900 text-xs text-left">{formatLimit(plan.loadsLimit)} Loads</span>
+                                    <span className="font-black text-slate-900 text-xs">{formatLimit(plan.loadsLimit)} Loads</span>
                                 </div>
                             </div>
                         </CardContent>
                         
-                        <CardFooter className="p-8 bg-slate-50 border-t text-left text-foreground">
+                        <CardFooter className="p-8 bg-slate-50 border-t text-left">
                             <Button asChild className={cn("w-full h-14 font-black uppercase tracking-widest shadow-md group text-white", !plan.isPopular && "bg-slate-800 hover:bg-slate-700")}>
                                 <Link href={`/checkout/${plan.id}`}>
                                     Activate Access <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -157,15 +150,15 @@ export default function MembershipPage() {
             <div className="max-w-md mx-auto text-center py-20 bg-muted/20 rounded-3xl border-2 border-dashed">
                 <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
                 <h3 className="text-xl font-bold">Access Matrix Standby</h3>
-                <p className="text-sm text-muted-foreground mt-2 px-8">
+                <p className="text-sm text-muted-foreground mt-2 px-8 text-center">
                     The platform core access tiers are being synchronized. Please check back in a few moments.
                 </p>
             </div>
         )}
 
-        <div className="mt-32 max-w-4xl mx-auto p-12 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-foreground">
+        <div className="mt-32 max-w-4xl mx-auto p-12 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
             <div className="absolute top-0 right-0 p-12 opacity-5"><ShieldCheck className="h-40 w-40 text-primary" /></div>
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 text-left text-white">
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-10 text-left">
                 <div className="flex-1 space-y-4 text-left">
                     <Badge className="bg-primary/20 text-primary border-none font-bold uppercase text-left">The Data Dividend</Badge>
                     <h3 className="text-3xl font-black uppercase tracking-tight text-white text-left">Own the Industrial Flow.</h3>
