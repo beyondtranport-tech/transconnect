@@ -48,12 +48,46 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
-            // --- LENDING PORTAL COMPLETION ACTIONS ---
+            case 'bulkSavePartners': {
+                const { partners, type } = payload;
+                const batch = db.batch();
+                partners.forEach((p: any) => {
+                    const collection = (p.source === 'Lead' || !p.type || p.type === 'lead') ? 'leads' : 'partners';
+                    const ref = db.collection(collection).doc(p.id || db.collection(collection).doc().id);
+                    batch.set(ref, { 
+                        ...p, 
+                        id: ref.id, 
+                        type: type || p.type || 'partner',
+                        source: p.source || 'AI Discovery',
+                        status: p.status || 'new',
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: partners.length });
+            }
+
+            case 'bulkSaveLendingClients': {
+                const { clients } = payload;
+                const batch = db.batch();
+                clients.forEach((c: any) => {
+                    const ref = db.collection('lendingClients').doc(c.id || db.collection('lendingClients').doc().id);
+                    batch.set(ref, { 
+                        ...c, 
+                        id: ref.id, 
+                        status: c.status || 'draft',
+                        updatedAt: FieldValue.serverTimestamp() 
+                    }, { merge: true });
+                });
+                await batch.commit();
+                return NextResponse.json({ success: true, count: clients.length });
+            }
+
             case 'getLendingData': {
                 const { collectionName, clientId } = payload;
                 let q: any = db.collection(collectionName);
                 if (clientId) q = q.where('clientId', '==', clientId);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(200).get();
+                const snap = await q.orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -64,38 +98,10 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: ref.id });
             }
 
-            case 'saveLendingAgreement': {
-                const { agreement } = payload;
-                const ref = db.collection('agreements').doc(agreement.id || db.collection('agreements').doc().id);
-                await ref.set({ ...agreement, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-
-            case 'saveLendingAsset': {
-                const { asset } = payload;
-                const ref = db.collection('lendingAssets').doc(asset.id || db.collection('lendingAssets').doc().id);
-                await ref.set({ ...asset, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-
-            case 'saveLendingSecurity': {
-                const { security, clientId, agreementId } = payload;
-                const ref = db.collection('lendingClients').doc(clientId).collection('agreements').doc(agreementId).collection('securities').doc();
-                await ref.set({ ...security, id: ref.id, createdAt: FieldValue.serverTimestamp() });
+            case 'deleteLendingPartner': {
+                const { partnerId, collection: col = 'lendingClients' } = payload;
+                await db.collection(col).doc(partnerId).delete();
                 return NextResponse.json({ success: true });
-            }
-
-            case 'saveLendingFacility': {
-                const { facility } = payload;
-                const ref = db.collection('facilities').doc(facility.id || db.collection('facilities').doc().id);
-                await ref.set({ ...facility, id: ref.id, status: 'active', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true });
-            }
-
-            // --- LEGACY ACTIONS ---
-            case 'getGlobalHandshakes': {
-                const snap = await db.collection('engagementPings').orderBy('timestamp', 'desc').limit(200).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getMembers': {
@@ -110,7 +116,6 @@ export async function POST(req: NextRequest) {
 
             case 'searchRegistry': {
                 const { type: rType, limit: rLimit = 100, term = '' } = payload;
-                const normalizedTerm = term.toLowerCase().trim();
                 const limitNum = parseInt(String(rLimit), 10) || 100;
                 
                 let pQuery: any = db.collection('partners');
@@ -120,22 +125,47 @@ export async function POST(req: NextRequest) {
 
                 let lQuery: any = db.collection('leads');
                 if (rType !== 'all') {
-                    const roleMap: Record<string, string> = { 'transporter': 'Transporter', 'supplier': 'Supplier', 'driver': 'Driver', 'finance': 'Funder', 'associate': 'Associate' };
+                    const roleMap: Record<string, string> = { 'transporter': 'Transporter', 'supplier': 'Supplier', 'driver': 'Driver', 'finance': 'Funder', 'associate': 'Associate', 'debtor': 'Debtor' };
                     lQuery = lQuery.where('role', '==', roleMap[rType] || rType);
                 }
                 const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const lResults = lSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
                 let combined = [...pResults, ...lResults];
-                if (normalizedTerm) {
-                    combined = combined.filter(item => {
-                        const name = (item.companyName || item.firstName || '').toLowerCase();
-                        const email = (item.email || '').toLowerCase();
-                        return name.includes(normalizedTerm) || email.includes(normalizedTerm);
-                    });
+                if (term) {
+                    const norm = term.toLowerCase().trim();
+                    combined = combined.filter(item => (item.companyName || item.firstName || '').toLowerCase().includes(norm));
                 }
                 combined.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
                 return NextResponse.json({ success: true, data: serializeData(combined.slice(0, limitNum)) });
+            }
+
+            case 'getAuditLogs': {
+                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(100).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, subject, type: cType, notes, collection: col = 'partners' } = payload;
+                const logRef = db.collection(col).doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    id: logRef.id,
+                    subject,
+                    type: cType,
+                    notes,
+                    timestamp: FieldValue.serverTimestamp(),
+                    senderId: decodedToken.uid
+                });
+                
+                // Update outreach status on parent
+                await db.collection(col).doc(partnerId).update({
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    status: 'contacted',
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                
+                return NextResponse.json({ success: true });
             }
 
             default: 

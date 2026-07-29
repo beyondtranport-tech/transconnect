@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -24,6 +25,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
+        cache: 'no-store'
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
@@ -102,35 +104,52 @@ type ClientFormValues = z.infer<typeof clientSchema>;
 
 // --- STEP COMPONENTS ---
 const StepMain = () => {
-    const { control } = useFormContext<ClientFormValues>();
+    const { control, setValue } = useFormContext<ClientFormValues>();
+    
+    const handleVisionExtraction = (data: any) => {
+        if (data.ownerName) setValue('name', data.ownerName);
+        if (data.registrationNumber) setValue('registrationId', data.registrationNumber);
+        if (data.vin) setValue('code', data.vin); // Storing VIN as code for now
+    };
+
     return (
-         <div className="space-y-4">
-            <FormField control={control} name="name" render={({ field }) => (<FormItem><FormLabel>Client Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={control} name="type" render={({ field }) => (<FormItem><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="company">Company</SelectItem><SelectItem value="individual">Individual</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                <FormField control={control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+         <div className="space-y-6 text-left text-foreground">
+            <div className="flex justify-between items-center bg-primary/5 p-4 rounded-2xl border-2 border-dashed border-primary/20 text-left">
+                <div className="text-left">
+                    <h4 className="font-black text-sm flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Vision Onboarding</h4>
+                    <p className="text-xs text-muted-foreground">Populate identity from RC1 or Registration document photo.</p>
+                </div>
+                <div className="w-48 text-left">
+                    <VisionOnboardingDialog onExtractionComplete={handleVisionExtraction} />
+                </div>
             </div>
-             <FormField control={control} name="registrationId" render={({ field }) => (<FormItem><FormLabel>Registration ID</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label>VAT Registered?</Label></FormItem>)} />
+
+            <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                <FormField control={control} name="type" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="company">Company</SelectItem><SelectItem value="individual">Individual</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormField control={control} name="status" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+            </div>
+             <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Registration ID</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2 text-left text-foreground"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="cursor-pointer">VAT Registered?</Label></FormItem>)} />
         </div>
     )
 };
 const StepAddress = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
-        <div className="space-y-6">
-            <div>
-                <h4 className="font-semibold mb-2">Physical Address</h4>
-                <div className="space-y-4 p-4 border rounded-md">
-                    <FormField control={control} name="physicalAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={control} name="physicalPostalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+        <div className="space-y-6 text-left">
+            <div className="text-left text-foreground">
+                <h4 className="font-semibold mb-2 flex items-center gap-2"><Building className="h-4 w-4 text-primary" /> Physical Address</h4>
+                <div className="space-y-4 p-4 border rounded-md bg-white">
+                    <FormField control={control} name="physicalAddress" render={({ field }) => (<FormItem className="text-left"><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
+                    <FormField control={control} name="physicalPostalCode" render={({ field }) => (<FormItem className="text-left"><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
                 </div>
             </div>
-             <div>
-                <h4 className="font-semibold mb-2">Postal Address</h4>
-                <div className="space-y-4 p-4 border rounded-md">
-                    <FormField control={control} name="postalAddress" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <FormField control={control} name="postalPostalCode" render={({ field }) => (<FormItem><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+             <div className="text-left text-foreground">
+                <h4 className="font-semibold mb-2 flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> Postal Address</h4>
+                <div className="space-y-4 p-4 border rounded-md bg-white">
+                    <FormField control={control} name="postalAddress" render={({ field }) => (<FormItem className="text-left"><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
+                    <FormField control={control} name="postalPostalCode" render={({ field }) => (<FormItem className="text-left"><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
                 </div>
             </div>
         </div>
@@ -142,24 +161,24 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
     const { fields, append, remove } = useFieldArray({ control, name });
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 text-left">
             {fields.map((item, index) => (
-                <div key={item.id} className="p-4 border rounded-lg relative">
-                    <h4 className="font-medium mb-2">{title} #{index + 1}</h4>
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div key={item.id} className="p-4 border rounded-lg relative bg-white text-left">
+                    <h4 className="font-medium mb-2 text-left text-foreground">{title} #{index + 1}</h4>
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left text-foreground">
                         {fieldsConfig.map(config => (
                             <FormField
                                 control={control}
                                 key={`${item.id}-${config.id}`}
                                 name={`${name}.${index}.${config.id}` as any}
                                 render={({ field }) => (
-                                    <FormItem>
+                                    <FormItem className="text-left">
                                         <FormLabel>{config.label}</FormLabel>
                                         <FormControl>
                                             <Input
                                                 type={config.type}
                                                 {...field}
-                                                // @ts-ignore - Handle coercion for number inputs
+                                                value={field.value || ''}
                                                 onChange={e => field.onChange(config.type === 'number' ? parseFloat(e.target.value) || '' : e.target.value)}
                                             />
                                         </FormControl>
@@ -172,7 +191,7 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </div>
             ))}
-            <Button type="button" variant="outline" onClick={() => append({})}>
+            <Button type="button" variant="outline" onClick={() => append({})} className="font-bold border-2">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add {title}
             </Button>
         </div>
@@ -181,7 +200,7 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
 
 // --- WIZARD COMPONENT ---
 const steps = [
-    { id: 'main', title: 'Main', icon: User, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
+    { id: 'main', title: 'Main & AI Scan', icon: Sparkles, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
     { id: 'address', title: 'Address', icon: Building, fields: ['physicalAddress', 'physicalPostalCode', 'postalAddress', 'postalPostalCode'] },
     { id: 'contact', title: 'Contact', icon: Phone, fields: ['contacts'] },
     { id: 'owners', title: 'Owners', icon: Users, fields: ['owners'] },
@@ -284,55 +303,56 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
             case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />;
             case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />;
             case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />;
-            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving the client.</p></div>;
+            case 'review': return <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase">Audit Readiness Verified</h3><p className="text-muted-foreground max-w-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>;
             default: return null;
         }
     };
     
     return (
-         <Card>
+         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader>
-                         <div className="flex justify-between items-start">
-                            <div>
-                                <h2 className="text-2xl font-bold font-headline">{client ? 'Edit' : 'Add'} Client</h2>
-                                <p className="text-muted-foreground">{steps[currentStep].title}</p>
+                    <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white">
+                         <div className="flex justify-between items-start text-left text-white">
+                            <div className="text-left">
+                                <h2 className="text-2xl font-black font-headline text-white text-left uppercase tracking-tight">{client ? 'Edit' : 'Add'} Debtor Profile</h2>
+                                <p className="text-slate-400 mt-1">{steps[currentStep].title}</p>
                             </div>
-                            <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
+                            <Button type="button" variant="ghost" onClick={onBack} className="text-white hover:text-primary"><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                            <div className="flex flex-col gap-2 border-r pr-4">
+                    <CardContent className="p-8">
+                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12 text-left">
+                            <div className="flex flex-col gap-2 border-r pr-6 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = completedSteps.has(step.id);
                                     return (
-                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)}>
-                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
-                                            {step.title}
+                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className={cn("justify-start gap-3 h-11 px-3 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(index)}>
+                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-white" : "bg-muted")}>{index + 1}</div>}
+                                            <Icon className="h-4 w-4 mr-1 text-primary" />
+                                            <span className={cn("text-[10px] font-black uppercase tracking-widest", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                         </Button>
                                     );
                                 })}
                             </div>
-                            <div className="space-y-6 min-h-[400px]">
+                            <div className="space-y-6 min-h-[500px] text-left">
                                 {renderStepContent()}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t pt-6 mt-6">
-                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading}>
+                    <CardFooter className="flex justify-between border-t p-8 bg-slate-50">
+                        <Button type="button" variant="ghost" onClick={handleBackStep} disabled={currentStep === 0 || isLoading} className="font-bold">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>
-                                Next <ArrowRight className="ml-2 h-4 w-4"/>
+                            <Button type="button" onClick={handleNext} className="px-10 font-bold text-white shadow-lg">
+                                Next Step <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                {client ? 'Update Client' : 'Create Client'}
+                            <Button type="submit" disabled={isLoading} className="h-14 px-12 font-black uppercase tracking-tight shadow-xl text-white">
+                                {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
+                                {client ? 'Update Forensic Record' : 'Create Forensic Record'}
                             </Button>
                         )}
                     </CardFooter>
@@ -341,4 +361,3 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
         </Card>
     );
 }
-

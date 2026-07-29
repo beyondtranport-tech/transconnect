@@ -6,13 +6,18 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Eye } from 'lucide-react';
+import { Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, Download, Upload, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { EditClientWizard } from './edit-client';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import DebtorDiscoveryEngine from './debtor-discovery';
+import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
+import { downloadDataAsCSV } from '@/lib/utils';
+import AudienceCommunicationsTable from '@/app/adminaccount/marketing/AudienceCommunicationsTable';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -20,6 +25,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, payload }),
+        cache: 'no-store'
     });
     const result = await response.json();
     if (!response.ok || !result.success) {
@@ -28,7 +34,6 @@ async function performAdminAction(token: string, action: string, payload: any) {
     return result;
 }
 
-// Main Component
 export default function ClientsContent() {
     const { toast } = useToast();
     const [clients, setClients] = useState<any[]>([]);
@@ -71,7 +76,7 @@ export default function ClientsContent() {
     };
     
     const handleBackToList = () => {
-        setView('wizard');
+        setView('list');
         setSelectedClient(null);
     };
 
@@ -97,12 +102,25 @@ export default function ClientsContent() {
     };
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { accessorKey: 'name', header: 'Name', cell: ({row}) => <div>{row.original.name}</div> },
-        { accessorKey: 'contactPerson', header: 'Contact Person', cell: ({row}) => <div>{row.original.contactPerson}</div> },
-        { accessorKey: 'email', header: 'Email', cell: ({row}) => <div>{row.original.email}</div> },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge className="capitalize">{row.original.status}</Badge>},
+        { 
+            accessorKey: 'name', 
+            header: 'Client / Debtor',
+            cell: ({row}) => (
+                <div className="flex flex-col text-left">
+                    <span className="font-bold text-foreground text-left">{row.original.name}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono uppercase text-left">{row.original.code || row.original.id}</span>
+                </div>
+            )
+        },
+        { accessorKey: 'contactPerson', header: 'Contact Person' },
+        { accessorKey: 'email', header: 'Email' },
+        { 
+            accessorKey: 'status', 
+            header: 'Status', 
+            cell: ({ row }) => <Badge className="capitalize text-[10px] font-black">{row.original.status}</Badge>
+        },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1">
+            <div className="flex justify-end items-center gap-1 text-left">
                 <Button asChild variant="ghost" size="icon"><Link href={`/lending/clients/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setClientToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
@@ -110,44 +128,98 @@ export default function ClientsContent() {
         ) },
     ], []);
     
-    if (error) {
-        return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
-    }
-
     if (view === 'wizard') {
         return <EditClientWizard client={selectedClient} onSave={handleSaveSuccess} onBack={handleBackToList} />;
     }
 
     return (
-        <>
+        <div className="space-y-8 text-left text-foreground">
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete client "{clientToDelete?.name}".</AlertDialogDescription>
+                <AlertDialogContent className="text-left">
+                    <AlertDialogHeader className="text-left">
+                        <AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">This will permanently delete client "{clientToDelete?.name}".</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className="text-left">
                         <AlertDialogCancel onClick={() => setClientToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="flex items-center gap-2"><Users /> Clients (Debtors)</CardTitle>
-                        <CardDescription>Manage all clients within the lending system.</CardDescription>
-                    </div>
-                    <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>Add Client</Button>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
-                    ) : (
-                        <DataTable columns={columns} data={clients} />
-                    )}
-                </CardContent>
-            </Card>
-        </>
+
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+                        <Users className="h-8 w-8 text-primary" />
+                        Client & Debtor Portfolio
+                    </h1>
+                    <p className="text-muted-foreground mt-1 text-left">Manage active lending relationships and discover new high-fidelity debtor opportunities.</p>
+                </div>
+            </div>
+
+            <Tabs defaultValue="registry" className="w-full text-left">
+                <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start">
+                    <TabsTrigger value="registry" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                        <Database className="h-3.5 w-3.5" /> Client Registry (CRM)
+                    </TabsTrigger>
+                    <TabsTrigger value="discovery" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                        <SearchCode className="h-3.5 w-3.5" /> Debtor Discovery (AI)
+                    </TabsTrigger>
+                    <TabsTrigger value="oversight" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
+                        <History className="h-3.5 w-3.5" /> Oversight Timeline
+                    </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="registry" className="mt-8 space-y-6 text-left">
+                    <Card className="border-none shadow-xl bg-white text-left">
+                        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
+                            <div className="text-left">
+                                <CardTitle className="text-lg font-bold text-left">Master Portfolio</CardTitle>
+                                <CardDescription className="text-left">Verified entities currently active in the lending system.</CardDescription>
+                            </div>
+                            <div className="flex gap-2 text-left">
+                                <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
+                                    <RotateCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(clients, `debtors-registry-${Date.now()}.csv`)} className="gap-2">
+                                    <Download className="h-4 w-4" /> Export
+                                </Button>
+                                <BulkImportDialog type="lendingClient" onComplete={forceRefresh}>
+                                    <Button variant="outline" size="sm" className="gap-2"><Upload className="h-4 w-4" /> Import</Button>
+                                </BulkImportDialog>
+                                <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg">
+                                    <PlusCircle className="h-4 w-4" /> Add Debtor
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-6 text-left">
+                            {isLoading ? (
+                                <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Opening Registry...</p>
+                                </div>
+                            ) : (
+                                <DataTable columns={columns} data={clients} />
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="discovery" className="mt-8 text-left">
+                    <DebtorDiscoveryEngine />
+                </TabsContent>
+
+                <TabsContent value="oversight" className="mt-8 text-left">
+                    <Card className="border-none shadow-xl bg-white text-left">
+                        <CardHeader className="border-b bg-muted/10 text-left">
+                            <CardTitle className="text-lg font-bold text-left">Engagement Audit Trail</CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-6 text-left">
+                            <AudienceCommunicationsTable audience="debtor" />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
+        </div>
     );
 }

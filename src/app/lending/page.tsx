@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,25 +19,20 @@ import {
   LogOut,
   Loader2,
   LayoutDashboard,
-  Calculator,
-  Banknote,
   Landmark,
-  Lightbulb,
   FileSignature,
   ClipboardList,
   Users,
   Handshake,
   Truck,
-  Repeat,
   Paperclip,
-  CalendarCheck,
   Settings,
   ArrowRightLeft,
-  Camera,
-  ShieldCheck,
+  Globe,
+  Database,
+  SearchCode,
   Zap,
-  Sparkles,
-  Globe
+  Sparkles
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -123,11 +119,15 @@ function LendingPortalContent() {
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'agreements', 'assets', 'facilities'].includes(activeView)}>
-                        <ClipboardList /><span>Portfolios</span>
+                    <SidebarMenuButton tooltip="Clients" isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
+                        <Users /><span>Debtors (Clients)</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities'].includes(activeView)}>
+                        <ClipboardList /><span>Lending Ledger</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'clients'} onClick={() => navigate('clients')}>Debtors (Clients)</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>Asset Register</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>Credit Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
@@ -144,7 +144,7 @@ function LendingPortalContent() {
              <div className="p-4 border-t space-y-4">
                 <VisionOnboardingDialog onExtractionComplete={(data) => {
                     console.log("Vision Data Extracted:", data);
-                    router.push(`/lending?view=assets&action=create&prefill=${encodeURIComponent(JSON.stringify(data))}`);
+                    router.push(`/lending?view=clients&action=create&prefill=${encodeURIComponent(JSON.stringify(data))}`);
                 }} />
                 <Button variant="outline" className="w-full justify-start gap-2 h-9 text-[10px] font-black uppercase tracking-widest" asChild>
                     <Link href="/backend"><ArrowRightLeft className="h-3.5 w-3.5" /> App Backend</Link>
