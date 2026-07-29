@@ -124,7 +124,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
         <DialogHeader className="p-6 pb-2 text-left">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">{plan ? 'Audit' : 'Initialize'} Node Protocol</DialogTitle>
-          <DialogDescription className="text-left text-foreground text-foreground">Define commercial boundaries and B2B yield for this digital node.</DialogDescription>
+          <DialogDescription className="text-left text-foreground">Define commercial boundaries and B2B yield for this digital node.</DialogDescription>
         </DialogHeader>
         <FormProvider {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8 text-left text-foreground">
@@ -145,7 +145,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 
             <div className="grid grid-cols-3 gap-4 text-left">
                 <FormField name="price" render={({ field }) => (
-                    <FormItem className="text-left text-foreground text-foreground"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
+                    <FormItem className="text-left text-foreground"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
                 )} />
                 <FormField name="isPopular" render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left text-foreground"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="cursor-pointer text-xs font-bold uppercase">Highlight</FormLabel></FormItem>
@@ -156,7 +156,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             </div>
 
             <FormField name="description" render={({ field }) => (
-              <FormItem className="text-left text-foreground text-foreground"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Value Prop</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>
+              <FormItem className="text-left text-foreground"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Value Prop</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>
             )} />
 
             {methods.watch('type') === 'access' && (
@@ -193,7 +193,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             
             <div className="pt-4 text-left">
                 <FormField name="id" render={({ field }) => (
-                  <FormItem className="text-left text-foreground text-foreground"><FormLabel className="text-[10px] font-black uppercase text-muted-foreground">ID</FormLabel><FormControl><Input {...field} disabled={!!plan} className="h-8 font-mono text-xs bg-slate-50" /></FormControl></FormItem>
+                  <FormItem className="text-left text-foreground"><FormLabel className="text-[10px] font-black uppercase text-muted-foreground">ID</FormLabel><FormControl><Input {...field} disabled={!!plan} className="h-8 font-mono text-xs bg-slate-50" /></FormControl></FormItem>
                 )} />
             </div>
           </form>
@@ -240,7 +240,7 @@ export default function PricingManagement() {
                 </AlertDialogTrigger>
                 <AlertDialogContent className="text-left text-foreground">
                     <AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left text-foreground">Expunge Node Protocol?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Permanent deletion of "{row.original.name}".</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground"><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} className={buttonVariants({ border: 'destructive' })}>Delete Node</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogFooter className="text-left text-foreground"><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} className={buttonVariants({ variant: 'destructive' })}>Delete Node</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
