@@ -34,9 +34,9 @@
         "mobile": { "type": "string" },
         "companyName": { "type": "string" },
         "status": { "type": "string", "enum": ["active", "inactive", "contacted", "new", "qualified", "invited", "registered"] },
-        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance", "distributor"] },
-        "minedServiceWording": { "type": "string", "description": "First 300 words of technical content scraped from the sitemap sub-pages." },
-        "industrialTags": { "type": "array", "items": { "type": "string" }, "description": "ML-extracted keywords for search indexing." },
+        "type": { "type": "string", "enum": ["partner", "isa", "investor", "developer", "supplier", "transporter", "finance", "distributor", "lead"] },
+        "minedServiceWording": { "type": "string", "description": "Technical content mined from the site." },
+        "industrialTags": { "type": "array", "items": { "type": "string" } },
         "address": { "type": "string" },
         "website": { "type": "string" },
         "marketingManager": {
@@ -55,11 +55,34 @@
             "mobile": { "type": "string" }
           }
         },
-        "assigneeId": { "type": "string", "description": "UID of the allocated platform staff member." },
+        "assigneeId": { "type": "string" },
         "createdAt": { "type": "object" },
         "updatedAt": { "type": "object" }
-      },
-      "required": ["firstName", "lastName", "email", "type"]
+      }
+    },
+    "LendingClient": {
+      "title": "Lending Client",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "status": { "type": "string" },
+        "registrationId": { "type": "string" },
+        "code": { "type": "string" },
+        "availableFacility": { "type": "number" }
+      }
+    },
+    "LendingAgreement": {
+      "title": "Lending Agreement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "type": { "type": "string" },
+        "totalAdvanced": { "type": "number" },
+        "interestRate": { "type": "number" },
+        "status": { "type": "string" }
+      }
     },
     "DataHarvestNode": {
       "title": "Data Harvest Node",
@@ -68,11 +91,9 @@
       "properties": {
         "id": { "type": "string" },
         "silo": { "type": "string", "enum": ["behavioral", "operational", "financial"] },
-        "sourceId": { "type": "string", "description": "Obfuscated ID of the originating member or visitor." },
-        "dataPoints": { "type": "object", "description": "The specific metrics harvested (e.g., search patterns, fleet specs)." },
+        "sourceId": { "type": "string", "description": "Obfuscated ID of the originating member." },
+        "dataPoints": { "type": "object" },
         "isAnonymized": { "type": "boolean" },
-        "isCleaned": { "type": "boolean" },
-        "resaleValueTier": { "type": "string", "enum": ["low", "medium", "high"] },
         "createdAt": { "type": "object" }
       }
     }
@@ -82,18 +103,11 @@
   },
   "firestore": {
     "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" }, "description": "User profiles." }
-      },
-      {
-        "path": "/partners/{partnerId}",
-        "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
-      },
-      {
-        "path": "/dataHarvest/{nodeId}",
-        "definition": { "entityName": "DataHarvestNode", "schema": { "$ref": "#/entities/DataHarvestNode" }, "description": "The proprietary IP vault for anonymized industrial data." }
-      }
+      { "path": "/users/{userId}", "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" }, "description": "User profiles." } },
+      { "path": "/partners/{partnerId}", "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." } },
+      { "path": "/leads/{leadId}", "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Discovery leads." } },
+      { "path": "/lendingClients/{clientId}", "definition": { "entityName": "LendingClient", "schema": { "$ref": "#/entities/LendingClient" }, "description": "Lending debtors." } },
+      { "path": "/dataHarvest/{nodeId}", "definition": { "entityName": "DataHarvestNode", "schema": { "$ref": "#/entities/DataHarvestNode" }, "description": "The proprietary IP vault." } }
     ]
   }
 }

@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -42,228 +43,58 @@ export async function POST(req: NextRequest) {
         const action = (body.action || '').trim();
         const payload = body.payload || {};
 
-        if (action === 'getMemberEngagementPings') {
-            const { companyId } = payload;
-            if (!companyId) throw new Error("Company ID required.");
-            
-            const userDoc = await db.collection('users').doc(decodedToken.uid).get();
-            if (userDoc.data()?.companyId !== companyId && !isAdmin) {
-                throw new Error("Forbidden: Access to these signals is restricted to the node owner.");
-            }
-
-            const pingsSnap = await db.collection('engagementPings')
-                .where('targetId', '==', companyId)
-                .orderBy('timestamp', 'desc')
-                .limit(20)
-                .get();
-
-            return NextResponse.json({ success: true, data: serializeData(pingsSnap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+        if (!isAdmin) {
+             if (action !== 'getMemberEngagementPings') throw new Error("Forbidden: Admin access required.");
         }
 
-        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
-
         switch (action) {
-            case 'getGlobalHandshakes': {
-                const snap = await db.collection('engagementPings')
-                    .orderBy('timestamp', 'desc')
-                    .limit(200)
-                    .get();
-                return NextResponse.json({ 
-                    success: true, 
-                    data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) 
-                });
-            }
-
-            case 'getGlobalSearchLogs': {
-                const snap = await db.collectionGroup('searchLogs')
-                    .orderBy('type', 'asc')
-                    .orderBy('timestamp', 'desc')
-                    .limit(200)
-                    .get();
-                
-                const results = await Promise.all(snap.docs.map(async (d: QueryDocumentSnapshot) => {
-                    const data = d.data();
-                    const companyId = d.ref.parent.parent?.id;
-                    let companyName = "Unknown Member";
-                    
-                    if (companyId) {
-                        const cSnap = await db.collection('companies').doc(companyId).get();
-                        companyName = cSnap.data()?.companyName || companyName;
-                    }
-
-                    return {
-                        id: d.id,
-                        ...data,
-                        companyId,
-                        companyName
-                    };
-                }));
-
-                return NextResponse.json({ success: true, data: serializeData(results) });
-            }
-
-            case 'updateHandshakeResult': {
-                const { pingId, status, result } = payload;
-                await db.collection('engagementPings').doc(pingId).update({
-                    status,
-                    result,
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'finalizeSale': {
-                const { saleId, commissionRate } = payload;
-                const saleRef = db.collection('sales').doc(saleId);
-                await saleRef.update({ 
-                    status: 'concluded', 
-                    finalCommissionRate: commissionRate,
-                    concludedAt: FieldValue.serverTimestamp() 
-                });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getPipelineQueue': {
-                const now = new Date();
-                const leadsSnap = await db.collection('leads')
-                    .where('nextStepDueAt', '<=', now)
-                    .where('status', 'in', ['new', 'contacted'])
-                    .limit(50)
-                    .get();
-                
-                const partnersSnap = await db.collection('partners')
-                    .where('nextStepDueAt', '<=', now)
-                    .where('status', 'in', ['new', 'contacted'])
-                    .limit(50)
-                    .get();
-
-                const results = [
-                    ...leadsSnap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data(), type: 'lead' })),
-                    ...partnersSnap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data(), type: 'partner' }))
-                ];
-
-                return NextResponse.json({ success: true, data: serializeData(results) });
-            }
-
-            case 'dispatchPipelineStep': {
-                const { leadId, stepIndex, email, subject, html, collection: colOverride } = payload;
-                const colName = colOverride || 'leads';
-                const docRef = db.collection(colName).doc(leadId);
-                
-                if (process.env.SENDGRID_API_KEY && email) {
-                    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-                    await sgMail.send({
-                        to: email,
-                        from: 'michael@logisticsflow.co.za',
-                        subject,
-                        html
-                    });
-                }
-
-                const policySnap = await db.doc('configuration/engagementPolicy').get();
-                const policy = policySnap.exists ? policySnap.data()?.steps : [];
-                const nextStep = policy[stepIndex];
-                
-                const update: any = {
-                    currentPipelineStep: stepIndex,
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp(),
-                };
-
-                if (nextStep) {
-                    const dueAt = new Date();
-                    dueAt.setHours(dueAt.getHours() + (nextStep.waitHours || 48));
-                    update.nextStepDueAt = Timestamp.fromDate(dueAt);
-                } else {
-                    update.pipelineStatus = 'completed';
-                    update.nextStepDueAt = null;
-                }
-
-                await docRef.update(update);
-                await docRef.collection('communications').add({
-                    type: 'Email (Auto-Pilot)',
-                    subject,
-                    timestamp: FieldValue.serverTimestamp(),
-                    notes: `Automated dispatch for Step ${stepIndex}.`
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case 'dispatchEngagement': {
-                const { partnerId, email, subject, html, collection: colOverride } = payload;
-                const colName = colOverride || 'partners';
-                const docRef = db.collection(colName).doc(partnerId);
-
-                if (process.env.SENDGRID_API_KEY && email) {
-                    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-                    await sgMail.send({
-                        to: email,
-                        from: 'michael@logisticsflow.co.za',
-                        subject,
-                        html
-                    });
-                }
-
-                await docRef.update({
-                    status: 'contacted',
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-
-                await docRef.collection('communications').add({
-                    type: 'Email (Automated)',
-                    subject,
-                    timestamp: FieldValue.serverTimestamp(),
-                    notes: 'Sent via automated server-side dispatch.'
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, type, subject, notes, collection: colOverride } = payload;
-                
-                let colName = colOverride;
-                if (!colName) {
-                    const pSnap = await db.collection('partners').doc(partnerId).get();
-                    colName = pSnap.exists ? 'partners' : 'leads';
-                }
-
-                const docRef = db.collection(colName).doc(partnerId);
-                const batch = db.batch();
-                
-                const logRef = docRef.collection('communications').doc();
-                batch.set(logRef, {
-                    type,
-                    subject,
-                    notes,
-                    timestamp: FieldValue.serverTimestamp(),
-                    loggedBy: decodedToken.uid
-                });
-
-                batch.set(docRef, {
-                    status: 'contacted',
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getPartnersByType': {
-                const { type: queryType, limit: searchLimit = 100 } = payload;
-                const limitNum = parseInt(String(searchLimit), 10) || 100;
-                const collectionName = (queryType === 'lead') ? 'leads' : 'partners';
+            // --- LENDING PORTAL COMPLETION ACTIONS ---
+            case 'getLendingData': {
+                const { collectionName, clientId } = payload;
                 let q: any = db.collection(collectionName);
-                if (collectionName === 'partners' && queryType !== 'all') {
-                    q = q.where('type', '==', queryType);
-                }
-                const snap = await q.orderBy('updatedAt', 'desc').limit(limitNum).get();
+                if (clientId) q = q.where('clientId', '==', clientId);
+                const snap = await q.orderBy('updatedAt', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'saveLendingClient': {
+                const { client } = payload;
+                const ref = db.collection('lendingClients').doc(client.id || db.collection('lendingClients').doc().id);
+                await ref.set({ ...client, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'saveLendingAgreement': {
+                const { agreement } = payload;
+                const ref = db.collection('agreements').doc(agreement.id || db.collection('agreements').doc().id);
+                await ref.set({ ...agreement, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'saveLendingAsset': {
+                const { asset } = payload;
+                const ref = db.collection('lendingAssets').doc(asset.id || db.collection('lendingAssets').doc().id);
+                await ref.set({ ...asset, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'saveLendingSecurity': {
+                const { security, clientId, agreementId } = payload;
+                const ref = db.collection('lendingClients').doc(clientId).collection('agreements').doc(agreementId).collection('securities').doc();
+                await ref.set({ ...security, id: ref.id, createdAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingFacility': {
+                const { facility } = payload;
+                const ref = db.collection('facilities').doc(facility.id || db.collection('facilities').doc().id);
+                await ref.set({ ...facility, id: ref.id, status: 'active', updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true });
+            }
+
+            // --- LEGACY ACTIONS ---
+            case 'getGlobalHandshakes': {
+                const snap = await db.collection('engagementPings').orderBy('timestamp', 'desc').limit(200).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -272,66 +103,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'savePartner': {
-                const { partner: pData, collection: colNameOverride } = payload;
-                if (!pData) throw new Error("Partner data missing.");
-                const colName = colNameOverride || (pData.source === 'Lead' || !pData.type || pData.type === 'lead' ? 'leads' : 'partners');
-                const id = pData.id || db.collection(colName).doc().id;
-                const ref = db.collection(colName).doc(id);
-                
-                await ref.set({
-                    ...pData,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                
-                return NextResponse.json({ success: true, id });
-            }
-
-            case 'bulkSavePartners': {
-                const { partners, type: partnerType } = payload;
-                if (!Array.isArray(partners)) throw new Error("Invalid partners array.");
-                const colName = partnerType === 'lead' ? 'leads' : 'partners';
-                const batch = db.batch();
-                
-                partners.forEach((p: any) => {
-                    const id = p.record_id || p.id || db.collection(colName).doc().id;
-                    const ref = db.collection(colName).doc(id);
-                    batch.set(ref, {
-                        ...p,
-                        id,
-                        type: partnerType,
-                        updatedAt: FieldValue.serverTimestamp()
-                    }, { merge: true });
-                });
-                
-                await batch.commit();
-                return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'deleteLeads': {
-                const { leadIds } = payload;
-                const batch = db.batch();
-                leadIds.forEach((id: string) => batch.delete(db.collection('leads').doc(id)));
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deletePartner': {
-                const { partnerId, source } = payload;
-                const colName = source === 'Lead' ? 'leads' : 'partners';
-                await db.collection(colName).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
             }
 
             case 'searchRegistry': {
@@ -360,7 +134,6 @@ export async function POST(req: NextRequest) {
                         return name.includes(normalizedTerm) || email.includes(normalizedTerm);
                     });
                 }
-
                 combined.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
                 return NextResponse.json({ success: true, data: serializeData(combined.slice(0, limitNum)) });
             }
