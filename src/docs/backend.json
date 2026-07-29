@@ -47,22 +47,6 @@
             "mobile": { "type": "string" }
           }
         },
-        "operationsManager": {
-          "type": "object",
-          "properties": {
-            "name": { "type": "string" },
-            "email": { "type": "string" },
-            "mobile": { "type": "string" }
-          }
-        },
-        "technicalManager": {
-          "type": "object",
-          "properties": {
-            "name": { "type": "string" },
-            "email": { "type": "string" },
-            "mobile": { "type": "string" }
-          }
-        },
         "ceo": {
           "type": "object",
           "properties": {
@@ -76,6 +60,21 @@
         "updatedAt": { "type": "object" }
       },
       "required": ["firstName", "lastName", "email", "type"]
+    },
+    "DataHarvestNode": {
+      "title": "Data Harvest Node",
+      "type": "object",
+      "description": "A silo for harvested, cleaned, and anonymized industrial data points.",
+      "properties": {
+        "id": { "type": "string" },
+        "silo": { "type": "string", "enum": ["behavioral", "operational", "financial"] },
+        "sourceId": { "type": "string", "description": "Obfuscated ID of the originating member or visitor." },
+        "dataPoints": { "type": "object", "description": "The specific metrics harvested (e.g., search patterns, fleet specs)." },
+        "isAnonymized": { "type": "boolean" },
+        "isCleaned": { "type": "boolean" },
+        "resaleValueTier": { "type": "string", "enum": ["low", "medium", "high"] },
+        "createdAt": { "type": "object" }
+      }
     }
   },
   "auth": {
@@ -90,6 +89,10 @@
       {
         "path": "/partners/{partnerId}",
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
+      },
+      {
+        "path": "/dataHarvest/{nodeId}",
+        "definition": { "entityName": "DataHarvestNode", "schema": { "$ref": "#/entities/DataHarvestNode" }, "description": "The proprietary IP vault for anonymized industrial data." }
       }
     ]
   }
