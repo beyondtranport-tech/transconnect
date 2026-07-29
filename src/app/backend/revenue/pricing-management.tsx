@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import featuresData from '@/lib/features.json';
 
@@ -167,13 +167,13 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                 <FormField name="isPopular" control={form.control} render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel className="cursor-pointer">Highlight Node</FormLabel>
+                        <FormLabel className="cursor-pointer text-sm">Highlight Node</FormLabel>
                     </FormItem>
                 )} />
                 <FormField name="isActive" control={form.control} render={({ field }) => (
                     <FormItem className="flex items-center space-x-2 pt-8 text-left">
                         <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        <FormLabel className="cursor-pointer text-primary font-bold">Active in Grid</FormLabel>
+                        <FormLabel className="cursor-pointer text-primary font-bold text-sm">Active in Grid</FormLabel>
                     </FormItem>
                 )} />
             </div>
@@ -217,16 +217,16 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                         <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Platform Capabilities</h4>
                         <div className="grid grid-cols-1 gap-6">
                             {featuresData.featureSections.map((section) => (
-                                <div key={section.name} className="space-y-3">
+                                <div key={section.name} className="space-y-3 text-left">
                                     <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">{section.name}</Label>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2 text-left">
                                         {section.features.map((feature) => (
                                             <FormField
                                                 key={feature.key}
                                                 name="features"
                                                 control={form.control}
                                                 render={({ field }) => (
-                                                    <div className="flex items-center space-x-2 p-2 border rounded-xl hover:bg-slate-50 transition-all cursor-pointer" onClick={() => {
+                                                    <div className="flex items-center space-x-2 p-2 border rounded-xl hover:bg-slate-50 transition-all cursor-pointer text-left" onClick={() => {
                                                         const current = field.value || [];
                                                         if (current.includes(feature.key)) {
                                                             field.onChange(current.filter(v => v !== feature.key));
@@ -234,10 +234,12 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                                             field.onChange([...current, feature.key]);
                                                         }
                                                     }}>
-                                                        <Checkbox
-                                                            checked={field.value?.includes(feature.key)}
-                                                            onCheckedChange={() => {}} // Controlled by wrapper div
-                                                        />
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value?.includes(feature.key)}
+                                                                onCheckedChange={() => {}}
+                                                            />
+                                                        </FormControl>
                                                         <span className="text-[10px] font-bold uppercase tracking-tight">{feature.name}</span>
                                                     </div>
                                                 )}
@@ -251,7 +253,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                 </>
             )}
             
-            <div className="pt-4">
+            <div className="pt-4 text-left">
                 <FormField name="id" control={form.control} render={({ field }) => (
                   <FormItem className="text-left">
                       <FormLabel className="text-[10px] font-black uppercase text-muted-foreground ml-1">Protocol Identifier (Immutable ID)</FormLabel>
@@ -325,7 +327,7 @@ export default function PricingManagement() {
   const accessTiers = useMemo(() => {
       return (plans || [])
         .filter(p => p.type === 'access' || coreIds.includes(p.id?.toLowerCase()))
-        .sort((a,b) => a.price - b.price);
+        .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [plans]);
 
   const dataSilos = useMemo(() => {
@@ -334,7 +336,7 @@ export default function PricingManagement() {
             const isCore = coreIds.includes(p.id?.toLowerCase());
             return p.type === 'data_silo' && !isCore;
         })
-        .sort((a,b) => a.price - b.price);
+        .sort((a,b) => (a.price || 0) - (b.price || 0));
   }, [plans]);
 
   const columns: ColumnDef<any>[] = [
@@ -354,7 +356,7 @@ export default function PricingManagement() {
         accessorKey: 'name', 
         header: 'Commercial Label',
         cell: ({ row }) => (
-            <div className="flex flex-col">
+            <div className="flex flex-col text-left">
                 <div className="font-bold text-slate-900">{row.original.name}</div>
                 <span className="text-[9px] font-mono uppercase text-muted-foreground">{row.original.id}</span>
             </div>
@@ -367,7 +369,7 @@ export default function PricingManagement() {
     },
     { 
         header: 'Forensic Description',
-        cell: ({row}) => <span className="text-xs text-muted-foreground truncate max-w-[200px]">{row.original.description}</span>
+        cell: ({row}) => <span className="text-xs text-muted-foreground truncate max-w-[200px] text-left">{row.original.description}</span>
     },
     {
         id: 'actions',
@@ -379,10 +381,10 @@ export default function PricingManagement() {
                     <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="text-left text-foreground">
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Expunge Node Protocol?</AlertDialogTitle>
-                            <AlertDialogDescription>
+                            <AlertDialogTitle className="text-left">Expunge Node Protocol?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-left">
                                 This will permanently delete the commercial definition for "{row.original.name}". This action cannot be undone.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -400,7 +402,7 @@ export default function PricingManagement() {
   return (
     <div className="space-y-12 text-left text-base text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left text-foreground">
-        <div className="text-left text-foreground">
+        <div className="text-left">
             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-left">
                 <Layers className="text-primary h-8 w-8"/> 
                 Commercial Node Ledger
@@ -440,7 +442,7 @@ export default function PricingManagement() {
         </div>
       </div>
 
-      <div className="p-10 bg-slate-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden text-left">
+      <div className="p-10 bg-slate-900 text-white rounded-[2rem] shadow-2xl relative overflow-hidden text-left text-foreground">
             <div className="absolute top-0 right-0 p-12 opacity-5"><Zap className="h-40 w-40 text-primary" /></div>
             <div className="relative z-10 flex items-start gap-6 text-left">
                 <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
