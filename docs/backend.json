@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "User": {
@@ -61,18 +60,18 @@
       },
       "required": ["firstName", "lastName", "email", "type"]
     },
-    "CommunityIncentive": {
-      "title": "Community Welcome Gift",
+    "DataHarvestNode": {
+      "title": "Data Harvest Node",
       "type": "object",
-      "description": "A voucher or gift offered by a supplier to new members.",
+      "description": "A silo for harvested, cleaned, and anonymized industrial data points.",
       "properties": {
         "id": { "type": "string" },
-        "supplierId": { "type": "string" },
-        "supplierName": { "type": "string" },
-        "title": { "type": "string", "description": "e.g. R500 Off First Set of Brakes" },
-        "description": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "expired"] },
-        "terms": { "type": "string" },
+        "silo": { "type": "string", "enum": ["behavioral", "operational", "financial"] },
+        "sourceId": { "type": "string", "description": "Obfuscated ID of the originating member or visitor." },
+        "dataPoints": { "type": "object", "description": "The specific metrics harvested (e.g., search patterns, fleet specs)." },
+        "isAnonymized": { "type": "boolean" },
+        "isCleaned": { "type": "boolean" },
+        "resaleValueTier": { "type": "string", "enum": ["low", "medium", "high"] },
         "createdAt": { "type": "object" }
       }
     }
@@ -91,8 +90,8 @@
         "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." }
       },
       {
-        "path": "/configuration/communityIncentives/{incentiveId}",
-        "definition": { "entityName": "CommunityIncentive", "schema": { "$ref": "#/entities/CommunityIncentive" }, "description": "Active member welcome gifts." }
+        "path": "/dataHarvest/{nodeId}",
+        "definition": { "entityName": "DataHarvestNode", "schema": { "$ref": "#/entities/DataHarvestNode" }, "description": "The proprietary IP vault for anonymized industrial data." }
       }
     ]
   }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUser, getClientSideAuthToken } from '@/firebase';
@@ -54,33 +53,33 @@ function EngagementYieldModule({ companyId, isPaid }: { companyId: string, isPai
             "border-none shadow-2xl overflow-hidden text-left bg-white",
             !isPaid && "ring-2 ring-amber-500/20"
         )}>
-            <CardHeader className="bg-slate-900 text-white p-6">
-                <div className="flex justify-between items-center">
+            <CardHeader className="bg-slate-900 text-white p-6 text-left">
+                <div className="flex justify-between items-center text-left">
                     <div className="text-left text-white">
-                        <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                        <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-white text-left">
                             <Search className="h-5 w-5 text-primary" />
                             Sales intelligence Ledger
                         </CardTitle>
-                        <CardDescription className="text-slate-400">High-intent traffic recorded on your digital node.</CardDescription>
+                        <CardDescription className="text-slate-400 text-left">High-intent traffic recorded on your digital node.</CardDescription>
                     </div>
                     <Badge className="bg-primary text-white border-none">{pings.length}</Badge>
                 </div>
             </CardHeader>
-            <CardContent className="p-0">
-                <div className={cn("relative", !isPaid && "max-h-[250px] overflow-hidden")}>
+            <CardContent className="p-0 text-left">
+                <div className={cn("relative text-left", !isPaid && "max-h-[250px] overflow-hidden")}>
                     <div className="divide-y text-left">
                         {pings.map((ping) => (
-                            <div key={ping.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-3 text-left text-foreground">
-                                    <div className="bg-primary/10 p-2 rounded-full text-foreground"><UserPlus className="h-4 w-4 text-primary" /></div>
-                                    <div className="text-left">
-                                        <p className={cn("text-sm font-bold", !isPaid && "blur-sm select-none")}>
+                            <div key={ping.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors text-left text-foreground">
+                                <div className="flex items-center gap-3 text-left">
+                                    <div className="bg-primary/10 p-2 rounded-full"><UserPlus className="h-4 w-4 text-primary" /></div>
+                                    <div className="text-left text-foreground">
+                                        <p className={cn("text-sm font-bold text-foreground text-left", !isPaid && "blur-sm select-none")}>
                                             {isPaid ? ping.engagerName : "Forensic Lead Hidden"}
                                         </p>
-                                        <p className="text-[10px] text-muted-foreground uppercase font-bold">{formatDateSafe(ping.timestamp, "dd MMM, HH:mm")}</p>
+                                        <p className="text-[10px] text-muted-foreground uppercase font-bold text-left">{formatDateSafe(ping.timestamp, "dd MMM, HH:mm")}</p>
                                     </div>
                                 </div>
-                                <Badge variant="outline" className="text-[9px] uppercase font-black">Engagement</Badge>
+                                <Badge variant="outline" className="text-[9px] uppercase font-black text-left">Engagement</Badge>
                             </div>
                         ))}
                     </div>
@@ -94,7 +93,7 @@ function EngagementYieldModule({ companyId, isPaid }: { companyId: string, isPai
                             <p className="text-xs text-muted-foreground max-w-xs mx-auto mt-1 leading-relaxed text-center">
                                 <strong>{pings.length} companies</strong> have selected your profile to engage. Upgrade to an intelligence plan to reveal their identities.
                             </p>
-                            <Button asChild size="sm" className="mt-4 font-black uppercase text-[10px] tracking-widest h-10 px-8 shadow-xl">
+                            <Button asChild size="sm" className="mt-4 font-black uppercase text-[10px] tracking-widest h-10 px-8 shadow-xl text-white">
                                 <Link href="/checkout/intelligence">Unlock Discovery Leads</Link>
                             </Button>
                         </div>
@@ -103,7 +102,7 @@ function EngagementYieldModule({ companyId, isPaid }: { companyId: string, isPai
             </CardContent>
             {isPaid && (
                 <CardFooter className="bg-slate-50 border-t p-4 text-center">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase mx-auto">Lead recording is live and verified.</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase mx-auto text-center">Lead recording is live and verified.</p>
                 </CardFooter>
             )}
         </Card>
@@ -117,7 +116,6 @@ export default function AccountDashboard() {
     const companyId = companyData?.id;
 
     const isPaidIntelligence = ['intelligence', 'standard', 'premium'].includes(companyData?.membershipId || '');
-    const isPaidOperator = ['standard', 'premium'].includes(companyData?.membershipId || '');
     
     const loyaltyTier = companyData?.loyaltyTier || 'bronze';
     const tierColors: {[key: string]: string} = {
@@ -136,17 +134,17 @@ export default function AccountDashboard() {
 
     return (
         <div className="w-full space-y-8 text-left text-foreground">
-            <div className="flex justify-between items-end">
-                <div className="text-left text-foreground">
-                    <h1 className="text-3xl md:text-4xl font-black font-headline uppercase tracking-tight">Commerce Command</h1>
-                    <p className="text-lg text-muted-foreground font-medium">Welcome back, {user?.firstName || 'Member'}!</p>
+            <div className="flex justify-between items-end text-left text-foreground">
+                <div className="text-left">
+                    <h1 className="text-3xl md:text-4xl font-black font-headline uppercase tracking-tight text-left">Commerce Command</h1>
+                    <p className="text-lg text-muted-foreground font-medium text-left">Welcome back, {user?.firstName || 'Member'}!</p>
                 </div>
                 <div className="flex gap-2">
                     <Button asChild variant="outline" size="sm" className="font-bold">
                         <Link href="/mall"><ShoppingBasket className="mr-2 h-4 w-4 text-primary" /> Malls</Link>
                     </Button>
-                    <Button asChild size="sm" className="font-bold shadow-md">
-                        <Link href="/account?view=shop"><Store className="mr-2 h-4 w-4" /> My Digital Branch</Link>
+                    <Button asChild size="sm" className="font-bold shadow-md text-white">
+                        <Link href="/account?view=shop"><Store className="mr-2 h-4 w-4" /> My digital Branch</Link>
                     </Button>
                 </div>
             </div>
@@ -157,7 +155,7 @@ export default function AccountDashboard() {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-left text-foreground">
-                <Card className="text-left text-foreground border-none shadow-lg bg-white">
+                <Card className="text-left border-none shadow-lg bg-white">
                     <CardHeader className="flex flex-row items-center justify-between pb-2 text-left">
                         <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Available Wallet</CardTitle>
                          <Wallet className="h-4 w-4 text-primary" />
@@ -170,7 +168,7 @@ export default function AccountDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="text-left text-foreground border-none shadow-lg bg-white">
+                <Card className="text-left border-none shadow-lg bg-white text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Loyalty Standing</CardTitle>
                         <Award className="h-4 w-4 text-primary" />
@@ -183,7 +181,7 @@ export default function AccountDashboard() {
                     </CardContent>
                 </Card>
 
-                <Card className="text-left text-foreground border-none shadow-lg bg-white">
+                <Card className="text-left border-none shadow-lg bg-white text-foreground">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Membership Node</CardTitle>
                         <Gem className="h-4 w-4 text-primary" />
