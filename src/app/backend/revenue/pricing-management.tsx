@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -35,6 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import featuresData from '@/lib/features.json';
+import { formatCurrency } from '@/lib/utils';
 
 const planSchema = z.object({
   id: z.string().min(1, 'ID is required'),
@@ -124,11 +124,11 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
         <DialogHeader className="p-6 pb-2 text-left">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">{plan ? 'Audit' : 'Initialize'} Node Protocol</DialogTitle>
-          <DialogDescription className="text-left text-foreground">Define commercial boundaries and B2B yield for this digital node.</DialogDescription>
+          <DialogDescription className="text-left text-foreground text-foreground">Define commercial boundaries and B2B yield for this digital node.</DialogDescription>
         </DialogHeader>
         <FormProvider {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8 text-left">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-4 text-left">
                 <FormField name="type" render={({ field }) => (
                     <FormItem className="text-left">
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Classification</FormLabel>
@@ -139,34 +139,34 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                     </FormItem>
                 )} />
                  <FormField name="name" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Node Label</FormLabel><FormControl><Input {...field} className="bg-white border-2 font-bold" /></FormControl></FormItem>
+                    <FormItem className="text-left text-foreground"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Node Label</FormLabel><FormControl><Input {...field} className="bg-white border-2 font-bold" /></FormControl></FormItem>
                 )} />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-3 gap-4 text-left">
                 <FormField name="price" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
+                    <FormItem className="text-left text-foreground text-foreground"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Monthly Price (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>
                 )} />
                 <FormField name="isPopular" render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 pt-8 text-left"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="cursor-pointer text-xs font-bold uppercase">Highlight</FormLabel></FormItem>
+                    <FormItem className="flex items-center space-x-2 pt-8 text-left text-foreground"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="cursor-pointer text-xs font-bold uppercase">Highlight</FormLabel></FormItem>
                 )} />
                 <FormField name="isActive" render={({ field }) => (
-                    <FormItem className="flex items-center space-x-2 pt-8 text-left"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="cursor-pointer text-primary font-bold text-xs uppercase">Active</FormLabel></FormItem>
+                    <FormItem className="flex items-center space-x-2 pt-8 text-left text-foreground"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="cursor-pointer text-primary font-bold text-xs uppercase">Active</FormLabel></FormItem>
                 )} />
             </div>
 
             <FormField name="description" render={({ field }) => (
-              <FormItem className="text-left"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Value Prop</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>
+              <FormItem className="text-left text-foreground text-foreground"><FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Value Prop</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>
             )} />
 
             {methods.watch('type') === 'access' && (
                 <div className="space-y-6 text-left">
                     <Separator />
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Platform Capabilities</h4>
-                    <div className="grid grid-cols-1 gap-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary text-left">Platform Capabilities</h4>
+                    <div className="grid grid-cols-1 gap-6 text-left">
                         {featuresData.featureSections.map((section) => (
                             <div key={section.name} className="space-y-3 text-left">
-                                <Label className="text-[10px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-1 rounded">{section.name}</Label>
+                                <Label className="text-[10px] font-bold text-muted-foreground uppercase bg-muted/50 px-2 py-1 rounded text-left">{section.name}</Label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2 text-left">
                                     {section.features.map((feature) => (
                                         <div key={feature.key} className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-all text-left">
@@ -177,7 +177,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                             />
                                             <Label 
                                                 htmlFor={`feat-${planId}-${feature.key}`} 
-                                                className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1"
+                                                className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1 text-left"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
                                                 {feature.name}
@@ -193,7 +193,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             
             <div className="pt-4 text-left">
                 <FormField name="id" render={({ field }) => (
-                  <FormItem className="text-left"><FormLabel className="text-[10px] font-black uppercase text-muted-foreground">ID</FormLabel><FormControl><Input {...field} disabled={!!plan} className="h-8 font-mono text-xs bg-slate-50" /></FormControl></FormItem>
+                  <FormItem className="text-left text-foreground text-foreground"><FormLabel className="text-[10px] font-black uppercase text-muted-foreground">ID</FormLabel><FormControl><Input {...field} disabled={!!plan} className="h-8 font-mono text-xs bg-slate-50" /></FormControl></FormItem>
                 )} />
             </div>
           </form>
@@ -232,15 +232,15 @@ export default function PricingManagement() {
     { header: 'Label', cell: ({row}) => <div className="text-left"><p className="font-bold">{row.original.name}</p><span className="text-[9px] font-mono text-muted-foreground uppercase">{row.original.id}</span></div> },
     { header: 'Yield (R)', cell: ({row}) => <span className="font-mono font-bold text-primary">{formatCurrency(row.original.price)}</span> },
     { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({row}) => (
-        <div className="text-right flex justify-end gap-1">
+        <div className="text-right flex justify-end gap-1 text-left text-foreground">
             <PlanDialog plan={row.original} onSave={forceRefresh} />
             <AlertDialog>
                 <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader><AlertDialogTitle className="text-left">Expunge Node Protocol?</AlertDialogTitle><AlertDialogDescription className="text-left">Permanent deletion of "{row.original.name}".</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} className={buttonVariants({ variant: 'destructive' })}>Delete Node</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left text-foreground">Expunge Node Protocol?</AlertDialogTitle><AlertDialogDescription className="text-left text-foreground">Permanent deletion of "{row.original.name}".</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter className="text-left text-foreground"><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDelete(row.original.id)} className={buttonVariants({ variant: 'destructive' })}>Delete Node</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
         </div>
@@ -250,8 +250,8 @@ export default function PricingManagement() {
   return (
     <div className="space-y-12 text-left text-foreground">
       <div className="flex justify-between items-center text-left">
-        <div className="text-left">
-            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3">
+        <div className="text-left text-foreground">
+            <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-left text-foreground">
                 <Layers className="text-primary h-8 w-8"/> Commercial Node Ledger
             </CardTitle>
             <CardDescription className="text-left">Define access boundaries for members and B2B pricing for data IP.</CardDescription>
@@ -265,14 +265,14 @@ export default function PricingManagement() {
             <Card className="border-none shadow-xl bg-white"><CardContent className="pt-6"><DataTable columns={columns} data={categorized.access} /></CardContent></Card>
         </div>
         <div className="space-y-4 text-left text-foreground">
-            <h3 className="text-xl font-black uppercase border-l-4 border-slate-900 pl-4 text-left">2. Proprietary Data Silos</h3>
+            <h3 className="text-xl font-black uppercase border-l-4 border-slate-900 pl-4 text-left text-foreground">2. Proprietary Data Silos</h3>
             <Card className="border-none shadow-xl bg-white text-left"><CardContent className="pt-6 text-left"><DataTable columns={columns} data={categorized.silos} /></CardContent></Card>
         </div>
       </div>
 
-      <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
+      <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-foreground">
             <div className="absolute top-0 right-0 p-12 opacity-5 text-left"><Zap className="h-40 w-40 text-primary" /></div>
-            <div className="relative z-10 flex items-start gap-6 text-left">
+            <div className="relative z-10 flex items-start gap-6 text-left text-white">
                 <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
                 <div className="space-y-2 text-left">
                     <h4 className="text-xl font-black uppercase text-left text-white">Commercial Ledger Stability</h4>
@@ -283,4 +283,3 @@ export default function PricingManagement() {
     </div>
   );
 }
-
