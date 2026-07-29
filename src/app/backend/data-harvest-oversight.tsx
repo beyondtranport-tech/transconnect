@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Database, ShieldCheck, Zap, BarChart3, SearchCode, Lock, Filter, RefreshCcw, Loader2 } from 'lucide-react';
+import { Database, ShieldCheck, Zap, BarChart3, SearchCode, Lock, Filter, RefreshCcw, Loader2, Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
