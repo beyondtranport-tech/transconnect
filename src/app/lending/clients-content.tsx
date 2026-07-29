@@ -5,7 +5,10 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, Download, Upload, Zap, Search, Globe } from 'lucide-react';
+import { 
+  Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, 
+  Download, Upload, Zap, Search, Globe, ShieldCheck, Scale, FileCheck 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -19,15 +22,11 @@ import { cn, downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
 import AudienceCommunicationsTable from '@/app/adminaccount/marketing/AudienceCommunicationsTable';
 import { Separator } from '@/components/ui/separator';
 
-// Forensic AI Tool Imports
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
-import { DeepPersonalizationButton } from '@/app/adminaccount/marketing/DeepPersonalizationButton';
 import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
 import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-// API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
     const response = await fetch('/api/admin', {
         method: 'POST',
@@ -128,28 +127,37 @@ export default function ClientsContent() {
                 <div className="flex items-center gap-1.5">
                     {row.original.website ? <Globe className="h-3.5 w-3.5 text-primary" /> : <Globe className="h-3.5 w-3.5 text-muted-foreground opacity-20" />}
                     {row.original.email ? <Zap className="h-3.5 w-3.5 text-amber-500 fill-current" /> : <Zap className="h-3.5 w-3.5 text-muted-foreground opacity-20" />}
+                    {row.original.auditStatus === 'completed' && <FileCheck className="h-3.5 w-3.5 text-green-600" />}
                 </div>
             )
         },
         { 
             accessorKey: 'status', 
             header: 'Status', 
-            cell: ({ row }) => <Badge className="capitalize text-[10px] font-black">{row.original.status}</Badge>
+            cell: ({ row }) => (
+                <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black">
+                    {row.original.status}
+                </Badge>
+            )
         },
-        { id: 'actions', header: <div className="text-right">Forensic Actions</div>, cell: ({ row }) => (
+        { id: 'actions', header: <div className="text-right">Audit Actions</div>, cell: ({ row }) => (
             <div className="flex justify-end items-center gap-1 text-left">
-                {/* DEEP RESEARCH & PERSO TOOLS */}
+                {/* FORENSIC AUDIT TOOLS */}
                 <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
-                <DeepPersonalizationButton partner={row.original} audience="debtors" />
+                <Button asChild variant="ghost" size="icon" title="Digital Scorecard">
+                    <Link href={`/lending/clients/${row.original.id}?tab=analysis`}>
+                        <Scale className="h-4 w-4 text-primary" />
+                    </Link>
+                </Button>
                 <AddCommunicationLogDialog partnerId={row.original.id} collection="lendingClients" onLogAdded={forceRefresh} />
                 <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.name} />
                 <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
                 
                 <Separator orientation="vertical" className="h-4 mx-1" />
                 
-                <Button asChild variant="ghost" size="icon"><Link href={`/lending/clients/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => { setClientToDelete(row.original); setIsDeleteAlertOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                <Button asChild variant="ghost" size="icon" title="View Detail"><Link href={`/lending/clients/${row.original.id}`}><Eye className="h-4 w-4" /></Link></Button>
+                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)} title="Edit Record"><Edit className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={() => { setClientToDelete(row.original); setIsDeleteAlertOpen(true); }} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         ) },
     ], [forceRefresh]);
@@ -163,12 +171,12 @@ export default function ClientsContent() {
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent className="text-left">
                     <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle className="text-left">Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">This will permanently delete client "{clientToDelete?.name}".</AlertDialogDescription>
+                        <AlertDialogTitle className="text-left">Expunge Debtor Record?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">Permanent removal of "{clientToDelete?.name}" from the lending registry.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="text-left">
                         <AlertDialogCancel onClick={() => setClientToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -179,20 +187,20 @@ export default function ClientsContent() {
                         <Users className="h-8 w-8 text-primary" />
                         Client & Debtor Portfolio
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Manage active lending relationships and discover new high-fidelity debtor opportunities.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Manage active lending relationships and execute forensic audits.</p>
                 </div>
             </div>
 
             <Tabs defaultValue="registry" className="w-full text-left">
                 <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start">
                     <TabsTrigger value="registry" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <Database className="h-3.5 w-3.5" /> Client Registry (CRM)
+                        <Database className="h-3.5 w-3.5" /> Client Registry
                     </TabsTrigger>
                     <TabsTrigger value="discovery" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <SearchCode className="h-3.5 w-3.5" /> Debtor Discovery (AI)
+                        <SearchCode className="h-3.5 w-3.5" /> Debtor Scouting (AI)
                     </TabsTrigger>
                     <TabsTrigger value="oversight" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <History className="h-3.5 w-3.5" /> Oversight Timeline
+                        <History className="h-3.5 w-3.5" /> Audit Timeline
                     </TabsTrigger>
                 </TabsList>
 
@@ -200,8 +208,8 @@ export default function ClientsContent() {
                     <Card className="border-none shadow-xl bg-white text-left">
                         <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
                             <div className="text-left">
-                                <CardTitle className="text-lg font-bold text-left">Master Portfolio</CardTitle>
-                                <CardDescription className="text-left text-foreground">Verified entities currently active in the lending system.</CardDescription>
+                                <CardTitle className="text-lg font-bold text-left">Master Registry</CardTitle>
+                                <CardDescription className="text-left">Verified entities currently active in the audit system.</CardDescription>
                             </div>
                             <div className="flex gap-2 text-left">
                                 <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
@@ -218,11 +226,11 @@ export default function ClientsContent() {
                                 </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="pt-6 text-left">
+                        <CardContent className="pt-6 text-left text-foreground">
                             {isLoading ? (
                                 <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                                     <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Opening Registry...</p>
+                                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Ledger...</p>
                                 </div>
                             ) : (
                                 <DataTable columns={columns} data={clients} />
@@ -231,14 +239,16 @@ export default function ClientsContent() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="discovery" className="mt-8 text-left text-foreground">
+                <TabsContent value="discovery" className="mt-8">
                     <DebtorDiscoveryEngine />
                 </TabsContent>
 
-                <TabsContent value="oversight" className="mt-8 text-left text-foreground">
-                    <Card className="border-none shadow-xl bg-white text-left">
-                        <CardHeader className="border-b bg-muted/10 text-left">
-                            <CardTitle className="text-lg font-bold text-left">Engagement Audit Trail</CardTitle>
+                <TabsContent value="oversight" className="mt-8">
+                    <Card className="border-none shadow-xl bg-white text-left text-foreground">
+                        <CardHeader className="border-b bg-muted/10">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                <History className="h-5 w-5 text-primary" /> Relationship Activity Stream
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-6 text-left">
                             <AudienceCommunicationsTable audience="debtor" />

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
-import sgMail from '@sendgrid/mail';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +46,31 @@ export async function POST(req: NextRequest) {
         }
 
         switch (action) {
+            case 'saveDigitalScorecard': {
+                const { clientId, scorecard } = payload;
+                const ref = db.collection('lendingClients').doc(clientId).collection('digitalScorecards').doc();
+                await ref.set({
+                    ...scorecard,
+                    id: ref.id,
+                    createdAt: FieldValue.serverTimestamp()
+                });
+                // Update master status
+                await db.collection('lendingClients').doc(clientId).update({
+                    lastAuditAt: FieldValue.serverTimestamp(),
+                    auditStatus: 'completed'
+                });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'getLatestScorecard': {
+                const { clientId } = payload;
+                const snap = await db.collection('lendingClients').doc(clientId).collection('digitalScorecards').orderBy('createdAt', 'desc').limit(1).get();
+                return NextResponse.json({ 
+                    success: true, 
+                    data: snap.empty ? null : serializeData({ id: snap.docs[0].id, ...snap.docs[0].data() })
+                });
+            }
+
             case 'bulkSavePartners': {
                 const { partners, type } = payload;
                 const batch = db.batch();
@@ -67,7 +91,7 @@ export async function POST(req: NextRequest) {
             }
 
             case 'bulkSaveLendingClients': {
-                const { partners } = payload; // Support both naming conventions
+                const { partners } = payload; 
                 const clients = partners || payload.clients || [];
                 const batch = db.batch();
                 clients.forEach((c: any) => {
@@ -116,31 +140,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() })) });
             }
 
-            case 'getAudienceCommunications': {
-                const { type } = payload;
-                let collectionName = 'partners';
-                if (type === 'lead') collectionName = 'leads';
-                if (type === 'debtor') collectionName = 'lendingClients';
-
-                const partnersSnap = await db.collection(collectionName).get();
-                const promises = partnersSnap.docs.map(p => db.collection(`${collectionName}/${p.id}/communications`).get());
-                const results = await Promise.all(promises);
-                
-                const allLogs: any[] = [];
-                results.forEach((snap, idx) => {
-                    const partner = partnersSnap.docs[idx].data();
-                    snap.docs.forEach(d => allLogs.push({ ...d.data(), partnerName: partner.companyName || partner.firstName, partnerType: partner.type }));
-                });
-
-                return NextResponse.json({ success: true, data: serializeData(allLogs.sort((a,b) => b.timestamp - a.timestamp)) });
-            }
-
-            case 'deleteLendingPartner': {
-                const { partnerId, collection: col = 'lendingClients' } = payload;
-                await db.collection(col).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
             case 'getMembers': {
                 const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
@@ -168,7 +167,6 @@ export async function POST(req: NextRequest) {
                 const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const lResults = lSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
-                // Debtor/Lending Support
                 let dResults: any[] = [];
                 if (rType === 'debtor' || rType === 'all') {
                     const dSnap = await db.collection('lendingClients').orderBy('updatedAt', 'desc').limit(limitNum).get();
