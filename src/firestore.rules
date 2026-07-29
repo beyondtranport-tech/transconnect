@@ -22,12 +22,6 @@ service cloud.firestore {
       );
     }
 
-    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
-    // Grants recursive read/write across the entire tree if isAdmin() is true.
-    match /{allPaths=**} {
-      allow read, write: if isAdmin();
-    }
-
     /**
      * IS MEMBER / OWNER CHECK
      */
@@ -41,6 +35,12 @@ service cloud.firestore {
            get(/databases/$(database)/documents/companies/$(cid)).data.ownerId == request.auth.uid)
         )
       );
+    }
+
+    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
+    // Grants recursive read/write across the entire tree if isAdmin() is true.
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
     }
 
     // --- COLLECTION SPECIFIC RULES ---
