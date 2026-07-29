@@ -10,9 +10,7 @@ service cloud.firestore {
     }
 
     /**
-     * IS ADMIN CHECK
-     * High-priority administrative override for platform oversight.
-     * Authorized via UID and verified professional email nodes.
+     * IS ADMIN CHECK (PRIORITY 1)
      */
     function isAdmin() {
       return isSignedIn() && (
@@ -24,7 +22,6 @@ service cloud.firestore {
 
     /**
      * IS MEMBER / OWNER CHECK
-     * Determines if the user is a direct member of the company node or a platform admin.
      */
     function isMember(cid) {
       return isAdmin() || (
@@ -38,13 +35,10 @@ service cloud.firestore {
       );
     }
 
-    // --- GLOBAL ADMIN OVERRIDE (PRIORITY 1) ---
-    // Rule Sync ID: 2026-03-17T16:00:00Z - FORCING RECURSIVE ADMIN ACCESS
+    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
-
-    // --- COLLECTION SPECIFIC RULES ---
 
     match /engagementPings/{pingId} {
       allow list, get: if isSignedIn();
@@ -117,7 +111,6 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || (isSignedIn() && exists(/databases/$(database)/documents/companies/$(companyId)) && get(/databases/$(database)/documents/companies/$(companyId)).data.ownerId == request.auth.uid);
       
-      // Explicitly allow subcollection listing for members and admins
       match /{allSub=**} {
         allow read, list: if isAdmin() || isMember(companyId);
         allow write: if isAdmin() || isMember(companyId);

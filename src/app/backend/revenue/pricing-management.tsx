@@ -1,18 +1,17 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, PlusCircle, Save, Edit, Trash2, Layers, Zap, Info, Database, ShieldCheck, Lock, Eye, EyeOff, BarChart3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useCollection, getClientSideAuthToken, useMemoFirebase } from '@/firebase';
+import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -20,17 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 
@@ -170,11 +159,12 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
             <FormField name="description" control={form.control} render={({ field }) => (
               <FormItem className="text-left">
                   <FormLabel>Forensic Description</FormLabel>
-                  <FormControl><Textarea {...field} className="bg-white border-2" /></FormItem>
+                  <FormControl><Textarea {...field} className="bg-white border-2" /></FormControl>
+              </FormItem>
             )} />
 
             {form.watch('type') === 'access' && (
-                <>
+                <div className="space-y-4 text-left">
                     <Separator />
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-primary text-left">Capacity Constraints (Allowances)</h4>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-left">
@@ -188,7 +178,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                             <FormItem className="text-left"><FormLabel className="text-[9px] uppercase font-black">Max Loads</FormLabel><FormControl><Input type="number" {...field} className="h-9" /></FormControl></FormItem>
                         )} />
                     </div>
-                </>
+                </div>
             )}
           </form>
         </Form>
@@ -206,7 +196,6 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
 export default function PricingManagement() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const membershipsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -308,7 +297,7 @@ export default function PricingManagement() {
             </h3>
             <Card className="border-none shadow-xl bg-white text-left text-foreground">
                 <CardContent className="pt-6 text-left text-foreground">
-                    {isLoading ? <div className="flex justify-center p-20 text-left"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
+                    {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
                 </CardContent>
             </Card>
         </div>

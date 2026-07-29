@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -11,7 +10,7 @@ service cloud.firestore {
     }
 
     /**
-     * IS ADMIN CHECK
+     * IS ADMIN CHECK (PRIORITY 1)
      */
     function isAdmin() {
       return isSignedIn() && (
@@ -36,8 +35,7 @@ service cloud.firestore {
       );
     }
 
-    // --- GLOBAL ADMIN OVERRIDE ---
-    // Rule Sync ID: 2026-03-17T15:00:00Z
+    // --- GLOBAL ADMIN OVERRIDE (HIGHEST PRIORITY) ---
     match /{allPaths=**} {
       allow read, write: if isAdmin();
     }
@@ -128,5 +126,6 @@ service cloud.firestore {
     match /{path=**}/supportMessages/{id} { allow read, write: if isAdmin() || isSignedIn(); }
     match /{path=**}/auditLogs/{id} { allow read, write: if isAdmin(); }
     match /{path=**}/platformTasks/{id} { allow read, write: if isAdmin(); }
+    match /{path=**}/transactions/{id} { allow read, list: if isSignedIn() && (isAdmin() || isMember(path.split('/')[1])); }
   }
 }
