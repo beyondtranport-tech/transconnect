@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck } from 'lucide-react';
-import { getClientSideAuthToken } from '@/firebase';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -18,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
+import { Separator } from '@/components/ui/separator';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -104,50 +104,34 @@ type ClientFormValues = z.infer<typeof clientSchema>;
 
 // --- STEP COMPONENTS ---
 const StepMain = () => {
-    const { control, setValue } = useFormContext<ClientFormValues>();
-    
-    const handleVisionExtraction = (data: any) => {
-        if (data.ownerName) setValue('name', data.ownerName);
-        if (data.registrationNumber) setValue('registrationId', data.registrationNumber);
-        if (data.vin) setValue('code', data.vin); // Storing VIN as code for now
-    };
-
+    const { control } = useFormContext<ClientFormValues>();
     return (
          <div className="space-y-6 text-left text-foreground">
-            <div className="flex justify-between items-center bg-primary/5 p-4 rounded-2xl border-2 border-dashed border-primary/20 text-left">
-                <div className="text-left">
-                    <h4 className="font-black text-sm flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /> Vision Onboarding</h4>
-                    <p className="text-xs text-muted-foreground">Populate identity from RC1 or Registration document photo.</p>
-                </div>
-                <div className="w-48 text-left">
-                    <VisionOnboardingDialog onExtractionComplete={handleVisionExtraction} />
-                </div>
+            <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Client Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <div className="grid grid-cols-2 gap-4 text-left">
+                <FormField control={control} name="type" render={({ field }) => (<FormItem className="text-left"><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="company">Company</SelectItem><SelectItem value="individual">Individual</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormField control={control} name="status" render={({ field }) => (<FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
-
-            <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={control} name="type" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="company">Company</SelectItem><SelectItem value="individual">Individual</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                <FormField control={control} name="status" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-            </div>
-             <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Registration ID</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2 text-left text-foreground"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="cursor-pointer">VAT Registered?</Label></FormItem>)} />
+             <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Registration ID / RSA ID</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
+            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2 text-left"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="cursor-pointer font-bold">VAT Registered?</Label></FormItem>)} />
         </div>
     )
 };
+
 const StepAddress = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
         <div className="space-y-6 text-left">
             <div className="text-left text-foreground">
-                <h4 className="font-semibold mb-2 flex items-center gap-2"><Building className="h-4 w-4 text-primary" /> Physical Address</h4>
-                <div className="space-y-4 p-4 border rounded-md bg-white">
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-left"><Building className="h-4 w-4 text-primary" /> Physical Address</h4>
+                <div className="space-y-4 p-4 border rounded-md bg-white text-left">
                     <FormField control={control} name="physicalAddress" render={({ field }) => (<FormItem className="text-left"><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
                     <FormField control={control} name="physicalPostalCode" render={({ field }) => (<FormItem className="text-left"><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
                 </div>
             </div>
              <div className="text-left text-foreground">
-                <h4 className="font-semibold mb-2 flex items-center gap-2"><Globe className="h-4 w-4 text-primary" /> Postal Address</h4>
-                <div className="space-y-4 p-4 border rounded-md bg-white">
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-left"><Globe className="h-4 w-4 text-primary" /> Postal Address</h4>
+                <div className="space-y-4 p-4 border rounded-md bg-white text-left text-foreground">
                     <FormField control={control} name="postalAddress" render={({ field }) => (<FormItem className="text-left"><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
                     <FormField control={control} name="postalPostalCode" render={({ field }) => (<FormItem className="text-left"><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
                 </div>
@@ -163,8 +147,8 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
     return (
         <div className="space-y-4 text-left">
             {fields.map((item, index) => (
-                <div key={item.id} className="p-4 border rounded-lg relative bg-white text-left">
-                    <h4 className="font-medium mb-2 text-left text-foreground">{title} #{index + 1}</h4>
+                <div key={item.id} className="p-4 border rounded-lg relative bg-white text-left text-foreground">
+                    <h4 className="font-medium mb-2 text-left">{title} #{index + 1}</h4>
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left text-foreground">
                         {fieldsConfig.map(config => (
                             <FormField
@@ -191,7 +175,7 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
                     <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                 </div>
             ))}
-            <Button type="button" variant="outline" onClick={() => append({})} className="font-bold border-2">
+            <Button type="button" variant="outline" onClick={() => append({})} className="font-bold border-2 text-left">
                 <PlusCircle className="mr-2 h-4 w-4" /> Add {title}
             </Button>
         </div>
@@ -254,6 +238,23 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
         }
     }, [client, methods]);
 
+    const handleAiExtraction = useCallback((stepId: string, data: any) => {
+        if (stepId === 'main') {
+            if (data.name) methods.setValue('name', data.name);
+            if (data.registrationNumber) methods.setValue('registrationId', data.registrationNumber);
+            if (data.idNumber) methods.setValue('registrationId', data.idNumber);
+            if (data.address) methods.setValue('physicalAddress', data.address);
+        } else if (stepId === 'bankAccounts') {
+             const current = methods.getValues('bankAccounts') || [];
+             methods.setValue('bankAccounts', [...current, { 
+                 bankName: data.bankName, 
+                 accountNumber: data.accountNumber,
+                 branchCode: data.branchCode 
+             }]);
+        }
+        toast({ title: "Forensic Data Mapped", description: "The AI results have been committed to the form." });
+    }, [methods, toast]);
+
     const onSubmit = async (values: ClientFormValues) => {
         setIsLoading(true);
         try {
@@ -303,13 +304,25 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
             case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />;
             case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />;
             case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />;
-            case 'review': return <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase">Audit Readiness Verified</h3><p className="text-muted-foreground max-w-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>;
+            case 'review': return <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase">Audit Readiness Verified</h3><p className="text-muted-foreground max-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>;
             default: return null;
         }
     };
+
+    const suggestedDocType = useMemo(() => {
+        const type = methods.watch('type');
+        const stepId = steps[currentStep].id;
+        if (stepId === 'main') {
+            if (type === 'individual') return 'rsa_id';
+            return 'company_formation';
+        }
+        if (stepId === 'bankAccounts') return 'bank_statement';
+        if (stepId === 'balanceSheet' || stepId === 'incomeStatement') return 'invoice';
+        return 'rc1';
+    }, [currentStep, methods.watch('type')]);
     
     return (
-         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left">
+         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white">
@@ -327,12 +340,42 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = completedSteps.has(step.id);
+                                    const isActive = currentStep === index;
+
                                     return (
-                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className={cn("justify-start gap-3 h-11 px-3 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(index)}>
-                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-white" : "bg-muted")}>{index + 1}</div>}
-                                            <Icon className="h-4 w-4 mr-1 text-primary" />
-                                            <span className={cn("text-[10px] font-black uppercase tracking-widest", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
-                                        </Button>
+                                        <div key={step.id} className="space-y-1 text-left">
+                                            <Button 
+                                                type="button" 
+                                                variant={isActive ? 'secondary' : 'ghost'} 
+                                                className={cn("w-full justify-start gap-3 h-11 px-3 transition-all", isActive && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                                onClick={() => setCurrentStep(index)} 
+                                                disabled={index > currentStep && !isCompleted && !isActive}
+                                            >
+                                                {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-white" : "bg-muted")}>{index + 1}</div>}
+                                                <Icon className="h-4 w-4 mr-1 text-primary" />
+                                                <span className={cn("text-[10px] font-black uppercase tracking-widest", isActive ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                            </Button>
+                                            
+                                            {isActive && step.id !== 'review' && (
+                                                <div className="px-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                                                    <VisionOnboardingDialog 
+                                                        stepId={step.id}
+                                                        initialDocType={suggestedDocType}
+                                                        onExtractionComplete={(data) => handleAiExtraction(step.id, data)}
+                                                        trigger={
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="sm" 
+                                                                className="h-8 w-full justify-start text-[9px] font-black uppercase text-primary gap-2 hover:bg-primary/5"
+                                                            >
+                                                                <Zap className="h-3 w-3 fill-current" />
+                                                                AI Doc Onboarding
+                                                            </Button>
+                                                        }
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -361,3 +404,4 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
         </Card>
     );
 }
+
