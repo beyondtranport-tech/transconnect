@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, PlusCircle, Save, Edit, Trash2, Eye, EyeOff, Layers, Info } from 'lucide-react';
+import { Loader2, PlusCircle, Save, Edit, Trash2, Eye, EyeOff, Layers, Info, Zap } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,17 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle, 
+    AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import featuresData from '@/lib/features.json';
 
@@ -68,6 +78,9 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
         isActive: true,
     }
   });
+
+  // Watch features to ensure re-renders on change
+  const watchedFeatures = form.watch('features') || [];
   
   useEffect(() => {
     if (isOpen) {
@@ -108,10 +121,9 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
   }, [isOpen, plan, form]);
 
   const handleFeatureToggle = (featureKey: string) => {
-      const current = form.getValues('features') || [];
-      const updated = current.includes(featureKey) 
-        ? current.filter(f => f !== featureKey)
-        : [...current, featureKey];
+      const updated = watchedFeatures.includes(featureKey) 
+        ? watchedFeatures.filter(f => f !== featureKey)
+        : [...watchedFeatures, featureKey];
       form.setValue('features', updated, { shouldDirty: true, shouldValidate: true });
   };
 
@@ -164,7 +176,7 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0 text-left text-foreground">
         <DialogHeader className="p-6 pb-2 text-left">
           <DialogTitle className="text-2xl font-black uppercase tracking-tight">{plan ? 'Audit' : 'Create'} {form.watch('type') === 'access' ? 'Access Tier' : 'Data Silo'}</DialogTitle>
-          <DialogDescription className="text-left">Define commercial boundaries and B2B valuation for this node.</DialogDescription>
+          <DialogDescription className="text-left text-foreground">Define commercial boundaries and B2B valuation for this node.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto px-6 py-4 space-y-8 text-left">
@@ -259,27 +271,26 @@ function PlanDialog({ plan, onSave }: { plan?: any; onSave: () => void }) {
                                 <div key={section.name} className="space-y-3 text-left">
                                     <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest bg-muted/50 px-2 py-1 rounded">{section.name}</Label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2 text-left">
-                                        {section.features.map((feature) => {
-                                            const isChecked = (form.watch('features') || []).includes(feature.key);
-                                            return (
-                                                <div 
-                                                    key={feature.key} 
-                                                    className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-all text-left" 
+                                        {section.features.map((feature) => (
+                                            <div 
+                                                key={feature.key} 
+                                                className="flex items-center space-x-3 p-3 border rounded-xl hover:bg-slate-50 transition-all text-left cursor-pointer"
+                                                onClick={() => handleFeatureToggle(feature.key)}
+                                            >
+                                                <Checkbox
+                                                    id={`feature-${feature.key}`}
+                                                    checked={watchedFeatures.includes(feature.key)}
+                                                    onCheckedChange={() => {}} // Driven by div onClick
+                                                />
+                                                <label 
+                                                    htmlFor={`feature-${feature.key}`}
+                                                    className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1"
+                                                    onClick={(e) => e.preventDefault()}
                                                 >
-                                                    <Checkbox
-                                                        id={`feature-${feature.key}`}
-                                                        checked={isChecked}
-                                                        onCheckedChange={() => handleFeatureToggle(feature.key)}
-                                                    />
-                                                    <label 
-                                                        htmlFor={`feature-${feature.key}`}
-                                                        className="text-[10px] font-black uppercase tracking-tight cursor-pointer flex-1 py-1"
-                                                    >
-                                                        {feature.name}
-                                                    </label>
-                                                </div>
-                                            );
-                                        })}
+                                                    {feature.name}
+                                                </label>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}
@@ -391,7 +402,7 @@ export default function PricingManagement() {
         accessorKey: 'name', 
         header: 'Commercial Label',
         cell: ({ row }) => (
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col text-left text-foreground">
                 <div className="font-bold text-slate-900">{row.original.name}</div>
                 <span className="text-[9px] font-mono uppercase text-muted-foreground">{row.original.id}</span>
             </div>
@@ -400,7 +411,7 @@ export default function PricingManagement() {
     { 
         accessorKey: 'price', 
         header: 'Yield (R)',
-        cell: ({ row }) => <span className="font-mono font-bold text-primary">{formatCurrency(row.original.price)}</span> 
+        cell: ({ row }) => <span className="font-mono font-bold text-primary">{row.original.price ? `R ${row.original.price.toLocaleString()}` : 'R 0'}</span> 
     },
     { 
         header: 'Forensic Description',
@@ -418,8 +429,8 @@ export default function PricingManagement() {
                     </AlertDialogTrigger>
                     <AlertDialogContent className="text-left text-foreground">
                         <AlertDialogHeader>
-                            <AlertDialogTitle className="text-left">Expunge Node Protocol?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-left">
+                            <AlertDialogTitle className="text-left text-foreground">Expunge Node Protocol?</AlertDialogTitle>
+                            <AlertDialogDescription className="text-left text-foreground">
                                 This will permanently delete the commercial definition for "{row.original.name}". This action cannot be undone.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -437,7 +448,7 @@ export default function PricingManagement() {
   return (
     <div className="space-y-12 text-left text-base text-foreground">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-left">
-        <div className="text-left">
+        <div className="text-left text-foreground">
             <CardTitle className="text-3xl font-black font-headline flex items-center gap-3 text-left">
                 <Layers className="text-primary h-8 w-8"/> 
                 Commercial Node Ledger
@@ -447,7 +458,7 @@ export default function PricingManagement() {
         <PlanDialog onSave={forceRefresh} />
       </div>
 
-      <div className="space-y-16 text-left text-foreground">
+      <div className="space-y-16 text-left">
         <div className="space-y-6 text-left">
             <div className="flex items-center gap-4 border-l-4 border-primary pl-4 text-left">
                 <div className="text-left">
@@ -455,29 +466,29 @@ export default function PricingManagement() {
                     <p className="text-sm text-muted-foreground text-left">Core memberships that manage navigation and usage boundaries.</p>
                 </div>
             </div>
-            <Card className="border-none shadow-xl bg-white text-left">
+            <Card className="border-none shadow-xl bg-white text-left text-foreground">
                 <CardContent className="pt-6 text-left">
-                    {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={accessTiers} />}
+                    {isLoading ? <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin text-primary h-8 w-8 mx-auto" /></div> : <DataTable columns={columns} data={accessTiers} />}
                 </CardContent>
             </Card>
         </div>
 
-        <div className="space-y-6 text-left">
+        <div className="space-y-6 text-left text-foreground">
              <div className="flex items-center gap-4 border-l-4 border-slate-900 pl-4 text-left">
                 <div className="text-left">
                     <h3 className="text-xl font-black uppercase tracking-tight text-left">2. Proprietary Data Silos</h3>
-                    <p className="text-sm text-muted-foreground text-left text-foreground">B2B intelligence silos deactivated for public view. Sold via institutional handshake.</p>
+                    <p className="text-sm text-muted-foreground text-left">B2B intelligence silos deactivated for public view. Sold via institutional handshake.</p>
                 </div>
             </div>
-            <Card className="border-none shadow-xl bg-white text-left">
+            <Card className="border-none shadow-xl bg-white text-left text-foreground">
                 <CardContent className="pt-6 text-left">
-                    {isLoading ? <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div> : <DataTable columns={columns} data={dataSilos} />}
+                    {isLoading ? <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin text-primary h-8 w-8 mx-auto" /></div> : <DataTable columns={columns} data={dataSilos} />}
                 </CardContent>
             </Card>
         </div>
       </div>
 
-      <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
+      <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-white">
             <div className="absolute top-0 right-0 p-12 opacity-5 text-left"><Zap className="h-40 w-40 text-primary" /></div>
             <div className="relative z-10 flex items-start gap-6 text-left">
                 <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
@@ -492,4 +503,3 @@ export default function PricingManagement() {
     </div>
   );
 }
-
