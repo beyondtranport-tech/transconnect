@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Edit, RefreshCcw } from 'lucide-react';
+import { Loader2, Lock, Edit, RefreshCcw, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { DataTable } from '@/components/ui/data-table';
+import { cn } from '@/lib/utils';
 
 
 // --- Helper Functions and Data ---
@@ -383,4 +384,3 @@ export default function PermissionsContent() {
         </div>
     );
 }
-
