@@ -34,7 +34,8 @@ import {
   Sparkles,
   ShieldCheck,
   Lock,
-  UserCheck
+  UserCheck,
+  ListChecks
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -50,7 +51,6 @@ import React from 'react';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // --- Dynamic Imports ---
-const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
@@ -94,7 +94,6 @@ function LendingPortalContent() {
       case 'facilities': return <FacilitiesContent />;
       case 'staff': return <PlatformStaffManagement />;
       case 'permissions': return <PermissionsContent />;
-      case 'market': return <FundingDivisionContent mode="market" />;
       default: return <LenderDeskContent />;
     }
   }, [activeView]);
@@ -123,7 +122,7 @@ function LendingPortalContent() {
             <SidebarGroup>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Admin Ledger" isActive={activeView === 'desk'} onClick={() => navigate('desk')}>
-                        <LayoutDashboard /><span>Lender Desk (Ledger)</span>
+                        <ListChecks /><span>Master Action Ledger</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -141,11 +140,6 @@ function LendingPortalContent() {
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>Credit Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Market Sourcing" isActive={activeView === 'market'} onClick={() => navigate('market')}>
-                        <Globe /><span>Market Sourcing</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
             </SidebarGroup>
 
             <SidebarGroup>
@@ -162,7 +156,7 @@ function LendingPortalContent() {
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
-             <div className="p-4 border-t space-y-4">
+             <div className="p-4 border-t space-y-4 text-left">
                 <VisionOnboardingDialog onExtractionComplete={(data) => {
                     router.push(`/lending?view=clients&action=create&prefill=${encodeURIComponent(JSON.stringify(data))}`);
                 }} />
@@ -192,7 +186,12 @@ function LendingPortalContent() {
 
 export default function LendingPage() {
   return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-8rem)] text-foreground"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
+    <Suspense fallback={
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground gap-4">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Initializing Portal...</p>
+        </div>
+    }>
       <LendingPortalContent />
     </Suspense>
   );

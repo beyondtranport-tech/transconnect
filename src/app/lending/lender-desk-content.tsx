@@ -22,55 +22,46 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-        cache: 'no-store'
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
-    return result.data;
-}
-
 export default function LenderDeskContent() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
     
-    const [selectedOpportunity, setSelectedOpportunity] = useState<any | null>(null);
-
-    // 1. FETCH ALL ENQUIRIES (The Raw Intake Ledger)
+    // 1. FETCH ALL ENQUIRIES (The Unified Intake Ledger)
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'enquiries'), orderBy('updatedAt', 'desc'), limit(100));
+        return query(collectionGroup(firestore, 'enquiries'), orderBy('updatedAt', 'desc'), limit(200));
     }, [firestore]);
     const { data: allEnquiries, isLoading, forceRefresh } = useCollection(enquiriesQuery);
 
-    // 2. FILTER FOR THE TASK LEDGER (Administrative Exceptions)
-    const taskLedgerItems = useMemo(() => {
+    // 2. UNIFIED TRIAGE LOGIC
+    // We categorize into "Action Required" (Triage) and "Active Review" based on status/data gaps
+    const triageItems = useMemo(() => {
         if (!allEnquiries) return [];
-        
         return allEnquiries.filter((enquiry: any) => {
-            // Logic: Include anything with missing docs or high risk
-            const isMissingDocs = !enquiry.userIdUrl || !enquiry.afsDocUrl || (enquiry.entityType?.includes('Pty') && !enquiry.registrationDocUrl);
-            const isHighRisk = enquiry.hasJudgements || enquiry.hasDefaults;
             const isNew = enquiry.status === 'pending';
-            
-            return isMissingDocs || isHighRisk || isNew;
+            const hasGaps = !enquiry.userIdUrl || !enquiry.afsDocUrl;
+            return isNew || hasGaps;
         });
+    }, [allEnquiries]);
+
+    const activeReviewItems = useMemo(() => {
+        if (!allEnquiries) return [];
+        return allEnquiries.filter((enquiry: any) => enquiry.status === 'under_review');
     }, [allEnquiries]);
 
     const columns: ColumnDef<any>[] = [
         {
-            header: 'Triage Entity',
+            header: 'Entity / Channel',
             cell: ({ row }) => (
                 <div className="flex flex-col text-left">
-                    <span className="font-bold text-foreground text-left">{row.original.companyLegalName || 'Provisional Borrower'}</span>
+                    <span className="font-bold text-foreground text-left">{row.original.companyLegalName || row.original.name || 'Provisional Borrower'}</span>
                     <div className="flex items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black bg-slate-50">
-                            {row.original.originationType === 'direct' ? 'Direct Path' : 'Market Broadcast'}
+                        <Badge variant={row.original.originationType === 'direct' ? 'default' : 'outline'} className={cn(
+                            "text-[8px] h-3.5 uppercase font-black px-1.5",
+                            row.original.originationType === 'market' && "border-primary/30 text-primary"
+                        )}>
+                            {row.original.originationType || 'Direct'}
                         </Badge>
                         <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id.slice(-6)}</span>
                     </div>
@@ -78,7 +69,7 @@ export default function LenderDeskContent() {
             )
         },
         {
-            header: 'Forensic Triage',
+            header: 'Forensic Health',
             cell: ({ row }) => {
                 const missingDocs = [];
                 if (!row.original.userIdUrl) missingDocs.push('ID');
@@ -93,7 +84,7 @@ export default function LenderDeskContent() {
                             </Badge>
                         ) : (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-[8px] h-4 uppercase font-black">
-                                <CheckCircle className="h-2.5 w-2.5 mr-1" /> Docs Verified
+                                <CheckCircle className="h-2.5 w-2.5 mr-1" /> Data Secure
                             </Badge>
                         )}
                         <div className="flex items-center gap-1">
@@ -104,7 +95,7 @@ export default function LenderDeskContent() {
                                             <Scale className="h-3 w-3" />
                                         </div>
                                     </TooltipTrigger>
-                                    <TooltipContent className="text-[10px] font-bold uppercase">{row.original.hasJudgements ? 'Hard Risk: Judgements Found' : 'Clean Registry'}</TooltipContent>
+                                    <TooltipContent className="text-[10px] font-bold uppercase">{row.original.hasJudgements ? 'Exception: Judgements' : 'Registry Clean'}</TooltipContent>
                                 </Tooltip>
                              </TooltipProvider>
                         </div>
@@ -113,7 +104,7 @@ export default function LenderDeskContent() {
             }
         },
         {
-            header: 'Facility Value',
+            header: 'Enquiry Value',
             cell: ({ row }) => (
                 <div className="flex flex-col text-left">
                     <span className="font-black text-primary text-sm">{formatCurrency(row.original.amountRequested)}</span>
@@ -131,7 +122,7 @@ export default function LenderDeskContent() {
         },
         {
             id: 'actions',
-            header: <div className="text-right">Manage</div>,
+            header: <div className="text-right">Audit</div>,
             cell: ({ row }) => (
                 <div className="text-right">
                     <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-black uppercase tracking-widest gap-1.5">
@@ -148,7 +139,7 @@ export default function LenderDeskContent() {
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4 text-left">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Aggregating Admin Ledger...</p>
+                <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Synchronizing Master Ledger...</p>
             </div>
         );
     }
@@ -159,23 +150,23 @@ export default function LenderDeskContent() {
                 <div className="text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <ListChecks className="h-8 w-8 text-primary" />
-                        Admin Ledger (Task Hub)
+                        Master Action Ledger
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">Triaging new applications and resolving forensic exceptions.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Unified triage for Direct and Mall-originated funding requests.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => forceRefresh()}>
-                    <RefreshCcw className="h-4 w-4 mr-2" />
-                    Sync Work Items
+                <Button variant="outline" size="sm" onClick={() => forceRefresh()} className="gap-2">
+                    <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                    Refresh Ledger
                 </Button>
             </div>
 
             <Tabs defaultValue="triage" className="w-full text-left text-foreground">
                 <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start border border-muted text-left">
                     <TabsTrigger value="triage" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <Zap className="h-3.5 w-3.5" /> Pending Triage ({taskLedgerItems.length})
+                        <Zap className="h-3.5 w-3.5" /> Pending Triage ({triageItems.length})
                     </TabsTrigger>
                     <TabsTrigger value="active" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <Activity className="h-3.5 w-3.5" /> Under Analysis
+                        <Activity className="h-3.5 w-3.5" /> Under Analysis ({activeReviewItems.length})
                     </TabsTrigger>
                 </TabsList>
 
@@ -184,16 +175,16 @@ export default function LenderDeskContent() {
                         <CardHeader className="bg-slate-50 border-b p-6 text-left">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left">
                                 <Info className="h-4 w-4 text-primary" />
-                                Actionable Items Queue
+                                Actionable Intake Queue
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-6 text-left">
-                            {taskLedgerItems.length > 0 ? (
-                                <DataTable columns={columns} data={taskLedgerItems} />
+                            {triageItems.length > 0 ? (
+                                <DataTable columns={columns} data={triageItems} />
                             ) : (
                                 <div className="py-24 text-center space-y-4">
                                     <CheckCircle className="h-12 w-12 mx-auto text-green-500 opacity-20" />
-                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Ledger Clear</p>
+                                    <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Intake Clear</p>
                                 </div>
                             )}
                         </CardContent>
@@ -201,10 +192,18 @@ export default function LenderDeskContent() {
                 </TabsContent>
 
                 <TabsContent value="active" className="mt-8 text-left">
-                    <div className="py-20 text-center border-2 border-dashed rounded-2xl bg-muted/10 text-left">
-                        <Clock className="h-10 w-10 mx-auto text-muted-foreground opacity-30" />
-                        <p className="text-sm font-bold text-muted-foreground mt-4 text-center">Active analysis sessions will populate here once triage is complete.</p>
-                    </div>
+                    <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
+                        <CardContent className="pt-6">
+                            {activeReviewItems.length > 0 ? (
+                                <DataTable columns={columns} data={activeReviewItems} />
+                            ) : (
+                                <div className="py-20 text-center border-2 border-dashed rounded-2xl bg-muted/10 text-left">
+                                    <Clock className="h-10 w-10 mx-auto text-muted-foreground opacity-30" />
+                                    <p className="text-sm font-bold text-muted-foreground mt-4 text-center">No active analysis sessions in progress.</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </div>
