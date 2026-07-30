@@ -5,11 +5,18 @@ import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap } from 'lucide-react';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -18,6 +25,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 import { Separator } from '@/components/ui/separator';
+import { doc, query, collection, serverTimestamp } from 'firebase/firestore';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -80,6 +88,16 @@ const incomeStatementSchema = z.object({
     taxation: z.coerce.number().optional(),
 });
 
+const entityTypes = [
+    "Ltd",
+    "Private Company (Pty Ltd)",
+    "Sole Proprietorship",
+    "Close Corporation (CC)",
+    "Trust",
+    "Individual",
+    "Partnership"
+];
+
 const clientSchema = z.object({
   name: z.string().min(1, 'Client name is required'),
   code: z.string().optional(),
@@ -109,11 +127,22 @@ const StepMain = () => {
          <div className="space-y-6 text-left text-foreground">
             <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Client Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
             <div className="grid grid-cols-2 gap-4 text-left">
-                <FormField control={control} name="type" render={({ field }) => (<FormItem className="text-left"><FormLabel>Type</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="company">Company</SelectItem><SelectItem value="individual">Individual</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                <FormField control={control} name="type" render={({ field }) => (
+                    <FormItem className="text-left text-foreground">
+                        <FormLabel>Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                {entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )} />
                 <FormField control={control} name="status" render={({ field }) => (<FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
             </div>
              <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Registration ID / RSA ID</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2 text-left"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="cursor-pointer font-bold">VAT Registered?</Label></FormItem>)} />
+            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2 text-left"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="cursor-pointer font-bold text-foreground">VAT Registered?</Label></FormItem>)} />
         </div>
     )
 };
@@ -304,22 +333,23 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
             case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />;
             case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />;
             case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />;
-            case 'review': return <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase">Audit Readiness Verified</h3><p className="text-muted-foreground max-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>;
+            case 'review': return <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase text-foreground">Audit Readiness Verified</h3><p className="text-muted-foreground max-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>;
             default: return null;
         }
     };
 
-    const suggestedDocType = useMemo(() => {
+    const getSuggestedDocType = useCallback((stepId: string) => {
         const type = methods.watch('type');
-        const stepId = steps[currentStep].id;
         if (stepId === 'main') {
-            if (type === 'individual') return 'rsa_id';
+            if (type === 'Individual' || type === 'Sole Proprietorship') return 'rsa_id';
+            if (type === 'Trust') return 'trust_deed';
+            if (type === 'Partnership') return 'partnership_agreement';
             return 'company_formation';
         }
         if (stepId === 'bankAccounts') return 'bank_statement';
         if (stepId === 'balanceSheet' || stepId === 'incomeStatement') return 'invoice';
         return 'rc1';
-    }, [currentStep, methods.watch('type')]);
+    }, [methods]);
     
     return (
          <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
@@ -336,18 +366,18 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
                     </CardHeader>
                     <CardContent className="p-8">
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12 text-left">
-                            <div className="flex flex-col gap-2 border-r pr-6 text-left">
+                            <div className="flex flex-col gap-3 border-r pr-6 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = completedSteps.has(step.id);
                                     const isActive = currentStep === index;
 
                                     return (
-                                        <div key={step.id} className="space-y-1 text-left">
+                                        <div key={step.id} className="space-y-2 text-left">
                                             <Button 
                                                 type="button" 
                                                 variant={isActive ? 'secondary' : 'ghost'} 
-                                                className={cn("w-full justify-start gap-3 h-11 px-3 transition-all", isActive && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                                className={cn("w-full justify-start gap-3 h-11 px-3 transition-all text-left", isActive && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                                 onClick={() => setCurrentStep(index)} 
                                                 disabled={index > currentStep && !isCompleted && !isActive}
                                             >
@@ -356,17 +386,20 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
                                                 <span className={cn("text-[10px] font-black uppercase tracking-widest", isActive ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                             </Button>
                                             
-                                            {isActive && step.id !== 'review' && (
-                                                <div className="px-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                                            {step.id !== 'review' && (
+                                                <div className="px-2">
                                                     <VisionOnboardingDialog 
                                                         stepId={step.id}
-                                                        initialDocType={suggestedDocType}
+                                                        initialDocType={getSuggestedDocType(step.id)}
                                                         onExtractionComplete={(data) => handleAiExtraction(step.id, data)}
                                                         trigger={
                                                             <Button 
                                                                 variant="ghost" 
                                                                 size="sm" 
-                                                                className="h-8 w-full justify-start text-[9px] font-black uppercase text-primary gap-2 hover:bg-primary/5"
+                                                                className={cn(
+                                                                    "h-8 w-full justify-start text-[9px] font-black uppercase text-primary gap-2 hover:bg-primary/5",
+                                                                    isActive ? "opacity-100" : "opacity-40 grayscale"
+                                                                )}
                                                             >
                                                                 <Zap className="h-3 w-3 fill-current" />
                                                                 AI Doc Onboarding
