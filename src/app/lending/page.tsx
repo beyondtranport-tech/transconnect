@@ -32,7 +32,10 @@ import {
   Database,
   SearchCode,
   Zap,
-  Sparkles
+  Sparkles,
+  ShieldCheck,
+  Lock,
+  UserCheck
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -48,12 +51,16 @@ import React from 'react';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // --- Dynamic Imports ---
-const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
-const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
-const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
-const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
-const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
-const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div> });
+const FundingDivisionContent = dynamic(() => import('@/app/backend/funding-division-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+
+// New Internal Modules
+const PlatformStaffManagement = dynamic(() => import('@/app/adminaccount/platform-staff'), { ssr: false });
+const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { ssr: false });
 
 function LendingPortalContent() {
   const router = useRouter();
@@ -86,6 +93,8 @@ function LendingPortalContent() {
       case 'agreements': return <AgreementsContent />;
       case 'assets': return <AssetRegisterContent />;
       case 'facilities': return <FacilitiesContent />;
+      case 'staff': return <PlatformStaffManagement />;
+      case 'permissions': return <PermissionsContent />;
       case 'market': return <FundingDivisionContent mode="market" />;
       default: return <LenderDeskContent />;
     }
@@ -114,28 +123,41 @@ function LendingPortalContent() {
           <SidebarContent>
             <SidebarGroup>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="CRM Desk" isActive={activeView === 'desk'} onClick={() => navigate('desk')}>
-                        <LayoutDashboard /><span>Lender Desk</span>
+                    <SidebarMenuButton tooltip="Admin Ledger" isActive={activeView === 'desk'} onClick={() => navigate('desk')}>
+                        <LayoutDashboard /><span>Lender Desk (Ledger)</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Clients" isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
-                        <Users /><span>Debtors (Clients)</span>
+                        <Users /><span>Debtor Registry</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities'].includes(activeView)}>
-                        <ClipboardList /><span>Lending Ledger</span>
+                        <ClipboardList /><span>Lending Portfolios</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>Active Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>Asset Register</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>Credit Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Market Origination" isActive={activeView === 'market'} onClick={() => navigate('market')}>
-                        <Globe /><span>Market Channel</span>
+                        <Globe /><span>Inbound deal-flow</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroup>
+
+            <SidebarGroup>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Team" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
+                        <UserCheck /><span>Internal Team (Staff)</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Security" isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>
+                        <Lock /><span>Security Matrix</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
@@ -143,17 +165,16 @@ function LendingPortalContent() {
           <SidebarFooter>
              <div className="p-4 border-t space-y-4">
                 <VisionOnboardingDialog onExtractionComplete={(data) => {
-                    console.log("Vision Data Extracted:", data);
                     router.push(`/lending?view=clients&action=create&prefill=${encodeURIComponent(JSON.stringify(data))}`);
                 }} />
                 <Button variant="outline" className="w-full justify-start gap-2 h-9 text-[10px] font-black uppercase tracking-widest" asChild>
-                    <Link href="/backend"><ArrowRightLeft className="h-3.5 w-3.5" /> App Backend</Link>
+                    <Link href="/backend"><ArrowRightLeft className="h-3.5 w-3.5" /> Platform Backend</Link>
                 </Button>
                 <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
                     <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary text-white font-bold text-xs">AD</AvatarFallback></Avatar>
-                    <div className="flex flex-col truncate">
-                        <span className="text-xs font-bold text-sidebar-foreground truncate">{user.displayName || 'Admin'}</span>
-                        <span className="text-[10px] text-sidebar-foreground/70 truncate">{user.email}</span>
+                    <div className="flex flex-col truncate text-left">
+                        <span className="text-xs font-bold text-sidebar-foreground truncate text-left">{user.displayName || 'Admin'}</span>
+                        <span className="text-[10px] text-sidebar-foreground/70 truncate text-left">{user.email}</span>
                     </div>
                 </div>
              </div>
