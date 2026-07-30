@@ -103,7 +103,7 @@ const combinedSchema = baseSchema.superRefine((data, ctx) => {
     }
 });
 
-export type ApplicationFormValues = z.infer<typeof combinedSchema>;
+type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 const entityTypesList = [
     "Ltd", "Private Company (Pty Ltd)", "Sole Proprietorship", "Close Corporation (CC)", 
@@ -385,7 +385,6 @@ function StepDocumentSummary() {
 export function EditClientWizard({ client, onSave, onBack }: { client?: any, onSave: () => void, onBack: () => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 

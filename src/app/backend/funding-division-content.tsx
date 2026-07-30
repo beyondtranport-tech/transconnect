@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2, Landmark, Globe, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Loader2, Landmark, Globe, ArrowRight, ShieldCheck, AlertCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
@@ -27,8 +27,6 @@ export default function FundingDivisionContent({ mode = 'direct' }: FundingDivis
     }, [firestore]);
     
     const { data: allEnquiries, isLoading, error } = useCollection(enquiriesQuery);
-
-    const adminParams = useMemo(() => user?.companyData?.lendingParams, [user]);
 
     // Filter based on the requested mode
     const enquiries = useMemo(() => {
@@ -62,15 +60,15 @@ export default function FundingDivisionContent({ mode = 'direct' }: FundingDivis
         );
     }
 
-    const title = mode === 'direct' ? 'Direct In-House Queue' : 'Market Origination Channel';
+    const title = mode === 'direct' ? 'Direct In-House Queue' : 'Market Sourcing Hub';
     const description = mode === 'direct' 
-        ? 'Deals submitted exclusively to your team via the Funding Division.' 
-        : 'Comparative deal flow broadcasted to the wider CRM network.';
-    const Icon = mode === 'direct' ? Landmark : Globe;
+        ? 'Deals submitted exclusively to your team via the internal Funding Division path.' 
+        : 'Comparative deal flow broadcasted by members to the wider Finance Mall network.';
+    const Icon = mode === 'direct' ? Landmark : Search;
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
                         <Icon className="h-8 w-8 text-primary" />
@@ -80,7 +78,7 @@ export default function FundingDivisionContent({ mode = 'direct' }: FundingDivis
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl overflow-hidden bg-white">
+            <Card className="border-none shadow-xl overflow-hidden bg-white text-left">
                 <Table>
                     <TableHeader className="bg-slate-50">
                         <TableRow>
@@ -122,8 +120,8 @@ export default function FundingDivisionContent({ mode = 'direct' }: FundingDivis
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button asChild variant="ghost" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest gap-1.5">
-                                        <Link href={`/adminaccount?view=wallet&memberId=${app.companyId}`}>
-                                            Open Desk <ArrowRight className="h-3 w-3" />
+                                        <Link href={`/lending/clients/${app.companyId}`}>
+                                            Open Case <ArrowRight className="h-3 w-3" />
                                         </Link>
                                     </Button>
                                 </TableCell>
@@ -131,9 +129,9 @@ export default function FundingDivisionContent({ mode = 'direct' }: FundingDivis
                         )) : (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-32 text-muted-foreground">
-                                    <div className="flex flex-col items-center gap-2 opacity-30">
-                                        <Icon className="h-12 w-12" />
-                                        <p className="text-sm font-bold uppercase tracking-widest">Queue Empty</p>
+                                    <div className="flex flex-col items-center gap-2 opacity-30 text-center">
+                                        <Icon className="h-12 w-12 mx-auto" />
+                                        <p className="text-sm font-bold uppercase tracking-widest">Registry Empty</p>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -142,13 +140,13 @@ export default function FundingDivisionContent({ mode = 'direct' }: FundingDivis
                 </Table>
             </Card>
 
-            {mode === 'direct' && (
-                <Alert className="bg-primary/5 border-primary/20 p-4 rounded-xl text-left">
-                    <ShieldCheck className="h-5 w-5 text-primary mt-0.5" />
+            {mode === 'market' && (
+                <Alert className="bg-blue-50 border-blue-200 p-4 rounded-xl text-left">
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5" />
                     <div className="text-left ml-2">
-                        <AlertTitle className="text-xs font-bold uppercase tracking-widest text-primary">Relationship Shield Active</AlertTitle>
-                        <AlertDescription className="text-[11px] text-muted-foreground leading-relaxed mt-1">
-                            These applications are strictly internal to your funding division and are not shared with the wider CRM network.
+                        <AlertTitle className="text-xs font-bold uppercase tracking-widest text-blue-800">Sourcing Hub Active</AlertTitle>
+                        <AlertDescription className="text-[11px] text-blue-700 leading-relaxed mt-1">
+                            These applications represent broad community demand. Engaging with a record here establishes a commercial intro and moves the client into your private audit queue.
                         </AlertDescription>
                     </div>
                 </Alert>
@@ -156,3 +154,4 @@ export default function FundingDivisionContent({ mode = 'direct' }: FundingDivis
         </div>
     );
 }
+

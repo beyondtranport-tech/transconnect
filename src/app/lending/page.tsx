@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -143,8 +142,8 @@ function LendingPortalContent() {
                     </SidebarMenuSub>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Market Origination" isActive={activeView === 'market'} onClick={() => navigate('market')}>
-                        <Globe /><span>Inbound deal-flow</span>
+                    <SidebarMenuButton tooltip="Market Sourcing" isActive={activeView === 'market'} onClick={() => navigate('market')}>
+                        <Globe /><span>Market Sourcing</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
