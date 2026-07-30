@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Users, Search, Database, Globe, UserCheck, ShieldAlert, Send, RefreshCcw, RotateCcw } from 'lucide-react';
+import { Loader2, Users, Search, Database, Globe, UserCheck, ShieldAlert, Send, RefreshCcw, RotateCcw, Sparkles, Zap, ShieldCheck } from 'lucide-react';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,8 @@ import { PartnerOversightDialog } from './marketing/PartnerOversightDialog';
 import MemberActionMenu from '@/app/backend/member-action-menu';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { cn, formatDateSafe } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 async function performAdminAction(token: string, action: string, payload?: any) {
     const response = await fetch('/api/admin', {
@@ -79,10 +82,44 @@ export default function UnifiedDirectory() {
                          <Badge variant={row.original.source === 'Member' ? 'default' : 'outline'} className="text-[10px] uppercase h-4">
                             {row.original.source}
                         </Badge>
-                        <span className="text-[10px] font-black text-muted-foreground uppercase">{row.original.entryType || 'General'}</span>
+                        <span className="text-[10px] font-black text-muted-foreground uppercase">{row.original.entryType || row.original.type || 'General'}</span>
                     </div>
                 </div>
             )
+        },
+        {
+            header: 'Data Fidelity',
+            cell: ({ row }) => {
+                const isHealed = !!(row.original.minedServiceWording || row.original.notes);
+                const hasContacts = !!(row.original.marketingManager?.email || row.original.email);
+                
+                return (
+                    <div className="flex items-center gap-2 text-left">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <div className={cn("p-1 rounded-md transition-colors", isHealed ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground/30")}>
+                                        <Sparkles className="h-4 w-4" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-[10px] font-bold">
+                                    {isHealed ? "Forensic Technical Data Mined" : "Unmined Node"}
+                                </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <div className={cn("p-1 rounded-md transition-colors", hasContacts ? "bg-blue-100 text-blue-600" : "bg-muted text-muted-foreground/30")}>
+                                        <ShieldCheck className="h-4 w-4" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-[10px] font-bold">
+                                    {hasContacts ? "Direct Stakeholder Verified" : "Contacts Missing"}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                )
+            }
         },
         {
             header: 'Fiduciary / Referral Node',
@@ -141,7 +178,7 @@ export default function UnifiedDirectory() {
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 text-left">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                 <Card className="bg-primary/5 border-primary/10">
                     <CardContent className="pt-6 text-left">
@@ -181,10 +218,10 @@ export default function UnifiedDirectory() {
             <Card className="text-left">
                 <CardHeader className="flex flex-row items-center justify-between text-left">
                     <div className="text-left">
-                        <CardTitle className="flex items-center gap-2 text-left"><Users /> Unified Industry Directory</CardTitle>
-                        <CardDescription className="text-left">Forensic view of all platform entities and their referring partners.</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-left text-foreground font-black font-headline"><Users className="h-6 w-6 text-primary" /> Unified Industry Directory</CardTitle>
+                        <CardDescription className="text-left text-muted-foreground">Forensic view of all platform entities and their referring partners.</CardDescription>
                     </div>
-                    <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading}>
+                    <Button variant="outline" size="sm" onClick={loadData} disabled={isLoading} className="text-foreground">
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <RotateCcw className="mr-2 h-4 w-4" />}
                         Sync Registry
                     </Button>
