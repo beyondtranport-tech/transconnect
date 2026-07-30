@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info, Scale, Gavel, History, MapPin, Landmark } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info, Scale, Gavel, History, MapPin, Landmark, ShieldAlert } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -503,7 +503,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 
                                 {currentStepConfig.id === 'nca' && (
                                     <div className="space-y-6 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground text-foreground">
                                             <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
                                                 <FormItem className="text-left text-foreground text-foreground"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
@@ -523,7 +523,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
                                         <div className="space-y-2 text-center text-foreground">
                                             <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
-                                            <p className="text-sm text-muted-foreground max-w-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
+                                            <p className="text-sm text-muted-foreground max-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
                                         </div>
                                     </div>
                                 )}
@@ -536,7 +536,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                             <Button type="button" onClick={() => setCurrentStep(prev => prev + 1)} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg">Next Step <ArrowRight className="ml-2 h-4 w-4" /></Button>
                         ) : (
                             <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase tracking-tight text-lg shadow-2xl text-white">
-                                {isSubmitting ? <Loader2 className="animate-spin h-6 w-6" /> : <ShieldCheck className="h-6 w-6" />}
+                                {isSubmitting ? <Loader2 className="animate-spin h-6 w-6" /> : <Save className="mr-2 h-6 w-6" />}
                                 Commit Audit Record
                             </Button>
                         )}
