@@ -16,10 +16,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info, Scale, Gavel, History, MapPin, Landmark, ShieldAlert } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info, Scale, Gavel, History, MapPin, Landmark, ShieldAlert, Truck } from 'lucide-react';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -448,40 +448,40 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const currentStepConfig = memoizedSteps[currentStep];
 
     return (
-        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
+        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader className="bg-slate-900 text-white p-8 text-left">
-                        <div className="flex justify-between items-center text-left">
+                    <CardHeader className="bg-slate-900 text-white p-8 text-left text-foreground">
+                        <div className="flex justify-between items-center text-left text-foreground">
                             <div className="text-left text-white">
-                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left">Forensic Interview terminal</CardTitle>
-                                <CardDescription className="text-slate-400">Step: {currentStepConfig.title}</CardDescription>
+                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left text-foreground">Forensic Interview terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-left">Step: {currentStepConfig.title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left text-foreground">
-                            <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
+                    <CardContent className="p-0 text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left text-foreground text-foreground">
+                            <div className="bg-slate-50 border-r p-6 space-y-2 text-left text-foreground text-foreground">
                                 {memoizedSteps.map((step, i) => (
                                     <Button
                                         key={step.id}
                                         type="button"
                                         variant={currentStep === i ? "secondary" : "ghost"}
-                                        className={cn("w-full justify-start gap-3 h-10 px-3 transition-all", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")}
+                                        className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left text-foreground", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")}
                                         onClick={() => setCurrentStep(i)}
                                     >
                                         {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
-                                        <span className={cn("text-[11px] font-black uppercase tracking-widest", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                        <span className={cn("text-[11px] font-black uppercase tracking-widest text-left", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                     </Button>
                                 ))}
                             </div>
-                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left text-foreground text-foreground">
+                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left text-foreground text-foreground text-foreground">
                                 {currentStepConfig.id !== 'review' && (
                                     <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left text-foreground">
-                                        <div className="flex items-start gap-4 text-left">
+                                        <div className="flex items-start gap-4 text-left text-foreground">
                                             <div className="bg-primary/10 p-3 rounded-2xl shrink-0 text-left"><Zap className="h-6 w-6 text-primary" /></div>
-                                            <div className="text-left">
+                                            <div className="text-left text-foreground">
                                                 <h4 className="text-sm font-black uppercase text-primary">Verification Gateway</h4>
                                                 <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm text-left">Heal data gaps via automated Vision AI extraction.</p>
                                             </div>
@@ -503,7 +503,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 
                                 {currentStepConfig.id === 'nca' && (
                                     <div className="space-y-6 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground text-foreground">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground text-foreground text-foreground">
                                             <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
                                                 <FormItem className="text-left text-foreground text-foreground"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
@@ -519,7 +519,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 )}
 
                                 {currentStepConfig.id === 'review' && (
-                                    <div className="text-center py-20 space-y-6 text-foreground text-foreground">
+                                    <div className="text-center py-20 space-y-6 text-foreground text-foreground text-foreground text-foreground">
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
                                         <div className="space-y-2 text-center text-foreground">
                                             <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
