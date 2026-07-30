@@ -41,13 +41,40 @@ export async function POST(req: NextRequest) {
         const action = (body.action || '').trim();
         const payload = body.payload || {};
 
-        // Certain actions like 'getMemberEngagementPings' might have looser requirements, 
-        // but for saving forensic data, we strictly require admin.
         if (!isAdmin) {
              if (action !== 'getMemberEngagementPings') throw new Error("Forbidden: Admin access required.");
         }
 
         switch (action) {
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').get();
+                const data = snap.docs.map(doc => {
+                    const docData = doc.data();
+                    const pathSegments = doc.ref.path.split('/');
+                    const companiesIdx = pathSegments.indexOf('companies');
+                    const companyId = companiesIdx > -1 ? pathSegments[companiesIdx + 1] : null;
+                    return {
+                        ...docData,
+                        id: doc.id,
+                        companyId
+                    };
+                });
+                return NextResponse.json({ success: true, data: serializeData(data) });
+            }
+
+            case 'savePlatformStaff': {
+                const { staff } = payload;
+                const ref = db.collection('platformStaff').doc(staff.id || db.collection('platformStaff').doc().id);
+                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deletePlatformStaff': {
+                const { staffId } = payload;
+                await db.collection('platformStaff').doc(staffId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'saveForensicExtraction': {
                 const { clientId, extraction, docType, confidence, summary } = payload;
                 if (!clientId) throw new Error("Client ID required for extraction storage.");
@@ -59,7 +86,7 @@ export async function POST(req: NextRequest) {
                     extraction,
                     confidence,
                     summary,
-                    status: 'raw', // Waiting for human audit/exception check
+                    status: 'raw',
                     createdAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 });
@@ -75,7 +102,6 @@ export async function POST(req: NextRequest) {
                     id: ref.id,
                     createdAt: FieldValue.serverTimestamp()
                 });
-                // Update master status
                 await db.collection('lendingClients').doc(clientId).update({
                     lastAuditAt: FieldValue.serverTimestamp(),
                     auditStatus: 'completed'
@@ -111,49 +137,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, count: partners.length });
             }
 
-            case 'bulkSaveLendingClients': {
-                const { partners } = payload; 
-                const clients = partners || payload.clients || [];
-                const batch = db.batch();
-                clients.forEach((c: any) => {
-                    const ref = db.collection('lendingClients').doc(c.id || db.collection('lendingClients').doc().id);
-                    batch.set(ref, { 
-                        ...c, 
-                        id: ref.id, 
-                        status: c.status || 'draft',
-                        source: c.source || 'AI Discovery',
-                        updatedAt: FieldValue.serverTimestamp() 
-                    }, { merge: true });
-                });
-                await batch.commit();
-                return NextResponse.json({ success: true, count: clients.length });
-            }
-
             case 'getLendingData': {
                 const { collectionName, clientId } = payload;
                 let q: any = db.collection(collectionName);
                 if (clientId) q = q.where('clientId', '==', clientId);
                 const snap = await q.orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'saveLendingClient': {
-                const { client } = payload;
-                const ref = db.collection('lendingClients').doc(client.id || db.collection('lendingClients').doc().id);
-                await ref.set({ ...client, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-
-            case 'logForensicInitiated': {
-                const { partnerId, isLead, isLending } = payload;
-                const collection = isLending ? 'lendingClients' : (isLead ? 'leads' : 'partners');
-                const ref = db.collection(collection).doc(partnerId);
-                await ref.update({
-                    forensicAnalysisStatus: 'initiated',
-                    lastForensicAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
             }
 
             case 'getPlatformStaff': {
