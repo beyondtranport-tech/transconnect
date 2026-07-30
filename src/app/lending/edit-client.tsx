@@ -20,7 +20,7 @@ import {
     Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
     History, Package, Sparkles, Building, FileUp, Users, PlusCircle, 
     Trash2, UserCheck, Truck, FileText, Navigation, MapPin, Info, 
-    ShieldAlert, Gavel, Zap, User, UserCircle, Scale, Banknote
+    ShieldAlert, Gavel, Zap, User, UserCircle, Scale, Banknote, Shield
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -32,7 +32,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 import { Separator } from '@/components/ui/separator';
@@ -99,7 +99,6 @@ const clientSchema = z.object({
 
   // Section 8: Financial Management (Dynamic)
   bookkeepingType: z.enum(['in_house', 'external']).default('external'),
-  hasInHouseBookkeeper: z.boolean().default(false),
   bookkeeperContact: z.object({
       name: z.string().optional(),
       email: z.string().optional(),
@@ -327,10 +326,9 @@ const StepGovernance = () => {
 };
 
 const StepStakeholders = ({ type, label }: { type: 'shareholders' | 'directors' | 'staff', label: string }) => {
-    const { control, watch, setValue } = useFormContext<ClientFormValues>();
+    const { control, watch } = useFormContext<ClientFormValues>();
     const { fields, append, remove } = useFieldArray({ control, name: type });
     
-    // Sync array length with count from Governance step
     const countKey = type === 'shareholders' ? 'shareholderCount' : type === 'directors' ? 'directorCount' : 'staffCount';
     const targetCount = watch(countKey) || 0;
 
@@ -352,56 +350,16 @@ const StepStakeholders = ({ type, label }: { type: 'shareholders' | 'directors' 
                             <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} #{index + 1}</Badge>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                            <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                            <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
+                            <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                            <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                            <FormField control={control} name={`${type}.${index}.email` as any} render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                            <FormField control={control} name={`${type}.${index}.phone` as any} render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                            <FormField control={control} name={`${type}.${index}.email` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Email Address</FormLabel><FormControl><Input type="email" {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                            <FormField control={control} name={`${type}.${index}.phone` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
                         </div>
-                        {type === 'directors' && (
-                            <FormField control={control} name={`${type}.${index}.position` as any} render={({ field }) => (<FormItem><FormLabel>Official Position</FormLabel><FormControl><Input {...field} className="h-10 border-2" placeholder="e.g. Managing Director" /></FormControl></FormItem>)} />
-                        )}
-                        {type === 'shareholders' && (
-                            <FormField control={control} name={`${type}.${index}.shareholdingPercent` as any} render={({ field }) => (<FormItem><FormLabel>Equity Stake (%)</FormLabel><FormControl><Input type="number" {...field} className="h-10 border-2 w-32" /></FormControl></FormItem>)} />
-                        )}
-                        <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem><FormLabel>Residential Address</FormLabel><FormControl><Textarea {...field} className="h-20 border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Residential Address</FormLabel><FormControl><Textarea {...field} className="h-20 border-2" /></FormControl></FormItem>)} />
                     </div>
                 ))}
-            </div>
-        </div>
-    );
-};
-
-const StepCreditForensic = () => {
-    const { control } = useFormContext<ClientFormValues>();
-    return (
-        <div className="space-y-6 text-left">
-            <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4">
-                <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs">
-                    <ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure
-                </div>
-                
-                <FormField control={control} name="hasReturnedPayments" render={({ field }) => (
-                    <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
-                        <FormLabel className="text-sm font-medium">Any returned payments (12 Months)?</FormLabel>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                    </FormItem>
-                )} />
-
-                <FormField control={control} name="hasJudgements" render={({ field }) => (
-                    <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
-                        <FormLabel className="text-sm font-medium">Any active judgements?</FormLabel>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                    </FormItem>
-                )} />
-
-                <FormField control={control} name="hasLegalAction" render={({ field }) => (
-                    <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
-                        <FormLabel className="text-sm font-medium">Any legal action pending/past 12mo?</FormLabel>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                    </FormItem>
-                )} />
             </div>
         </div>
     );
@@ -438,7 +396,6 @@ const StepBackground = () => {
 const StepFinancialManagement = () => {
     const { control, watch } = useFormContext<ClientFormValues>();
     const bType = watch('bookkeepingType');
-    const hasInHouse = watch('hasInHouseBookkeeper');
 
     return (
         <div className="space-y-8 text-left">
@@ -458,19 +415,17 @@ const StepFinancialManagement = () => {
                 </FormItem>
             )} />
 
-            {(bType === 'external' || bType === 'in_house') && (
-                <div className="space-y-4 p-6 border-2 border-dashed rounded-2xl bg-slate-50 animate-in fade-in duration-500 text-left">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
-                        <Users className="h-4 w-4" /> 
-                        {bType === 'external' ? 'External Accountant Details' : 'Bookkeeper Details'}
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                        <FormField control={control} name="bookkeeperContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Name / Firm</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                        <FormField control={control} name="bookkeeperContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                        <FormField control={control} name="bookkeeperContact.phone" render={({ field }) => (<FormItem className="md:col-span-2 text-left"><FormLabel>Direct Phone / Mobile</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    </div>
+            <div className="space-y-4 p-6 border-2 border-dashed rounded-2xl bg-slate-50 animate-in fade-in duration-500 text-left">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                    <Users className="h-4 w-4" /> 
+                    Contact Details for Financial Oversight
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <FormField control={control} name="bookkeeperContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Name / Firm</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    <FormField control={control} name="bookkeeperContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    <FormField control={control} name="bookkeeperContact.phone" render={({ field }) => (<FormItem className="md:col-span-2 text-left"><FormLabel>Direct Phone / Mobile</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                 </div>
-            )}
+            </div>
         </div>
     );
 };
@@ -482,9 +437,9 @@ const StepInfrastructure = () => {
     return (
         <div className="space-y-8 text-left text-foreground">
              <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
-                <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left text-foreground text-foreground">
-                    <div className="space-y-1 text-left text-foreground">
-                        <FormLabel className="text-lg font-black uppercase tracking-tight text-left">Property Ownership</FormLabel>
+                <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left text-foreground">
+                    <div className="space-y-1 text-left">
+                        <FormLabel className="text-lg font-black uppercase tracking-tight">Property Ownership</FormLabel>
                         <FormDescription className="text-left">Do you own the property where you operate from?</FormDescription>
                     </div>
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl>
@@ -492,21 +447,21 @@ const StepInfrastructure = () => {
             )} />
 
             {ownsProperty ? (
-                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 animate-in zoom-in-95 duration-500 text-left text-foreground text-foreground">
+                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 animate-in zoom-in-95 duration-500 text-left">
                     <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
                         <MapPin className="h-4 w-4" /> Operating Property Details
                     </h4>
                     <FormField control={control} name="propertyDetails.address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                         <FormField control={control} name="propertyDetails.marketValue" render={({ field }) => (
-                            <FormItem className="text-left text-foreground text-foreground text-foreground">
+                            <FormItem className="text-left">
                                 <FormLabel>Estimated Market Value (R)</FormLabel>
                                 <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
                             </FormItem>
                         )} />
                         <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (
-                            <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground">
-                                <FormLabel>Outstanding Bond (R)</FormLabel>
+                            <FormItem className="text-left">
+                                <FormLabel>Outstanding Bond Balance (R)</FormLabel>
                                 <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
                             </FormItem>
                         )} />
@@ -514,12 +469,12 @@ const StepInfrastructure = () => {
                     <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Bondholder Institution</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
                 </div>
             ) : (
-                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 animate-in fade-in duration-500 text-left text-foreground text-foreground">
-                    <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
+                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 animate-in fade-in duration-500 text-left">
+                    <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left">
                         <Landmark className="h-4 w-4" /> Landlord / Lease Info
                     </h4>
                     <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Landlord / Managing Agent Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    <p className="text-xs text-muted-foreground italic text-left">If the property is rented, the landlord details are required for forensic standing verification.</p>
+                    <p className="text-xs text-muted-foreground italic text-left">If the property is rented, provide the primary contact node for verification.</p>
                 </div>
             )}
         </div>
@@ -533,6 +488,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const { toast } = useToast();
     const [currentStep, setCurrentStep] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const firestore = useFirestore();
 
     const methods = useForm<ClientFormValues>({
         resolver: zodResolver(clientSchema),
@@ -549,7 +505,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
 
         if (watchedValues.applyingCapacity === 'entity') {
             base.push({ id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'lastSignedAfsDate', 'lastManagementAccountsDate'] });
-            base.push({ id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'signingAuthority', 'hasSigningResolution'] });
+            base.push({ id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'staffCount', 'signingAuthority', 'hasSigningResolution'] });
             
             if (watchedValues.shareholderCount > 0) {
                 base.push({ id: 'shareholders', title: 'Shareholders', icon: Users, fields: ['shareholders'] });
@@ -578,6 +534,44 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         toast({ title: "Forensic Data Mapped", description: "AI extraction results committed to form." });
     };
 
+    /**
+     * PERSISTENCE HANDLER
+     * Triggers a non-blocking save on every step transition.
+     */
+    const handleStepTransition = async (direction: 'next' | 'back' | number) => {
+        // 1. Validate if moving forward
+        if (direction === 'next') {
+            const isValid = await methods.trigger(memoizedSteps[currentStep].fields as any);
+            if (!isValid) {
+                toast({ variant: 'destructive', title: "Validation Error", description: "Complete all required fields in this section." });
+                return;
+            }
+        }
+
+        // 2. Perform background save
+        const values = methods.getValues();
+        const token = await getClientSideAuthToken();
+        if (token && client?.id) {
+            fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    path: `lendingClients/${client.id}`, 
+                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } 
+                })
+            }).catch(e => console.warn("Background autosave failed", e));
+        }
+
+        // 3. Update UI
+        if (typeof direction === 'number') {
+            setCurrentStep(direction);
+        } else if (direction === 'next') {
+            setCurrentStep(prev => Math.min(prev + 1, memoizedSteps.length - 1));
+        } else {
+            setCurrentStep(prev => Math.max(prev - 1, 0));
+        }
+    };
+
     const onSubmit = async (values: ClientFormValues) => {
         setIsSubmitting(true);
         try {
@@ -604,15 +598,15 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-8 text-left">
-                        <div className="flex justify-between items-center text-left text-foreground">
+                        <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
-                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left text-foreground">Forensic Interview terminal</CardTitle>
+                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left">Forensic Interview terminal</CardTitle>
                                 <CardDescription className="text-slate-400 text-left">Step: {currentStepConfig.title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left text-foreground">
+                    <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left">
                             <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                                 {memoizedSteps.map((step, i) => (
@@ -621,7 +615,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                         type="button"
                                         variant={currentStep === i ? "secondary" : "ghost"}
                                         className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")}
-                                        onClick={() => setCurrentStep(i)}
+                                        onClick={() => handleStepTransition(i)}
                                     >
                                         {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
                                         <span className={cn("text-[11px] font-black uppercase tracking-widest", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
@@ -633,7 +627,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left">
                                         <div className="flex items-start gap-4 text-left">
                                             <div className="bg-primary/10 p-3 rounded-2xl shrink-0"><Zap className="h-6 w-6 text-primary" /></div>
-                                            <div className="text-left text-foreground">
+                                            <div className="text-left">
                                                 <h4 className="text-sm font-black uppercase text-primary">Forensic Verification Gateway</h4>
                                                 <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm">Heal data gaps via automated Vision AI extraction.</p>
                                             </div>
@@ -651,6 +645,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 {currentStepConfig.id === 'shareholders' && <StepStakeholders type="shareholders" label="Shareholder" />}
                                 {currentStepConfig.id === 'directors' && <StepStakeholders type="directors" label="Director" />}
                                 {currentStepConfig.id === 'staff_list' && <StepStakeholders type="staff" label="Staff" />}
+                                
                                 {currentStepConfig.id === 'nca' && (
                                     <div className="space-y-6 text-left">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
@@ -663,31 +658,59 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                         </div>
                                         <Alert className="bg-muted/50 border-none text-left">
                                             <Info className="h-4 w-4" />
-                                            <AlertDescription className="text-xs italic text-left">This data is critical for determining the applicability of the National Credit Act (NCA) to this specific transaction.</AlertDescription>
+                                            <AlertDescription className="text-xs italic text-left">This data is critical for determining the applicability of the National Credit Act (NCA).</AlertDescription>
                                         </Alert>
                                     </div>
                                 )}
-                                {currentStepConfig.id === 'credit' && <StepCreditForensic />}
+
+                                {currentStepConfig.id === 'credit' && (
+                                    <div className="space-y-6 text-left">
+                                        <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4">
+                                            <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs">
+                                                <ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure
+                                            </div>
+                                            <FormField control={methods.control} name="hasReturnedPayments" render={({ field }) => (
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
+                                                    <FormLabel className="text-sm font-medium">Any returned payments (12 Months)?</FormLabel>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                </FormItem>
+                                            )} />
+                                            <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
+                                                    <FormLabel className="text-sm font-medium">Any active judgements?</FormLabel>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                </FormItem>
+                                            )} />
+                                            <FormField control={methods.control} name="hasLegalAction" render={({ field }) => (
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
+                                                    <FormLabel className="text-sm font-medium">Any legal action pending?</FormLabel>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                </FormItem>
+                                            )} />
+                                        </div>
+                                    </div>
+                                )}
+
                                 {currentStepConfig.id === 'background' && <StepBackground />}
                                 {currentStepConfig.id === 'finance_mgmt' && <StepFinancialManagement />}
                                 {currentStepConfig.id === 'infrastructure' && <StepInfrastructure />}
                                 
                                 {currentStepConfig.id === 'review' && (
-                                    <div className="text-center py-20 space-y-6 text-left text-foreground">
+                                    <div className="text-center py-20 space-y-6 text-left">
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
-                                        <div className="space-y-2 text-center text-foreground">
+                                        <div className="space-y-2 text-center">
                                             <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
-                                            <p className="text-sm text-muted-foreground max-sm mx-auto">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
+                                            <p className="text-sm text-muted-foreground max-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
-                        <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0} className="font-bold">Back</Button>
+                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left">
+                        <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} disabled={currentStep === 0} className="font-bold">Back</Button>
                         {currentStep < memoizedSteps.length - 1 ? (
-                            <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg">Next Step <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                            <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg">Next Section <ArrowRight className="ml-2 h-4 w-4" /></Button>
                         ) : (
                             <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase tracking-tight text-lg shadow-2xl text-white">
                                 {isSubmitting ? <Loader2 className="animate-spin h-6 w-6" /> : <Save className="mr-2 h-6 w-6" />}
