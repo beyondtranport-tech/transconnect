@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
@@ -35,9 +34,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc, collection } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
-import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
@@ -124,6 +122,7 @@ const clientSchema = z.object({
   userIdUrl: z.string().optional(),
   registrationDocUrl: z.string().optional(),
   vatCertificateUrl: z.string().optional(),
+  ficaDocUrl: z.string().optional(),
   signingResolutionUrl: z.string().optional(),
   afsDocUrl: z.string().optional(),
   bureauReportUrl: z.string().optional(),
@@ -133,14 +132,14 @@ const clientSchema = z.object({
   leaseAgreementUrl: z.string().optional(),
 });
 
-type ClientFormValues = z.infer<typeof clientSchema>;
-
 const entityTypesList = [
     "Ltd", "Private Company (Pty Ltd)", "Sole Proprietorship", "Close Corporation (CC)", 
     "Trust", "Individual", "Partnership"
 ];
 
-// --- HELPERS ---
+type ClientFormValues = z.infer<typeof clientSchema>;
+
+// --- SHARED COMPONENTS ---
 
 function FileUploadField({ name, label, folder, variant = 'standard' }: { name: any, label: string, folder: string, variant?: 'standard' | 'compact' }) {
     const { setValue, watch } = useFormContext<ClientFormValues>();
@@ -153,22 +152,30 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !user) return;
+
         setIsUploading(true);
         setProgress(10);
         try {
             const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
             const reader = new FileReader();
             const dataUri = await new Promise<string>((resolve) => {
                 reader.onload = () => resolve(reader.result as string);
                 reader.readAsDataURL(file);
             });
+
+            setProgress(30);
+            const fileName = `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}`;
             const res = await fetch('/api/uploadImageAsset', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName: `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}`, contentType: file.type })
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName, contentType: file.type })
             });
+
             const result = await res.json();
             if (!res.ok) throw new Error(result.error);
+
             setValue(name, result.url, { shouldValidate: true });
             setProgress(100);
             toast({ title: `${label} Attached` });
@@ -183,7 +190,18 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
         <div className="space-y-1.5 text-left">
             {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{label}</Label>}
             <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size={variant === 'compact' ? 'sm' : 'default'} className={cn("h-10 gap-2 border-2 text-xs font-bold", currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed", variant === 'compact' && "h-8 px-3")} onClick={() => document.getElementById(`upload-${name}`)?.click()} disabled={isUploading}>
+                <Button 
+                    type="button" 
+                    variant="outline" 
+                    size={variant === 'compact' ? 'sm' : 'default'}
+                    className={cn(
+                        "h-10 gap-2 border-2 text-xs font-bold", 
+                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed",
+                        variant === 'compact' && "h-8 px-3"
+                    )}
+                    onClick={() => document.getElementById(`upload-${name}`)?.click()}
+                    disabled={isUploading}
+                >
                     {isUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : currentUrl ? <UserCheck className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
                     {currentUrl ? `Update ${label}` : `Attach ${label}`}
                 </Button>
@@ -201,7 +219,7 @@ function StakeholderForm({ type, label, onToggleDirector }: { type: 'shareholder
     return (
         <div className="space-y-6 text-left">
             {fields.map((field, index) => (
-                <div key={field.id} className="p-6 border-2 border-dashed rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2 text-left text-foreground">
+                <div key={field.id} className="p-6 border-2 border-dashed rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2 text-left">
                     <div className="flex items-center justify-between border-b pb-4">
                         <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} {index + 1}</Badge>
                         <div className="flex items-center gap-4">
@@ -215,18 +233,18 @@ function StakeholderForm({ type, label, onToggleDirector }: { type: 'shareholder
                         </div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                        <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-9 border-2 font-mono" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-9 border-2 font-mono" /></FormControl></FormItem>)} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                        <FormField control={control} name={`${type}.${index}.email` as any} render={({ field }) => (<FormItem><FormLabel>E-mail Address</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`${type}.${index}.phone` as any} render={({ field }) => (<FormItem><FormLabel>Contact Number</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.email` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>E-mail Address</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.phone` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Contact Number</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
                     </div>
-                    <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem><FormLabel>Residential Address</FormLabel><FormControl><Textarea {...field} className="h-16 border-2" /></FormControl></FormItem>)} />
+                    <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Residential Address</FormLabel><FormControl><Textarea {...field} className="h-16 border-2" /></FormControl></FormItem>)} />
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 text-left">
                         <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="RSA Identity Document" folder="stakeholder-ids" variant="standard" />
-                        <FileUploadField name={`${type}.${index}.proofAddressUrl`} label="Proof of Residence" folder="stakeholder-address" variant="standard" />
+                        <FileUploadField name={`${type}.${index}.proofAddressUrl`} label="Proof of Residential Address" folder="stakeholder-address" variant="standard" />
                     </div>
                 </div>
             ))}
@@ -234,7 +252,7 @@ function StakeholderForm({ type, label, onToggleDirector }: { type: 'shareholder
     );
 }
 
-// --- MAIN STEPS ---
+// --- STEP COMPONENTS ---
 
 const StepMain = () => {
     const { control } = useFormContext<ClientFormValues>();
@@ -304,11 +322,11 @@ const StepCompliance = () => {
                         )} />
                     )}
                 </div>
-                {isVatRegistered && (
-                    <div className="p-6 bg-slate-900 text-white rounded-3xl shadow-xl flex flex-col justify-center animate-in zoom-in-95 duration-500">
-                        <FileUploadField name="vatCertificateUrl" label="VAT Certificate / Tax Clearance" folder="forensic-compliance" />
-                    </div>
-                )}
+                <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4">
+                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Compliance Node</h4>
+                    <FileUploadField name="vatCertificateUrl" label="VAT Certificate / Tax Clearance" folder="forensic-compliance" />
+                    <FileUploadField name="ficaDocUrl" label="FICA Proof of Address" folder="forensic-compliance" />
+                </div>
             </div>
             
             {isVatRegistered && (
@@ -350,17 +368,17 @@ const StepBackground = () => {
                 <FormField control={control} name="isSelfEmployed" render={({ field }) => (<FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left"><div className="space-y-0.5"><FormLabel className="text-sm font-black uppercase">Self-Employed?</FormLabel><FormDescription className="text-xs">Principal employment standing.</FormDescription></div><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl></FormItem>)} />
                 <FormField control={control} name="yearsInIndustry" render={({ field }) => (<FormItem className="text-left"><FormLabel>Tenure (Years in Industry)</FormLabel><FormControl><Input type="number" {...field} className="h-14 border-2 bg-white text-2xl font-black" /></FormControl></FormItem>)} />
             </div>
-            <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 space-y-8 text-left">
+            <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 space-y-8 text-left text-foreground">
                 <div className="flex items-center gap-3"><Truck className="h-6 w-6 text-primary" /><h4 className="text-lg font-black uppercase tracking-tight">Fleet capacity Declaration</h4></div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <FormField control={control} name="truckCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Truck Nodes (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                     <FormField control={control} name="trailerCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Trailer Nodes</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center text-left text-foreground">
-                    <div className="space-y-1">
+                    <div className="space-y-1 text-left text-foreground">
                         <p className="text-sm font-bold">Fleet Register Audit</p>
-                        <p className="text-xs text-muted-foreground italic max-w-sm text-left">Upload fleet registry list for RC1 cross-referencing.</p>
+                        <p className="text-xs text-muted-foreground italic max-w-sm">Upload fleet registry list for RC1 cross-referencing.</p>
                     </div>
                     <FileUploadField name="fleetInventoryUrl" label="Fleet Inventory / RC1 Batch" folder="forensic-background" />
                 </div>
@@ -381,7 +399,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const methods = useForm<ClientFormValues>({
         resolver: zodResolver(clientSchema),
         mode: 'onChange',
-        defaultValues: client || { applyingCapacity: 'entity', status: 'draft' }
+        defaultValues: client || { applyingCapacity: 'entity', status: 'draft', shareholderCount: 0, directorCount: 0, staffCount: 0 }
     });
 
     const watchedValues = methods.watch();
@@ -396,7 +414,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             { id: 'entity', title: 'Entity', icon: Building, fields: ['registrationId', 'inceptionDate', 'registrationDocUrl'] },
         ];
         if (watchedValues.applyingCapacity === 'entity') {
-            base.push({ id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'lastVatReturnDate', 'vatCertificateUrl'] });
+            base.push({ id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'lastVatReturnDate', 'vatCertificateUrl', 'ficaDocUrl'] });
             base.push({ id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'staffCount', 'signingAuthority', 'hasSigningResolution', 'signingResolutionUrl'] });
             if (Number(watchedValues.shareholderCount) > 0) base.push({ id: 'shareholders', title: 'Shareholders', icon: Users, fields: ['shareholders'] });
             if (Number(watchedValues.directorCount) > 0) base.push({ id: 'directors', title: 'Directors', icon: UserCircle, fields: ['directors'] });
@@ -456,22 +474,6 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         else setCurrentStep(prev => Math.max(prev - 1, 0));
     };
 
-    const onSubmit = async (values: ClientFormValues) => {
-        setIsSubmitting(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-            const clientRef = doc(firestore, 'lendingClients', client?.id || doc(collection(firestore, 'lendingClients')).id);
-            await setDoc(clientRef, { ...values, updatedAt: serverTimestamp() }, { merge: true });
-            toast({ title: 'Audit Committed' });
-            onSave();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Submit Failed', description: e.message });
-        } finally {
-            setIsSubmitting(true);
-        }
-    };
-
     const currentStepConfig = memoizedSteps[currentStep];
 
     return (
@@ -480,7 +482,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-8">
                         <div className="flex justify-between items-center">
-                            <div className="text-left"><CardTitle className="text-2xl font-black font-headline uppercase text-white">Forensic Interview terminal</CardTitle><CardDescription className="text-slate-400">Step: {currentStepConfig.title}</CardDescription></div>
+                            <div className="text-left text-white"><CardTitle className="text-2xl font-black font-headline uppercase text-white">Forensic Interview terminal</CardTitle><CardDescription className="text-slate-400">Step: {currentStepConfig.title}</CardDescription></div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
                         </div>
                     </CardHeader>
@@ -499,8 +501,8 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 {currentStepConfig.id === 'entity' && <StepEntityDetails />}
                                 {currentStepConfig.id === 'compliance' && <StepCompliance />}
                                 {currentStepConfig.id === 'governance' && (
-                                    <div className="space-y-8 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
+                                    <div className="space-y-8 text-left text-foreground">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                             <div className="space-y-6">
                                                 <div className="grid grid-cols-3 gap-6">
                                                     <FormField control={methods.control} name="shareholderCount" render={({ field }) => (<FormItem><FormLabel>Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>)} />
@@ -509,7 +511,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                                 </div>
                                                 <FormField control={methods.control} name="signingAuthority" render={({ field }) => (<FormItem className="space-y-3"><FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest">Signing Authority</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer font-bold">Single</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer font-bold">Multiple</Label></div></RadioGroup></FormControl></FormItem>)} />
                                             </div>
-                                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4">
+                                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
                                                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Gavel className="h-4 w-4" /> Authority Node</h4>
                                                 <FileUploadField name="signingResolutionUrl" label="Signing Resolution / Authorization" folder="forensic-governance" />
                                             </div>
@@ -520,9 +522,9 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 {currentStepConfig.id === 'directors' && <StakeholderForm type="directors" label="Director" />}
                                 {currentStepConfig.id === 'staff_list' && <StakeholderForm type="staff" label="Staff" />}
                                 {currentStepConfig.id === 'nca' && (
-                                    <div className="space-y-8 text-left">
+                                    <div className="space-y-8 text-left text-foreground">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                            <div className="space-y-6 text-left">
+                                            <div className="space-y-6">
                                                 <FormField control={methods.control} name="annualTurnover" render={({ field }) => (<FormItem><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>)} />
                                                 <FormField control={methods.control} name="totalAssetValue" render={({ field }) => (<FormItem><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>)} />
                                             </div>
@@ -534,21 +536,21 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     </div>
                                 )}
                                 {currentStepConfig.id === 'credit' && (
-                                    <div className="space-y-8 text-left">
+                                    <div className="space-y-8 text-left text-foreground">
                                         <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left">
                                             <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left"><ShieldAlert className="h-5 w-5 text-primary" /> Hard Risk Disclosure</div>
                                             <FormField control={methods.control} name="hasReturnedPayments" render={({ field }) => (<FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left"><FormLabel className="text-sm font-medium">Any returned payments?</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
                                             <FormField control={methods.control} name="hasJudgements" render={({ field }) => (<FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left"><FormLabel className="text-sm font-medium">Any active judgements?</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
                                         </div>
-                                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left">
-                                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Scale className="h-4 w-4" /> Credit intelligence</h4><p className="text-xs text-slate-400">Upload bureau evidence or settlement letters.</p></div>
+                                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left text-foreground">
+                                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Scale className="h-4 w-4" /> Credit intelligence</h4><p className="text-xs text-slate-400">Upload bureau evidence or settlement letters.</p></div>
                                             <FileUploadField name="bureauReportUrl" label="Bureau Report / Settlement Letter" folder="forensic-risk" />
                                         </div>
                                     </div>
                                 )}
                                 {currentStepConfig.id === 'background' && <StepBackground />}
                                 {currentStepConfig.id === 'finance_mgmt' && (
-                                    <div className="space-y-12 text-left">
+                                    <div className="space-y-12 text-left text-foreground">
                                         <FormField control={methods.control} name="bookkeepingType" render={({ field }) => (
                                             <FormItem className="space-y-6 text-left">
                                                 <FormLabel className="text-2xl font-black font-headline uppercase tracking-tight">Oversight Structure</FormLabel>
@@ -556,40 +558,40 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                                     <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-6 text-left">
                                                         <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all shadow-sm", field.value === 'in_house' ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-white hover:border-slate-300")}>
                                                             <div className="flex items-center space-x-3"><RadioGroupItem value="in_house" id="bk-in" /><Label htmlFor="bk-in" className="cursor-pointer font-black uppercase text-sm">In-House Team</Label></div>
-                                                            <p className="text-[10px] text-muted-foreground mt-2 pl-7">Internal financial controllers manage the ledger.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-2 pl-7 text-left">Internal financial controllers manage the ledger.</p>
                                                         </div>
                                                         <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all shadow-sm", field.value === 'external' ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-white hover:border-slate-300")}>
                                                             <div className="flex items-center space-x-2"><RadioGroupItem value="external" id="bk-ex" /><Label htmlFor="bk-ex" className="cursor-pointer font-black uppercase text-sm">External Firm</Label></div>
-                                                            <p className="text-[10px] text-muted-foreground mt-2 pl-7">Authorized external accountants manage reporting.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-2 pl-7 text-left">Authorized external accountants manage reporting.</p>
                                                         </div>
                                                     </RadioGroup>
                                                 </FormControl>
                                             </FormItem>
                                         )} />
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center text-left">
-                                            <div className="space-y-6 p-8 border-2 border-dashed rounded-[2.5rem] bg-slate-50 animate-in fade-in duration-500">
-                                                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><UserCheck className="h-4 w-4" /> Account Node</h4>
-                                                <div className="space-y-4">
-                                                    <FormField control={methods.control} name="bookkeeperContact.name" render={({ field }) => (<FormItem><FormLabel>Full Name / Firm</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                                    <FormField control={methods.control} name="bookkeeperContact.email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center text-left text-foreground">
+                                            <div className="space-y-6 p-8 border-2 border-dashed rounded-[2.5rem] bg-slate-50 animate-in fade-in duration-500 text-left">
+                                                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left"><UserCheck className="h-4 w-4" /> Account Node</h4>
+                                                <div className="space-y-4 text-left">
+                                                    <FormField control={methods.control} name="bookkeeperContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Name / Firm</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                    <FormField control={methods.control} name="bookkeeperContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                                                 </div>
                                             </div>
-                                            <div className="p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-xl space-y-4">
+                                            <div className="p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-xl space-y-4 text-left">
                                                 <div className="bg-primary/20 p-3 rounded-2xl w-fit"><FileText className="h-6 w-6 text-primary" /></div>
                                                 <h4 className="font-bold text-sm uppercase text-primary">Ledger Evidence</h4>
-                                                <p className="text-xs text-slate-400 leading-relaxed">Upload latest management accounts (YTD) for audit.</p>
+                                                <p className="text-xs text-slate-400 leading-relaxed text-left">Upload latest management accounts (YTD) for audit.</p>
                                                 <FileUploadField name="mgmtAccountsUrl" label="Management Accounts (YTD)" folder="forensic-finance" />
                                             </div>
                                         </div>
                                     </div>
                                 )}
                                 {currentStepConfig.id === 'infrastructure' && (
-                                    <div className="space-y-12 text-left">
+                                    <div className="space-y-12 text-left text-foreground">
                                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
-                                           <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg">
-                                               <div className="space-y-1">
-                                                   <FormLabel className="text-2xl font-black uppercase tracking-tight">Infrastructure Standing</FormLabel>
-                                                   <FormDescription className="text-base text-muted-foreground">Do you own the property where you operate from?</FormDescription>
+                                           <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
+                                               <div className="space-y-1 text-left">
+                                                   <FormLabel className="text-2xl font-black uppercase tracking-tight text-left">Infrastructure Standing</FormLabel>
+                                                   <FormDescription className="text-base text-muted-foreground text-left">Do you own the property where you operate from?</FormDescription>
                                                </div>
                                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125 data-[state=checked]:bg-primary" /></FormControl>
                                            </FormItem>
@@ -597,25 +599,25 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
 
                                        {watchedValues.ownsOperatingProperty ? (
                                            <div className="space-y-10 animate-in zoom-in-95 duration-500 text-left">
-                                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                                                   <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5">
-                                                       <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><MapPin className="h-4 w-4" /> Physical Site Details</h4>
-                                                       <div className="space-y-4">
-                                                           <FormField control={methods.control} name="propertyDetails.address" render={({ field }) => (<FormItem><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2 h-20" /></FormControl></FormItem>)} />
-                                                           <FormField control={methods.control} name="propertyDetails.marketValue" render={({ field }) => (<FormItem><FormLabel>Est. Market Value (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2 font-bold" /></FormControl></FormItem>)} />
-                                                            <FormField control={methods.control} name="propertyDetails.titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch text-left">
+                                                   <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left">
+                                                       <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left"><MapPin className="h-4 w-4" /> Physical Site Details</h4>
+                                                       <div className="space-y-4 text-left">
+                                                           <FormField control={methods.control} name="propertyDetails.address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2 h-20" /></FormControl></FormItem>)} />
+                                                           <FormField control={methods.control} name="propertyDetails.marketValue" render={({ field }) => (<FormItem className="text-left"><FormLabel>Est. Market Value (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2 font-bold" /></FormControl></FormItem>)} />
+                                                            <FormField control={methods.control} name="propertyDetails.titleholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Titleholder Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                                                            <FileUploadField name="propertyDeedUrl" label="Title Deed / Ownership Proof" folder="forensic-standing" />
                                                        </div>
                                                    </div>
                                                    <div className="space-y-8 p-8 border-2 border-dashed rounded-3xl bg-slate-900 text-white shadow-2xl text-left">
-                                                       <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2"><Banknote className="h-4 w-4" /> Active Bond Ledger</h4>
-                                                       <div className="grid grid-cols-1 gap-6">
-                                                           <FormField control={methods.control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem><FormLabel className="text-slate-400">Bondholder Institution</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                                       <h4 className="text-xs font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2 text-left"><Banknote className="h-4 w-4" /> Active Bond Ledger</h4>
+                                                       <div className="grid grid-cols-1 gap-6 text-left">
+                                                           <FormField control={methods.control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Bondholder Institution</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
                                                            <div className="grid grid-cols-2 gap-4 text-left">
-                                                               <FormField control={methods.control} name="propertyLiability.outstandingBalance" render={({ field }) => (<FormItem><FormLabel className="text-slate-400">Outstanding (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
-                                                               <FormField control={methods.control} name="propertyLiability.installment" render={({ field }) => (<FormItem><FormLabel className="text-slate-400">Installment (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
-                                                               <FormField control={methods.control} name="propertyLiability.term" render={({ field }) => (<FormItem><FormLabel className="text-slate-400">Remaining Term</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
-                                                               <FormField control={methods.control} name="propertyLiability.rate" render={({ field }) => (<FormItem><FormLabel className="text-slate-400">Interest Rate (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                                               <FormField control={methods.control} name="propertyLiability.outstandingBalance" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Outstanding (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                                               <FormField control={methods.control} name="propertyLiability.installment" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Installment (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                                               <FormField control={methods.control} name="propertyLiability.term" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Remaining Term</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                                               <FormField control={methods.control} name="propertyLiability.rate" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Interest Rate (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
                                                            </div>
                                                        </div>
                                                    </div>
@@ -623,27 +625,27 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                            </div>
                                        ) : (
                                            <div className="space-y-10 animate-in fade-in duration-500 text-left">
-                                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                                                   <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50">
+                                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch text-left">
+                                                   <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 text-left text-foreground">
                                                        <h4 className="text-xs font-black uppercase tracking-widest text-slate-600 flex items-center gap-2 text-left"><UserCheck className="h-4 w-4" /> Landlord Node</h4>
-                                                       <div className="space-y-4 text-left">
-                                                           <FormField control={methods.control} name="landlordContact.name" render={({ field }) => (<FormItem><FormLabel>Legal Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                                           <FormField control={methods.control} name="landlordContact.email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                                           <FormField control={methods.control} name="landlordContact.phone" render={({ field }) => (<FormItem><FormLabel>Contact Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                       <div className="space-y-4 text-left text-foreground">
+                                                           <FormField control={methods.control} name="landlordContact.name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Legal Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                           <FormField control={methods.control} name="landlordContact.email" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                           <FormField control={methods.control} name="landlordContact.phone" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Contact Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                                                        </div>
                                                    </div>
-                                                   <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left">
-                                                       <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Lease Parameters</h4>
-                                                       <div className="grid grid-cols-1 gap-4 text-left">
-                                                           <div className="grid grid-cols-2 gap-4 text-left">
-                                                               <FormField control={methods.control} name="leaseInfo.startDate" render={({ field }) => (<FormItem><FormLabel>Lease Start</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                                               <FormField control={methods.control} name="leaseInfo.term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                   <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left text-foreground">
+                                                       <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Lease Parameters</h4>
+                                                       <div className="grid grid-cols-1 gap-4 text-left text-foreground">
+                                                           <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                                                               <FormField control={methods.control} name="leaseInfo.startDate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Lease Start</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                               <FormField control={methods.control} name="leaseInfo.term" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                                                            </div>
-                                                            <div className="grid grid-cols-2 gap-4">
-                                                               <FormField control={methods.control} name="leaseInfo.escalationRate" render={({ field }) => (<FormItem><FormLabel>Escalation (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                                               <FormField control={methods.control} name="leaseInfo.ratePerSqm" render={({ field }) => (<FormItem><FormLabel>Rate / sqm (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                            <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                                                               <FormField control={methods.control} name="leaseInfo.escalationRate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Escalation (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                               <FormField control={methods.control} name="leaseInfo.ratePerSqm" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Rate / sqm (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                                                            </div>
-                                                            <FormField control={methods.control} name="leaseInfo.size" render={({ field }) => (<FormItem><FormLabel>Facility Size (sqm)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                                            <FormField control={methods.control} name="leaseInfo.size" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Facility Size (sqm)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                                                            <FileUploadField name="leaseAgreementUrl" label="Signed Lease Agreement" folder="forensic-standing" />
                                                        </div>
                                                    </div>
@@ -653,11 +655,11 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     </div>
                                 )}
                                 {currentStepConfig.id === 'review' && (
-                                    <div className="text-center py-20 space-y-6">
+                                    <div className="text-center py-20 space-y-6 text-foreground">
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
                                         <div className="space-y-2 text-center text-foreground">
-                                            <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
-                                            <p className="text-sm text-muted-foreground max-sm mx-auto">Verify data integrity before formally committing this node to the registry.</p>
+                                            <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
+                                            <p className="text-sm text-muted-foreground max-sm mx-auto text-center leading-relaxed">Verify data integrity before formally committing this node to the registry. The background ledger will remain persistent.</p>
                                         </div>
                                     </div>
                                 )}
@@ -669,7 +671,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                         {currentStep < memoizedSteps.length - 1 ? (
                             <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs text-white shadow-lg">Next Section <ArrowRight className="ml-2 h-4 w-4" /></Button>
                         ) : (
-                            <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase text-white shadow-2xl bg-primary hover:bg-primary/90">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Record</Button>
+                            <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase text-white shadow-2xl bg-primary hover:bg-primary/90 text-center">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Record</Button>
                         )}
                     </CardFooter>
                 </form>
@@ -678,7 +680,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     );
 }
 
-export default function ApplyPage() {
+export default function Page() {
     return (
         <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-20 text-left bg-slate-50 text-foreground">
             <Suspense fallback={<Loader2 className="animate-spin h-12 w-12 text-primary" />}>
