@@ -20,8 +20,8 @@ import {
     History, Package, Sparkles, Building, FileUp, Users, PlusCircle, 
     Trash2, UserCheck, Truck, FileText, Navigation, MapPin, Info, 
     ShieldAlert, Gavel, Zap, User, UserCircle, Scale, Banknote, 
-    Smartphone, AlertCircle, Lock, Eye, SearchCode, Camera, Wrench,
-    CheckCircle2, ThumbsUp, ListChecks
+    Smartphone, AlertCircle, Lock, SearchCode, Camera, Wrench,
+    CheckCircle2, ListChecks
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -39,7 +39,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // --- SCHEMAS ---
 
@@ -103,7 +102,7 @@ const combinedSchema = baseSchema.superRefine((data, ctx) => {
     }
 });
 
-type ClientFormValues = z.infer<typeof combinedSchema>;
+export type ApplicationFormValues = z.infer<typeof combinedSchema>;
 
 const entityTypesList = [
     "Ltd", "Private Company (Pty Ltd)", "Sole Proprietorship", "Close Corporation (CC)", 
@@ -113,7 +112,7 @@ const entityTypesList = [
 // --- HELPER COMPONENTS ---
 
 function FileUploadField({ name, label, folder, variant = 'standard' }: { name: any, label: string, folder: string, variant?: 'standard' | 'compact' }) {
-    const { setValue, watch } = useFormContext<ClientFormValues>();
+    const { setValue, watch } = useFormContext<ApplicationFormValues>();
     const [isUploading, setIsUploading] = useState(false);
     const [progress, setProgress] = useState(0);
     const { user } = useUser();
@@ -167,7 +166,7 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
                     size={variant === 'compact' ? 'sm' : 'default'}
                     className={cn(
                         "h-10 gap-2 border-2 text-xs font-bold", 
-                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed",
+                        currentUrl ? "border-green-50 text-green-700" : "border-dashed",
                         variant === 'compact' && "h-8 px-3"
                     )}
                     onClick={() => document.getElementById(`upload-${name}`)?.click()}
@@ -184,14 +183,14 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
 }
 
 function StakeholderForm({ type, label }: { type: 'shareholders' | 'directors', label: string }) {
-    const { control } = useFormContext<ClientFormValues>();
+    const { control } = useFormContext<ApplicationFormValues>();
     const { fields, remove } = useFieldArray({ control, name: type });
 
     return (
         <div className="space-y-6 text-left">
             {fields.map((field, index) => (
                 <div key={field.id} className="p-6 border-2 border-dashed rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2 text-left">
-                    <div className="flex items-center justify-between border-b pb-4">
+                    <div className="flex items-center justify-between border-b pb-4 text-left">
                         <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} {index + 1}</Badge>
                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                     </div>
@@ -212,7 +211,7 @@ function StakeholderForm({ type, label }: { type: 'shareholders' | 'directors', 
 // --- STEP COMPONENTS ---
 
 const StepMain = () => {
-    const { control } = useFormContext<ClientFormValues>();
+    const { control } = useFormContext<ApplicationFormValues>();
     return (
         <div className="space-y-8 text-left text-foreground">
              <FormField control={control} name="applyingCapacity" render={({ field }) => (
@@ -227,9 +226,6 @@ const StepMain = () => {
                 </FormItem>
             )} />
             <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Primary Operational Name</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
-            <FormField control={control} name="entityType" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Type of Entity</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{entityTypesList.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</Select></FormItem>
-            )} />
             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
                 <p className="text-xs text-slate-400 text-left">Attach proof of identity for the primary applicant/owner.</p>
@@ -240,12 +236,15 @@ const StepMain = () => {
 };
 
 const StepEntity = () => {
-    const { control, watch } = useFormContext<ClientFormValues>();
+    const { control, watch } = useFormContext<ApplicationFormValues>();
     const entType = watch('entityType');
     
     return (
         <div className="space-y-8 text-left text-foreground">
             <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-left">Legal Registration Details</h3>
+            <FormField control={control} name="entityType" render={({ field }) => (
+                <FormItem className="text-left"><FormLabel>Type of Entity</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{entityTypesList.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</Select></FormItem>
+            )} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <div className="space-y-6 text-left">
                     <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="e.g. 2024/123456/07" className="h-11 border-2 font-mono" /></FormControl></FormItem>)} />
@@ -266,7 +265,7 @@ const StepEntity = () => {
 };
 
 const StepDocumentSummary = () => {
-    const { watch } = useFormContext<ClientFormValues>();
+    const { watch } = useFormContext<ApplicationFormValues>();
     const values = watch();
     
     const requiredDocs = useMemo(() => {
@@ -346,7 +345,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
-  const methods = useForm<ClientFormValues>({
+  const methods = useForm<ApplicationFormValues>({
     resolver: zodResolver(combinedSchema),
     mode: 'onChange',
     defaultValues: client || { applyingCapacity: 'entity', status: 'draft', shareholderCount: 0, directorCount: 0 }
@@ -356,8 +355,8 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
 
   const memoizedSteps = useMemo(() => {
     const base = [
-        { id: 'main', title: '1. Identity', icon: User, fields: ['applyingCapacity', 'name', 'entityType', 'userIdUrl'] },
-        { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'inceptionDate', 'registrationDocUrl'] },
+        { id: 'main', title: '1. Identity', icon: User, fields: ['applyingCapacity', 'name', 'userIdUrl'] },
+        { id: 'entity', title: '2. Entity', icon: Building, fields: ['entityType', 'registrationId', 'inceptionDate', 'registrationDocUrl'] },
     ];
     if (watchedValues.applyingCapacity === 'entity') {
         base.push({ id: 'compliance', title: '3. Compliance', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'ficaDocUrl'] });
@@ -394,7 +393,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     else setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
-  const onSubmit = async (values: ClientFormValues) => {
+  const onSubmit = async (values: ApplicationFormValues) => {
     setIsSubmitting(true);
     try {
         const token = await getClientSideAuthToken();
@@ -412,7 +411,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     }
   };
   
-  if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin" /></div>;
+  if (isUserLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>;
 
   const currentStepConfig = memoizedSteps[currentStep];
 
@@ -439,12 +438,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                   </Button>
                 ))}
               </div>
-              <div className="p-10 space-y-12 bg-white min-h-[600px] text-left text-foreground text-foreground">
+              <div className="p-10 space-y-12 bg-white min-h-[600px] text-left text-foreground">
                 {currentStepConfig.id === 'main' && <StepMain />}
                 {currentStepConfig.id === 'entity' && <StepEntity />}
                 {currentStepConfig.id === 'compliance' && (
                     <div className="space-y-10 text-left text-foreground">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                             <div className="space-y-6 text-left text-foreground">
                                 <FormField control={methods.control} name="vatRegistered" render={({ field }) => (
                                     <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left">
@@ -466,16 +465,26 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 )}
                 {currentStepConfig.id === 'governance' && (
                     <div className="space-y-8 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left text-foreground">
                             <div className="space-y-6 text-left">
                                 <div className="grid grid-cols-2 gap-6 text-left">
                                     <FormField control={methods.control} name="shareholderCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>)} />
                                     <FormField control={methods.control} name="directorCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Directors</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>)} />
                                 </div>
-                                <FormField control={methods.control} name="signingAuthority" render={({ field }) => (<FormItem className="space-y-3 text-left text-foreground"><FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest text-left">Signing Authority</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer font-bold">Single</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer font-bold">Multiple</Label></div></RadioGroup></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="signingAuthority" render={({ field }) => (
+                                    <FormItem className="space-y-3 text-left text-foreground">
+                                        <FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest text-left">Signing Authority</FormLabel>
+                                        <FormControl>
+                                            <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6">
+                                                <div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer font-bold">Single</Label></div>
+                                                <div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer font-bold">Multiple</Label></div>
+                                            </RadioGroup>
+                                        </FormControl>
+                                    </FormItem>
+                                )} />
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Gavel className="h-4 w-4" /> Authority Node</h4>
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><Gavel className="h-4 w-4" /> Authority Node</h4>
                                 <FileUploadField name="signingResolutionUrl" label="Signing Resolution / Authorization" folder="forensic-governance" />
                             </div>
                         </div>
@@ -515,26 +524,26 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 )}
                 {currentStepConfig.id === 'background' && (
                      <div className="space-y-10 text-left text-foreground">
-                        <div className="grid grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                        <div className="grid grid-cols-2 gap-8 text-left text-foreground">
                             <FormField control={methods.control} name="truckCount" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Truck Nodes (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                             <FormField control={methods.control} name="trailerCount" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Trailer Nodes</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                         </div>
-                        <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 flex justify-between items-center text-left text-foreground text-foreground text-foreground">
-                            <div className="space-y-1 text-left text-foreground text-foreground">
-                                <p className="text-sm font-bold flex items-center gap-2 text-left text-foreground text-foreground"><Truck className="h-4 w-4 text-primary"/> Fleet Register Audit</p>
-                                <p className="text-xs text-muted-foreground italic max-w-xs text-left text-foreground text-foreground">Upload fleet inventory list for RC1 cross-referencing.</p>
+                        <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 flex justify-between items-center text-left text-foreground">
+                            <div className="space-y-1 text-left">
+                                <p className="text-sm font-bold flex items-center gap-2 text-left"><Truck className="h-4 w-4 text-primary"/> Fleet Register Audit</p>
+                                <p className="text-xs text-muted-foreground italic max-w-xs text-left">Upload fleet inventory list for RC1 cross-referencing.</p>
                             </div>
                             <FileUploadField name="fleetInventoryUrl" label="Fleet Inventory / RC1 Batch" folder="forensic-background" />
                         </div>
                     </div>
                 )}
                 {currentStepConfig.id === 'finance_mgmt' && (
-                    <div className="space-y-12 text-left text-foreground text-foreground">
-                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-foreground">
+                    <div className="space-y-12 text-left text-foreground">
+                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left">
                             <div className="space-y-1 text-left text-foreground">
-                                <div className="bg-primary/20 p-2 rounded-lg w-fit text-left text-foreground"><FileText className="h-5 w-5 text-primary" /></div>
+                                <div className="bg-primary/20 p-2 rounded-lg w-fit text-left"><FileText className="h-5 w-5 text-primary" /></div>
                                 <h4 className="font-bold text-sm uppercase text-primary text-left">Ledger Evidence</h4>
-                                <p className="text-xs text-slate-400 leading-relaxed max-w-sm text-left text-foreground text-foreground">Upload latest management accounts (YTD) for audit.</p>
+                                <p className="text-xs text-slate-400 leading-relaxed max-w-sm text-left">Upload latest management accounts (YTD) for audit.</p>
                             </div>
                             <FileUploadField name="mgmtAccountsUrl" label="Management Accounts (YTD)" folder="forensic-finance" />
                         </div>
@@ -543,15 +552,15 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 {currentStepConfig.id === 'infrastructure' && (
                     <div className="space-y-12 text-left text-foreground">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
-                           <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
-                               <div className="space-y-1 text-left text-foreground text-foreground">
-                                   <span className="text-2xl font-black font-headline uppercase tracking-tight text-left text-foreground">Infrastructure Standing</span>
-                                   <p className="text-base text-muted-foreground text-left text-foreground text-foreground">Do you own the property where you operate from?</p>
+                           <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
+                               <div className="space-y-1 text-left">
+                                   <span className="text-2xl font-black font-headline uppercase tracking-tight text-left">Infrastructure Standing</span>
+                                   <p className="text-base text-muted-foreground text-left">Do you own the property where you operate from?</p>
                                </div>
                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
                            </FormItem>
                        )} />
-                       <div className="grid grid-cols-1 gap-6 text-left text-foreground text-foreground">
+                       <div className="grid grid-cols-1 gap-6 text-left">
                             <FileUploadField name={watchedValues.ownsOperatingProperty ? "propertyDeedUrl" : "leaseAgreementUrl"} label={watchedValues.ownsOperatingProperty ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} folder="forensic-standing" />
                        </div>
                     </div>
@@ -559,8 +568,8 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 {currentStepConfig.id === 'review' && (
                     <div className="text-center py-20 space-y-6 text-left text-foreground">
                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40 text-center" />
-                        <h3 className="text-2xl font-black uppercase text-center text-foreground">Audit Finalization</h3>
-                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center text-foreground text-foreground">Verify data integrity before formally committing this node to the registry.</p>
+                        <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
+                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before formally committing this node to the registry.</p>
                     </div>
                 )}
                 {currentStepConfig.id === 'doc_summary' && <StepDocumentSummary />}
