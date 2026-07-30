@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -26,6 +26,7 @@ import { Label } from '@/components/ui/label';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 import { Separator } from '@/components/ui/separator';
 import { doc, query, collection, serverTimestamp } from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -211,9 +212,80 @@ const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fi
     )
 }
 
+function FileUploadField({ name, label, folder, variant = 'standard' }: { name: any, label: string, folder: string, variant?: 'standard' | 'compact' }) {
+    const { setValue, watch } = useFormContext<ApplicationFormValues>();
+    const [isUploading, setIsUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const { user } = useUser();
+    const { toast } = useToast();
+    const currentUrl = watch(name);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(true);
+        setProgress(10);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>((resolve) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+
+            setProgress(30);
+            const fileName = `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}`;
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName, contentType: file.type })
+            });
+
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error);
+
+            setValue(name, result.url, { shouldValidate: true });
+            setProgress(100);
+            toast({ title: `${label} Attached` });
+        } catch (err: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: err.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-1.5 text-left">
+            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{label}</Label>}
+            <div className="flex items-center gap-2">
+                <Button 
+                    type="button" 
+                    variant="outline" 
+                    size={variant === 'compact' ? 'sm' : 'default'}
+                    className={cn(
+                        "h-10 gap-2 border-2 text-xs font-bold", 
+                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed",
+                        variant === 'compact' && "h-8 px-3"
+                    )}
+                    onClick={() => document.getElementById(`upload-${name}`)?.click()}
+                    disabled={isUploading}
+                >
+                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : currentUrl ? <UserCheck className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
+                    {currentUrl ? `Update ${label}` : `Attach ${label}`}
+                </Button>
+                <input id={`upload-${name}`} type="file" className="hidden" onChange={handleUpload} />
+            </div>
+            {isUploading && <Progress value={progress} className="h-1 mt-1" />}
+        </div>
+    );
+}
+
 // --- WIZARD COMPONENT ---
 const steps = [
-    { id: 'main', title: 'Main & AI Scan', icon: Sparkles, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
+    { id: 'main', title: 'Main', icon: Sparkles, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
     { id: 'address', title: 'Address', icon: Building, fields: ['physicalAddress', 'physicalPostalCode', 'postalAddress', 'postalPostalCode'] },
     { id: 'contact', title: 'Contact', icon: Phone, fields: ['contacts'] },
     { id: 'owners', title: 'Owners', icon: Users, fields: ['owners'] },
@@ -322,22 +394,6 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
     
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
     
-    const renderStepContent = () => {
-        const stepId = steps[currentStep]?.id;
-        switch (stepId) {
-            case 'main': return <StepMain />;
-            case 'address': return <StepAddress />;
-            case 'contact': return <ArrayStep name="contacts" title="Contact" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'position', label: 'Position', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'email', label: 'Email', type: 'email'} ]} />;
-            case 'owners': return <ArrayStep name="owners" title="Owner" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'} ]} />;
-            case 'management': return <ArrayStep name="management" title="Manager" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'} ]} />;
-            case 'bankAccounts': return <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />;
-            case 'balanceSheet': return <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />;
-            case 'incomeStatement': return <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />;
-            case 'review': return <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase text-foreground">Audit Readiness Verified</h3><p className="text-muted-foreground max-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>;
-            default: return null;
-        }
-    };
-
     const getSuggestedDocType = useCallback((stepId: string) => {
         const type = methods.watch('type');
         if (stepId === 'main') {
@@ -348,9 +404,62 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
         }
         if (stepId === 'bankAccounts') return 'bank_statement';
         if (stepId === 'balanceSheet' || stepId === 'incomeStatement') return 'invoice';
-        return 'rc1';
+        if (stepId === 'asset') return 'rc1';
+        return 'invoice';
     }, [methods]);
-    
+
+    const renderStepContent = () => {
+        const stepId = steps[currentStep]?.id;
+        const stepTitle = steps[currentStep]?.title;
+        
+        const aiButton = stepId !== 'review' && (
+            <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] mb-10 flex flex-col md:flex-row items-center justify-between gap-6 text-left">
+                <div className="flex items-start gap-4 text-left">
+                    <div className="bg-primary/10 p-3 rounded-2xl shrink-0"><Zap className="h-6 w-6 text-primary" /></div>
+                    <div className="text-left space-y-1">
+                        <h4 className="text-sm font-black uppercase tracking-tight text-primary">Forensic Verification Gateway</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
+                            Extract high-fidelity data nodes directly from official documentation to heal gaps and boost the forensic trust score.
+                        </p>
+                    </div>
+                </div>
+                <VisionOnboardingDialog 
+                    stepId={stepId}
+                    initialDocType={getSuggestedDocType(stepId)}
+                    onExtractionComplete={(data) => handleAiExtraction(stepId, data)}
+                    trigger={
+                        <Button className="h-14 px-10 font-black uppercase tracking-widest gap-3 shadow-xl text-white">
+                            <Camera className="h-5 w-5" /> Execute AI Scan
+                        </Button>
+                    }
+                />
+            </div>
+        );
+
+        let content = null;
+        switch (stepId) {
+            case 'main': content = <StepMain />; break;
+            case 'address': content = <StepAddress />; break;
+            case 'contact': content = <ArrayStep name="contacts" title="Contact" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'position', label: 'Position', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'email', label: 'Email', type: 'email'} ]} />; break;
+            case 'owners': content = <ArrayStep name="owners" title="Owner" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'} ]} />; break;
+            case 'management': content = <ArrayStep name="management" title="Manager" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'} ]} />; break;
+            case 'bankAccounts': content = <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />; break;
+            case 'balanceSheet': content = <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />; break;
+            case 'incomeStatement': content = <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />; break;
+            case 'review': content = <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase text-foreground">Audit Readiness Verified</h3><p className="text-muted-foreground max-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>; break;
+        }
+
+        return (
+            <div className="animate-in fade-in duration-500">
+                {aiButton}
+                <div className="space-y-4">
+                    <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 border-l-4 border-primary pl-4">{stepTitle}</h3>
+                    <div className="pt-4">{content}</div>
+                </div>
+            </div>
+        );
+    };
+
     return (
          <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
@@ -385,29 +494,6 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
                                                 <Icon className="h-4 w-4 mr-1 text-primary" />
                                                 <span className={cn("text-[10px] font-black uppercase tracking-widest", isActive ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                             </Button>
-                                            
-                                            {step.id !== 'review' && (
-                                                <div className="px-2">
-                                                    <VisionOnboardingDialog 
-                                                        stepId={step.id}
-                                                        initialDocType={getSuggestedDocType(step.id)}
-                                                        onExtractionComplete={(data) => handleAiExtraction(step.id, data)}
-                                                        trigger={
-                                                            <Button 
-                                                                variant="ghost" 
-                                                                size="sm" 
-                                                                className={cn(
-                                                                    "h-8 w-full justify-start text-[9px] font-black uppercase text-primary gap-2 hover:bg-primary/5",
-                                                                    isActive ? "opacity-100" : "opacity-40 grayscale"
-                                                                )}
-                                                            >
-                                                                <Zap className="h-3 w-3 fill-current" />
-                                                                AI Doc Onboarding
-                                                            </Button>
-                                                        }
-                                                    />
-                                                </div>
-                                            )}
                                         </div>
                                     );
                                 })}
@@ -437,4 +523,3 @@ export function EditClientWizard({ client, onSave, onBack }: EditClientWizardPro
         </Card>
     );
 }
-
