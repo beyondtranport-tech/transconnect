@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -7,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, ClipboardList, CheckCircle, FileText, Send, Landmark, 
     ArrowRight, UserCheck, ShieldCheck, Zap, Info, Search, Building, Clock, Mail, Phone, FileSignature,
-    AlertTriangle, RefreshCcw, Lock, Tag, SearchCode, Database, Banknote, ListChecks, ArrowUpRight
+    AlertTriangle, RefreshCcw, Lock, Tag, SearchCode, Database, Banknote, ListChecks, ArrowUpRight,
+    Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -72,7 +72,7 @@ export default function LenderDeskContent() {
                         <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black bg-slate-50">
                             {row.original.originationType === 'direct' ? 'Direct Path' : 'Market Broadcast'}
                         </Badge>
-                        <span className="text-[9px] text-muted-foreground font-mono uppercase">{row.original.id.slice(-6)}</span>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id.slice(-6)}</span>
                     </div>
                 </div>
             )
@@ -157,7 +157,7 @@ export default function LenderDeskContent() {
         <div className="space-y-8 text-left text-foreground">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <ListChecks className="h-8 w-8 text-primary" />
                         Admin Ledger (Task Hub)
                     </h1>
