@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,19 +16,28 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info, Scale, Gavel, History, MapPin, Landmark, ShieldAlert, Truck } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { 
+    Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
+    History, Package, Sparkles, Building, FileUp, Users, PlusCircle, 
+    Trash2, UserCheck, Truck, FileText, Navigation, MapPin, Info, 
+    ShieldAlert, Gavel, Zap, User, UserCircle, Scale, Banknote
+} from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { provinces } from '@/lib/geodata';
 
 // --- ZOD SCHEMA (ENHANCED FOR FORENSIC INTERVIEW) ---
 
@@ -99,6 +108,77 @@ type ClientFormValues = z.infer<typeof clientSchema>;
 
 // --- STEP COMPONENTS ---
 
+function FileUploadField({ name, label, folder, variant = 'standard' }: { name: any, label: string, folder: string, variant?: 'standard' | 'compact' }) {
+    const { setValue, watch } = useFormContext<ClientFormValues>();
+    const [isUploading, setIsUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const { user } = useUser();
+    const { toast } = useToast();
+    const currentUrl = watch(name);
+
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !user) return;
+
+        setIsUploading(true);
+        setProgress(10);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed.");
+
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>((resolve) => {
+                reader.onload = () => resolve(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+
+            setProgress(30);
+            const fileName = `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}`;
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName, contentType: file.type })
+            });
+
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error);
+
+            setValue(name, result.url, { shouldValidate: true });
+            setProgress(100);
+            toast({ title: `${label} Attached` });
+        } catch (err: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: err.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    return (
+        <div className="space-y-1.5 text-left">
+            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{label}</Label>}
+            <div className="flex items-center gap-2">
+                <Button 
+                    type="button" 
+                    variant="outline" 
+                    size={variant === 'compact' ? 'sm' : 'default'}
+                    className={cn(
+                        "h-10 gap-2 border-2 text-xs font-bold", 
+                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed",
+                        variant === 'compact' && "h-8 px-3"
+                    )}
+                    onClick={() => document.getElementById(`upload-${name}`)?.click()}
+                    disabled={isUploading}
+                >
+                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : currentUrl ? <UserCheck className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
+                    {currentUrl ? `Update ${label}` : `Attach ${label}`}
+                </Button>
+                <input id={`upload-${name}`} type="file" className="hidden" onChange={handleUpload} />
+            </div>
+            {isUploading && <Progress value={progress} className="h-1 mt-1" />}
+        </div>
+    );
+}
+
 const StepCapacity = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
@@ -130,7 +210,7 @@ const StepCapacity = () => {
                     <FormItem className="text-left">
                         <FormLabel>Type of Entity</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value || ''}>
-                            <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                             <SelectContent>
                                 <SelectItem value="Pty Ltd">Private Company (Pty Ltd)</SelectItem>
                                 <SelectItem value="Ltd">Public Company (Ltd)</SelectItem>
@@ -266,10 +346,10 @@ const StepCreditForensic = () => {
 const StepBackground = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left">
             <div className="grid grid-cols-2 gap-6 text-left">
                 <FormField control={control} name="isSelfEmployed" render={({ field }) => (
-                    <FormItem className="flex items-center justify-between p-4 border rounded-2xl bg-white">
+                    <FormItem className="flex items-center justify-between p-4 border rounded-2xl bg-white text-left">
                         <FormLabel className="font-bold">Self Employed?</FormLabel>
                         <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                     </FormItem>
@@ -279,7 +359,7 @@ const StepBackground = () => {
                 )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-6 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-6 text-left">
                 <FormField control={control} name="truckCount" render={({ field }) => (
                     <FormItem className="text-left"><FormLabel>Number of Trucks Owned</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                 )} />
@@ -297,7 +377,7 @@ const StepFinancialManagement = () => {
     const hasInHouse = watch('hasInHouseBookkeeper');
 
     return (
-        <div className="space-y-8 text-left text-foreground">
+        <div className="space-y-8 text-left">
             <FormField control={control} name="bookkeepingType" render={({ field }) => (
                 <FormItem className="space-y-4 text-left">
                     <FormLabel className="font-bold text-lg">How is your bookkeeping managed?</FormLabel>
@@ -347,11 +427,11 @@ const StepInfrastructure = () => {
     const ownsProperty = watch('ownsOperatingProperty');
 
     return (
-        <div className="space-y-8 text-left text-foreground">
+        <div className="space-y-8 text-left">
              <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
                 <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm">
                     <div className="space-y-1">
-                        <FormLabel className="text-lg font-black uppercase tracking-tight">Property Ownership</FormLabel>
+                        <FormLabel className="text-lg font-black uppercase tracking-tight text-left">Property Ownership</FormLabel>
                         <FormDescription>Do you own the property where you operate from?</FormDescription>
                     </div>
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl>
@@ -399,7 +479,6 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
 
     const watchedValues = methods.watch();
 
-    // DYNAMIC STEPS LOGIC
     const memoizedSteps = useMemo(() => {
         const base = [
             { id: 'capacity', title: 'Capacity', icon: User, fields: ['applyingCapacity', 'name', 'entityType', 'registrationId'] },
@@ -418,11 +497,10 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         base.push({ id: 'review', title: 'Review', icon: CheckCircle, fields: [] });
 
         return base;
-    }, [watchedValues]);
+    }, [watchedValues.applyingCapacity]);
 
     const handleAiExtraction = (data: any) => {
-        // Shared mapping logic
-        if (data.registrationNumber) methods.setValue('registrationId', data.registrationNumber);
+        if (data.registrationId) methods.setValue('registrationId', data.registrationId);
         if (data.name) methods.setValue('name', data.name);
         toast({ title: "Forensic Data Mapped", description: "AI extraction results committed to form." });
     };
@@ -449,42 +527,42 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const currentStepConfig = memoizedSteps[currentStep];
 
     return (
-        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
+        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader className="bg-slate-900 text-white p-8 text-left">
-                        <div className="flex justify-between items-center text-left text-foreground">
+                    <CardHeader className="bg-slate-900 text-white p-8">
+                        <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
-                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left text-foreground">Forensic Interview terminal</CardTitle>
+                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left">Forensic Interview terminal</CardTitle>
                                 <CardDescription className="text-slate-400 text-left">Step: {currentStepConfig.title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left text-foreground">
+                    <CardContent className="p-0">
+                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
                             <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                                 {memoizedSteps.map((step, i) => (
                                     <Button
                                         key={step.id}
                                         type="button"
                                         variant={currentStep === i ? "secondary" : "ghost"}
-                                        className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left text-foreground", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")}
+                                        className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")}
                                         onClick={() => setCurrentStep(i)}
                                     >
                                         {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
-                                        <span className={cn("text-[11px] font-black uppercase tracking-widest text-left", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                        <span className={cn("text-[11px] font-black uppercase tracking-widest", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                     </Button>
                                 ))}
                             </div>
-                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left text-foreground">
+                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left">
                                 {currentStepConfig.id !== 'review' && (
                                     <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left">
                                         <div className="flex items-start gap-4 text-left">
-                                            <div className="bg-primary/10 p-3 rounded-2xl shrink-0 text-left"><Zap className="h-6 w-6 text-primary" /></div>
+                                            <div className="bg-primary/10 p-3 rounded-2xl shrink-0"><Zap className="h-6 w-6 text-primary" /></div>
                                             <div className="text-left">
-                                                <h4 className="text-sm font-black uppercase text-primary">Verification Gateway</h4>
-                                                <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm text-left">Heal data gaps via automated Vision AI extraction.</p>
+                                                <h4 className="text-sm font-black uppercase text-primary">Forensic Verification Gateway</h4>
+                                                <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm">Heal data gaps via automated Vision AI extraction.</p>
                                             </div>
                                         </div>
                                         <VisionOnboardingDialog 
@@ -504,7 +582,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 
                                 {currentStepConfig.id === 'nca' && (
                                     <div className="space-y-6 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                                             <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
                                                 <FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
@@ -512,7 +590,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                                 <FormItem className="text-left"><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
                                         </div>
-                                        <Alert className="bg-muted/50 border-none text-left">
+                                        <Alert className="bg-muted/50 border-none">
                                             <Info className="h-4 w-4" />
                                             <AlertDescription className="text-xs italic text-left">This data is critical for determining the applicability of the National Credit Act (NCA) to this specific transaction.</AlertDescription>
                                         </Alert>
@@ -520,7 +598,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 )}
 
                                 {currentStepConfig.id === 'review' && (
-                                    <div className="text-center py-20 space-y-6">
+                                    <div className="text-center py-20 space-y-6 text-center">
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
                                         <div className="space-y-2 text-center">
                                             <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
