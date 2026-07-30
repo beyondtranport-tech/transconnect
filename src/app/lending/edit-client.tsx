@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -39,13 +39,18 @@ import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 // --- ZOD SCHEMA (ENHANCED FOR FORENSIC INTERVIEW) ---
 
-const contactInfoSchema = z.object({
-    name: z.string().optional(),
-    email: z.string().email().optional().or(z.literal('')),
+const stakeholderSchema = z.object({
+    name: z.string().min(1, "Full name required."),
+    email: z.string().email("Valid email required.").optional().or(z.literal('')),
     phone: z.string().optional(),
+    address: z.string().optional(),
+    rsaIdNumber: z.string().optional(),
+    position: z.string().optional(),
+    shareholdingPercent: z.coerce.number().min(0).max(100).optional(),
 });
 
 const clientSchema = z.object({
@@ -64,8 +69,14 @@ const clientSchema = z.object({
   // Section 3: Governance
   shareholderCount: z.coerce.number().min(0).default(0),
   directorCount: z.coerce.number().min(0).default(0),
+  staffCount: z.coerce.number().min(0).default(0),
   signingAuthority: z.enum(['single', 'multiple']).default('single'),
   hasSigningResolution: z.boolean().default(false),
+
+  // Dynamic Stakeholder Data
+  shareholders: z.array(stakeholderSchema).optional().default([]),
+  directors: z.array(stakeholderSchema).optional().default([]),
+  staff: z.array(stakeholderSchema).optional().default([]),
   
   // Section 4: Financial Dates
   lastSignedAfsDate: z.string().optional(),
@@ -89,7 +100,11 @@ const clientSchema = z.object({
   // Section 8: Financial Management (Dynamic)
   bookkeepingType: z.enum(['in_house', 'external']).default('external'),
   hasInHouseBookkeeper: z.boolean().default(false),
-  bookkeeperContact: contactInfoSchema.optional(),
+  bookkeeperContact: z.object({
+      name: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+  }).optional(),
 
   // Section 9: Infrastructure (Dynamic)
   ownsOperatingProperty: z.boolean().default(false),
@@ -107,7 +122,7 @@ const clientSchema = z.object({
 
 type ClientFormValues = z.infer<typeof clientSchema>;
 
-// --- STEP COMPONENTS ---
+// --- REUSABLE COMPONENTS ---
 
 function FileUploadField({ name, label, folder, variant = 'standard' }: { name: any, label: string, folder: string, variant?: 'standard' | 'compact' }) {
     const { setValue, watch } = useFormContext<ClientFormValues>();
@@ -280,9 +295,10 @@ const StepGovernance = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
         <div className="space-y-6 text-left">
-            <div className="grid grid-cols-2 gap-4">
-                <FormField control={control} name="shareholderCount" render={({ field }) => (<FormItem><FormLabel>Number of Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>)} />
-                <FormField control={control} name="directorCount" render={({ field }) => (<FormItem><FormLabel>Number of Directors</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>)} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                <FormField control={control} name="shareholderCount" render={({ field }) => (<FormItem><FormLabel>Shareholders / Members</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>)} />
+                <FormField control={control} name="directorCount" render={({ field }) => (<FormItem><FormLabel>Directors / Trustees</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>)} />
+                <FormField control={control} name="staffCount" render={({ field }) => (<FormItem><FormLabel>Key Staff / Managers</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>)} />
             </div>
             
             <FormField control={control} name="signingAuthority" render={({ field }) => (
@@ -290,8 +306,8 @@ const StepGovernance = () => {
                     <FormLabel>Signing Authority</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-6">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer">Single Director</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer">Multiple Directors</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer">Single Signature</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer">Multiple Signatures</Label></div>
                         </RadioGroup>
                     </FormControl>
                 </FormItem>
@@ -306,6 +322,53 @@ const StepGovernance = () => {
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                 </FormItem>
             )} />
+        </div>
+    );
+};
+
+const StepStakeholders = ({ type, label }: { type: 'shareholders' | 'directors' | 'staff', label: string }) => {
+    const { control, watch, setValue } = useFormContext<ClientFormValues>();
+    const { fields, append, remove } = useFieldArray({ control, name: type });
+    
+    // Sync array length with count from Governance step
+    const countKey = type === 'shareholders' ? 'shareholderCount' : type === 'directors' ? 'directorCount' : 'staffCount';
+    const targetCount = watch(countKey) || 0;
+
+    useEffect(() => {
+        if (fields.length < targetCount) {
+            for (let i = fields.length; i < targetCount; i++) append({ name: '', email: '', phone: '', address: '', rsaIdNumber: '' });
+        } else if (fields.length > targetCount) {
+            for (let i = fields.length - 1; i >= targetCount; i--) remove(i);
+        }
+    }, [targetCount, fields.length, append, remove]);
+
+    return (
+        <div className="space-y-6 text-left">
+            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground"><Users className="h-6 w-6 text-primary" /> {label} Registry</h3>
+            <div className="space-y-8 text-left">
+                {fields.map((field, index) => (
+                    <div key={field.id} className="p-6 border-2 rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2 text-left shadow-sm">
+                        <div className="flex items-center justify-between border-b pb-4">
+                            <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} #{index + 1}</Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                            <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                            <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                            <FormField control={control} name={`${type}.${index}.email` as any} render={({ field }) => (<FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                            <FormField control={control} name={`${type}.${index}.phone` as any} render={({ field }) => (<FormItem><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                        </div>
+                        {type === 'directors' && (
+                            <FormField control={control} name={`${type}.${index}.position` as any} render={({ field }) => (<FormItem><FormLabel>Official Position</FormLabel><FormControl><Input {...field} className="h-10 border-2" placeholder="e.g. Managing Director" /></FormControl></FormItem>)} />
+                        )}
+                        {type === 'shareholders' && (
+                            <FormField control={control} name={`${type}.${index}.shareholdingPercent` as any} render={({ field }) => (<FormItem><FormLabel>Equity Stake (%)</FormLabel><FormControl><Input type="number" {...field} className="h-10 border-2 w-32" /></FormControl></FormItem>)} />
+                        )}
+                        <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem><FormLabel>Residential Address</FormLabel><FormControl><Textarea {...field} className="h-20 border-2" /></FormControl></FormItem>)} />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
@@ -348,7 +411,7 @@ const StepBackground = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
         <div className="space-y-6 text-left">
-            <div className="grid grid-cols-2 gap-6 text-left">
+            <div className="grid grid-cols-2 gap-6 text-left text-foreground">
                 <FormField control={control} name="isSelfEmployed" render={({ field }) => (
                     <FormItem className="flex items-center justify-between p-4 border rounded-2xl bg-white text-left">
                         <FormLabel className="font-bold text-left">Self Employed?</FormLabel>
@@ -360,7 +423,7 @@ const StepBackground = () => {
                 )} />
             </div>
 
-            <div className="grid grid-cols-2 gap-6 text-left">
+            <div className="grid grid-cols-2 gap-6 text-left text-foreground">
                 <FormField control={control} name="truckCount" render={({ field }) => (
                     <FormItem className="text-left"><FormLabel>Number of Trucks Owned</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
                 )} />
@@ -381,7 +444,7 @@ const StepFinancialManagement = () => {
         <div className="space-y-8 text-left">
             <FormField control={control} name="bookkeepingType" render={({ field }) => (
                 <FormItem className="space-y-4 text-left">
-                    <FormLabel className="font-bold text-lg">How is your bookkeeping managed?</FormLabel>
+                    <FormLabel className="font-bold text-lg">How is bookkeeping managed?</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-4 text-left">
                             <div className={cn("p-4 border-2 rounded-2xl cursor-pointer text-left", field.value === 'in_house' ? "border-primary bg-primary/5" : "bg-white")}>
@@ -395,18 +458,7 @@ const StepFinancialManagement = () => {
                 </FormItem>
             )} />
 
-            {bType === 'in_house' && (
-                <div className="space-y-4 p-6 border rounded-2xl bg-white animate-in slide-in-from-top-2 text-left">
-                    <FormField control={control} name="hasInHouseBookkeeper" render={({ field }) => (
-                        <FormItem className="flex items-center justify-between mb-4">
-                            <FormLabel className="font-bold">Do you have a dedicated bookkeeper?</FormLabel>
-                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        </FormItem>
-                    )} />
-                </div>
-            )}
-
-            {(bType === 'external' || (bType === 'in_house' && hasInHouse)) && (
+            {(bType === 'external' || bType === 'in_house') && (
                 <div className="space-y-4 p-6 border-2 border-dashed rounded-2xl bg-slate-50 animate-in fade-in duration-500 text-left">
                     <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                         <Users className="h-4 w-4" /> 
@@ -428,10 +480,10 @@ const StepInfrastructure = () => {
     const ownsProperty = watch('ownsOperatingProperty');
 
     return (
-        <div className="space-y-8 text-left">
+        <div className="space-y-8 text-left text-foreground">
              <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
-                <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left">
-                    <div className="space-y-1 text-left">
+                <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left text-foreground text-foreground">
+                    <div className="space-y-1 text-left text-foreground">
                         <FormLabel className="text-lg font-black uppercase tracking-tight text-left">Property Ownership</FormLabel>
                         <FormDescription className="text-left">Do you own the property where you operate from?</FormDescription>
                     </div>
@@ -440,20 +492,30 @@ const StepInfrastructure = () => {
             )} />
 
             {ownsProperty ? (
-                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 animate-in zoom-in-95 duration-500 text-left">
+                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 animate-in zoom-in-95 duration-500 text-left text-foreground text-foreground">
                     <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
                         <MapPin className="h-4 w-4" /> Operating Property Details
                     </h4>
                     <FormField control={control} name="propertyDetails.address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                        <FormField control={control} name="propertyDetails.marketValue" render={({ field }) => (<FormItem className="text-left"><FormLabel>Estimated Market Value (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                        <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (<FormItem className="text-left"><FormLabel>Outstanding Bond (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                        <FormField control={control} name="propertyDetails.marketValue" render={({ field }) => (
+                            <FormItem className="text-left text-foreground text-foreground text-foreground">
+                                <FormLabel>Estimated Market Value (R)</FormLabel>
+                                <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
+                            </FormItem>
+                        )} />
+                        <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (
+                            <FormItem className="text-left text-foreground text-foreground text-foreground text-foreground">
+                                <FormLabel>Outstanding Bond (R)</FormLabel>
+                                <FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl>
+                            </FormItem>
+                        )} />
                     </div>
                     <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Bondholder Institution</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
                 </div>
             ) : (
-                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 animate-in fade-in duration-500 text-left">
-                    <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left">
+                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 animate-in fade-in duration-500 text-left text-foreground text-foreground">
+                    <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground text-foreground">
                         <Landmark className="h-4 w-4" /> Landlord / Lease Info
                     </h4>
                     <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Landlord / Managing Agent Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
@@ -488,6 +550,16 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         if (watchedValues.applyingCapacity === 'entity') {
             base.push({ id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'lastSignedAfsDate', 'lastManagementAccountsDate'] });
             base.push({ id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'signingAuthority', 'hasSigningResolution'] });
+            
+            if (watchedValues.shareholderCount > 0) {
+                base.push({ id: 'shareholders', title: 'Shareholders', icon: Users, fields: ['shareholders'] });
+            }
+            if (watchedValues.directorCount > 0) {
+                base.push({ id: 'directors', title: 'Directors', icon: UserCircle, fields: ['directors'] });
+            }
+            if (watchedValues.staffCount > 0) {
+                base.push({ id: 'staff_list', title: 'Staff', icon: Users, fields: ['staff'] });
+            }
         }
 
         base.push({ id: 'nca', title: 'NCA Data', icon: Landmark, fields: ['annualTurnover', 'totalAssetValue'] });
@@ -498,7 +570,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         base.push({ id: 'review', title: 'Review', icon: CheckCircle, fields: [] });
 
         return base;
-    }, [watchedValues.applyingCapacity]);
+    }, [watchedValues.applyingCapacity, watchedValues.shareholderCount, watchedValues.directorCount, watchedValues.staffCount]);
 
     const handleAiExtraction = (data: any) => {
         if (data.registrationId) methods.setValue('registrationId', data.registrationId);
@@ -540,8 +612,8 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
+                    <CardContent className="p-0 text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left">
                             <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                                 {memoizedSteps.map((step, i) => (
                                     <Button
@@ -557,9 +629,9 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 ))}
                             </div>
                             <div className="p-10 space-y-8 bg-white min-h-[500px] text-left">
-                                {currentStepConfig.id !== 'review' && (
+                                {['capacity', 'compliance', 'governance', 'nca', 'credit', 'background', 'infrastructure'].includes(currentStepConfig.id) && (
                                     <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left">
-                                        <div className="flex items-start gap-4 text-left text-foreground">
+                                        <div className="flex items-start gap-4 text-left">
                                             <div className="bg-primary/10 p-3 rounded-2xl shrink-0"><Zap className="h-6 w-6 text-primary" /></div>
                                             <div className="text-left text-foreground">
                                                 <h4 className="text-sm font-black uppercase text-primary">Forensic Verification Gateway</h4>
@@ -576,14 +648,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 {currentStepConfig.id === 'capacity' && <StepCapacity />}
                                 {currentStepConfig.id === 'compliance' && <StepCompliance />}
                                 {currentStepConfig.id === 'governance' && <StepGovernance />}
-                                {currentStepConfig.id === 'credit' && <StepCreditForensic />}
-                                {currentStepConfig.id === 'background' && <StepBackground />}
-                                {currentStepConfig.id === 'finance_mgmt' && <StepFinancialManagement />}
-                                {currentStepConfig.id === 'infrastructure' && <StepInfrastructure />}
-                                
+                                {currentStepConfig.id === 'shareholders' && <StepStakeholders type="shareholders" label="Shareholder" />}
+                                {currentStepConfig.id === 'directors' && <StepStakeholders type="directors" label="Director" />}
+                                {currentStepConfig.id === 'staff_list' && <StepStakeholders type="staff" label="Staff" />}
                                 {currentStepConfig.id === 'nca' && (
-                                    <div className="space-y-6 text-left text-foreground">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                                    <div className="space-y-6 text-left">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                                             <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
                                                 <FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
@@ -597,20 +667,24 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                         </Alert>
                                     </div>
                                 )}
-
+                                {currentStepConfig.id === 'credit' && <StepCreditForensic />}
+                                {currentStepConfig.id === 'background' && <StepBackground />}
+                                {currentStepConfig.id === 'finance_mgmt' && <StepFinancialManagement />}
+                                {currentStepConfig.id === 'infrastructure' && <StepInfrastructure />}
+                                
                                 {currentStepConfig.id === 'review' && (
-                                    <div className="text-center py-20 space-y-6 text-center text-foreground">
+                                    <div className="text-center py-20 space-y-6 text-left text-foreground">
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
-                                        <div className="space-y-2 text-center">
-                                            <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
-                                            <p className="text-sm text-muted-foreground max-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
+                                        <div className="space-y-2 text-center text-foreground">
+                                            <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
+                                            <p className="text-sm text-muted-foreground max-sm mx-auto">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
                                         </div>
                                     </div>
                                 )}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left">
+                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
                         <Button type="button" variant="outline" onClick={() => setCurrentStep(currentStep - 1)} disabled={currentStep === 0} className="font-bold">Back</Button>
                         {currentStep < memoizedSteps.length - 1 ? (
                             <Button type="button" onClick={() => setCurrentStep(currentStep + 1)} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg">Next Step <ArrowRight className="ml-2 h-4 w-4" /></Button>
