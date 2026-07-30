@@ -6,6 +6,8 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
@@ -35,7 +37,12 @@ import {
   ShieldCheck,
   Lock,
   UserCheck,
-  ListChecks
+  ListChecks,
+  Scale,
+  Wrench,
+  FileText,
+  TrendingUp,
+  Gavel
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -57,9 +64,11 @@ const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-
 const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 
-// New Internal Modules
+// Admin Modules
 const PlatformStaffManagement = dynamic(() => import('@/app/adminaccount/platform-staff'), { ssr: false });
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { ssr: false });
+const PoliciesContent = dynamic(() => import('./policies-content'), { ssr: false });
+const UtilitiesContent = dynamic(() => import('./utilities-content'), { ssr: false });
 
 function LendingPortalContent() {
   const router = useRouter();
@@ -94,6 +103,8 @@ function LendingPortalContent() {
       case 'facilities': return <FacilitiesContent />;
       case 'staff': return <PlatformStaffManagement />;
       case 'permissions': return <PermissionsContent />;
+      case 'policies': return <PoliciesContent />;
+      case 'utilities': return <UtilitiesContent />;
       default: return <LenderDeskContent />;
     }
   }, [activeView]);
@@ -143,16 +154,29 @@ function LendingPortalContent() {
             </SidebarGroup>
 
             <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Team" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
-                        <UserCheck /><span>Internal Team (Staff)</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Security" isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>
-                        <Lock /><span>Security Matrix</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SidebarGroupLabel>Administrative Control</SidebarGroupLabel>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
+                            <UserCheck /><span>Internal Team</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Security" isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>
+                            <Lock /><span>Security Matrix</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Policies" isActive={activeView === 'policies'} onClick={() => navigate('policies')}>
+                            <Gavel /><span>Lending Policies</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton tooltip="Utilities" isActive={activeView === 'utilities'} onClick={() => navigate('utilities')}>
+                            <Wrench /><span>Global Utilities</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
           <SidebarFooter>
