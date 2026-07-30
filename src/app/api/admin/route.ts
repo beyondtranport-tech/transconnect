@@ -41,11 +41,32 @@ export async function POST(req: NextRequest) {
         const action = (body.action || '').trim();
         const payload = body.payload || {};
 
+        // Certain actions like 'getMemberEngagementPings' might have looser requirements, 
+        // but for saving forensic data, we strictly require admin.
         if (!isAdmin) {
              if (action !== 'getMemberEngagementPings') throw new Error("Forbidden: Admin access required.");
         }
 
         switch (action) {
+            case 'saveForensicExtraction': {
+                const { clientId, extraction, docType, confidence, summary } = payload;
+                if (!clientId) throw new Error("Client ID required for extraction storage.");
+                
+                const ref = db.collection('lendingClients').doc(clientId).collection('forensicExtractions').doc();
+                await ref.set({
+                    id: ref.id,
+                    docType,
+                    extraction,
+                    confidence,
+                    summary,
+                    status: 'raw', // Waiting for human audit/exception check
+                    createdAt: FieldValue.serverTimestamp(),
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
             case 'saveDigitalScorecard': {
                 const { clientId, scorecard } = payload;
                 const ref = db.collection('lendingClients').doc(clientId).collection('digitalScorecards').doc();

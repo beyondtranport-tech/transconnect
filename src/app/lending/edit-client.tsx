@@ -39,6 +39,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { provinces } from '@/lib/geodata';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // --- SCHEMAS ---
 
@@ -235,13 +236,56 @@ function StepMain() {
     );
 }
 
-function StepEntity() {
+function StepEntity({ clientId }: { clientId?: string }) {
     const { control, watch } = useFormContext<ApplicationFormValues>();
     const entType = watch('entityType');
+    const { toast } = useToast();
+
+    /**
+     * SHADOW SILO PERSISTENCE
+     * When Vision AI completes, we save the raw extraction to the hidden sub-collection.
+     */
+    const handleForensicExtraction = async (result: any) => {
+        if (!clientId) return;
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'saveForensicExtraction',
+                    payload: {
+                        clientId,
+                        docType: 'company_formation',
+                        extraction: result,
+                        confidence: 0.95,
+                        summary: "Automated extraction of legal entity founding documents."
+                    }
+                })
+            });
+            toast({ title: "Forensic Extraction Logged", description: "Source data moved to backend vault." });
+        } catch (e) {
+            console.warn("Forensic logging failed", e);
+        }
+    };
     
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-left">Legal Registration Details</h3>
+            <div className="flex justify-between items-center text-left">
+                <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-left">Legal Registration Details</h3>
+                <VisionOnboardingDialog 
+                    initialDocType="company_formation" 
+                    onExtractionComplete={handleForensicExtraction} 
+                    trigger={
+                        <Button variant="outline" className="gap-2 border-primary/20 text-primary font-bold">
+                            <Sparkles className="h-4 w-4" /> AI Auto-Extract
+                        </Button>
+                    }
+                />
+            </div>
+
             <FormField control={control} name="entityType" render={({ field }) => (
                 <FormItem className="text-left"><FormLabel>Type of Entity</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold text-left"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{entityTypesList.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
             )} />
@@ -251,7 +295,7 @@ function StepEntity() {
                     <FormField control={control} name="inceptionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Inception Date</FormLabel><FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2" /></FormControl></FormItem>)} />
                 </div>
                 <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
+                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                     <p className="text-xs text-slate-400">Upload official CIPC, CM or Trust documentation.</p>
                     <FileUploadField 
                         name="registrationDocUrl" 
@@ -440,7 +484,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
               </div>
               <div className="p-10 space-y-12 bg-white min-h-[600px] text-left text-foreground">
                 {currentStepConfig.id === 'main' && <StepMain />}
-                {currentStepConfig.id === 'entity' && <StepEntity />}
+                {currentStepConfig.id === 'entity' && <StepEntity clientId={client?.id} />}
                 {currentStepConfig.id === 'compliance' && (
                     <div className="space-y-10 text-left">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
