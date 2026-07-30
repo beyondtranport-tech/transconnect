@@ -21,7 +21,7 @@ import {
     History, Package, Sparkles, Building, FileUp, Users, PlusCircle, 
     Trash2, UserCheck, Truck, FileText, Navigation, MapPin, Info, 
     ShieldAlert, Gavel, Zap, User, UserCircle, Scale, Banknote, 
-    Smartphone, AlertCircle
+    Smartphone, AlertCircle, Lock
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -54,6 +54,8 @@ const stakeholderSchema = z.object({
     position: z.string().optional(),
     shareholdingPercent: z.coerce.number().min(0).max(100).optional(),
     isDirector: z.boolean().default(false),
+    rsaIdUrl: z.string().optional(),
+    proofAddressUrl: z.string().optional(),
 });
 
 const clientSchema = z.object({
@@ -118,9 +120,33 @@ const clientSchema = z.object({
       size: z.coerce.number().optional(),
   }).optional(),
   status: z.enum(['draft', 'active', 'inactive', 'suspended']).default('draft'),
+  // --- FORENSIC DOCUMENT VAULT ---
+  registrationDocUrl: z.string().optional(),
+  vatCertificateUrl: z.string().optional(),
+  signingResolutionUrl: z.string().optional(),
+  afsDocUrl: z.string().optional(),
+  bureauReportUrl: z.string().optional(),
+  fleetInventoryUrl: z.string().optional(),
+  mgmtAccountsUrl: z.string().optional(),
+  propertyDeedUrl: z.string().optional(),
+  leaseAgreementUrl: z.string().optional(),
 });
 
-type ClientFormValues = z.infer<typeof clientSchema>;
+const combinedSchema = clientSchema; // Simplifying for prototype
+
+type ClientFormValues = z.infer<typeof combinedSchema>;
+
+const staticSteps = [
+  { id: 'capacity', title: 'Main', icon: User, fields: ['applyingCapacity', 'name', 'entityType', 'registrationId', 'inceptionDate', 'registrationDocUrl'] },
+  { id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'vatCertificateUrl'] },
+  { id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'staffCount', 'signingAuthority', 'hasSigningResolution', 'signingResolutionUrl'] },
+  { id: 'nca', title: 'NCA Data', icon: Landmark, fields: ['annualTurnover', 'totalAssetValue', 'afsDocUrl'] },
+  { id: 'credit', title: 'Forensic Risk', icon: ShieldAlert, fields: ['hasReturnedPayments', 'hasJudgements', 'hasLegalAction', 'bureauReportUrl'] },
+  { id: 'background', title: 'Background', icon: Truck, fields: ['isSelfEmployed', 'yearsInIndustry', 'truckCount', 'trailerCount', 'fleetInventoryUrl'] },
+  { id: 'finance_mgmt', title: 'Financial Management', icon: Banknote, fields: ['bookkeepingType', 'bookkeeperContact', 'mgmtAccountsUrl'] },
+  { id: 'infrastructure', title: 'Standing', icon: Building, fields: ['ownsOperatingProperty', 'propertyDetails', 'propertyLiability', 'landlordContact', 'leaseInfo', 'propertyDeedUrl', 'leaseAgreementUrl'] },
+  { id: 'review', title: 'Review', icon: CheckCircle, fields: [] },
+];
 
 // --- REUSABLE COMPONENTS ---
 
@@ -161,7 +187,7 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
 
             setValue(name, result.url, { shouldValidate: true });
             setProgress(100);
-            toast({ title: `${label} Attached` });
+            toast({ title: `${label} Captured` });
         } catch (err: any) {
             toast({ variant: 'destructive', title: "Upload Failed", description: err.message });
         } finally {
@@ -170,7 +196,7 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
     };
 
     return (
-        <div className="space-y-1.5 text-left">
+        <div className={cn("space-y-1.5 text-left", variant === 'compact' ? "flex items-center gap-2 space-y-0" : "flex flex-col")}>
             {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{label}</Label>}
             <div className="flex items-center gap-2">
                 <Button 
@@ -178,17 +204,22 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
                     variant="outline" 
                     size={variant === 'compact' ? 'sm' : 'default'}
                     className={cn(
-                        "h-10 gap-2 border-2 text-xs font-bold", 
-                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed",
+                        "h-10 gap-2 border-2 text-xs font-bold transition-all", 
+                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed hover:border-primary/50",
                         variant === 'compact' && "h-8 px-3"
                     )}
                     onClick={() => document.getElementById(`upload-${name}`)?.click()}
                     disabled={isUploading}
                 >
-                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : currentUrl ? <UserCheck className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
-                    {currentUrl ? `Update ${label}` : `Attach ${label}`}
+                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : currentUrl ? <CheckCircle className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
+                    {currentUrl ? `Stored ${label}` : `Attach ${label}`}
                 </Button>
                 <input id={`upload-${name}`} type="file" className="hidden" onChange={handleUpload} />
+                {currentUrl && (
+                    <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-primary">
+                        <a href={currentUrl} target="_blank" rel="noopener noreferrer"><Eye className="h-4 w-4" /></a>
+                    </Button>
+                )}
             </div>
             {isUploading && <Progress value={progress} className="h-1 mt-1" />}
         </div>
@@ -201,7 +232,7 @@ const StepCapacity = () => {
     const entityType = watch('entityType');
 
     return (
-        <div className="space-y-6 text-left">
+        <div className="space-y-8 text-left">
             <FormField control={control} name="applyingCapacity" render={({ field }) => (
                 <FormItem className="space-y-3">
                     <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Applying Capacity</FormLabel>
@@ -209,11 +240,11 @@ const StepCapacity = () => {
                         <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-4">
                             <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'individual' ? "border-primary bg-primary/5" : "bg-white")}>
                                 <RadioGroupItem value="individual" id="cap-ind" />
-                                <Label htmlFor="cap-ind" className="cursor-pointer font-bold">Individual / Sole Prop</Label>
+                                <Label htmlFor="cap-ind" className="cursor-pointer font-bold uppercase text-xs">Individual / Sole Prop</Label>
                             </div>
                             <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'entity' ? "border-primary bg-primary/5" : "bg-white")}>
                                 <RadioGroupItem value="entity" id="cap-ent" />
-                                <Label htmlFor="cap-ent" className="cursor-pointer font-bold">Legal Entity (Company/Trust)</Label>
+                                <Label htmlFor="cap-ent" className="cursor-pointer font-bold uppercase text-xs">Legal Entity (Company/Trust)</Label>
                             </div>
                         </RadioGroup>
                     </FormControl>
@@ -221,16 +252,16 @@ const StepCapacity = () => {
             )} />
             
             <FormField control={control} name="name" render={({ field }) => (
-                <FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-11 border-2 bg-white font-bold" /></FormControl><FormMessage /></FormItem>
+                <FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl><FormMessage /></FormItem>
             )} />
 
             {capacity === 'entity' && (
-                <>
+                <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                     <FormField control={control} name="entityType" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel>Type of Entity</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value || ''}>
-                                <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                                <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left font-bold"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                                 <SelectContent>
                                     <SelectItem value="Pty Ltd">Private Company (Pty Ltd)</SelectItem>
                                     <SelectItem value="Ltd">Public Company (Ltd)</SelectItem>
@@ -243,24 +274,30 @@ const StepCapacity = () => {
                     )} />
 
                     {entityType && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2 duration-300">
-                            <FormField control={control} name="registrationId" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel>Registration Number</FormLabel>
-                                    <FormControl><Input {...field} value={field.value || ''} placeholder="e.g. 2024/123456/07" className="h-11 border-2 bg-white" /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <FormField control={control} name="inceptionDate" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel>Inception Date</FormLabel>
-                                    <FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2 bg-white" /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in zoom-in-95 duration-300 text-left">
+                            <div className="space-y-4">
+                                <FormField control={control} name="registrationId" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <FormLabel>Registration Number</FormLabel>
+                                        <FormControl><Input {...field} value={field.value || ''} placeholder="e.g. 2024/123456/07" className="h-11 border-2 bg-white font-mono" /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                                <FormField control={control} name="inceptionDate" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <FormLabel>Inception Date</FormLabel>
+                                        <FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2 bg-white" /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
+                            </div>
+                            <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 flex flex-col justify-center">
+                                <FileUploadField name="registrationDocUrl" label="Official CIPC / Registration Certificate" folder="forensic-main" />
+                                <p className="text-[10px] text-muted-foreground mt-3 italic leading-tight">Must show current directors and active status.</p>
+                            </div>
                         </div>
                     )}
-                </>
+                </div>
             )}
         </div>
     );
@@ -272,60 +309,56 @@ const StepCompliance = () => {
     const isVatUpToDate = watch('vatUpToDate');
 
     return (
-        <div className="space-y-6 text-left">
+        <div className="space-y-10 text-left">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormField control={control} name="vatRegistered" render={({ field }) => (
-                    <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left">
-                        <FormLabel className="font-bold">VAT Registered?</FormLabel>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                    </FormItem>
-                )} />
-                {isVatRegistered && (
-                    <FormField control={control} name="vatNumber" render={({ field }) => (
-                        <FormItem className="text-left animate-in fade-in slide-in-from-right-2 duration-300"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>
+                <div className="space-y-6">
+                    <FormField control={control} name="vatRegistered" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left">
+                            <FormLabel className="font-black uppercase text-xs">VAT Registered?</FormLabel>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
                     )} />
+                    {isVatRegistered && (
+                        <FormField control={control} name="vatNumber" render={({ field }) => (
+                            <FormItem className="text-left animate-in fade-in slide-in-from-left-2 duration-300"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2 font-mono" /></FormControl></FormItem>
+                        )} />
+                    )}
+                </div>
+                {isVatRegistered && (
+                    <div className="p-6 bg-primary/5 rounded-3xl border-2 border-dashed border-primary/20 flex flex-col justify-center animate-in zoom-in-95 duration-500">
+                        <FileUploadField name="vatCertificateUrl" label="VAT Registration Certificate" folder="forensic-compliance" />
+                    </div>
                 )}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {isVatRegistered && (
+            {isVatRegistered && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-500">
                     <FormField control={control} name="vatUpToDate" render={({ field }) => (
-                        <FormItem className="flex items-center justify-between p-4 border rounded-xl bg-white text-left animate-in fade-in duration-500">
+                        <FormItem className="flex items-center justify-between p-4 border rounded-xl bg-white text-left">
                             <FormLabel className="text-sm font-medium">VAT Returns Up to Date?</FormLabel>
                             <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                         </FormItem>
                     )} />
-                )}
-                <FormField control={control} name="cipcLevyUpToDate" render={({ field }) => (
-                    <FormItem className="flex items-center justify-between p-4 border rounded-xl bg-white text-left">
-                        <FormLabel className="text-sm font-medium">CIPC Annual Levy Paid?</FormLabel>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                    </FormItem>
-                )} />
-            </div>
-
-            {isVatRegistered && !isVatUpToDate && (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                    <FormField control={control} name="lastVatReturnDate" render={({ field }) => (
-                        <FormItem className="text-left max-w-sm">
-                            <FormLabel>Last VAT Return Date</FormLabel>
-                            <FormControl><Input type="date" {...field} value={field.value || ''} className="h-11 border-2" /></FormControl>
-                            <FormDescription className="text-left text-[10px]">Specify the date of the last successful filing.</FormDescription>
+                    <FormField control={control} name="cipcLevyUpToDate" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between p-4 border rounded-xl bg-white text-left">
+                            <FormLabel className="text-sm font-medium">CIPC Annual Levy Paid?</FormLabel>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                         </FormItem>
                     )} />
                 </div>
             )}
-            
-            <Separator />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField control={control} name="lastSignedAfsDate" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel>Last Signed AFS Date</FormLabel><FormControl><Input type="date" {...field} className="h-11 border-2" /></FormControl></FormItem>
-                )} />
-                <FormField control={control} name="lastManagementAccountsDate" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel>Last Management Accounts Date</FormLabel><FormControl><Input type="date" {...field} className="h-11 border-2" /></FormControl></FormItem>
-                )} />
-            </div>
+            {isVatRegistered && !isVatUpToDate && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300 bg-amber-50 p-6 rounded-2xl border border-amber-200">
+                    <FormField control={control} name="lastVatReturnDate" render={({ field }) => (
+                        <FormItem className="text-left max-w-sm">
+                            <FormLabel className="text-amber-800 font-bold">Last VAT Return Date</FormLabel>
+                            <FormControl><Input type="date" {...field} value={field.value || ''} className="h-11 border-2 border-amber-300 bg-white" /></FormControl>
+                            <FormDescription className="text-left text-[10px] text-amber-600">Specify the date of the last successful filing for gap analysis.</FormDescription>
+                        </FormItem>
+                    )} />
+                </div>
+            )}
         </div>
     );
 };
@@ -333,38 +366,44 @@ const StepCompliance = () => {
 const StepGovernance = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
-        <div className="space-y-6 text-left">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="space-y-10 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <FormField control={control} name="shareholderCount" render={({ field }) => (
-                  <FormItem className="text-left"><FormLabel>Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                  <FormItem className="text-left"><FormLabel>Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>
                 )} />
                 <FormField control={control} name="directorCount" render={({ field }) => (
-                  <FormItem className="text-left"><FormLabel>Directors</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                  <FormItem className="text-left"><FormLabel>Directors</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>
                 )} />
                 <FormField control={control} name="staffCount" render={({ field }) => (
-                  <FormItem className="text-left"><FormLabel>Key Staff</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                  <FormItem className="text-left"><FormLabel>Key Staff</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>
                 )} />
             </div>
             
-            <FormField control={control} name="signingAuthority" render={({ field }) => (
-                <FormItem className="space-y-3 text-left">
-                    <FormLabel>Signing Authority</FormLabel>
-                    <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-6">
-                            <div className="flex items-center space-x-2 text-left"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer">Single Signature</Label></div>
-                            <div className="flex items-center space-x-2 text-left"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer">Multiple Signatures</Label></div>
-                        </RadioGroup>
-                    </FormControl>
-                </FormItem>
-            )} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <FormField control={control} name="signingAuthority" render={({ field }) => (
+                    <FormItem className="space-y-3 text-left">
+                        <FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest">Signing Authority</FormLabel>
+                        <FormControl>
+                            <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-6">
+                                <div className="flex items-center space-x-2 text-left"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer font-bold">Single Signature</Label></div>
+                                <div className="flex items-center space-x-2 text-left"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer font-bold">Multiple Signatures</Label></div>
+                            </RadioGroup>
+                        </FormControl>
+                    </FormItem>
+                )} />
+
+                <div className="p-6 bg-slate-900 text-white rounded-3xl shadow-xl flex flex-col justify-center">
+                    <FileUploadField name="signingResolutionUrl" label="Board Resolution / Signing Authority Doc" folder="forensic-governance" />
+                </div>
+            </div>
 
             <FormField control={control} name="hasSigningResolution" render={({ field }) => (
-                <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-slate-50 border-dashed text-left">
-                    <div className="space-y-0.5 text-left text-foreground">
-                        <FormLabel className="font-bold">Signing Resolution on File?</FormLabel>
-                        <FormDescription className="text-[10px]">Does the board have a signed resolution authorizing this application?</FormDescription>
+                <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-slate-50 border-dashed text-left">
+                    <div className="space-y-1 text-left">
+                        <FormLabel className="font-black uppercase text-sm">Resolution Logic</FormLabel>
+                        <FormDescription className="text-[10px]">Does the board have a signed resolution authorizing this specific facility application?</FormDescription>
                     </div>
-                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl>
                 </FormItem>
             )} />
         </div>
@@ -383,52 +422,63 @@ const StepStakeholders = ({ type, label, arrayProps, onToggleDirector }: StepSta
     const { fields } = arrayProps;
 
     return (
-        <div className="space-y-6 text-left">
-            <h3 className="text-xl font-black font-headline flex items-center gap-2 text-foreground text-left"><Users className="h-6 w-6 text-primary" /> {label} Registry</h3>
-            <div className="space-y-8 text-left">
+        <div className="space-y-8 text-left">
+            <div className="flex items-center justify-between border-b pb-4">
+                <h3 className="text-2xl font-black font-headline flex items-center gap-3 text-foreground text-left uppercase tracking-tight">
+                    <Users className="h-8 w-8 text-primary" /> {label} Ledger
+                </h3>
+            </div>
+            
+            <div className="space-y-12 text-left">
                 {fields.map((field, index) => (
-                    <div key={field.id} className="p-6 border-2 rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2 text-left shadow-sm">
-                        <div className="flex items-center justify-between border-b pb-4 text-left">
-                            <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest text-left">
-                                {label} #{index + 1}
+                    <div key={field.id} className="p-8 border-2 rounded-[2.5rem] bg-white space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 text-left shadow-lg relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 rotate-12"><Users className="h-32 w-32" /></div>
+                        
+                        <div className="flex items-center justify-between border-b pb-6 text-left relative z-10">
+                            <Badge className="bg-slate-900 text-white font-black uppercase text-[10px] tracking-widest px-4 py-1.5 h-auto">
+                                {label} NODE #{index + 1}
                             </Badge>
                             {type === 'shareholders' && (
                                 <FormField 
                                     control={control} 
                                     name={`shareholders.${index}.isDirector` as any} 
                                     render={({ field: switchField }) => (
-                                        <div className="flex items-center gap-3 bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10 text-left">
-                                            <Label className="text-[9px] font-black uppercase tracking-tight text-primary">Also a Director</Label>
+                                        <div className="flex items-center gap-3 bg-primary/10 px-4 py-2 rounded-full border border-primary/20 text-left">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Cross-Map: Also a Director</Label>
                                             <Switch 
                                                 checked={switchField.value} 
                                                 onCheckedChange={(checked) => {
                                                     switchField.onChange(checked);
                                                     if (onToggleDirector) onToggleDirector(index, checked);
                                                 }} 
-                                                className="scale-75"
+                                                className="data-[state=checked]:bg-primary"
                                             />
                                         </div>
                                     )} 
                                 />
                             )}
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                            <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                            <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left relative z-10">
+                            <div className="space-y-6">
+                                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Identity</FormLabel><FormControl><Input {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
+                                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-11 border-2 bg-white font-mono" /></FormControl></FormItem>)} />
+                                <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Residential Operational Address</FormLabel><FormControl><Textarea {...field} className="h-24 border-2 bg-white leading-relaxed" /></FormControl></FormItem>)} />
+                            </div>
+                            
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <FormField control={control} name={`${type}.${index}.email` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Primary Contact Email</FormLabel><FormControl><Input type="email" {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                    <FormField control={control} name={`${type}.${index}.phone` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct Mobile Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                                </div>
+                                <div className="p-6 bg-slate-50 border-2 border-dashed rounded-3xl space-y-4">
+                                    <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="RSA ID Document" folder="stakeholder-ids" variant="compact" />
+                                    <FileUploadField name={`${type}.${index}.proofAddressUrl`} label="Proof of Residence" folder="stakeholder-address" variant="compact" />
+                                </div>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                            <FormField control={control} name={`${type}.${index}.email` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Email Address</FormLabel><FormControl><Input type="email" {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                            <FormField control={control} name={`${type}.${index}.phone` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Mobile Number</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                        </div>
-                        <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Residential Address</FormLabel><FormControl><Textarea {...field} className="h-20 border-2" /></FormControl></FormItem>)} />
                     </div>
                 ))}
-                {fields.length === 0 && (
-                    <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30 text-left">
-                        <Users className="h-12 w-12 mx-auto mb-2" />
-                        <p className="font-bold uppercase text-[10px] tracking-widest text-center">No {label} declared in Governance</p>
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -437,26 +487,40 @@ const StepStakeholders = ({ type, label, arrayProps, onToggleDirector }: StepSta
 const StepBackground = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
-        <div className="space-y-6 text-left">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+        <div className="space-y-10 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                 <FormField control={control} name="isSelfEmployed" render={({ field }) => (
-                    <FormItem className="flex items-center justify-between p-4 border rounded-2xl bg-white text-left">
-                        <FormLabel className="font-bold">Self Employed?</FormLabel>
-                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left">
+                        <div className="space-y-0.5 text-left">
+                            <FormLabel className="text-sm font-black uppercase">Employment standing</FormLabel>
+                            <FormDescription className="text-xs">Is the principal self-employed?</FormDescription>
+                        </div>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl>
                     </FormItem>
                 )} />
                 <FormField control={control} name="yearsInIndustry" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel>Years in Industry</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                    <FormItem className="text-left"><FormLabel>Years in Industry (Tenure)</FormLabel><FormControl><Input type="number" {...field} className="h-14 border-2 bg-white text-2xl font-black" /></FormControl></FormItem>
                 )} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                <FormField control={control} name="truckCount" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel>Number of Trucks Owned</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
-                )} />
-                <FormField control={control} name="trailerCount" render={({ field }) => (
-                    <FormItem className="text-left"><FormLabel>Number of Trailers Owned</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
-                )} />
+            <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 space-y-8 text-left">
+                <div className="flex items-center gap-3">
+                    <Truck className="h-6 w-6 text-primary" />
+                    <h4 className="text-lg font-black uppercase tracking-tight">Fleet Footprint declaration</h4>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <FormField control={control} name="truckCount" render={({ field }) => (
+                        <FormItem className="text-left"><FormLabel>Number of Verified Trucks (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>
+                    )} />
+                    <FormField control={control} name="trailerCount" render={({ field }) => (
+                        <FormItem className="text-left"><FormLabel>Number of Verified Trailers</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>
+                    )} />
+                </div>
+                <Separator />
+                <div className="flex justify-between items-center text-left">
+                    <p className="text-xs text-muted-foreground italic max-w-sm">Upload the complete fleet registry / inventory list to cross-reference RC1 availability.</p>
+                    <FileUploadField name="fleetInventoryUrl" label="Fleet Inventory List / RC1 Batch" folder="forensic-background" />
+                </div>
             </div>
         </div>
     );
@@ -466,32 +530,45 @@ const StepFinancialManagement = () => {
     const { control, watch } = useFormContext<ClientFormValues>();
 
     return (
-        <div className="space-y-8 text-left">
+        <div className="space-y-12 text-left">
             <FormField control={control} name="bookkeepingType" render={({ field }) => (
-                <FormItem className="space-y-4 text-left">
-                    <FormLabel className="font-bold text-lg text-foreground">How is bookkeeping managed?</FormLabel>
+                <FormItem className="space-y-6 text-left">
+                    <FormLabel className="text-2xl font-black font-headline text-foreground uppercase tracking-tight">Oversight Structure</FormLabel>
                     <FormControl>
-                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-4 text-left">
-                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer text-left", field.value === 'in_house' ? "border-primary bg-primary/5" : "bg-white")}>
-                                <div className="flex items-center space-x-2 text-left"><RadioGroupItem value="in_house" id="bk-in" /><Label htmlFor="bk-in" className="cursor-pointer font-bold">In-House Team</Label></div>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-6 text-left">
+                            <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all shadow-sm", field.value === 'in_house' ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-white hover:border-slate-300")}>
+                                <div className="flex items-center space-x-3 text-left"><RadioGroupItem value="in_house" id="bk-in" /><Label htmlFor="bk-in" className="cursor-pointer font-black uppercase text-sm">In-House Team</Label></div>
+                                <p className="text-[10px] text-muted-foreground mt-2 pl-7">Internal financial controllers manage the ledger.</p>
                             </div>
-                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer text-left", field.value === 'external' ? "border-primary bg-primary/5" : "bg-white")}>
-                                <div className="flex items-center space-x-2 text-left"><RadioGroupItem value="external" id="bk-ex" /><Label htmlFor="bk-ex" className="cursor-pointer font-bold">External Firm</Label></div>
+                            <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all shadow-sm", field.value === 'external' ? "border-primary bg-primary/5 ring-1 ring-primary" : "bg-white hover:border-slate-300")}>
+                                <div className="flex items-center space-x-2 text-left"><RadioGroupItem value="external" id="bk-ex" /><Label htmlFor="bk-ex" className="cursor-pointer font-black uppercase text-sm">External Firm</Label></div>
+                                <p className="text-[10px] text-muted-foreground mt-2 pl-7">Authorized external accountants manage reporting.</p>
                             </div>
                         </RadioGroup>
                     </FormControl>
                 </FormItem>
             )} />
 
-            <div className="space-y-4 p-6 border-2 border-dashed rounded-2xl bg-slate-50 animate-in fade-in duration-500 text-left">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
-                    <Users className="h-4 w-4" /> 
-                    Contact Details for Financial Oversight
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                    <FormField control={control} name="bookkeeperContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Name / Firm</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    <FormField control={control} name="bookkeeperContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    <FormField control={control} name="bookkeeperContact.phone" render={({ field }) => (<FormItem className="md:col-span-2 text-left"><FormLabel>Direct Phone / Mobile</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+                <div className="space-y-6 p-8 border-2 border-dashed rounded-[2.5rem] bg-slate-50 animate-in fade-in duration-500 text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                        <UserCheck className="h-4 w-4" /> 
+                        Financial Point of Contact
+                    </h4>
+                    <div className="space-y-4 text-left">
+                        <FormField control={control} name="bookkeeperContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Name / Firm</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name="bookkeeperContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name="bookkeeperContact.phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct Phone / Mobile</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    </div>
+                </div>
+
+                <div className="flex flex-col justify-center gap-6 text-left">
+                    <div className="p-6 bg-slate-900 text-white rounded-[2.5rem] shadow-xl space-y-4 text-left">
+                        <div className="bg-primary/20 p-3 rounded-2xl w-fit"><FileText className="h-6 w-6 text-primary" /></div>
+                        <h4 className="font-bold text-sm uppercase text-primary">Management Ledger Audit</h4>
+                        <p className="text-xs text-slate-400 leading-relaxed text-left">Upload the latest management accounts (Year-to-date) for performance verification.</p>
+                        <FileUploadField name="mgmtAccountsUrl" label="Management Accounts (YTD)" folder="forensic-finance" />
+                    </div>
                 </div>
             </div>
         </div>
@@ -505,99 +582,79 @@ const StepInfrastructure = () => {
     return (
         <div className="space-y-12 text-left">
              <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
-                <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left">
-                    <div className="space-y-1 text-left text-foreground">
-                        <FormLabel className="text-lg font-black uppercase tracking-tight text-foreground">Infrastructure Standing</FormLabel>
-                        <FormDescription className="text-left">Do you own the property where you operate from?</FormDescription>
+                <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
+                    <div className="space-y-1 text-left">
+                        <FormLabel className="text-2xl font-black uppercase tracking-tight text-foreground">Infrastructure Standing</FormLabel>
+                        <FormDescription className="text-base text-muted-foreground">Do you own the property where you operate from?</FormDescription>
                     </div>
-                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl>
+                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125 data-[state=checked]:bg-primary" /></FormControl>
                 </FormItem>
             )} />
 
             {ownsProperty ? (
                 <div className="space-y-10 animate-in zoom-in-95 duration-500 text-left">
-                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left">
-                        <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
-                            <MapPin className="h-4 w-4" /> Operating Property Details
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                            <FormField control={control} name="propertyDetails.address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2 h-10" /></FormControl></FormItem>)} />
-                            <FormField control={control} name="propertyDetails.titleholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registered Titleholder</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+                        <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left">
+                            <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
+                                <MapPin className="h-4 w-4" /> Operating Property Details
+                            </h4>
+                            <div className="space-y-4 text-left">
+                                <FormField control={control} name="propertyDetails.address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2 h-20" /></FormControl></FormItem>)} />
+                                <FormField control={control} name="propertyDetails.titleholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registered Titleholder</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={control} name="propertyDetails.marketValue" render={({ field }) => (<FormItem className="text-left"><FormLabel>Est. Market Value (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2 font-bold" /></FormControl></FormItem>)} />
+                                <Separator />
+                                <FileUploadField name="propertyDeedUrl" label="Title Deed / Ownership Proof" folder="forensic-standing" />
+                            </div>
                         </div>
-                        <FormField control={control} name="propertyDetails.marketValue" render={({ field }) => (
-                            <FormItem className="text-left max-w-sm">
-                                <FormLabel>Estimated Market Value (R)</FormLabel>
-                                <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl>
-                            </FormItem>
-                        )} />
-                    </div>
 
-                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-900 text-white shadow-xl text-left">
-                         <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left text-white">
-                            <Banknote className="h-4 w-4" /> Active Bond Ledger
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                             <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (
-                                <FormItem className="text-left text-white">
-                                    <FormLabel className="text-slate-400">Bondholder Institution</FormLabel>
-                                    <FormControl><Input {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
-                                </FormItem>
-                             )} />
-                             <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-slate-400">Outstanding Balance (R)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
-                                </FormItem>
-                             )} />
-                             <FormField control={control} name="propertyLiability.installment" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-slate-400">Monthly Installment (R)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
-                                </FormItem>
-                             )} />
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-                             <FormField control={control} name="propertyLiability.term" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-slate-400">Total Term (Months)</FormLabel>
-                                    <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
-                                </FormItem>
-                             )} />
-                             <FormField control={control} name="propertyLiability.rate" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-slate-400">Interest Rate (%)</FormLabel>
-                                    <FormControl><Input type="number" step="0.01" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
-                                </FormItem>
-                             )} />
+                        <div className="space-y-8 p-8 border-2 border-dashed rounded-3xl bg-slate-900 text-white shadow-2xl text-left">
+                            <h4 className="font-black uppercase text-[10px] tracking-[0.2em] text-primary flex items-center gap-2 text-left">
+                                <Banknote className="h-4 w-4" /> Active Bond Ledger
+                            </h4>
+                            <div className="grid grid-cols-1 gap-6 text-left">
+                                <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Bondholder Institution</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                <div className="grid grid-cols-2 gap-4 text-left">
+                                    <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Outstanding (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                    <FormField control={control} name="propertyLiability.installment" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Installment (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-left">
+                                    <FormField control={control} name="propertyLiability.term" render={({ field }) => (<FormItem className="text-left"><FormLabel className="text-slate-400">Remaining Term</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                    <FormField control={control} name="propertyLiability.rate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel className="text-slate-400">Rate (%)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl></FormItem>)} />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             ) : (
                 <div className="space-y-10 animate-in fade-in duration-500 text-left">
-                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 text-left">
-                        <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left">
-                            <UserCheck className="h-4 w-4" /> Landlord & Verification Node
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                            <FormField control={control} name="landlordContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Landlord / Agency Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                            <FormField control={control} name="landlordContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Contact E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                            <FormField control={control} name="landlordContact.phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct Phone</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                        </div>
-                    </div>
-
-                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left">
-                        <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
-                            <FileText className="h-4 w-4" /> Active Lease parameters
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                <FormField control={control} name="leaseInfo.startDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Lease Start Date</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FormField control={control} name="leaseInfo.term" render={({ field }) => (<FormItem className="text-left"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
+                        <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 text-left">
+                            <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left text-foreground">
+                                <UserCheck className="h-4 w-4" /> Landlord / Managing Agent
+                            </h4>
+                            <div className="space-y-4 text-left">
+                                <FormField control={control} name="landlordContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Legal Entity Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={control} name="landlordContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={control} name="landlordContact.phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct Phone</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                                <FormField control={control} name="leaseInfo.size" render={({ field }) => (<FormItem className="text-left"><FormLabel>Size (sqm)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FormField control={control} name="leaseInfo.ratePerSqm" render={({ field }) => (<FormItem className="text-left"><FormLabel>Rate / sqm (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FormField control={control} name="leaseInfo.escalationRate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Escalation (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        </div>
+
+                        <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left text-foreground">
+                            <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
+                                <FileText className="h-4 w-4" /> Active Lease parameters
+                            </h4>
+                            <div className="grid grid-cols-1 gap-4 text-left text-foreground">
+                                <div className="grid grid-cols-2 gap-4 text-left">
+                                    <FormField control={control} name="leaseInfo.startDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Start Date</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                    <FormField control={control} name="leaseInfo.term" render={({ field }) => (<FormItem className="text-left"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-left">
+                                    <FormField control={control} name="leaseInfo.size" render={({ field }) => (<FormItem className="text-left"><FormLabel>Size (sqm)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                    <FormField control={control} name="leaseInfo.ratePerSqm" render={({ field }) => (<FormItem className="text-left"><FormLabel>Rate / sqm (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                </div>
+                                <FormField control={control} name="leaseInfo.escalationRate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Annual Escalation (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <Separator />
+                                <FileUploadField name="leaseAgreementUrl" label="Signed Lease Agreement" folder="forensic-standing" />
                             </div>
                         </div>
                     </div>
@@ -659,12 +716,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
 
     const memoizedSteps = useMemo(() => {
         const base = [
-            { id: 'capacity', title: 'Main', icon: User, fields: ['applyingCapacity', 'name', 'entityType', 'registrationId', 'inceptionDate'] },
+            { id: 'capacity', title: 'Main', icon: User, fields: ['applyingCapacity', 'name', 'entityType', 'registrationId', 'inceptionDate', 'registrationDocUrl'] },
         ];
 
         if (watchedValues.applyingCapacity === 'entity') {
-            base.push({ id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'lastSignedAfsDate', 'lastManagementAccountsDate'] });
-            base.push({ id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'staffCount', 'signingAuthority', 'hasSigningResolution'] });
+            base.push({ id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'lastVatReturnDate', 'vatCertificateUrl'] });
+            base.push({ id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'staffCount', 'signingAuthority', 'hasSigningResolution', 'signingResolutionUrl'] });
             
             if (Number(watchedValues.shareholderCount) > 0) {
                 base.push({ id: 'shareholders', title: 'Shareholders', icon: Users, fields: ['shareholders'] });
@@ -677,11 +734,11 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             }
         }
 
-        base.push({ id: 'nca', title: 'NCA Data', icon: Landmark, fields: ['annualTurnover', 'totalAssetValue'] });
-        base.push({ id: 'credit', title: 'Forensic Risk', icon: ShieldAlert, fields: ['hasReturnedPayments', 'hasJudgements', 'hasLegalAction'] });
-        base.push({ id: 'background', title: 'Background (Footprint)', icon: Truck, fields: ['isSelfEmployed', 'yearsInIndustry', 'truckCount', 'trailerCount'] });
-        base.push({ id: 'finance_mgmt', title: 'Financial Management', icon: Banknote, fields: ['bookkeepingType', 'bookkeeperContact'] });
-        base.push({ id: 'infrastructure', title: 'Standing', icon: Building, fields: ['ownsOperatingProperty', 'propertyDetails', 'propertyLiability', 'landlordContact', 'leaseInfo'] });
+        base.push({ id: 'nca', title: 'NCA Data', icon: Landmark, fields: ['annualTurnover', 'totalAssetValue', 'afsDocUrl'] });
+        base.push({ id: 'credit', title: 'Forensic Risk', icon: ShieldAlert, fields: ['hasReturnedPayments', 'hasJudgements', 'hasLegalAction', 'bureauReportUrl'] });
+        base.push({ id: 'background', title: 'Background', icon: Truck, fields: ['isSelfEmployed', 'yearsInIndustry', 'truckCount', 'trailerCount', 'fleetInventoryUrl'] });
+        base.push({ id: 'finance_mgmt', title: 'Financial Management', icon: Banknote, fields: ['bookkeepingType', 'bookkeeperContact', 'mgmtAccountsUrl'] });
+        base.push({ id: 'infrastructure', title: 'Standing', icon: Building, fields: ['ownsOperatingProperty', 'propertyDetails', 'propertyLiability', 'landlordContact', 'leaseInfo', 'propertyDeedUrl', 'leaseAgreementUrl'] });
         base.push({ id: 'review', title: 'Review', icon: CheckCircle, fields: [] });
 
         return base;
@@ -788,14 +845,14 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     </Button>
                                 ))}
                             </div>
-                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left">
+                            <div className="p-10 space-y-12 bg-white min-h-[500px] text-left">
                                 {['capacity', 'compliance', 'governance', 'nca', 'credit', 'background', 'infrastructure'].includes(currentStepConfig.id) && (
                                     <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left">
                                         <div className="flex items-start gap-4 text-left">
                                             <div className="bg-primary/10 p-3 rounded-2xl shrink-0"><Zap className="h-6 w-6 text-primary" /></div>
                                             <div className="text-left">
                                                 <h4 className="text-sm font-black uppercase text-primary">Forensic Verification Gateway</h4>
-                                                <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm text-left">Heal data gaps via automated Vision AI extraction.</p>
+                                                <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm text-left">Heal data gaps via automated Vision AI extraction from documentation.</p>
                                             </div>
                                         </div>
                                         <VisionOnboardingDialog 
@@ -813,14 +870,21 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 {currentStepConfig.id === 'staff_list' && <StepStakeholders type="staff" label="Staff" arrayProps={staffArray} />}
                                 
                                 {currentStepConfig.id === 'nca' && (
-                                    <div className="space-y-6 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
-                                            <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
-                                                <FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
-                                            )} />
-                                            <FormField control={methods.control} name="totalAssetValue" render={({ field }) => (
-                                                <FormItem className="text-left"><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
-                                            )} />
+                                    <div className="space-y-8 text-left text-foreground">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                                            <div className="space-y-6">
+                                                <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
+                                                    <FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
+                                                )} />
+                                                <FormField control={methods.control} name="totalAssetValue" render={({ field }) => (
+                                                    <FormItem className="text-left"><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
+                                                )} />
+                                            </div>
+                                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4">
+                                                <h4 className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Financial Verification</h4>
+                                                <p className="text-xs text-slate-400 leading-relaxed">Evidence is mandatory for NCA applicability assessment.</p>
+                                                <FileUploadField name="afsDocUrl" label="Latest Audited Financials (AFS)" folder="forensic-nca" />
+                                            </div>
                                         </div>
                                         <Alert className="bg-muted/50 border-none text-left">
                                             <Info className="h-4 w-4" />
@@ -830,7 +894,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 )}
 
                                 {currentStepConfig.id === 'credit' && (
-                                    <div className="space-y-6 text-left">
+                                    <div className="space-y-8 text-left text-foreground">
                                         <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left">
                                             <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left">
                                                 <ShieldAlert className="h-5 w-5 text-primary" /> Hard Risk Disclosure
@@ -851,6 +915,13 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
                                             )} />
                                         </div>
+                                        <div className="p-8 bg-slate-50 border-2 border-dashed rounded-3xl flex justify-between items-center">
+                                            <div className="text-left max-w-sm">
+                                                <h4 className="font-bold text-sm">Credit Bureau Attachment</h4>
+                                                <p className="text-xs text-muted-foreground mt-1 leading-tight">Attach settlement letters or credit bureau reports to reconcile risk declarations.</p>
+                                            </div>
+                                            <FileUploadField name="bureauReportUrl" label="Bureau Report / Settlement Letter" folder="forensic-risk" />
+                                        </div>
                                     </div>
                                 )}
 
@@ -863,7 +934,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
                                         <div className="space-y-2 text-center">
                                             <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
-                                            <p className="text-sm text-muted-foreground max-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
+                                            <p className="text-sm text-muted-foreground max-sm mx-auto text-center">Please verify the integrity of the interview responses and ensure all mandatory forensic documents are attached before committing the record.</p>
                                         </div>
                                     </div>
                                 )}
