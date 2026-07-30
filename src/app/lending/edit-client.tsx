@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -195,7 +195,7 @@ function StakeholderForm({ type, label }: { type: 'shareholders' | 'directors', 
                         <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} {index + 1}</Badge>
                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                         <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
                         <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-9 border-2 font-mono" /></FormControl></FormItem>)} />
                     </div>
@@ -217,9 +217,9 @@ const StepMain = () => {
         <div className="space-y-8 text-left text-foreground">
              <FormField control={control} name="applyingCapacity" render={({ field }) => (
                 <FormItem className="space-y-4 text-left">
-                    <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Applying Capacity</FormLabel>
+                    <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary text-left">Applying Capacity</FormLabel>
                     <FormControl>
-                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
+                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4 text-left">
                             <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'individual' ? "border-primary bg-primary/5" : "bg-white")}><RadioGroupItem value="individual" id="cap-ind" /><Label htmlFor="cap-ind" className="cursor-pointer font-bold uppercase text-xs">Individual</Label></div>
                             <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'entity' ? "border-primary bg-primary/5" : "bg-white")}><RadioGroupItem value="entity" id="cap-ent" /><Label htmlFor="cap-ent" className="cursor-pointer font-bold uppercase text-xs">Legal Entity</Label></div>
                         </RadioGroup>
@@ -231,8 +231,8 @@ const StepMain = () => {
                 <FormItem className="text-left"><FormLabel>Type of Entity</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{entityTypesList.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</Select></FormItem>
             )} />
             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
-                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
-                <p className="text-xs text-slate-400">Attach proof of identity for the primary applicant/owner.</p>
+                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
+                <p className="text-xs text-slate-400 text-left">Attach proof of identity for the primary applicant/owner.</p>
                 <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="forensic-main" />
             </div>
         </div>
@@ -245,15 +245,15 @@ const StepEntity = () => {
     
     return (
         <div className="space-y-8 text-left text-foreground">
-            <h3 className="text-2xl font-black font-headline uppercase tracking-tight">Legal Registration Details</h3>
+            <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-left">Legal Registration Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="e.g. 2024/123456/07" className="h-11 border-2 font-mono" /></FormControl></FormItem>)} />
-                    <FormField control={control} name="inceptionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Inception Date</FormLabel><FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2" /></FormControl></FormItem>)} />
+                    <FormField control={control} name="inceptionDate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Inception Date</FormLabel><FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2" /></FormControl></FormItem>)} />
                 </div>
                 <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
-                    <p className="text-xs text-slate-400">Upload official CIPC, CM or Trust documentation.</p>
+                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Evidence</h4>
+                    <p className="text-xs text-slate-400 text-left">Upload official CIPC, CM or Trust documentation.</p>
                     <FileUploadField 
                         name="registrationDocUrl" 
                         label={entType === 'Trust' ? 'Trust Deed' : 'CIPC / Founding Document'} 
@@ -298,23 +298,23 @@ const StepDocumentSummary = () => {
     return (
         <div className="space-y-8 text-left text-foreground">
             <div className="space-y-2 text-left">
-                <h3 className="text-2xl font-black font-headline uppercase tracking-tight">Forensic Document Summary</h3>
-                <p className="text-muted-foreground text-sm">Review your evidence nodes. Green indicators confirm the handshake is backed by documentation.</p>
+                <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-left">Forensic Document Summary</h3>
+                <p className="text-muted-foreground text-sm text-left">Review your evidence nodes. Green indicators confirm the handshake is backed by documentation.</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 text-left">
                 {requiredDocs.map((doc, i) => (
                     <div key={i} className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all",
+                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left",
                         doc.attached ? "bg-green-50 border-green-100" : "bg-white border-slate-100 opacity-60"
                     )}>
-                        <div className="flex items-center gap-4">
-                            <div className={cn("p-2 rounded-lg", doc.attached ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400")}>
+                        <div className="flex items-center gap-4 text-left">
+                            <div className={cn("p-2 rounded-lg text-left", doc.attached ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400")}>
                                 {doc.attached ? <CheckCircle2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                             </div>
                             <div className="text-left">
-                                <p className={cn("font-bold text-sm", doc.attached ? "text-green-900" : "text-slate-600")}>{doc.name}</p>
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Evidentiary Requirement</p>
+                                <p className={cn("font-bold text-sm text-left", doc.attached ? "text-green-900" : "text-slate-600")}>{doc.name}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-50 text-left">Evidentiary Requirement</p>
                             </div>
                         </div>
                         {!doc.attached && <Badge variant="outline" className="text-[9px] font-black uppercase">Missing Evidence</Badge>}
@@ -323,12 +323,14 @@ const StepDocumentSummary = () => {
             </div>
 
             {requiredDocs.some(d => !d.attached) && (
-                <Alert className="bg-amber-50 border-amber-200">
+                <Alert className="bg-amber-50 border-amber-200 text-left">
                     <Info className="h-5 w-5 text-amber-600" />
-                    <AlertTitle className="text-amber-800 font-bold">Incomplete Handshake</AlertTitle>
-                    <AlertDescription className="text-amber-700 text-xs text-left">
-                        The credit vetting division requires all high-fidelity documents to be attached before formal matching can commence.
-                    </AlertDescription>
+                    <div className="ml-2 text-left">
+                        <AlertTitle className="text-amber-800 font-bold">Incomplete Handshake</AlertTitle>
+                        <AlertDescription className="text-amber-700 text-xs text-left">
+                            The credit vetting division requires all high-fidelity documents to be attached before formal matching can commence.
+                        </AlertDescription>
+                    </div>
                 </Alert>
             )}
         </div>
@@ -409,150 +411,159 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         setIsSubmitting(false);
     }
   };
+  
+  if (isUserLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin" /></div>;
+
+  const currentStepConfig = memoizedSteps[currentStep];
 
   return (
     <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <CardHeader className="bg-slate-900 text-white p-8 text-left">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center text-left">
               <div className="text-left text-white">
-                <CardTitle className="text-2xl font-black font-headline uppercase text-white">Forensic Onboarding Terminal</CardTitle>
-                <CardDescription className="text-slate-400">Section: {memoizedSteps[currentStep].title}</CardDescription>
+                <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Forensic Onboarding Terminal</CardTitle>
+                <CardDescription className="text-slate-400 text-left">Section: {currentStepConfig.title}</CardDescription>
               </div>
-              <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Registry</Button>
+              <Button type="button" variant="ghost" className="text-white hover:text-primary text-left" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Registry</Button>
             </div>
           </CardHeader>
-          <CardContent className="p-0 text-left">
-            <div className="grid grid-cols-1 md:grid-cols-[260px_1fr]">
+          <CardContent className="p-0 text-left text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left">
               <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                 {memoizedSteps.map((step, i) => (
-                  <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
+                  <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left text-foreground", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
                     {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
                     <span className={cn("text-[11px] font-black uppercase text-left", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                   </Button>
                 ))}
               </div>
-              <div className="p-10 space-y-12 bg-white min-h-[600px] text-left text-foreground">
-                {memoizedSteps[currentStep].id === 'main' && <StepMain />}
-                {memoizedSteps[currentStep].id === 'entity' && <StepEntity />}
-                {memoizedSteps[currentStep].id === 'compliance' && (
+              <div className="p-10 space-y-12 bg-white min-h-[600px] text-left text-foreground text-foreground">
+                {currentStepConfig.id === 'main' && <StepMain />}
+                {currentStepConfig.id === 'entity' && <StepEntity />}
+                {currentStepConfig.id === 'compliance' && (
                     <div className="space-y-10 text-left text-foreground">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                            <div className="space-y-6">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                            <div className="space-y-6 text-left text-foreground">
                                 <FormField control={methods.control} name="vatRegistered" render={({ field }) => (
                                     <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left">
-                                        <FormLabel className="font-black uppercase text-xs">VAT Registered?</FormLabel>
+                                        <FormLabel className="font-black uppercase text-xs text-left">VAT Registered?</FormLabel>
                                         <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                                     </FormItem>
                                 )} />
                                 {watchedValues.vatRegistered && (
-                                    <FormField control={methods.control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in fade-in slide-in-from-left-2"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
+                                    <FormField control={methods.control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in fade-in slide-in-from-left-2 text-foreground"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
                                 )}
                             </div>
                             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><CheckCircle className="h-4 w-4" /> Compliance Node</h4>
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><CheckCircle className="h-4 w-4" /> Compliance Node</h4>
                                 <FileUploadField name="vatCertificateUrl" label="VAT Certificate / Tax Clearance" folder="forensic-compliance" />
                                 <FileUploadField name="ficaDocUrl" label="FICA Proof of Business Address" folder="forensic-compliance" />
                             </div>
                         </div>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'governance' && (
+                {currentStepConfig.id === 'governance' && (
                     <div className="space-y-8 text-left text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
-                            <div className="space-y-6">
+                            <div className="space-y-6 text-left">
                                 <div className="grid grid-cols-2 gap-6 text-left">
                                     <FormField control={methods.control} name="shareholderCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>)} />
                                     <FormField control={methods.control} name="directorCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Directors</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 font-bold" /></FormControl></FormItem>)} />
                                 </div>
-                                <FormField control={methods.control} name="signingAuthority" render={({ field }) => (<FormItem className="space-y-3 text-left"><FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest">Signing Authority</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer font-bold">Single</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer font-bold">Multiple</Label></div></RadioGroup></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="signingAuthority" render={({ field }) => (<FormItem className="space-y-3 text-left text-foreground"><FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest text-left">Signing Authority</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex gap-6"><div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single" className="cursor-pointer font-bold">Single</Label></div><div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult" className="cursor-pointer font-bold">Multiple</Label></div></RadioGroup></FormControl></FormItem>)} />
                             </div>
                             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Gavel className="h-4 w-4" /> Authority Node</h4>
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Gavel className="h-4 w-4" /> Authority Node</h4>
                                 <FileUploadField name="signingResolutionUrl" label="Signing Resolution / Authorization" folder="forensic-governance" />
                             </div>
                         </div>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'shareholders' && <StakeholderForm type="shareholders" label="Shareholder" />}
-                {memoizedSteps[currentStep].id === 'directors' && <StakeholderForm type="directors" label="Director" />}
-                {memoizedSteps[currentStep].id === 'nca' && (
+                {currentStepConfig.id === 'shareholders' && <StakeholderForm type="shareholders" label="Shareholder" />}
+                {currentStepConfig.id === 'directors' && <StakeholderForm type="directors" label="Director" />}
+                {currentStepConfig.id === 'nca' && (
                     <div className="space-y-8 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                            <div className="space-y-6">
-                                <FormField control={methods.control} name="annualTurnover" render={({ field }) => (<FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>)} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                            <div className="space-y-6 text-left">
+                                <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <FormLabel>Annual Turnover (L12M)</FormLabel>
+                                        <FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl>
+                                    </FormItem>
+                                )} />
                             </div>
                             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Financial Evidence</h4>
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Financial Evidence</h4>
                                 <FileUploadField name="afsDocUrl" label="Latest Audited Financials (AFS)" folder="forensic-nca" />
                             </div>
                         </div>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'credit' && (
+                {currentStepConfig.id === 'credit' && (
                     <div className="space-y-8 text-left text-foreground">
                         <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left">
-                            <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left"><ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure</div>
-                            <FormField control={methods.control} name="hasJudgements" render={({ field }) => (<FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left"><FormLabel className="text-sm font-medium">Any active judgements?</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
+                            <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left text-foreground"><ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure</div>
+                            <FormField control={methods.control} name="hasJudgements" render={({ field }) => (<FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left text-foreground"><FormLabel className="text-sm font-medium text-left">Any active judgements?</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
                         </div>
-                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left text-white">
-                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Scale className="h-4 w-4" /> Credit Intelligence</h4><p className="text-xs text-slate-400">Upload bureau evidence or settlement letters.</p></div>
+                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left">
+                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-foreground"><Scale className="h-4 w-4" /> Credit Intelligence</h4><p className="text-xs text-slate-400 text-left">Upload bureau evidence or settlement letters.</p></div>
                             <FileUploadField name="bureauReportUrl" label="Bureau Report / Settlement Letter" folder="forensic-risk" />
                         </div>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'background' && (
+                {currentStepConfig.id === 'background' && (
                      <div className="space-y-10 text-left text-foreground">
-                        <div className="grid grid-cols-2 gap-8 text-left text-foreground">
-                            <FormField control={methods.control} name="truckCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Truck Nodes (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
-                            <FormField control={methods.control} name="trailerCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Trailer Nodes</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
+                        <div className="grid grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                            <FormField control={methods.control} name="truckCount" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Truck Nodes (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
+                            <FormField control={methods.control} name="trailerCount" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Trailer Nodes</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                         </div>
-                        <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 flex justify-between items-center text-left text-foreground">
-                            <div className="space-y-1 text-left text-foreground">
-                                <p className="text-sm font-bold flex items-center gap-2 text-left text-foreground"><Truck className="h-4 w-4 text-primary"/> Fleet Register Audit</p>
-                                <p className="text-xs text-muted-foreground italic max-w-xs text-left">Upload fleet inventory list for RC1 cross-referencing.</p>
+                        <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 flex justify-between items-center text-left text-foreground text-foreground text-foreground">
+                            <div className="space-y-1 text-left text-foreground text-foreground">
+                                <p className="text-sm font-bold flex items-center gap-2 text-left text-foreground text-foreground"><Truck className="h-4 w-4 text-primary"/> Fleet Register Audit</p>
+                                <p className="text-xs text-muted-foreground italic max-w-xs text-left text-foreground text-foreground">Upload fleet inventory list for RC1 cross-referencing.</p>
                             </div>
                             <FileUploadField name="fleetInventoryUrl" label="Fleet Inventory / RC1 Batch" folder="forensic-background" />
                         </div>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'finance_mgmt' && (
-                    <div className="space-y-12 text-left text-foreground">
-                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-white">
-                            <div className="space-y-1 text-left text-white">
-                                <div className="bg-primary/20 p-2 rounded-lg w-fit text-left"><FileText className="h-5 w-5 text-primary" /></div>
+                {currentStepConfig.id === 'finance_mgmt' && (
+                    <div className="space-y-12 text-left text-foreground text-foreground">
+                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-foreground">
+                            <div className="space-y-1 text-left text-foreground">
+                                <div className="bg-primary/20 p-2 rounded-lg w-fit text-left text-foreground"><FileText className="h-5 w-5 text-primary" /></div>
                                 <h4 className="font-bold text-sm uppercase text-primary text-left">Ledger Evidence</h4>
-                                <p className="text-xs text-slate-400 leading-relaxed max-w-sm text-left">Upload latest management accounts (YTD) for audit.</p>
+                                <p className="text-xs text-slate-400 leading-relaxed max-w-sm text-left text-foreground text-foreground">Upload latest management accounts (YTD) for audit.</p>
                             </div>
                             <FileUploadField name="mgmtAccountsUrl" label="Management Accounts (YTD)" folder="forensic-finance" />
                         </div>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'infrastructure' && (
+                {currentStepConfig.id === 'infrastructure' && (
                     <div className="space-y-12 text-left text-foreground">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
-                           <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
-                               <div className="space-y-1 text-left text-foreground">
-                                   <span className="text-2xl font-black font-headline uppercase tracking-tight">Infrastructure Standing</span>
-                                   <p className="text-base text-muted-foreground">Do you own the property where you operate from?</p>
+                           <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
+                               <div className="space-y-1 text-left text-foreground text-foreground">
+                                   <span className="text-2xl font-black font-headline uppercase tracking-tight text-left text-foreground">Infrastructure Standing</span>
+                                   <p className="text-base text-muted-foreground text-left text-foreground text-foreground">Do you own the property where you operate from?</p>
                                </div>
                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
                            </FormItem>
                        )} />
-                       <div className="grid grid-cols-1 gap-6 text-left">
+                       <div className="grid grid-cols-1 gap-6 text-left text-foreground text-foreground">
                             <FileUploadField name={watchedValues.ownsOperatingProperty ? "propertyDeedUrl" : "leaseAgreementUrl"} label={watchedValues.ownsOperatingProperty ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} folder="forensic-standing" />
                        </div>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'review' && (
+                {currentStepConfig.id === 'review' && (
                     <div className="text-center py-20 space-y-6 text-left text-foreground">
-                        <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
-                        <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
-                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before formally committing this node to the registry.</p>
+                        <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40 text-center" />
+                        <h3 className="text-2xl font-black uppercase text-center text-foreground">Audit Finalization</h3>
+                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center text-foreground text-foreground">Verify data integrity before formally committing this node to the registry.</p>
                     </div>
                 )}
-                {memoizedSteps[currentStep].id === 'doc_summary' && <StepDocumentSummary />}
+                {currentStepConfig.id === 'doc_summary' && <StepDocumentSummary />}
               </div>
             </div>
           </CardContent>
@@ -561,7 +572,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             {currentStep < memoizedSteps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs text-white">Next Section <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase shadow-2xl bg-primary hover:bg-primary/90 text-white">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Record</Button>
+              <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase shadow-2xl bg-primary hover:bg-primary/90 text-white text-left">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin text-left" /> : <Save className="mr-2 h-4 w-4 text-left" />} Commit Record</Button>
             )}
           </CardFooter>
         </form>
