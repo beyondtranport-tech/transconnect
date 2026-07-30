@@ -17,17 +17,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info, Scale, Gavel, History, MapPin, Landmark, ShieldAlert, Truck } from 'lucide-react';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 import { Separator } from '@/components/ui/separator';
-import { doc, serverTimestamp } from 'firebase/firestore';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 // --- ZOD SCHEMA (ENHANCED FOR FORENSIC INTERVIEW) ---
 
@@ -448,10 +449,10 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const currentStepConfig = memoizedSteps[currentStep];
 
     return (
-        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground text-foreground">
+        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader className="bg-slate-900 text-white p-8 text-left text-foreground">
+                    <CardHeader className="bg-slate-900 text-white p-8 text-left">
                         <div className="flex justify-between items-center text-left text-foreground">
                             <div className="text-left text-white">
                                 <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left text-foreground">Forensic Interview terminal</CardTitle>
@@ -460,9 +461,9 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left text-foreground text-foreground">
-                            <div className="bg-slate-50 border-r p-6 space-y-2 text-left text-foreground text-foreground">
+                    <CardContent className="p-0 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left text-foreground">
+                            <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                                 {memoizedSteps.map((step, i) => (
                                     <Button
                                         key={step.id}
@@ -476,12 +477,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     </Button>
                                 ))}
                             </div>
-                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left text-foreground text-foreground text-foreground">
+                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left text-foreground">
                                 {currentStepConfig.id !== 'review' && (
-                                    <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left text-foreground">
-                                        <div className="flex items-start gap-4 text-left text-foreground">
+                                    <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left">
+                                        <div className="flex items-start gap-4 text-left">
                                             <div className="bg-primary/10 p-3 rounded-2xl shrink-0 text-left"><Zap className="h-6 w-6 text-primary" /></div>
-                                            <div className="text-left text-foreground">
+                                            <div className="text-left">
                                                 <h4 className="text-sm font-black uppercase text-primary">Verification Gateway</h4>
                                                 <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm text-left">Heal data gaps via automated Vision AI extraction.</p>
                                             </div>
@@ -503,12 +504,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 
                                 {currentStepConfig.id === 'nca' && (
                                     <div className="space-y-6 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground text-foreground text-foreground">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
                                             <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
-                                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
+                                                <FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
                                             <FormField control={methods.control} name="totalAssetValue" render={({ field }) => (
-                                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
+                                                <FormItem className="text-left"><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
                                         </div>
                                         <Alert className="bg-muted/50 border-none text-left">
@@ -519,10 +520,10 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 )}
 
                                 {currentStepConfig.id === 'review' && (
-                                    <div className="text-center py-20 space-y-6 text-foreground text-foreground text-foreground text-foreground">
+                                    <div className="text-center py-20 space-y-6">
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
-                                        <div className="space-y-2 text-center text-foreground">
-                                            <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
+                                        <div className="space-y-2 text-center">
+                                            <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
                                             <p className="text-sm text-muted-foreground max-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
                                         </div>
                                     </div>
@@ -530,7 +531,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
+                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left">
                         <Button type="button" variant="outline" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">Back</Button>
                         {currentStep < memoizedSteps.length - 1 ? (
                             <Button type="button" onClick={() => setCurrentStep(prev => prev + 1)} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg">Next Step <ArrowRight className="ml-2 h-4 w-4" /></Button>
