@@ -96,10 +96,26 @@ const clientSchema = z.object({
   propertyDetails: z.object({
       address: z.string().optional(),
       marketValue: z.coerce.number().optional(),
+      titleholder: z.string().optional(),
   }).optional(),
   propertyLiability: z.object({
       bondholder: z.string().optional(),
       outstandingBalance: z.coerce.number().optional(),
+      term: z.coerce.number().optional(),
+      rate: z.coerce.number().optional(),
+      installment: z.coerce.number().optional(),
+  }).optional(),
+  landlordContact: z.object({
+      name: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+  }).optional(),
+  leaseInfo: z.object({
+      startDate: z.string().optional(),
+      term: z.coerce.number().optional(),
+      escalationRate: z.coerce.number().optional(),
+      ratePerSqm: z.coerce.number().optional(),
+      size: z.coerce.number().optional(),
   }).optional(),
   status: z.enum(['draft', 'active', 'inactive', 'suspended']).default('draft'),
 });
@@ -487,11 +503,11 @@ const StepInfrastructure = () => {
     const ownsProperty = watch('ownsOperatingProperty');
 
     return (
-        <div className="space-y-8 text-left">
+        <div className="space-y-12 text-left">
              <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
                 <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm text-left">
-                    <div className="space-y-1 text-left">
-                        <FormLabel className="text-lg font-black uppercase tracking-tight text-foreground">Property Ownership</FormLabel>
+                    <div className="space-y-1 text-left text-foreground">
+                        <FormLabel className="text-lg font-black uppercase tracking-tight text-foreground">Infrastructure Standing</FormLabel>
                         <FormDescription className="text-left">Do you own the property where you operate from?</FormDescription>
                     </div>
                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl>
@@ -499,34 +515,92 @@ const StepInfrastructure = () => {
             )} />
 
             {ownsProperty ? (
-                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 animate-in zoom-in-95 duration-500 text-left">
-                    <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
-                        <MapPin className="h-4 w-4" /> Operating Property Details
-                    </h4>
-                    <FormField control={control} name="propertyDetails.address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                <div className="space-y-10 animate-in zoom-in-95 duration-500 text-left">
+                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left">
+                        <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
+                            <MapPin className="h-4 w-4" /> Operating Property Details
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                            <FormField control={control} name="propertyDetails.address" render={({ field }) => (<FormItem className="text-left"><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} value={field.value || ''} className="bg-white border-2 h-10" /></FormControl></FormItem>)} />
+                            <FormField control={control} name="propertyDetails.titleholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registered Titleholder</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        </div>
                         <FormField control={control} name="propertyDetails.marketValue" render={({ field }) => (
-                            <FormItem className="text-left">
+                            <FormItem className="text-left max-w-sm">
                                 <FormLabel>Estimated Market Value (R)</FormLabel>
                                 <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl>
                             </FormItem>
                         )} />
-                        <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (
-                            <FormItem className="text-left">
-                                <FormLabel>Outstanding Bond Balance (R)</FormLabel>
-                                <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl>
-                            </FormItem>
-                        )} />
                     </div>
-                    <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Bondholder Institution</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+
+                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-900 text-white shadow-xl text-left">
+                         <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left text-white">
+                            <Banknote className="h-4 w-4" /> Active Bond Ledger
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                             <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (
+                                <FormItem className="text-left text-white">
+                                    <FormLabel className="text-slate-400">Bondholder Institution</FormLabel>
+                                    <FormControl><Input {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
+                                </FormItem>
+                             )} />
+                             <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-slate-400">Outstanding Balance (R)</FormLabel>
+                                    <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
+                                </FormItem>
+                             )} />
+                             <FormField control={control} name="propertyLiability.installment" render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-slate-400">Monthly Installment (R)</FormLabel>
+                                    <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
+                                </FormItem>
+                             )} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                             <FormField control={control} name="propertyLiability.term" render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-slate-400">Total Term (Months)</FormLabel>
+                                    <FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
+                                </FormItem>
+                             )} />
+                             <FormField control={control} name="propertyLiability.rate" render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-slate-400">Interest Rate (%)</FormLabel>
+                                    <FormControl><Input type="number" step="0.01" {...field} value={field.value || ''} className="bg-white/5 border-white/10 text-white" /></FormControl>
+                                </FormItem>
+                             )} />
+                        </div>
+                    </div>
                 </div>
             ) : (
-                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 animate-in fade-in duration-500 text-left">
-                    <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left">
-                        <Landmark className="h-4 w-4" /> Landlord / Lease Info
-                    </h4>
-                    <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem className="text-left"><FormLabel>Landlord / Managing Agent Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
-                    <p className="text-xs text-muted-foreground italic text-left">If the property is rented, provide the primary contact node for verification.</p>
+                <div className="space-y-10 animate-in fade-in duration-500 text-left">
+                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 text-left">
+                        <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2 text-left">
+                            <UserCheck className="h-4 w-4" /> Landlord & Verification Node
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                            <FormField control={control} name="landlordContact.name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Landlord / Agency Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                            <FormField control={control} name="landlordContact.email" render={({ field }) => (<FormItem className="text-left"><FormLabel>Contact E-mail</FormLabel><FormControl><Input type="email" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                            <FormField control={control} name="landlordContact.phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Direct Phone</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 text-left">
+                        <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left">
+                            <FileText className="h-4 w-4" /> Active Lease parameters
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                <FormField control={control} name="leaseInfo.startDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Lease Start Date</FormLabel><FormControl><Input type="date" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={control} name="leaseInfo.term" render={({ field }) => (<FormItem className="text-left"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
+                                <FormField control={control} name="leaseInfo.size" render={({ field }) => (<FormItem className="text-left"><FormLabel>Size (sqm)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={control} name="leaseInfo.ratePerSqm" render={({ field }) => (<FormItem className="text-left"><FormLabel>Rate / sqm (R)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={control} name="leaseInfo.escalationRate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Escalation (%)</FormLabel><FormControl><Input type="number" {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>
@@ -554,11 +628,6 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const directorsArray = useFieldArray({ control: methods.control, name: 'directors' });
     const staffArray = useFieldArray({ control: methods.control, name: 'staff' });
 
-    /**
-     * MIRRORING LOGIC: Intelligent Stakeholder Mapping
-     * Resolves the user request: "In shareholders, i clicked also a director, 
-     * populate existing slot if available or append if not."
-     */
     const handleShareholderToDirector = useCallback((shIndex: number, checked: boolean) => {
         if (!checked) return;
         
@@ -576,15 +645,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             isDirector: true
         };
 
-        // Find the first empty or placeholder slot in the directors array
         const emptySlotIndex = currentDirectors.findIndex(d => !d.name || d.name.trim() === '');
 
         if (emptySlotIndex !== -1) {
-            // Populate existing slot
             directorsArray.update(emptySlotIndex, directorPayload);
             toast({ title: "Forensic Slot Mapped", description: `${shData.name} synced to existing Director slot.` });
         } else {
-            // No empty slots, expand the registry
             methods.setValue('directorCount', currentDirCount + 1);
             directorsArray.append(directorPayload);
             toast({ title: "Director Registry Expanded", description: `${shData.name} appended as a new Director.` });
@@ -615,22 +681,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         base.push({ id: 'credit', title: 'Forensic Risk', icon: ShieldAlert, fields: ['hasReturnedPayments', 'hasJudgements', 'hasLegalAction'] });
         base.push({ id: 'background', title: 'Background (Footprint)', icon: Truck, fields: ['isSelfEmployed', 'yearsInIndustry', 'truckCount', 'trailerCount'] });
         base.push({ id: 'finance_mgmt', title: 'Financial Management', icon: Banknote, fields: ['bookkeepingType', 'bookkeeperContact'] });
-        base.push({ id: 'infrastructure', title: 'Standing', icon: Building, fields: ['ownsOperatingProperty', 'propertyDetails', 'propertyLiability'] });
+        base.push({ id: 'infrastructure', title: 'Standing', icon: Building, fields: ['ownsOperatingProperty', 'propertyDetails', 'propertyLiability', 'landlordContact', 'leaseInfo'] });
         base.push({ id: 'review', title: 'Review', icon: CheckCircle, fields: [] });
 
         return base;
     }, [watchedValues.applyingCapacity, watchedValues.shareholderCount, watchedValues.directorCount, watchedValues.staffCount]);
 
-    const handleAiExtraction = (data: any) => {
-        if (data.registrationId) methods.setValue('registrationId', data.registrationId);
-        if (data.name) methods.setValue('name', data.name);
-        toast({ title: "Forensic Data Mapped", description: "AI extraction results committed to form." });
-    };
-
-    /**
-     * PERSISTENCE LAYER: Continuous Ledger Protocol
-     * Implements autosave whenever navigating steps or clicking next.
-     */
     const handleStepTransition = async (direction: 'next' | 'back' | number) => {
         if (direction === 'next') {
             const isValid = await methods.trigger(memoizedSteps[currentStep].fields as any);
@@ -640,7 +696,6 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             }
         }
 
-        // AUTO-SAVE: Perform background update if client ID exists
         const values = methods.getValues();
         const token = await getClientSideAuthToken();
         if (token && client?.id) {
@@ -663,6 +718,12 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         }
     };
 
+    const handleAiExtraction = (data: any) => {
+        if (data.registrationId) methods.setValue('registrationId', data.registrationId);
+        if (data.name) methods.setValue('name', data.name);
+        toast({ title: "Forensic Data Mapped", description: "AI extraction results committed to form." });
+    };
+
     const onSubmit = async (values: ClientFormValues) => {
         setIsSubmitting(true);
         try {
@@ -682,9 +743,6 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         }
     };
 
-    /**
-     * DYNAMIC SYNC EFFECT: Ensures FieldArrays match Governance Counts
-     */
     useEffect(() => {
         const syncArray = (arr: any[], count: number, appendFn: any, removeFn: any) => {
             const numCount = Number(count) || 0;
@@ -708,7 +766,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                     <CardHeader className="bg-slate-900 text-white p-8 text-left text-foreground">
                         <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
-                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left">Forensic Interview terminal</CardTitle>
+                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left text-foreground">Forensic Interview terminal</CardTitle>
                                 <CardDescription className="text-slate-400 text-left">Step: {currentStepConfig.title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
@@ -756,7 +814,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 
                                 {currentStepConfig.id === 'nca' && (
                                     <div className="space-y-6 text-left">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
                                             <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
                                                 <FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
@@ -775,20 +833,20 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     <div className="space-y-6 text-left">
                                         <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left">
                                             <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left">
-                                                <ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure
+                                                <ShieldAlert className="h-5 w-5 text-primary" /> Hard Risk Disclosure
                                             </div>
                                             <FormField control={methods.control} name="hasReturnedPayments" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left">
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left text-foreground">
                                                     <FormLabel className="text-sm font-medium text-left">Any returned payments (12 Months)?</FormLabel>
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
                                             )} />
                                             <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left">
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left text-foreground">
                                                     <FormLabel className="text-sm font-medium text-left">Any active judgements?</FormLabel>
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
                                             )} />
                                             <FormField control={methods.control} name="hasLegalAction" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left">
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left text-foreground">
                                                     <FormLabel className="text-sm font-medium text-left">Any legal action pending?</FormLabel>
                                                     <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>
                                             )} />
