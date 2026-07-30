@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Landmark, ArrowRight, Truck, Briefcase, FileText, Repeat, Calculator, Save, Mail } from "lucide-react";
+import { Landmark, ArrowRight, Truck, Briefcase, FileText, Repeat, Calculator, Save, Mail, Globe, Zap, Info } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import * as React from 'react';
@@ -15,7 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { CheckCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const productsData = {
     loans: {
@@ -53,14 +54,14 @@ const productsData = {
         icon: Briefcase,
         items: [
             { id: "disclosed-confirmed-factoring", title: "Disclosed confirmed factoring 75% advance", description: "Factoring with notification to the debtor, who confirms payment directly to the factor." },
-            { id: "disclosed-unconfirmed-factoring", title: "Disclosed un-confirmed factoring 0% advance", description: "Factoring where the debtor is notified, but doesn't confirm payment directly to the factor." },
+            { id: "disclosed-unconfirmed-factoring", name: "Disclosed un-confirmed factoring 0% advance", description: "Factoring where the debtor is notified, but doesn't confirm payment directly to the factor." },
             { id: "invoice-discounting", title: "Invoice discounting 100% advance", description: "A confidential facility where you maintain control of your sales ledger and collections." },
             { id: "rights-discounting", title: "Rights discounting", description: "Unlock the value of your contractual rights to future income streams." }
         ]
     }
 };
 
-function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { id: string; title: string }, onQuoteSaved: () => void, onOpenChange: (open: boolean) => void }) {
+function QuoteCalculator({ product, onOpenChange }: { product: { id: string; title: string }, onOpenChange: (open: boolean) => void }) {
     const { user } = useUser();
     const router = useRouter();
     const { toast } = useToast();
@@ -71,7 +72,7 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
     const [balloonPercent, setBalloonPercent] = useState(0);
     const [monthlyPayment, setMonthlyPayment] = useState(0);
     const [totalRepayment, setTotalRepayment] = useState(0);
-    const [view, setView] = useState('calculator'); // 'calculator' or 'conversion'
+    const [view, setView] = useState<'calculator' | 'conversion'>('calculator');
     
     const isBalloonProduct = product.id.includes('balloon');
 
@@ -82,22 +83,14 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
         if (monthlyRate > 0) {
             const pv = amount;
             const balloonAmount = isBalloonProduct ? pv * (balloonPercent / 100) : 0;
-            
-            // Present value of the balloon payment
             const pvOfBalloon = balloonAmount / Math.pow(1 + monthlyRate, n);
-            
-            // The principal amount that needs to be amortized
             const principalToAmortize = pv - pvOfBalloon;
-            
-            // Amortization factor
             const amortizationFactor = (monthlyRate * Math.pow(1 + monthlyRate, n)) / (Math.pow(1 + monthlyRate, n) - 1);
-            
             const payment = principalToAmortize * amortizationFactor;
 
             setMonthlyPayment(payment);
             setTotalRepayment(payment * n + balloonAmount);
-
-        } else { // No interest rate scenario
+        } else {
             const balloonAmount = isBalloonProduct ? amount * (balloonPercent / 100) : 0;
             const payment = term > 0 ? (amount - balloonAmount) / term : 0;
             setMonthlyPayment(payment);
@@ -113,39 +106,24 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication token not found.");
+            if (!token) throw new Error("Authentication failed.");
 
             const quoteData = {
                 applicantId: user.uid,
                 fundingType: product.id,
                 amountRequested: amount,
-                details: {
-                    rate,
-                    term,
-                    balloonPercent: isBalloonProduct ? balloonPercent : undefined,
-                    monthlyPayment,
-                    totalRepayment,
-                },
+                details: { rate, term, balloonPercent: isBalloonProduct ? balloonPercent : undefined, monthlyPayment, totalRepayment },
                 createdAt: { _methodName: 'serverTimestamp' },
             };
 
-            const response = await fetch('/api/createQuote', {
+            await fetch('/api/createQuote', {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ data: quoteData }),
             });
             
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Failed to save quote.');
-
-            toast({
-                title: 'Quote Saved!',
-                description: 'Your quote has been saved to your profile.',
-            });
-            setView('conversion'); // Switch to conversion view
+            toast({ title: 'Quote Saved!' });
+            setView('conversion');
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: error.message });
         } finally {
@@ -153,85 +131,95 @@ function QuoteCalculator({ product, onQuoteSaved, onOpenChange }: { product: { i
         }
     };
     
-    const handleStartEnquiry = () => {
+    const handleRoute = (origination: 'direct' | 'market') => {
         onOpenChange(false);
-        router.push(`/funding/apply?type=${product.id}&amount=${amount}`);
+        router.push(`/funding/apply?type=${product.id}&amount=${amount}&origination=${origination}`);
     };
 
     if (view === 'conversion') {
         return (
-             <DialogContent>
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2"><CheckCircle className="h-6 w-6 text-green-500" /> Quote Saved Successfully</DialogTitle>
-                    <DialogDescription>
-                        Your quote has been saved to your account. Would you like to proceed with a formal enquiry based on this quote?
-                    </DialogDescription>
+             <DialogContent className="sm:max-w-2xl text-left text-foreground">
+                <DialogHeader className="p-4 border-b bg-green-50 rounded-t-lg">
+                    <DialogTitle className="flex items-center gap-2 font-black text-green-700 text-left">
+                        <CheckCircle className="h-6 w-6" /> Quote Secured
+                    </DialogTitle>
+                    <DialogDescription className="text-green-600">The forensic quote for <strong>{formatCurrency(amount)}</strong> is saved to your profile.</DialogDescription>
                 </DialogHeader>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>No, Not Yet</Button>
-                    <Button onClick={handleStartEnquiry}>
-                       Start Enquiry <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </DialogFooter>
+                
+                <div className="p-6 space-y-6 text-left">
+                    <h3 className="font-bold text-lg text-left">How would you like to initiate the handshake?</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                        <Button 
+                            variant="outline" 
+                            className="h-auto py-6 flex flex-col items-center gap-3 border-2 hover:border-primary transition-all text-left bg-white text-foreground"
+                            onClick={() => handleRoute('direct')}
+                        >
+                            <Landmark className="h-8 w-8 text-primary" />
+                            <div className="text-center">
+                                <p className="font-black uppercase text-xs">Direct Path</p>
+                                <p className="text-[10px] text-muted-foreground mt-1 max-w-[150px] whitespace-normal leading-tight">Send directly to the platform finance division.</p>
+                            </div>
+                        </Button>
+                        <Button 
+                            variant="default" 
+                            className="h-auto py-6 flex flex-col items-center gap-3 shadow-lg text-left"
+                            onClick={() => handleRoute('market')}
+                        >
+                            <Globe className="h-8 w-8" />
+                            <div className="text-center">
+                                <p className="font-black uppercase text-xs">Market Broadcast</p>
+                                <p className="text-[10px] text-primary-foreground/80 mt-1 max-w-[150px] whitespace-normal leading-tight">Expose this deal to our 85+ specialized lenders.</p>
+                            </div>
+                        </Button>
+                    </div>
+                </div>
             </DialogContent>
         )
     }
 
     return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Quote Calculator: {product.title}</DialogTitle>
-                <DialogDescription>
-                    Adjust the sliders to estimate your payments. This is an estimate and not a formal offer.
-                </DialogDescription>
+        <DialogContent className="text-left text-foreground">
+            <DialogHeader className="text-left">
+                <DialogTitle>Forensic Quote: {product.title}</DialogTitle>
+                <DialogDescription>Adjust variables to estimate your industrial funding cost.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-6 py-4">
-                <div>
+            <div className="space-y-8 py-6 text-left">
+                <div className="space-y-4 text-left">
                     <div className="flex justify-between items-center mb-2">
-                        <Label htmlFor="amount-slider">Loan Amount</Label>
-                        <span className="font-bold">{formatCurrency(amount)}</span>
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Total Capital Required</Label>
+                        <span className="font-black text-primary text-xl">{formatCurrency(amount)}</span>
                     </div>
-                    <Slider id="amount-slider" min={10000} max={5000000} step={10000} value={[amount]} onValueChange={(v) => setAmount(v[0])} />
+                    <Slider min={10000} max={5000000} step={10000} value={[amount]} onValueChange={(v) => setAmount(v[0])} />
                 </div>
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <Label htmlFor="rate-slider">Interest Rate (p.a.)</Label>
-                        <span className="font-bold">{rate.toFixed(1)}%</span>
+                <div className="grid grid-cols-2 gap-8 text-left">
+                    <div className="space-y-4 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Target Rate (% p.a.)</Label>
+                        <span className="block font-bold mb-2">{rate.toFixed(1)}%</span>
+                        <Slider min={5} max={30} step={0.5} value={[rate]} onValueChange={(v) => setRate(v[0])} />
                     </div>
-                    <Slider id="rate-slider" min={5} max={30} step={0.5} value={[rate]} onValueChange={(v) => setRate(v[0])} />
+                    <div className="space-y-4 text-left">
+                        <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Repayment Term</Label>
+                        <span className="block font-bold mb-2">{term} Months</span>
+                        <Slider min={12} max={120} step={6} value={[term]} onValueChange={(v) => setTerm(v[0])} />
+                    </div>
                 </div>
-                <div>
-                    <div className="flex justify-between items-center mb-2">
-                        <Label htmlFor="term-slider">Loan Term (Months)</Label>
-                        <span className="font-bold">{term}</span>
-                    </div>
-                    <Slider id="term-slider" min={12} max={120} step={6} value={[term]} onValueChange={(v) => setTerm(v[0])} />
-                </div>
-                 {isBalloonProduct && (
-                    <div>
-                        <div className="flex justify-between items-center mb-2">
-                            <Label htmlFor="balloon-slider">Balloon Percentage</Label>
-                            <span className="font-bold">{balloonPercent}% ({formatCurrency(amount * (balloonPercent / 100))})</span>
-                        </div>
-                        <Slider id="balloon-slider" min={0} max={50} step={5} value={[balloonPercent]} onValueChange={(v) => setBalloonPercent(v[0])} />
-                    </div>
-                )}
 
-                <div className="border-t border-dashed pt-4 space-y-2">
-                    <div className="flex justify-between items-center">
-                        <p className="font-semibold">Estimated Monthly Payment:</p>
-                        <p className="text-xl font-bold text-primary">{formatCurrency(monthlyPayment)}</p>
+                <div className="p-6 bg-slate-900 rounded-2xl text-white shadow-xl space-y-4 text-left">
+                    <div className="flex justify-between items-baseline text-left">
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Estimated Installment</span>
+                        <span className="text-4xl font-black text-primary">{formatCurrency(monthlyPayment)}</span>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                        <p className="text-muted-foreground">Total Repayment:</p>
-                        <p className="font-mono text-muted-foreground">{formatCurrency(totalRepayment)}</p>
+                    <Separator className="bg-white/10" />
+                    <div className="flex justify-between text-xs text-slate-400">
+                        <span>Total Commit (Incl. Interest)</span>
+                        <span className="font-mono">{formatCurrency(totalRepayment)}</span>
                     </div>
                 </div>
             </div>
-            <DialogFooter>
-                <Button onClick={handleSaveQuote} disabled={isSaving}>
+            <DialogFooter className="bg-slate-50 border-t p-6 rounded-b-lg">
+                <Button onClick={handleSaveQuote} disabled={isSaving} className="w-full h-14 font-black uppercase text-lg shadow-xl text-white">
                     {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Save Quote
+                    Save Quote & Proceed
                 </Button>
             </DialogFooter>
         </DialogContent>
@@ -243,94 +231,59 @@ function ProductTypesContent() {
     const [isClient, setIsClient] = useState(false);
     const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
+    useEffect(() => { setIsClient(true); }, []);
 
     const agreement = searchParams.get('agreement') as keyof typeof productsData;
-    
-    // Defer data and icon selection until client-side
     const categoryData = isClient ? productsData[agreement] : null;
-    const Icon = categoryData?.icon || Landmark; // Default icon for server render
-
-    const handleQuoteSaved = (productId: string) => {
-        // The dialog logic is now handled inside the QuoteCalculator component
-    };
+    const Icon = categoryData?.icon || Landmark;
 
     return (
-        <div className="container mx-auto px-4 py-16">
-            <div className="text-center max-w-3xl mx-auto mb-12">
-                 {isClient && categoryData ? <Icon className="h-12 w-12 text-primary mx-auto mb-4" /> : <div className="h-12 w-12 mx-auto mb-4" />}
-                <h1 className="text-4xl md:text-5xl font-bold font-headline">{isClient && categoryData ? categoryData.title : 'Products'}</h1>
-                <p className="mt-4 text-lg md:text-xl text-muted-foreground">
-                    Select a specific product to start your application.
-                </p>
+        <div className="container mx-auto px-4 py-20 text-left text-foreground">
+            <div className="text-left max-w-3xl mb-16 space-y-4">
+                 {isClient && categoryData ? <Icon className="h-12 w-12 text-primary" /> : <div className="h-12 w-12" />}
+                <h1 className="text-4xl md:text-5xl font-black font-headline uppercase tracking-tight">{isClient && categoryData ? categoryData.title : 'Products'}</h1>
+                <p className="text-xl text-muted-foreground">Select a specific structure to generate your forensic quote.</p>
             </div>
             
-            {isClient && categoryData && categoryData.items.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {isClient && categoryData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl text-left">
                     {categoryData.items.map(product => (
                         <Dialog key={product.id} open={openDialogs[product.id] || false} onOpenChange={(isOpen) => setOpenDialogs(prev => ({...prev, [product.id]: isOpen}))}>
-                            <Card className="flex flex-col">
-                                <CardHeader>
-                                    <CardTitle>{product.title}</CardTitle>
+                            <Card className="flex flex-col border-none shadow-xl bg-white hover:ring-2 ring-primary/20 transition-all text-left">
+                                <CardHeader className="p-8 pb-4">
+                                    <CardTitle className="text-xl font-bold">{product.title}</CardTitle>
+                                    <CardDescription className="text-sm leading-relaxed mt-2">{product.description}</CardDescription>
                                 </CardHeader>
-                                <CardContent className="flex-grow">
-                                    <CardDescription>{product.description}</CardDescription>
-                                </CardContent>
-                                <CardFooter className="flex flex-col sm:flex-row gap-2">
+                                <CardFooter className="p-8 pt-0 gap-3">
                                      <DialogTrigger asChild>
-                                        <Button variant="outline" className="w-full">
-                                            <Calculator className="mr-2 h-4 w-4" />
-                                            Get Quote
+                                        <Button variant="outline" className="flex-1 h-12 font-bold gap-2">
+                                            <Calculator className="h-4 w-4" /> Get Quote
                                         </Button>
                                     </DialogTrigger>
-                                    <Button asChild className="w-full">
+                                    <Button asChild className="flex-1 h-12 font-bold gap-2 shadow-md">
                                         <Link href={`/funding/apply?type=${product.id}`}>
-                                            Start Enquiry <ArrowRight className="ml-2 h-4 w-4" />
+                                            Apply Now <ArrowRight className="h-4 w-4" />
                                         </Link>
                                     </Button>
                                 </CardFooter>
                             </Card>
                             <QuoteCalculator 
                                 product={product} 
-                                onQuoteSaved={() => handleQuoteSaved(product.id)}
                                 onOpenChange={(isOpen) => setOpenDialogs(prev => ({...prev, [product.id]: isOpen}))} 
                             />
                         </Dialog>
                     ))}
                 </div>
-            ) : isClient ? (
-                <Card className="max-w-2xl mx-auto">
-                    <CardHeader>
-                        <CardTitle>Products Coming Soon</CardTitle>
-                        <CardDescription>
-                            The products for this agreement type are being finalized. Please check back soon or contact us for more information.
-                        </CardDescription>
-                    </CardHeader>
-                     <CardFooter>
-                        <Button asChild variant="outline">
-                            <Link href="/contact">Contact Us</Link>
-                        </Button>
-                    </CardFooter>
-                </Card>
             ) : (
-                <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin"/></div>
+                <div className="flex justify-center py-20"><Loader2 className="h-12 w-12 animate-spin text-primary"/></div>
             )}
-
-             <div className="text-center mt-16">
-                <Button asChild variant="secondary">
-                    <Link href="/funding">Back to Funding Structures</Link>
-                </Button>
-            </div>
-
         </div>
     )
 }
 
 export default function ProductTypesPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<div className="flex justify-center py-40"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
             <ProductTypesContent />
         </Suspense>
     );
