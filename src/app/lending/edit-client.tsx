@@ -12,11 +12,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info } from 'lucide-react';
-import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, User, Building, Phone, Mail, Globe, Users, Banknote, FileText, BarChart, PlusCircle, Trash2, Sparkles, Camera, ShieldCheck, Zap, UserCircle, Wrench, Info, Scale, Gavel, History, MapPin, Landmark } from 'lucide-react';
+import { getClientSideAuthToken, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -25,496 +26,518 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 import { Separator } from '@/components/ui/separator';
-import { doc, query, collection, serverTimestamp } from 'firebase/firestore';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { doc, serverTimestamp } from 'firebase/firestore';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-// API Helper
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-        cache: 'no-store'
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
+// --- ZOD SCHEMA (ENHANCED FOR FORENSIC INTERVIEW) ---
 
-
-// --- ZOD Schemas ---
-const contactSchema = z.object({
+const contactInfoSchema = z.object({
     name: z.string().optional(),
-    position: z.string().optional(),
-    cell: z.string().optional(),
     email: z.string().email().optional().or(z.literal('')),
+    phone: z.string().optional(),
 });
-
-const ownerSchema = z.object({
-    name: z.string().optional(), address: z.string().optional(), suburb: z.string().optional(), city: z.string().optional(),
-    postCode: z.string().optional(), idNumber: z.string().optional(), cell: z.string().optional(), position: z.string().optional(),
-    qualification: z.string().optional(), since: z.string().optional(), percentageHeld: z.coerce.number().optional(),
-});
-const managementSchema = z.object({
-    name: z.string().optional(), address: z.string().optional(), suburb: z.string().optional(), city: z.string().optional(),
-    postCode: z.string().optional(), idNumber: z.string().optional(), cell: z.string().optional(), position: z.string().optional(),
-    qualification: z.string().optional(), since: z.string().optional(),
-});
-const bankAccountSchema = z.object({
-    bankName: z.string().optional(), branchCode: z.string().optional(), accountNumber: z.string().optional(), branchName: z.string().optional(),
-    bankCode: z.string().optional(), address: z.string().optional(), postCode: z.string().optional(), phone: z.string().optional(),
-    email: z.string().email().optional().or(z.literal('')), contactPerson: z.string().optional(),
-});
-const balanceSheetSchema = z.object({
-    periodEndDate: z.string().optional(),
-    propertyPlantEquipment: z.coerce.number().optional(),
-    intangibleAssets: z.coerce.number().optional(),
-    inventory: z.coerce.number().optional(),
-    tradeReceivables: z.coerce.number().optional(),
-    cashEquivalents: z.coerce.number().optional(),
-    shareCapital: z.coerce.number().optional(),
-    retainedEarnings: z.coerce.number().optional(),
-    longTermLoans: z.coerce.number().optional(),
-    tradePayables: z.coerce.number().optional(),
-    shortTermLoans: z.coerce.number().optional(),
-});
-const incomeStatementSchema = z.object({
-    periodEndDate: z.string().optional(),
-    revenue: z.coerce.number().optional(),
-    cogs: z.coerce.number().optional(),
-    operatingExpenses: z.coerce.number().optional(),
-    interestExpense: z.coerce.number().optional(),
-    taxation: z.coerce.number().optional(),
-});
-
-const entityTypes = [
-    "Ltd",
-    "Private Company (Pty Ltd)",
-    "Sole Proprietorship",
-    "Close Corporation (CC)",
-    "Trust",
-    "Individual",
-    "Partnership"
-];
 
 const clientSchema = z.object({
-  name: z.string().min(1, 'Client name is required'),
-  code: z.string().optional(),
-  type: z.string().min(1, 'Client type is required'),
-  category: z.string().optional(),
-  status: z.enum(['draft', 'active', 'inactive', 'suspended']).default('draft'),
+  // Section 1: Capacity
+  applyingCapacity: z.enum(['individual', 'entity']).default('entity'),
+  entityType: z.string().optional(),
+  name: z.string().min(1, 'Name is required'),
   registrationId: z.string().optional(),
+  
+  // Section 2: CIPC & VAT
   vatRegistered: z.boolean().default(false),
-  physicalAddress: z.string().optional(),
-  physicalPostalCode: z.string().optional(),
-  postalAddress: z.string().optional(),
-  postalPostalCode: z.string().optional(),
-  url: z.string().url().optional().or(z.literal('')),
-  contacts: z.array(contactSchema).optional(),
-  owners: z.array(ownerSchema).optional(),
-  management: z.array(managementSchema).optional(),
-  bankAccounts: z.array(bankAccountSchema).optional(),
-  balanceSheets: z.array(balanceSheetSchema).optional(),
-  incomeStatements: z.array(incomeStatementSchema).optional(),
+  vatNumber: z.string().optional(),
+  vatUpToDate: z.boolean().default(true),
+  cipcLevyUpToDate: z.boolean().default(true),
+  
+  // Section 3: Governance
+  shareholderCount: z.coerce.number().min(0).default(0),
+  directorCount: z.coerce.number().min(0).default(0),
+  signingAuthority: z.enum(['single', 'multiple']).default('single'),
+  hasSigningResolution: z.boolean().default(false),
+  
+  // Section 4: Financial Dates
+  lastSignedAfsDate: z.string().optional(),
+  lastManagementAccountsDate: z.string().optional(),
+
+  // Section 5: NCA Compliance
+  annualTurnover: z.coerce.number().min(0).default(0),
+  totalAssetValue: z.coerce.number().min(0).default(0),
+
+  // Section 6: Credit Forensic
+  hasReturnedPayments: z.boolean().default(false),
+  hasJudgements: z.boolean().default(false),
+  hasLegalAction: z.boolean().default(false),
+  
+  // Section 7: Background & Fleet
+  isSelfEmployed: z.boolean().default(false),
+  truckCount: z.coerce.number().min(0).default(0),
+  trailerCount: z.coerce.number().min(0).default(0),
+  yearsInIndustry: z.coerce.number().min(0).default(0),
+
+  // Section 8: Financial Management (Dynamic)
+  bookkeepingType: z.enum(['in_house', 'external']).default('external'),
+  hasInHouseBookkeeper: z.boolean().default(false),
+  bookkeeperContact: contactInfoSchema.optional(),
+
+  // Section 9: Infrastructure (Dynamic)
+  ownsOperatingProperty: z.boolean().default(false),
+  propertyDetails: z.object({
+      address: z.string().optional(),
+      marketValue: z.coerce.number().optional(),
+  }).optional(),
+  propertyLiability: z.object({
+      bondholder: z.string().optional(),
+      outstandingBalance: z.coerce.number().optional(),
+  }).optional(),
+
+  status: z.enum(['draft', 'active', 'inactive', 'suspended']).default('draft'),
 });
+
 type ClientFormValues = z.infer<typeof clientSchema>;
 
 // --- STEP COMPONENTS ---
-const StepMain = () => {
-    const { control } = useFormContext<ClientFormValues>();
-    return (
-         <div className="space-y-6 text-left text-foreground">
-            <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Client Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <div className="grid grid-cols-2 gap-4 text-left">
-                <FormField control={control} name="type" render={({ field }) => (
-                    <FormItem className="text-left text-foreground">
-                        <FormLabel>Type</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Select a type..." /></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {entityTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )} />
-                <FormField control={control} name="status" render={({ field }) => (<FormItem className="text-left"><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="draft">Draft</SelectItem><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem><SelectItem value="suspended">Suspended</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-            </div>
-             <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Registration ID / RSA ID</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="vatRegistered" render={({ field }) => (<FormItem className="flex items-center space-x-2 pt-2 text-left"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="cursor-pointer font-bold text-foreground">VAT Registered?</Label></FormItem>)} />
-        </div>
-    )
-};
 
-const StepAddress = () => {
+const StepCapacity = () => {
     const { control } = useFormContext<ClientFormValues>();
     return (
         <div className="space-y-6 text-left">
-            <div className="text-left text-foreground">
-                <h4 className="font-semibold mb-2 flex items-center gap-2 text-left"><Building className="h-4 w-4 text-primary" /> Physical Address</h4>
-                <div className="space-y-4 p-4 border rounded-md bg-white text-left">
-                    <FormField control={control} name="physicalAddress" render={({ field }) => (<FormItem className="text-left"><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
-                    <FormField control={control} name="physicalPostalCode" render={({ field }) => (<FormItem className="text-left"><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
-                </div>
-            </div>
-             <div className="text-left text-foreground">
-                <h4 className="font-semibold mb-2 flex items-center gap-2 text-left"><Globe className="h-4 w-4 text-primary" /> Postal Address</h4>
-                <div className="space-y-4 p-4 border rounded-md bg-white text-left text-foreground">
-                    <FormField control={control} name="postalAddress" render={({ field }) => (<FormItem className="text-left"><FormLabel>Street Address</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
-                    <FormField control={control} name="postalPostalCode" render={({ field }) => (<FormItem className="text-left"><FormLabel>Postal Code</FormLabel><FormControl><Input {...field} value={field.value || ''} /></FormControl></FormItem>)} />
-                </div>
-            </div>
-        </div>
-    )
-};
+            <FormField control={control} name="applyingCapacity" render={({ field }) => (
+                <FormItem className="space-y-3">
+                    <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Applying Capacity</FormLabel>
+                    <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-4">
+                            <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'individual' ? "border-primary bg-primary/5" : "bg-white")}>
+                                <RadioGroupItem value="individual" id="cap-ind" />
+                                <Label htmlFor="cap-ind" className="cursor-pointer font-bold">Individual / Sole Prop</Label>
+                            </div>
+                            <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'entity' ? "border-primary bg-primary/5" : "bg-white")}>
+                                <RadioGroupItem value="entity" id="cap-ent" />
+                                <Label htmlFor="cap-ent" className="cursor-pointer font-bold">Legal Entity (Company/Trust)</Label>
+                            </div>
+                        </RadioGroup>
+                    </FormControl>
+                </FormItem>
+            )} />
+            
+            <FormField control={control} name="name" render={({ field }) => (
+                <FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-11 border-2 bg-white font-bold" /></FormControl><FormMessage /></FormItem>
+            )} />
 
-const ArrayStep = ({ name, title, fieldsConfig }: { name: any, title: string, fieldsConfig: {id: string, label: string, type: string}[] }) => {
-    const { control } = useFormContext<ClientFormValues>();
-    const { fields, append, remove } = useFieldArray({ control, name });
-
-    return (
-        <div className="space-y-4 text-left">
-            {fields.map((item, index) => (
-                <div key={item.id} className="p-4 border rounded-lg relative bg-white text-left text-foreground">
-                    <h4 className="font-medium mb-2 text-left">{title} #{index + 1}</h4>
-                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left text-foreground">
-                        {fieldsConfig.map(config => (
-                            <FormField
-                                control={control}
-                                key={`${item.id}-${config.id}`}
-                                name={`${name}.${index}.${config.id}` as any}
-                                render={({ field }) => (
-                                    <FormItem className="text-left">
-                                        <FormLabel>{config.label}</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                type={config.type}
-                                                {...field}
-                                                value={field.value || ''}
-                                                onChange={e => field.onChange(config.type === 'number' ? parseFloat(e.target.value) || '' : e.target.value)}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        ))}
-                    </div>
-                    <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                </div>
-            ))}
-            <Button type="button" variant="outline" onClick={() => append({})} className="font-bold border-2 text-left">
-                <PlusCircle className="mr-2 h-4 w-4" /> Add {title}
-            </Button>
-        </div>
-    )
-}
-
-function FileUploadField({ name, label, folder, variant = 'standard' }: { name: any, label: string, folder: string, variant?: 'standard' | 'compact' }) {
-    const { setValue, watch } = useFormContext<ApplicationFormValues>();
-    const [isUploading, setIsUploading] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const { user } = useUser();
-    const { toast } = useToast();
-    const currentUrl = watch(name);
-
-    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file || !user) return;
-
-        setIsUploading(true);
-        setProgress(10);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed.");
-
-            const reader = new FileReader();
-            const dataUri = await new Promise<string>((resolve) => {
-                reader.onload = () => resolve(reader.result as string);
-                reader.readAsDataURL(file);
-            });
-
-            setProgress(30);
-            const fileName = `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}`;
-            const res = await fetch('/api/uploadImageAsset', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName, contentType: file.type })
-            });
-
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.error);
-
-            setValue(name, result.url, { shouldValidate: true });
-            setProgress(100);
-            toast({ title: `${label} Attached` });
-        } catch (err: any) {
-            toast({ variant: 'destructive', title: "Upload Failed", description: err.message });
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    return (
-        <div className="space-y-1.5 text-left">
-            {variant === 'standard' && <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{label}</Label>}
-            <div className="flex items-center gap-2">
-                <Button 
-                    type="button" 
-                    variant="outline" 
-                    size={variant === 'compact' ? 'sm' : 'default'}
-                    className={cn(
-                        "h-10 gap-2 border-2 text-xs font-bold", 
-                        currentUrl ? "border-green-500 bg-green-50 text-green-700" : "border-dashed",
-                        variant === 'compact' && "h-8 px-3"
-                    )}
-                    onClick={() => document.getElementById(`upload-${name}`)?.click()}
-                    disabled={isUploading}
-                >
-                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin"/> : currentUrl ? <UserCheck className="h-4 w-4" /> : <FileUp className="h-4 w-4" />}
-                    {currentUrl ? `Update ${label}` : `Attach ${label}`}
-                </Button>
-                <input id={`upload-${name}`} type="file" className="hidden" onChange={handleUpload} />
-            </div>
-            {isUploading && <Progress value={progress} className="h-1 mt-1" />}
+            {control._formValues.applyingCapacity === 'entity' && (
+                <FormField control={control} name="entityType" render={({ field }) => (
+                    <FormItem className="text-left">
+                        <FormLabel>Type of Entity</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                            <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                            <SelectContent>
+                                <SelectItem value="Pty Ltd">Private Company (Pty Ltd)</SelectItem>
+                                <SelectItem value="Ltd">Public Company (Ltd)</SelectItem>
+                                <SelectItem value="CC">Close Corporation (CC)</SelectItem>
+                                <SelectItem value="Trust">Trust</SelectItem>
+                                <SelectItem value="Partnership">Partnership</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </FormItem>
+                )} />
+            )}
         </div>
     );
-}
+};
 
-// --- WIZARD COMPONENT ---
-const steps = [
-    { id: 'main', title: 'Main', icon: Sparkles, fields: ['name', 'type', 'status', 'registrationId', 'vatRegistered'] },
-    { id: 'address', title: 'Address', icon: Building, fields: ['physicalAddress', 'physicalPostalCode', 'postalAddress', 'postalPostalCode'] },
-    { id: 'contact', title: 'Contact', icon: Phone, fields: ['contacts'] },
-    { id: 'owners', title: 'Owners', icon: Users, fields: ['owners'] },
-    { id: 'management', title: 'Management', icon: Users, fields: ['management'] },
-    { id: 'bankAccounts', title: 'Bank Accounts', icon: Banknote, fields: ['bankAccounts'] },
-    { id: 'balanceSheet', title: 'Balance Sheet', icon: FileText, fields: ['balanceSheets'] },
-    { id: 'incomeStatement', title: 'Income Statement', icon: BarChart, fields: ['incomeStatements'] },
-    { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
-];
+const StepCompliance = () => {
+    const { control, watch } = useFormContext<ClientFormValues>();
+    const isVatRegistered = watch('vatRegistered');
 
-interface EditClientWizardProps {
-  client?: any;
-  onSave: () => void;
-  onBack: () => void;
-}
+    return (
+        <div className="space-y-6 text-left">
+            <div className="grid grid-cols-2 gap-8 text-left">
+                <FormField control={control} name="vatRegistered" render={({ field }) => (
+                    <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white">
+                        <FormLabel className="font-bold">VAT Registered?</FormLabel>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )} />
+                {isVatRegistered && (
+                    <FormField control={control} name="vatNumber" render={({ field }) => (
+                        <FormItem className="text-left"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2" /></FormControl></FormItem>
+                    )} />
+                )}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <FormField control={control} name="vatUpToDate" render={({ field }) => (
+                    <FormItem className="flex items-center justify-between p-4 border rounded-xl bg-white">
+                        <FormLabel className="text-sm font-medium">VAT Returns Up to Date?</FormLabel>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )} />
+                <FormField control={control} name="cipcLevyUpToDate" render={({ field }) => (
+                    <FormItem className="flex items-center justify-between p-4 border rounded-xl bg-white">
+                        <FormLabel className="text-sm font-medium">CIPC Annual Levy Paid?</FormLabel>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )} />
+            </div>
 
-export function EditClientWizard({ client, onSave, onBack }: EditClientWizardProps) {
-    const [isLoading, setIsLoading] = useState(false);
-    const [currentStep, setCurrentStep] = useState(0);
-    const [completedSteps, setCompletedSteps] = useState(new Set<string>());
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="lastSignedAfsDate" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Last Signed AFS Date</FormLabel><FormControl><Input type="date" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                )} />
+                <FormField control={control} name="lastManagementAccountsDate" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Last Management Accounts Date</FormLabel><FormControl><Input type="date" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                )} />
+            </div>
+        </div>
+    );
+};
+
+const StepGovernance = () => {
+    const { control } = useFormContext<ClientFormValues>();
+    return (
+        <div className="space-y-6 text-left">
+            <div className="grid grid-cols-2 gap-4">
+                <FormField control={control} name="shareholderCount" render={({ field }) => (<FormItem><FormLabel>Number of Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>)} />
+                <FormField control={control} name="directorCount" render={({ field }) => (<FormItem><FormLabel>Number of Directors</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>)} />
+            </div>
+            
+            <FormField control={control} name="signingAuthority" render={({ field }) => (
+                <FormItem className="space-y-3">
+                    <FormLabel>Signing Authority</FormLabel>
+                    <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="flex gap-6">
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="single" id="auth-single" /><Label htmlFor="auth-single">Single Director</Label></div>
+                            <div className="flex items-center space-x-2"><RadioGroupItem value="multiple" id="auth-mult" /><Label htmlFor="auth-mult">Multiple Directors</Label></div>
+                        </RadioGroup>
+                    </FormControl>
+                </FormItem>
+            )} />
+
+            <FormField control={control} name="hasSigningResolution" render={({ field }) => (
+                <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-slate-50 border-dashed">
+                    <div className="space-y-0.5">
+                        <FormLabel className="font-bold">Signing Resolution on File?</FormLabel>
+                        <FormDescription className="text-[10px]">Does the board have a signed resolution authorizing this application?</FormDescription>
+                    </div>
+                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                </FormItem>
+            )} />
+        </div>
+    );
+};
+
+const StepCreditForensic = () => {
+    const { control } = useFormContext<ClientFormValues>();
+    return (
+        <div className="space-y-6 text-left">
+            <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4">
+                <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs">
+                    <ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure
+                </div>
+                
+                <FormField control={control} name="hasReturnedPayments" render={({ field }) => (
+                    <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
+                        <FormLabel className="text-sm">Any returned payments (12 Months)?</FormLabel>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )} />
+
+                <FormField control={control} name="hasJudgements" render={({ field }) => (
+                    <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
+                        <FormLabel className="text-sm">Any active judgements?</FormLabel>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )} />
+
+                <FormField control={control} name="hasLegalAction" render={({ field }) => (
+                    <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
+                        <FormLabel className="text-sm">Any legal action pending/past 12mo?</FormLabel>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )} />
+            </div>
+        </div>
+    );
+};
+
+const StepBackground = () => {
+    const { control } = useFormContext<ClientFormValues>();
+    return (
+        <div className="space-y-6 text-left text-foreground">
+            <div className="grid grid-cols-2 gap-6 text-left">
+                <FormField control={control} name="isSelfEmployed" render={({ field }) => (
+                    <FormItem className="flex items-center justify-between p-4 border rounded-2xl bg-white">
+                        <FormLabel className="font-bold">Self Employed?</FormLabel>
+                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                    </FormItem>
+                )} />
+                <FormField control={control} name="yearsInIndustry" render={({ field }) => (
+                    <FormItem><FormLabel>Years in Industry</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2" /></FormControl></FormItem>
+                )} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-6 text-left text-foreground">
+                <FormField control={control} name="truckCount" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Number of Trucks Owned</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                )} />
+                <FormField control={control} name="trailerCount" render={({ field }) => (
+                    <FormItem className="text-left"><FormLabel>Number of Trailers Owned</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>
+                )} />
+            </div>
+        </div>
+    );
+};
+
+const StepFinancialManagement = () => {
+    const { control, watch } = useFormContext<ClientFormValues>();
+    const bType = watch('bookkeepingType');
+    const hasInHouse = watch('hasInHouseBookkeeper');
+
+    return (
+        <div className="space-y-8 text-left text-foreground">
+            <FormField control={control} name="bookkeepingType" render={({ field }) => (
+                <FormItem className="space-y-4 text-left">
+                    <FormLabel className="font-bold text-lg">How is your bookkeeping managed?</FormLabel>
+                    <FormControl>
+                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-2 gap-4">
+                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'in_house' ? "border-primary bg-primary/5" : "bg-white")}>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="in_house" id="bk-in" /><Label htmlFor="bk-in" className="cursor-pointer font-bold">In-House Team</Label></div>
+                            </div>
+                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'external' ? "border-primary bg-primary/5" : "bg-white")}>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="external" id="bk-ex" /><Label htmlFor="bk-ex" className="cursor-pointer font-bold">External Firm</Label></div>
+                            </div>
+                        </RadioGroup>
+                    </FormControl>
+                </FormItem>
+            )} />
+
+            {bType === 'in_house' && (
+                <div className="space-y-4 p-6 border rounded-2xl bg-white animate-in slide-in-from-top-2 text-left">
+                    <FormField control={control} name="hasInHouseBookkeeper" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between mb-4">
+                            <FormLabel className="font-bold">Do you have a dedicated bookkeeper?</FormLabel>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
+                    )} />
+                </div>
+            )}
+
+            {(bType === 'external' || (bType === 'in_house' && hasInHouse)) && (
+                <div className="space-y-4 p-6 border-2 border-dashed rounded-2xl bg-slate-50 animate-in fade-in duration-500 text-left">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                        <Users className="h-4 w-4" /> 
+                        {bType === 'external' ? 'External Accountant Details' : 'Bookkeeper Details'}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                        <FormField control={control} name="bookkeeperContact.name" render={({ field }) => (<FormItem><FormLabel>Full Name / Firm</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem>)} />
+                        <FormField control={control} name="bookkeeperContact.email" render={({ field }) => (<FormItem><FormLabel>Direct E-mail</FormLabel><FormControl><Input type="email" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                        <FormField control={control} name="bookkeeperContact.phone" render={({ field }) => (<FormItem className="md:col-span-2"><FormLabel>Direct Phone / Mobile</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem>)} />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+const StepInfrastructure = () => {
+    const { control, watch } = useFormContext<ClientFormValues>();
+    const ownsProperty = watch('ownsOperatingProperty');
+
+    return (
+        <div className="space-y-8 text-left text-foreground">
+             <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
+                <FormItem className="flex items-center justify-between p-6 border-2 rounded-3xl bg-white shadow-sm">
+                    <div className="space-y-1">
+                        <FormLabel className="text-lg font-black uppercase tracking-tight">Property Ownership</FormLabel>
+                        <FormDescription>Do you own the property where you operate from?</FormDescription>
+                    </div>
+                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="data-[state=checked]:bg-primary" /></FormControl>
+                </FormItem>
+            )} />
+
+            {ownsProperty ? (
+                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-primary/5 animate-in zoom-in-95 duration-500 text-left">
+                    <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2">
+                        <MapPin className="h-4 w-4" /> Operating Property Details
+                    </h4>
+                    <FormField control={control} name="propertyDetails.address" render={({ field }) => (<FormItem><FormLabel>Physical Site Address</FormLabel><FormControl><Textarea {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                        <FormField control={control} name="propertyDetails.marketValue" render={({ field }) => (<FormItem><FormLabel>Estimated Market Value (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name="propertyLiability.outstandingBalance" render={({ field }) => (<FormItem><FormLabel>Outstanding Bond (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    </div>
+                    <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem><FormLabel>Bondholder Institution</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                </div>
+            ) : (
+                <div className="space-y-6 p-8 border-2 border-dashed rounded-3xl bg-slate-50 animate-in fade-in duration-500 text-left">
+                    <h4 className="font-black uppercase text-[10px] tracking-widest text-slate-600 flex items-center gap-2">
+                        <Landmark className="h-4 w-4" /> Landlord / Lease Info
+                    </h4>
+                    <FormField control={control} name="propertyLiability.bondholder" render={({ field }) => (<FormItem><FormLabel>Landlord / Managing Agent Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                    <p className="text-xs text-muted-foreground italic">If the property is rented, the landlord details are required for forensic standing verification.</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
+
+// --- MASTER WIZARD ---
+
+export function EditClientWizard({ client, onSave, onBack }: { client?: any, onSave: () => void, onBack: () => void }) {
     const { toast } = useToast();
+    const [currentStep, setCurrentStep] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const methods = useForm<ClientFormValues>({
         resolver: zodResolver(clientSchema),
         mode: 'onChange',
-        defaultValues: client || { status: 'draft', vatRegistered: false, contacts: [], owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] },
+        defaultValues: client || { applyingCapacity: 'entity', status: 'draft' }
     });
 
-    useEffect(() => {
-        const initialValues = client || { status: 'draft', vatRegistered: false, contacts: [], owners: [], management: [], bankAccounts: [], balanceSheets: [], incomeStatements: [] };
-        methods.reset(initialValues);
+    const watchedValues = methods.watch();
 
-        const validateInitialSteps = async () => {
-            const initiallyCompleted = new Set<string>();
-            for (let i = 0; i < steps.length; i++) {
-                const step = steps[i];
-                if (step.fields.length > 0) {
-                    const isValid = await methods.trigger(step.fields as any);
-                    if (isValid) {
-                        initiallyCompleted.add(step.id);
-                    }
-                }
-            }
-            setCompletedSteps(initiallyCompleted);
-        };
+    // DYNAMIC STEPS LOGIC
+    const memoizedSteps = useMemo(() => {
+        const base = [
+            { id: 'capacity', title: 'Capacity', icon: User, fields: ['applyingCapacity', 'name', 'entityType', 'registrationId'] },
+        ];
 
-        if (client) {
-            validateInitialSteps();
-        } else {
-             setCompletedSteps(new Set());
+        if (watchedValues.applyingCapacity === 'entity') {
+            base.push({ id: 'compliance', title: 'CIPC & VAT', icon: ShieldCheck, fields: ['vatRegistered', 'vatNumber', 'vatUpToDate', 'cipcLevyUpToDate', 'lastSignedAfsDate', 'lastManagementAccountsDate'] });
+            base.push({ id: 'governance', title: 'Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount', 'signingAuthority', 'hasSigningResolution'] });
         }
-    }, [client, methods]);
 
-    const handleAiExtraction = useCallback((stepId: string, data: any) => {
-        if (stepId === 'main') {
-            if (data.name) methods.setValue('name', data.name);
-            if (data.registrationNumber) methods.setValue('registrationId', data.registrationNumber);
-            if (data.idNumber) methods.setValue('registrationId', data.idNumber);
-            if (data.address) methods.setValue('physicalAddress', data.address);
-        } else if (stepId === 'bankAccounts') {
-             const current = methods.getValues('bankAccounts') || [];
-             methods.setValue('bankAccounts', [...current, { 
-                 bankName: data.bankName, 
-                 accountNumber: data.accountNumber,
-                 branchCode: data.branchCode 
-             }]);
-        }
-        toast({ title: "Forensic Data Mapped", description: "The AI results have been committed to the form." });
-    }, [methods, toast]);
+        base.push({ id: 'nca', title: 'NCA Data', icon: Landmark, fields: ['annualTurnover', 'totalAssetValue'] });
+        base.push({ id: 'credit', title: 'Forensic Risk', icon: ShieldAlert, fields: ['hasReturnedPayments', 'hasJudgements', 'hasLegalAction'] });
+        base.push({ id: 'background', title: 'Footprint', icon: Truck, fields: ['isSelfEmployed', 'yearsInIndustry', 'truckCount', 'trailerCount'] });
+        base.push({ id: 'finance_mgmt', title: 'Financial Management', icon: Banknote, fields: ['bookkeepingType', 'hasInHouseBookkeeper', 'bookkeeperContact'] });
+        base.push({ id: 'infrastructure', title: 'Standing', icon: Building, fields: ['ownsOperatingProperty', 'propertyDetails', 'propertyLiability'] });
+        base.push({ id: 'review', title: 'Review', icon: CheckCircle, fields: [] });
+
+        return base;
+    }, [watchedValues]);
+
+    const handleAiExtraction = (data: any) => {
+        // Shared mapping logic
+        if (data.registrationNumber) methods.setValue('registrationId', data.registrationNumber);
+        if (data.name) methods.setValue('name', data.name);
+        toast({ title: "Forensic Data Mapped", description: "AI extraction results committed to form." });
+    };
 
     const onSubmit = async (values: ClientFormValues) => {
-        setIsLoading(true);
+        setIsSubmitting(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'saveLendingClient', { client: { id: client?.id, ...values } });
-            toast({ title: client ? 'Client Updated' : 'Client Created' });
+            if (!token) throw new Error("Auth failed.");
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'saveLendingClient', payload: { client: { id: client?.id, ...values } } })
+            });
+            toast({ title: "Forensic Record Commited" });
             onSave();
         } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
+            toast({ variant: 'destructive', title: "Save Error", description: e.message });
         } finally {
-            setIsLoading(false);
+            setIsSubmitting(false);
         }
     };
-    
-    const handleNext = async () => {
-        const stepFields = steps[currentStep].fields;
-        if (!stepFields || stepFields.length === 0) {
-            if (currentStep < steps.length - 1) {
-                setCompletedSteps(prev => new Set(prev).add(steps[currentStep].id));
-                setCurrentStep(prev => prev + 1);
-            }
-            return;
-        }
 
-        const isValid = await methods.trigger(stepFields as any);
-        if (isValid) {
-            setCompletedSteps(prev => new Set(prev).add(steps[currentStep].id));
-            if (currentStep < steps.length - 1) {
-                setCurrentStep(prev => prev + 1);
-            }
-        } else {
-            toast({ variant: "destructive", title: "Please complete all required fields for this step." });
-        }
-    };
-    
-    const handleBackStep = () => setCurrentStep(prev => prev - 1);
-    
-    const getSuggestedDocType = useCallback((stepId: string) => {
-        const type = methods.watch('type');
-        if (stepId === 'main') {
-            if (type === 'Individual' || type === 'Sole Proprietorship') return 'rsa_id';
-            if (type === 'Trust') return 'trust_deed';
-            if (type === 'Partnership') return 'partnership_agreement';
-            return 'company_formation';
-        }
-        if (stepId === 'bankAccounts') return 'bank_statement';
-        if (stepId === 'balanceSheet' || stepId === 'incomeStatement') return 'invoice';
-        if (stepId === 'asset') return 'rc1';
-        return 'invoice';
-    }, [methods]);
-
-    const renderStepContent = () => {
-        const stepId = steps[currentStep]?.id;
-        const stepTitle = steps[currentStep]?.title;
-        
-        const aiButton = stepId !== 'review' && (
-            <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] mb-10 flex flex-col md:flex-row items-center justify-between gap-6 text-left">
-                <div className="flex items-start gap-4 text-left">
-                    <div className="bg-primary/10 p-3 rounded-2xl shrink-0"><Zap className="h-6 w-6 text-primary" /></div>
-                    <div className="text-left space-y-1">
-                        <h4 className="text-sm font-black uppercase tracking-tight text-primary">Forensic Verification Gateway</h4>
-                        <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
-                            Extract high-fidelity data nodes directly from official documentation to heal gaps and boost the forensic trust score.
-                        </p>
-                    </div>
-                </div>
-                <VisionOnboardingDialog 
-                    stepId={stepId}
-                    initialDocType={getSuggestedDocType(stepId)}
-                    onExtractionComplete={(data) => handleAiExtraction(stepId, data)}
-                    trigger={
-                        <Button className="h-14 px-10 font-black uppercase tracking-widest gap-3 shadow-xl text-white">
-                            <Camera className="h-5 w-5" /> Execute AI Scan
-                        </Button>
-                    }
-                />
-            </div>
-        );
-
-        let content = null;
-        switch (stepId) {
-            case 'main': content = <StepMain />; break;
-            case 'address': content = <StepAddress />; break;
-            case 'contact': content = <ArrayStep name="contacts" title="Contact" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'position', label: 'Position', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'email', label: 'Email', type: 'email'} ]} />; break;
-            case 'owners': content = <ArrayStep name="owners" title="Owner" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'percentageHeld', label: '% Held', type: 'number'} ]} />; break;
-            case 'management': content = <ArrayStep name="management" title="Manager" fieldsConfig={[ { id: 'name', label: 'Name', type: 'text' }, { id: 'idNumber', label: 'ID Number', type: 'text' }, { id: 'cell', label: 'Cell', type: 'text'}, { id: 'position', label: 'Position', type: 'text'} ]} />; break;
-            case 'bankAccounts': content = <ArrayStep name="bankAccounts" title="Bank Account" fieldsConfig={[ { id: 'bankName', label: 'Bank Name', type: 'text' }, { id: 'accountNumber', label: 'Account #', type: 'text' }, { id: 'branchCode', label: 'Branch Code', type: 'text'} ]} />; break;
-            case 'balanceSheet': content = <ArrayStep name="balanceSheets" title="Balance Sheet" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End', type: 'date' }, { id: 'propertyPlantEquipment', label: 'Property, Plant & Equip.', type: 'number' }, { id: 'intangibleAssets', label: 'Intangible Assets', type: 'number' }, { id: 'inventory', label: 'Inventory', type: 'number' }, { id: 'tradeReceivables', label: 'Trade Receivables', type: 'number' }, { id: 'cashEquivalents', label: 'Cash & Equivalents', type: 'number' }, { id: 'shareCapital', label: 'Share Capital', type: 'number' }, { id: 'retainedEarnings', label: 'Retained Earnings', type: 'number' }, { id: 'longTermLoans', label: 'Long-Term Loans', type: 'number' }, { id: 'tradePayables', label: 'Trade Payables', type: 'number' }, { id: 'shortTermLoans', label: 'Short-Term Loans', type: 'number' } ]} />; break;
-            case 'incomeStatement': content = <ArrayStep name="incomeStatements" title="Income Statement" fieldsConfig={[ { id: 'periodEndDate', label: 'Period End Date', type: 'date' }, { id: 'revenue', label: 'Revenue', type: 'number' }, { id: 'cogs', label: 'Cost of Goods Sold', type: 'number' }, { id: 'operatingExpenses', label: 'Operating Expenses', type: 'number' }, { id: 'interestExpense', label: 'Interest Expense', type: 'number' }, { id: 'taxation', label: 'Taxation', type: 'number' } ]} />; break;
-            case 'review': content = <div className="text-center py-20 space-y-6 text-left"><ShieldCheck className="h-16 w-16 text-primary mx-auto opacity-50" /><h3 className="text-2xl font-black uppercase text-foreground">Audit Readiness Verified</h3><p className="text-muted-foreground max-sm mx-auto">Please confirm all details before committing this debtor node to the registry.</p></div>; break;
-        }
-
-        return (
-            <div className="animate-in fade-in duration-500">
-                {aiButton}
-                <div className="space-y-4">
-                    <h3 className="text-xl font-black uppercase tracking-tight text-slate-900 border-l-4 border-primary pl-4">{stepTitle}</h3>
-                    <div className="pt-4">{content}</div>
-                </div>
-            </div>
-        );
-    };
+    const currentStepConfig = memoizedSteps[currentStep];
 
     return (
-         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
+        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white">
-                         <div className="flex justify-between items-start text-left text-white">
-                            <div className="text-left">
-                                <h2 className="text-2xl font-black font-headline text-white text-left uppercase tracking-tight">{client ? 'Edit' : 'Add'} Debtor Profile</h2>
-                                <p className="text-slate-400 mt-1">{steps[currentStep].title}</p>
+                    <CardHeader className="bg-slate-900 text-white p-8 text-left">
+                        <div className="flex justify-between items-center text-left">
+                            <div className="text-left text-white">
+                                <CardTitle className="text-2xl font-black font-headline uppercase tracking-tight text-white text-left">Forensic Interview terminal</CardTitle>
+                                <CardDescription className="text-slate-400">Step: {currentStepConfig.title}</CardDescription>
                             </div>
-                            <Button type="button" variant="ghost" onClick={onBack} className="text-white hover:text-primary"><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
+                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to registry</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-12 text-left">
-                            <div className="flex flex-col gap-3 border-r pr-6 text-left">
-                                {steps.map((step, index) => {
-                                    const Icon = step.icon;
-                                    const isCompleted = completedSteps.has(step.id);
-                                    const isActive = currentStep === index;
-
-                                    return (
-                                        <div key={step.id} className="space-y-2 text-left">
-                                            <Button 
-                                                type="button" 
-                                                variant={isActive ? 'secondary' : 'ghost'} 
-                                                className={cn("w-full justify-start gap-3 h-11 px-3 transition-all text-left", isActive && "bg-white shadow-sm ring-1 ring-primary/20")} 
-                                                onClick={() => setCurrentStep(index)} 
-                                                disabled={index > currentStep && !isCompleted && !isActive}
-                                            >
-                                                {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-white" : "bg-muted")}>{index + 1}</div>}
-                                                <Icon className="h-4 w-4 mr-1 text-primary" />
-                                                <span className={cn("text-[10px] font-black uppercase tracking-widest", isActive ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
-                                            </Button>
-                                        </div>
-                                    );
-                                })}
+                    <CardContent className="p-0">
+                        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] text-left text-foreground">
+                            <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
+                                {memoizedSteps.map((step, i) => (
+                                    <Button
+                                        key={step.id}
+                                        type="button"
+                                        variant={currentStep === i ? "secondary" : "ghost"}
+                                        className={cn("w-full justify-start gap-3 h-10 px-3 transition-all", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")}
+                                        onClick={() => setCurrentStep(i)}
+                                    >
+                                        {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
+                                        <span className={cn("text-[11px] font-black uppercase tracking-widest", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                    </Button>
+                                ))}
                             </div>
-                            <div className="space-y-6 min-h-[500px] text-left">
-                                {renderStepContent()}
+                            <div className="p-10 space-y-8 bg-white min-h-[500px] text-left text-foreground text-foreground">
+                                {currentStepConfig.id !== 'review' && (
+                                    <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left text-foreground">
+                                        <div className="flex items-start gap-4 text-left">
+                                            <div className="bg-primary/10 p-3 rounded-2xl shrink-0 text-left"><Zap className="h-6 w-6 text-primary" /></div>
+                                            <div className="text-left">
+                                                <h4 className="text-sm font-black uppercase text-primary">Verification Gateway</h4>
+                                                <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm text-left">Heal data gaps via automated Vision AI extraction.</p>
+                                            </div>
+                                        </div>
+                                        <VisionOnboardingDialog 
+                                            onExtractionComplete={handleAiExtraction}
+                                            trigger={<Button className="h-12 px-8 font-black uppercase text-[10px] tracking-widest shadow-xl text-white">Execute AI Scan</Button>}
+                                        />
+                                    </div>
+                                )}
+
+                                {currentStepConfig.id === 'capacity' && <StepCapacity />}
+                                {currentStepConfig.id === 'compliance' && <StepCompliance />}
+                                {currentStepConfig.id === 'governance' && <StepGovernance />}
+                                {currentStepConfig.id === 'credit' && <StepCreditForensic />}
+                                {currentStepConfig.id === 'background' && <StepBackground />}
+                                {currentStepConfig.id === 'finance_mgmt' && <StepFinancialManagement />}
+                                {currentStepConfig.id === 'infrastructure' && <StepInfrastructure />}
+                                
+                                {currentStepConfig.id === 'nca' && (
+                                    <div className="space-y-6 text-left">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                                            <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
+                                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
+                                            )} />
+                                            <FormField control={methods.control} name="totalAssetValue" render={({ field }) => (
+                                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
+                                            )} />
+                                        </div>
+                                        <Alert className="bg-muted/50 border-none text-left">
+                                            <Info className="h-4 w-4" />
+                                            <AlertDescription className="text-xs italic text-left">This data is critical for determining the applicability of the National Credit Act (NCA) to this specific transaction.</AlertDescription>
+                                        </Alert>
+                                    </div>
+                                )}
+
+                                {currentStepConfig.id === 'review' && (
+                                    <div className="text-center py-20 space-y-6 text-foreground text-foreground">
+                                        <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
+                                        <div className="space-y-2 text-center text-foreground">
+                                            <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
+                                            <p className="text-sm text-muted-foreground max-w-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t p-8 bg-slate-50">
-                        <Button type="button" variant="ghost" onClick={handleBackStep} disabled={currentStep === 0 || isLoading} className="font-bold">
-                            <ArrowLeft className="mr-2 h-4 w-4" /> Back
-                        </Button>
-                        {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext} className="px-10 font-bold text-white shadow-lg">
-                                Next Step <ArrowRight className="ml-2 h-4 w-4"/>
-                            </Button>
+                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
+                        <Button type="button" variant="outline" onClick={() => setCurrentStep(prev => prev - 1)} disabled={currentStep === 0} className="font-bold">Back</Button>
+                        {currentStep < memoizedSteps.length - 1 ? (
+                            <Button type="button" onClick={() => setCurrentStep(prev => prev + 1)} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg">Next Step <ArrowRight className="ml-2 h-4 w-4" /></Button>
                         ) : (
-                            <Button type="submit" disabled={isLoading} className="h-14 px-12 font-black uppercase tracking-tight shadow-xl text-white">
-                                {isLoading ? <Loader2 className="mr-2 h-6 w-6 animate-spin" /> : <Save className="mr-2 h-6 w-6" />}
-                                {client ? 'Update Forensic Record' : 'Create Forensic Record'}
+                            <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase tracking-tight text-lg shadow-2xl text-white">
+                                {isSubmitting ? <Loader2 className="animate-spin h-6 w-6" /> : <ShieldCheck className="h-6 w-6" />}
+                                Commit Audit Record
                             </Button>
                         )}
                     </CardFooter>
