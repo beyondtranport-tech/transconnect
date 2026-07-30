@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useForm, FormProvider, useFormContext, useFieldArray, UseFieldArrayReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -20,7 +20,8 @@ import {
     Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
     History, Package, Sparkles, Building, FileUp, Users, PlusCircle, 
     Trash2, UserCheck, Truck, FileText, Navigation, MapPin, Info, 
-    ShieldAlert, Gavel, Zap, User, UserCircle, Scale, Banknote, Shield
+    ShieldAlert, Gavel, Zap, User, UserCircle, Scale, Banknote, Shield,
+    Smartphone
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -51,6 +52,7 @@ const stakeholderSchema = z.object({
     rsaIdNumber: z.string().optional(),
     position: z.string().optional(),
     shareholdingPercent: z.coerce.number().min(0).max(100).optional(),
+    isDirector: z.boolean().default(false),
 });
 
 const clientSchema = z.object({
@@ -341,20 +343,16 @@ const StepGovernance = () => {
     );
 };
 
-const StepStakeholders = ({ type, label }: { type: 'shareholders' | 'directors' | 'staff', label: string }) => {
-    const { control, watch } = useFormContext<ClientFormValues>();
-    const { fields, append, remove } = useFieldArray({ control, name: type });
-    
-    const countKey = type === 'shareholders' ? 'shareholderCount' : type === 'directors' ? 'directorCount' : 'staffCount';
-    const targetCount = watch(countKey) || 0;
+interface StepStakeholdersProps {
+    type: 'shareholders' | 'directors' | 'staff';
+    label: string;
+    arrayProps: UseFieldArrayReturn<ClientFormValues, any, "id">;
+    onToggleDirector?: (index: number, checked: boolean) => void;
+}
 
-    useEffect(() => {
-        if (fields.length < targetCount) {
-            for (let i = fields.length; i < targetCount; i++) append({ name: '', email: '', phone: '', address: '', rsaIdNumber: '' });
-        } else if (fields.length > targetCount) {
-            for (let i = fields.length - 1; i >= targetCount; i--) remove(i);
-        }
-    }, [targetCount, fields.length, append, remove]);
+const StepStakeholders = ({ type, label, arrayProps, onToggleDirector }: StepStakeholdersProps) => {
+    const { control } = useFormContext<ClientFormValues>();
+    const { fields } = arrayProps;
 
     return (
         <div className="space-y-6 text-left">
@@ -364,6 +362,25 @@ const StepStakeholders = ({ type, label }: { type: 'shareholders' | 'directors' 
                     <div key={field.id} className="p-6 border-2 rounded-2xl bg-white space-y-6 animate-in fade-in slide-in-from-top-2 text-left shadow-sm">
                         <div className="flex items-center justify-between border-b pb-4">
                             <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} #{index + 1}</Badge>
+                            {type === 'shareholders' && (
+                                <FormField 
+                                    control={control} 
+                                    name={`shareholders.${index}.isDirector` as any} 
+                                    render={({ field: switchField }) => (
+                                        <div className="flex items-center gap-3 bg-primary/5 px-3 py-1.5 rounded-full border border-primary/10">
+                                            <Label className="text-[9px] font-black uppercase tracking-tight text-primary">Also a Director</Label>
+                                            <Switch 
+                                                checked={switchField.value} 
+                                                onCheckedChange={(checked) => {
+                                                    switchField.onChange(checked);
+                                                    if (onToggleDirector) onToggleDirector(index, checked);
+                                                }} 
+                                                className="scale-75"
+                                            />
+                                        </div>
+                                    )} 
+                                />
+                            )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                             <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
@@ -376,6 +393,12 @@ const StepStakeholders = ({ type, label }: { type: 'shareholders' | 'directors' 
                         <FormField control={control} name={`${type}.${index}.address` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Residential Address</FormLabel><FormControl><Textarea {...field} className="h-20 border-2" /></FormControl></FormItem>)} />
                     </div>
                 ))}
+                {fields.length === 0 && (
+                    <div className="text-center py-20 border-2 border-dashed rounded-3xl opacity-30">
+                        <Users className="h-12 w-12 mx-auto mb-2" />
+                        <p className="font-bold uppercase text-[10px] tracking-widest">No {label} declared in Governance</p>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -411,7 +434,6 @@ const StepBackground = () => {
 
 const StepFinancialManagement = () => {
     const { control, watch } = useFormContext<ClientFormValues>();
-    const bType = watch('bookkeepingType');
 
     return (
         <div className="space-y-8 text-left">
@@ -497,7 +519,6 @@ const StepInfrastructure = () => {
     );
 };
 
-
 // --- MASTER WIZARD ---
 
 export function EditClientWizard({ client, onSave, onBack }: { client?: any, onSave: () => void, onBack: () => void }) {
@@ -513,6 +534,34 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     });
 
     const watchedValues = methods.watch();
+
+    // 1. Centralize Stakeholder Array Controllers
+    const shareholdersArray = useFieldArray({ control: methods.control, name: 'shareholders' });
+    const directorsArray = useFieldArray({ control: methods.control, name: 'directors' });
+    const staffArray = useFieldArray({ control: methods.control, name: 'staff' });
+
+    const handleShareholderToDirector = useCallback((shIndex: number, checked: boolean) => {
+        if (!checked) return; // We only handle "Copy To" for now
+        
+        const shData = methods.getValues(`shareholders.${shIndex}`);
+        const currentDirCount = methods.getValues('directorCount') || 0;
+        
+        // Update Count
+        methods.setValue('directorCount', currentDirCount + 1);
+        
+        // Direct Append to the active array controller
+        directorsArray.append({
+            name: shData.name || '',
+            email: shData.email || '',
+            phone: shData.phone || '',
+            address: shData.address || '',
+            rsaIdNumber: shData.rsaIdNumber || '',
+            position: 'Director (Shareholder)',
+            isDirector: true
+        });
+
+        toast({ title: "Stakeholder Mirror Active", description: `${shData.name} mirrored to Directors registry.` });
+    }, [methods, directorsArray, toast]);
 
     const memoizedSteps = useMemo(() => {
         const base = [
@@ -542,7 +591,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         base.push({ id: 'review', title: 'Review', icon: CheckCircle, fields: [] });
 
         return base;
-    }, [watchedValues.applyingCapacity, watchedValues.shareholderCount, watchedValues.directorCount, watchedValues.staffCount, watchedValues.vatRegistered]);
+    }, [watchedValues.applyingCapacity, watchedValues.shareholderCount, watchedValues.directorCount, watchedValues.staffCount]);
 
     const handleAiExtraction = (data: any) => {
         if (data.registrationId) methods.setValue('registrationId', data.registrationId);
@@ -550,12 +599,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         toast({ title: "Forensic Data Mapped", description: "AI extraction results committed to form." });
     };
 
-    /**
-     * PERSISTENCE HANDLER
-     * Triggers a non-blocking save on every step transition.
-     */
     const handleStepTransition = async (direction: 'next' | 'back' | number) => {
-        // 1. Validate if moving forward
         if (direction === 'next') {
             const isValid = await methods.trigger(memoizedSteps[currentStep].fields as any);
             if (!isValid) {
@@ -564,7 +608,6 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             }
         }
 
-        // 2. Perform background save
         const values = methods.getValues();
         const token = await getClientSideAuthToken();
         if (token && client?.id) {
@@ -578,7 +621,6 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             }).catch(e => console.warn("Background autosave failed", e));
         }
 
-        // 3. Update UI
         if (typeof direction === 'number') {
             setCurrentStep(direction);
         } else if (direction === 'next') {
@@ -606,6 +648,21 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
             setIsSubmitting(false);
         }
     };
+
+    // 2. Pillar Population Logic
+    useEffect(() => {
+        const syncArray = (arr: any[], count: number, appendFn: any, removeFn: any) => {
+            if (arr.length < count) {
+                for (let i = arr.length; i < count; i++) appendFn({ name: '', email: '', position: '' });
+            } else if (arr.length > count) {
+                for (let i = arr.length - 1; i >= count; i--) removeFn(i);
+            }
+        };
+
+        syncArray(shareholdersArray.fields, watchedValues.shareholderCount, shareholdersArray.append, shareholdersArray.remove);
+        syncArray(directorsArray.fields, watchedValues.directorCount, directorsArray.append, directorsArray.remove);
+        syncArray(staffArray.fields, watchedValues.staffCount, staffArray.append, staffArray.remove);
+    }, [watchedValues.shareholderCount, watchedValues.directorCount, watchedValues.staffCount]);
 
     const currentStepConfig = memoizedSteps[currentStep];
 
@@ -643,7 +700,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                     <div className="bg-primary/5 border-2 border-primary/20 p-6 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 text-left">
                                         <div className="flex items-start gap-4 text-left">
                                             <div className="bg-primary/10 p-3 rounded-2xl shrink-0"><Zap className="h-6 w-6 text-primary" /></div>
-                                            <div className="text-left text-foreground">
+                                            <div className="text-left">
                                                 <h4 className="text-sm font-black uppercase text-primary">Forensic Verification Gateway</h4>
                                                 <p className="text-[10px] text-muted-foreground leading-relaxed max-w-sm">Heal data gaps via automated Vision AI extraction.</p>
                                             </div>
@@ -658,13 +715,13 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 {currentStepConfig.id === 'capacity' && <StepCapacity />}
                                 {currentStepConfig.id === 'compliance' && <StepCompliance />}
                                 {currentStepConfig.id === 'governance' && <StepGovernance />}
-                                {currentStepConfig.id === 'shareholders' && <StepStakeholders type="shareholders" label="Shareholder" />}
-                                {currentStepConfig.id === 'directors' && <StepStakeholders type="directors" label="Director" />}
-                                {currentStepConfig.id === 'staff_list' && <StepStakeholders type="staff" label="Staff" />}
+                                {currentStepConfig.id === 'shareholders' && <StepStakeholders type="shareholders" label="Shareholder" arrayProps={shareholdersArray} onToggleDirector={handleShareholderToDirector} />}
+                                {currentStepConfig.id === 'directors' && <StepStakeholders type="directors" label="Director" arrayProps={directorsArray} />}
+                                {currentStepConfig.id === 'staff_list' && <StepStakeholders type="staff" label="Staff" arrayProps={staffArray} />}
                                 
                                 {currentStepConfig.id === 'nca' && (
-                                    <div className="space-y-6 text-left text-foreground">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left text-foreground">
+                                    <div className="space-y-6 text-left">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                                             <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
                                                 <FormItem className="text-left"><FormLabel>Annual Turnover (L12M)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
@@ -672,36 +729,33 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                                 <FormItem className="text-left"><FormLabel>Total Entity Asset Value</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl></FormItem>
                                             )} />
                                         </div>
-                                        <Alert className="bg-muted/50 border-none text-left">
+                                        <Alert className="bg-muted/50 border-none">
                                             <Info className="h-4 w-4" />
-                                            <AlertDescription className="text-xs italic text-left">This data is critical for determining the applicability of the National Credit Act (NCA).</AlertDescription>
+                                            <AlertDescription className="text-xs italic text-left">This data is critical for determining the applicability of the National Credit Act (NCA) to this specific transaction.</AlertDescription>
                                         </Alert>
                                     </div>
                                 )}
 
                                 {currentStepConfig.id === 'credit' && (
-                                    <div className="space-y-6 text-left text-foreground">
-                                        <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left text-foreground">
-                                            <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left">
+                                    <div className="space-y-6 text-left">
+                                        <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left">
+                                            <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs">
                                                 <ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure
                                             </div>
                                             <FormField control={methods.control} name="hasReturnedPayments" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left">
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
                                                     <FormLabel className="text-sm font-medium">Any returned payments (12 Months)?</FormLabel>
-                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                                </FormItem>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormItem>
                                             )} />
                                             <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left text-foreground">
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
                                                     <FormLabel className="text-sm font-medium">Any active judgements?</FormLabel>
-                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                                </FormItem>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormItem>
                                             )} />
                                             <FormField control={methods.control} name="hasLegalAction" render={({ field }) => (
-                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left text-foreground">
+                                                <FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border">
                                                     <FormLabel className="text-sm font-medium">Any legal action pending?</FormLabel>
-                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                                </FormItem>
+                                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormItem>
                                             )} />
                                         </div>
                                     </div>
@@ -712,11 +766,11 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                                 {currentStepConfig.id === 'infrastructure' && <StepInfrastructure />}
                                 
                                 {currentStepConfig.id === 'review' && (
-                                    <div className="text-center py-20 space-y-6 text-left text-foreground">
+                                    <div className="text-center py-20 space-y-6 text-left">
                                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
-                                        <div className="space-y-2 text-center text-foreground">
+                                        <div className="space-y-2 text-center">
                                             <h3 className="text-2xl font-black uppercase">Audit Finalization</h3>
-                                            <p className="text-sm text-muted-foreground max-sm mx-auto text-center">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
+                                            <p className="text-sm text-muted-foreground max-sm mx-auto">Please verify the integrity of the interview responses before committing the record to the forensic grid.</p>
                                         </div>
                                     </div>
                                 )}
