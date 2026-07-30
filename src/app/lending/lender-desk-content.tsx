@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, ClipboardList, CheckCircle, FileText, Send, Landmark, 
     ArrowRight, UserCheck, ShieldCheck, Zap, Info, Search, Building, Clock, Mail, Phone, FileSignature,
     AlertTriangle, RefreshCcw, Lock, Tag, SearchCode, Database, Banknote, ListChecks, ArrowUpRight,
-    Activity
+    Activity, Scale
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -30,12 +30,11 @@ export default function LenderDeskContent() {
     // 1. FETCH ALL ENQUIRIES (The Unified Intake Ledger)
     const enquiriesQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        return query(collectionGroup(firestore, 'enquiries'), orderBy('updatedAt', 'desc'), limit(200));
+        return query(collectionGroup(firestore, 'enquiries'), orderBy('updatedAt', 'desc'), limit(500));
     }, [firestore]);
     const { data: allEnquiries, isLoading, forceRefresh } = useCollection(enquiriesQuery);
 
     // 2. UNIFIED TRIAGE LOGIC
-    // We categorize into "Action Required" (Triage) and "Active Review" based on status/data gaps
     const triageItems = useMemo(() => {
         if (!allEnquiries) return [];
         return allEnquiries.filter((enquiry: any) => {
@@ -77,7 +76,7 @@ export default function LenderDeskContent() {
                 if (row.original.entityType?.includes('Pty') && !row.original.registrationDocUrl) missingDocs.push('CIPC');
 
                 return (
-                    <div className="flex flex-col gap-1.5 items-start text-left">
+                    <div className="flex flex-col gap-1.5 items-start text-left text-foreground">
                         {missingDocs.length > 0 ? (
                             <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[8px] h-4 uppercase font-black">
                                 <AlertTriangle className="h-2.5 w-2.5 mr-1" /> Missing: {missingDocs.join(', ')}
@@ -95,7 +94,9 @@ export default function LenderDeskContent() {
                                             <Scale className="h-3 w-3" />
                                         </div>
                                     </TooltipTrigger>
-                                    <TooltipContent className="text-[10px] font-bold uppercase">{row.original.hasJudgements ? 'Exception: Judgements' : 'Registry Clean'}</TooltipContent>
+                                    <TooltipContent className="text-[10px] font-bold uppercase">
+                                        {row.original.hasJudgements ? 'Exception: Judgements' : 'Registry Clean'}
+                                    </TooltipContent>
                                 </Tooltip>
                              </TooltipProvider>
                         </div>
@@ -125,7 +126,7 @@ export default function LenderDeskContent() {
             header: <div className="text-right">Audit</div>,
             cell: ({ row }) => (
                 <div className="text-right">
-                    <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-black uppercase tracking-widest gap-1.5">
+                    <Button variant="ghost" size="sm" asChild className="h-8 text-[10px] font-black uppercase tracking-widest gap-1.5 text-left text-foreground">
                         <Link href={`/lending/clients/${row.original.companyId}`}>
                             Open Case <ArrowUpRight className="h-3 w-3" />
                         </Link>
@@ -147,14 +148,14 @@ export default function LenderDeskContent() {
     return (
         <div className="space-y-8 text-left text-foreground">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <ListChecks className="h-8 w-8 text-primary" />
                         Master Action Ledger
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left">Unified triage for Direct and Mall-originated funding requests.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => forceRefresh()} className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => forceRefresh()} className="gap-2 text-foreground">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                     Refresh Ledger
                 </Button>
@@ -170,7 +171,7 @@ export default function LenderDeskContent() {
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="triage" className="mt-8 text-left">
+                <TabsContent value="triage" className="mt-8 text-left text-foreground">
                     <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
                         <CardHeader className="bg-slate-50 border-b p-6 text-left">
                             <CardTitle className="text-sm font-black uppercase tracking-widest flex items-center gap-2 text-left">
@@ -191,7 +192,7 @@ export default function LenderDeskContent() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="active" className="mt-8 text-left">
+                <TabsContent value="active" className="mt-8 text-left text-foreground">
                     <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
                         <CardContent className="pt-6">
                             {activeReviewItems.length > 0 ? (
