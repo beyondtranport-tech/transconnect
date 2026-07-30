@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { 
     Loader2, Camera, Zap, ShieldCheck, FileUp, Sparkles, Truck, CheckCircle2, 
-    ArrowRight, User, Building, Landmark, Banknote, FileText, ChevronRight 
+    ArrowRight, User, Building, Landmark, Banknote, FileText, ChevronRight, Users 
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { runVisionOnboarding } from '@/ai/flows/vision-onboarding-flow';
