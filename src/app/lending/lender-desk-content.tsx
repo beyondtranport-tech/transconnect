@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
     Loader2, ClipboardList, CheckCircle, FileText, Send, Landmark, 
     ArrowRight, UserCheck, ShieldCheck, Zap, Info, Search, Building, Clock, Mail, Phone, FileSignature,
-    AlertTriangle, RefreshCcw, Lock, Tag
+    AlertTriangle, RefreshCcw, Lock, Tag, SearchCode, Database, Banknote
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -28,7 +28,7 @@ async function performAdminAction(token: string, action: string, payload: any) {
         cache: 'no-store'
     });
     const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
+    if (!response.ok || !result.success) throw new Error(result.error || `API Error for action: ${action}`);
     return result.data;
 }
 
@@ -140,7 +140,7 @@ function OpportunityDetail({
                                 <p>SUBJECT TO: FICA/KYC Verification and Asset Inspection.</p>
                             </div>
                         </div>
-                        <Button className="w-full h-12 font-bold gap-2" onClick={handleIssueLetter} disabled={isIssuing}>
+                        <Button className="w-full h-12 font-bold gap-2 text-white" onClick={handleIssueLetter} disabled={isIssuing}>
                             {isIssuing ? <Loader2 className="animate-spin h-4 w-4" /> : <Send className="h-4 w-4" />}
                             Issue Facility Letter via Registry
                         </Button>
@@ -232,14 +232,43 @@ export default function LenderDeskContent() {
             )
         },
         {
-            header: 'Asset Focus',
-            cell: ({row}) => (
-                <div className="flex flex-wrap gap-1 max-w-[150px]">
-                    {(row.original.industrial_tags || []).slice(0, 2).map((tag: string) => (
-                        <Badge key={tag} className="text-[7px] h-3 px-1 font-black bg-primary/10 text-primary border-none uppercase">{tag}</Badge>
-                    ))}
-                </div>
-            )
+            header: 'Forensic Pillar Audit',
+            cell: ({ row }) => {
+                const hasMined = !!(row.original.minedServiceWording || row.original.notes);
+                const hasOnboarded = (row.original.assets?.length > 0);
+                const hasCredit = (row.original.creditRating && row.original.creditRating !== 'unknown');
+                
+                return (
+                    <div className="flex items-center gap-2 text-left">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <div className={cn("p-1.5 rounded-md transition-colors", hasMined ? "bg-purple-100 text-purple-600" : "bg-muted text-muted-foreground/30")}>
+                                        <SearchCode className="h-3.5 w-3.5" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-[10px] font-bold uppercase tracking-widest">Mined Silo: {hasMined ? 'Verified' : 'Gapped'}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <div className={cn("p-1.5 rounded-md transition-colors", hasOnboarded ? "bg-blue-100 text-blue-600" : "bg-muted text-muted-foreground/30")}>
+                                        <Database className="h-3.5 w-3.5" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-[10px] font-bold uppercase tracking-widest">Onboarded Silo: {hasOnboarded ? 'Assets Mapped' : 'Gapped'}</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <div className={cn("p-1.5 rounded-md transition-colors", hasCredit ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground/30")}>
+                                        <Landmark className="h-3.5 w-3.5" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-[10px] font-bold uppercase tracking-widest">Credit Silo: {hasCredit ? 'Rating Stamped' : 'Gapped'}</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                );
+            }
         },
         {
             header: 'Value',
