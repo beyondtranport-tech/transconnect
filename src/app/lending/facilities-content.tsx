@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban, Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -9,25 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, fetchFromAdminAPI } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-
-// API Helper
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
 
 const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
     pending: 'secondary',
@@ -49,6 +36,7 @@ export default function FacilitiesContent() {
     const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
     const [facilityToDelete, setFacilityToDelete] = useState<any | null>(null);
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
     const [statusChangeAlert, setStatusChangeAlert] = useState<{ open: boolean; facility: any; newStatus: 'active' | 'inactive' | 'pending' | null }>({ open: false, facility: null, newStatus: null });
 
@@ -63,9 +51,9 @@ export default function FacilitiesContent() {
             if (!token) throw new Error("Authentication failed.");
             
             const [facilitiesRes, clientsRes, debtorsRes] = await Promise.all([
-                performAdminAction(token, 'getLendingData', { collectionName: 'facilities' }),
-                performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' }),
-                performAdminAction(token, 'getLendingData', { collectionName: 'lendingDebtors' })
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities' }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients' }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingDebtors' })
             ]);
             
             setFacilities(facilitiesRes.data || []);
@@ -112,7 +100,7 @@ export default function FacilitiesContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            await performAdminAction(token, 'updateFacilityStatus', {
+            await fetchFromAdminAPI(token, 'updateFacilityStatus', {
                 facilityId: facility.id,
                 status: newStatus
             });
@@ -128,10 +116,11 @@ export default function FacilitiesContent() {
     
     const handleDelete = async () => {
         if (!facilityToDelete) return;
+        setIsProcessing(facilityToDelete.id);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'deleteLendingFacility', { 
+            await fetchFromAdminAPI(token, 'deleteLendingFacility', { 
                 facilityId: facilityToDelete.id 
             });
             toast({ title: 'Facility Deleted' });
@@ -140,6 +129,8 @@ export default function FacilitiesContent() {
             setIsDeleteAlertOpen(false);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        } finally {
+            setIsProcessing(null);
         }
     };
 
@@ -187,7 +178,18 @@ export default function FacilitiesContent() {
         { accessorKey: 'limit', header: 'Authorized Limit', cell: ({ row }) => <span className="font-black text-foreground">{formatCurrency(row.original.limit)}</span> },
         { accessorKey: 'status', header: 'Standing', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize text-[10px] font-black tracking-widest">{row.original.status || 'Active'}</Badge> },
         { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({ row }) => (
-            <div className="text-right">
+            <div className="text-right flex items-center justify-end gap-1">
+                 <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-destructive"
+                    disabled={row.original.status !== 'inactive' || isProcessing === row.original.id}
+                    onClick={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}
+                    title={row.original.status !== 'inactive' ? "Set status to 'inactive' to enable deletion" : "Expunge Node"}
+                 >
+                    <Trash2 className="h-4 w-4" />
+                 </Button>
+
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
@@ -212,7 +214,8 @@ export default function FacilitiesContent() {
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             className="text-destructive"
-                            onSelect={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}
+                            onSelect={() => { if(row.original.status === 'inactive') { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); } }}
+                            disabled={row.original.status !== 'inactive'}
                         >
                             <Trash2 className="mr-2 h-4 w-4" /> Expunge Node
                         </DropdownMenuItem>
@@ -220,7 +223,7 @@ export default function FacilitiesContent() {
                 </DropdownMenu>
             </div>
         )},
-    ], [clientMap, debtorMap]);
+    ], [clientMap, debtorMap, isProcessing]);
     
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>

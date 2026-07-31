@@ -74,6 +74,23 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: ref.id });
             }
 
+            case 'deleteLendingFacility': {
+                const { facilityId } = payload;
+                if (!facilityId) throw new Error("Facility ID required.");
+                await db.collection('lendingFacilities').doc(facilityId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'updateFacilityStatus': {
+                const { facilityId, status } = payload;
+                if (!facilityId) throw new Error("Facility ID required.");
+                await db.collection('lendingFacilities').doc(facilityId).update({
+                    status,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'saveLendingDocument': {
                 const { document } = payload;
                 const ref = db.collection('lendingDocuments').doc(document.id || db.collection('lendingDocuments').doc().id);
@@ -119,6 +136,13 @@ export async function POST(req: NextRequest) {
                     updatedAt: FieldValue.serverTimestamp() 
                 }, { merge: true });
                 return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deleteLendingPartner': {
+                const { collection: col, partnerId } = payload;
+                if (!col || !partnerId) throw new Error("Collection and ID required.");
+                await db.collection(col).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
             }
 
             default: 
