@@ -193,18 +193,16 @@ function LendingPortalContent() {
                     <SidebarMenuSubButton 
                       isActive={activeView === 'security-vault'} 
                       onClick={() => navigate('security-vault')}
-                      className="text-xs"
                     >
-                      Security Vault (Rights Granted)
+                      Security Vault
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton 
                       isActive={activeView === 'collateral'} 
                       onClick={() => navigate('collateral')}
-                      className="text-xs"
                     >
-                      Collateral (Ownership Transferred)
+                      Collateral Register
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
