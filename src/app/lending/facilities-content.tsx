@@ -11,7 +11,7 @@ import {
     Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
     Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
     ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon,
-    CheckCircle2
+    CheckCircle2, FileSignature, Lock
 } from "lucide-react";
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -28,8 +28,124 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogDescription, 
+    DialogFooter, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogTrigger 
+} from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+// --- MODAL COMPONENT ---
+
+function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { parent: any, onComplete: () => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    const { toast } = useToast();
+    const [isSaving, setIsSaving] = useState(false);
+    const [type, setType] = useState('factoring');
+    const [limit, setLimit] = useState<string>('');
+
+    const handleSave = async () => {
+        if (!limit || Number(limit) <= 0) {
+            toast({ variant: 'destructive', title: "Limit Required", description: "Please enter a valid authorized amount." });
+            return;
+        }
+        setIsSaving(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) throw new Error("Auth failed");
+
+            // DEFINTIVE PERSISTENCE LOGIC: 
+            // We use the parent record to hard-code all relationship fields.
+            const payload = {
+                parentId: parent.id,
+                ownerType: parent.ownerType,
+                facilityClass: 'sub',
+                clientId: parent.clientId || null,
+                debtorId: parent.debtorId || null,
+                type: type,
+                limit: Number(limit),
+                status: 'active'
+            };
+
+            await fetchFromAdminAPI(token, 'saveLendingFacility', { facility: payload });
+            
+            toast({ title: "Agreement Facility Created", description: "Sub-node committed to parent ceiling." });
+            onComplete();
+            onOpenChange(false);
+            setLimit('');
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Commit Failed", description: e.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (!parent) return null;
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-md text-left text-foreground">
+                <DialogHeader className="text-left">
+                    <DialogTitle className="flex items-center gap-2">
+                        <Gavel className="h-5 w-5 text-primary" />
+                        Initialize Agreement Facility
+                    </DialogTitle>
+                    <DialogDescription className="text-left">
+                        Partition a sub-limit from the global ceiling for <strong>{parent.ownerName || 'Selected Member'}</strong>.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-6 py-6 text-left">
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Parent Ceiling (Available)</Label>
+                        <p className="px-4 py-3 bg-muted/30 rounded-xl border border-dashed font-bold text-sm">{formatCurrency(parent.limit)}</p>
+                    </div>
+
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Agreement Product Type</Label>
+                        <Select value={type} onValueChange={setType}>
+                            <SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="factoring">Factoring (Discounting)</SelectItem>
+                                <SelectItem value="asset_finance">Asset Finance (Lease/Sale)</SelectItem>
+                                <SelectItem value="working_capital">Working Capital (Loan)</SelectItem>
+                                <SelectItem value="guarantee">Guarantee / Performance Bond</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Authorized Sub-Limit (ZAR)</Label>
+                        <Input 
+                            type="number" 
+                            value={limit} 
+                            onChange={e => setLimit(e.target.value)} 
+                            placeholder="e.g. 250000"
+                            className="h-12 border-2 text-xl font-black bg-white"
+                        />
+                    </div>
+                </div>
+
+                <DialogFooter className="bg-slate-50 p-6 -mx-6 -mb-6 border-t rounded-b-lg">
+                    <Button onClick={handleSave} disabled={isSaving} className="w-full h-12 font-black uppercase shadow-lg text-white">
+                        {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save Agreement Node
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// --- MAIN CONTENT ---
 
 interface FacilitiesContentProps {
     mode?: 'client-global' | 'debtor';
@@ -41,11 +157,12 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
     const [debtors, setDebtors] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+    const [selectedMasterId, setSelectedMasterId] = useState<string | null>(null);
+    const [isAgreementModalOpen, setIsAgreementModalOpen] = useState(false);
     const { toast } = useToast();
     
     const [view, setView] = useState<'list' | 'wizard'>('list');
     const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
-    const [parentFacility, setParentFacility] = useState<any | null>(null);
     const [facilityToDelete, setFacilityToDelete] = useState<any | null>(null);
     const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
@@ -83,18 +200,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
         setExpandedIds(next);
     };
 
-    const handleEdit = (facility: any) => {
-        setSelectedFacility(facility);
-        setParentFacility(null);
-        setView('wizard');
-    };
-
-    const handleAddSubLimit = (parent: any) => {
-        setSelectedFacility(null);
-        setParentFacility(parent);
-        setView('wizard');
-    };
-
     const handleStatusUpdate = async (facility: any, status: string) => {
         try {
             const token = await getClientSideAuthToken();
@@ -129,46 +234,39 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             if (mode === 'client-global') return isGlobal && f.ownerType === 'client';
             if (mode === 'debtor') return isGlobal && f.ownerType === 'debtor';
             return isGlobal;
-        }).sort((a,b) => (b.limit || 0) - (a.limit || 0));
-    }, [facilities, mode]);
+        }).map(f => ({
+            ...f,
+            ownerName: f.ownerType === 'client' ? clientMap.get(f.clientId) : debtorMap.get(f.debtorId)
+        })).sort((a,b) => (b.limit || 0) - (a.limit || 0));
+    }, [facilities, mode, clientMap, debtorMap]);
 
-    const viewConfig = useMemo(() => {
-        switch(mode) {
-            case 'client-global': 
-                return { 
-                    title: 'Client Global Ceilings', 
-                    desc: 'Master limits for primary member borrowers.',
-                    btn: 'Initialize Client Ceiling',
-                    wizardDefaults: { ownerType: 'client', facilityClass: 'global' }
-                };
-            case 'debtor':
-                return {
-                    title: 'Debtor Registry Ceilings',
-                    desc: 'Global and sub-client limits for Load Provider cessionaries.',
-                    btn: 'Initialize Debtor Ceiling',
-                    wizardDefaults: { ownerType: 'debtor', facilityClass: 'global' }
-                };
-            default: return { title: 'Facilities', desc: 'Lending matrix.', btn: 'Initialize Facility', wizardDefaults: {} };
-        }
-    }, [mode]);
+    const selectedMaster = useMemo(() => {
+        return filteredGlobals.find(f => f.id === selectedMasterId);
+    }, [filteredGlobals, selectedMasterId]);
 
     if (view === 'wizard') {
         return (
             <EditFacilityWizard 
                 facility={selectedFacility} 
-                parentFacility={parentFacility}
                 clients={clients} 
                 debtors={debtors} 
                 onSave={() => { forceRefresh(); setView('list'); }} 
                 onBack={() => setView('list')}
-                initialOwnerType={viewConfig.wizardDefaults.ownerType as any}
-                initialFacilityClass={viewConfig.wizardDefaults.facilityClass as any}
+                initialOwnerType={mode === 'client-global' ? 'client' : 'debtor'}
+                initialFacilityClass="global"
             />
         );
     }
 
     return (
         <div className="space-y-8 text-left text-foreground">
+            <AgreementFacilityModal 
+                parent={selectedMaster} 
+                isOpen={isAgreementModalOpen} 
+                onOpenChange={setIsAgreementModalOpen} 
+                onComplete={forceRefresh} 
+            />
+
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent className="text-left text-foreground">
                     <AlertDialogHeader className="text-left">
@@ -183,19 +281,28 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left text-foreground text-left text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Scale className="h-8 w-8 text-primary" />
-                        {viewConfig.title}
+                        {mode === 'client-global' ? 'Client Global Ceilings' : 'Debtor Registry Ceilings'}
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">{viewConfig.desc}</p>
+                    <p className="text-muted-foreground mt-1 text-left">Management of master limits and partitioned agreement nodes.</p>
                 </div>
                 <div className="flex gap-2 text-left">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
-                    <Button onClick={() => { setSelectedFacility(null); setParentFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white">
-                        <PlusCircle className="h-4 w-4" /> {viewConfig.btn}
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setIsAgreementModalOpen(true)} 
+                        disabled={!selectedMasterId}
+                        className={cn("gap-2 font-bold h-10 px-6", selectedMasterId && "border-primary text-primary bg-primary/5")}
+                    >
+                        <FileSignature className="h-4 w-4" /> Agreement Facility
+                    </Button>
+                    <Button onClick={() => { setSelectedFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white">
+                        <PlusCircle className="h-4 w-4" /> New Client Global Facility
                     </Button>
                 </div>
             </div>
@@ -204,7 +311,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                 <Table>
                     <TableHeader className="bg-slate-900">
                         <TableRow className="hover:bg-slate-900 border-none">
-                            <TableHead className="w-12"></TableHead>
+                            <TableHead className="w-12 text-center text-white text-[10px] uppercase font-black tracking-widest">Select</TableHead>
+                            <TableHead className="w-10"></TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Fiduciary Entity</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Limit Ceiling</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-center">Status</TableHead>
@@ -213,15 +321,21 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
-                            <TableRow><TableCell colSpan={5} className="h-64 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={6} className="h-64 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></TableCell></TableRow>
                         ) : filteredGlobals.length > 0 ? filteredGlobals.map((global) => {
                             const isExpanded = expandedIds.has(global.id);
-                            const ownerName = global.ownerType === 'client' ? clientMap.get(global.clientId) : debtorMap.get(global.debtorId);
+                            const isChecked = selectedMasterId === global.id;
                             const subs = facilities.filter(f => f.parentId === global.id);
 
                             return (
                                 <React.Fragment key={global.id}>
-                                    <TableRow className="group hover:bg-slate-50 transition-colors text-left text-foreground">
+                                    <TableRow className={cn("group hover:bg-slate-50 transition-colors text-left", isChecked && "bg-primary/5")}>
+                                        <TableCell className="text-center">
+                                            <Checkbox 
+                                                checked={isChecked} 
+                                                onCheckedChange={(checked) => setSelectedMasterId(checked ? global.id : null)}
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                             <Button variant="ghost" size="icon" onClick={() => toggleExpand(global.id)} className="h-8 w-8 text-primary">
                                                 {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
@@ -229,7 +343,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col text-left">
-                                                <span className="font-black text-sm text-slate-900">{ownerName || 'Unknown Node'}</span>
+                                                <span className="font-black text-sm text-slate-900">{global.ownerName || 'Unknown Node'}</span>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Badge variant="outline" className="capitalize text-[8px] h-3.5 font-black border-primary/20 text-primary">
                                                         {global.ownerType} Master
@@ -253,7 +367,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="text-left text-foreground">
                                                     <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Ceiling</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Partition Sub-Limit</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
@@ -282,18 +395,15 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                     
                                     {isExpanded && (
                                         <TableRow className="bg-slate-50 border-y-2 border-primary/10">
-                                            <TableCell colSpan={5} className="p-0">
+                                            <TableCell colSpan={6} className="p-0">
                                                 <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
                                                     <div className="flex justify-between items-center text-left text-foreground">
                                                         <div className="text-left">
                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
-                                                                <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {ownerName}
+                                                                <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {global.ownerName}
                                                             </h4>
-                                                            <p className="text-[10px] text-muted-foreground mt-1">Granular sub-limits partitioned from the master ceiling.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-1">Specific product partitions approved under this ceiling.</p>
                                                         </div>
-                                                        <Button size="sm" onClick={() => handleAddSubLimit(global)} className="h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-white">
-                                                            <PlusCircle className="h-3 w-3" /> Initialize Sub-Node
-                                                        </Button>
                                                     </div>
 
                                                     {subs.length > 0 ? (
@@ -301,25 +411,18 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Hierarchy</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Product / Association</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Sub-Limit</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Actions</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">Agreement Type</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Sub-Limit</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {subs.map(sub => (
                                                                         <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors">
-                                                                            <TableCell className="py-3">
-                                                                                <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-300">Sub-Node</Badge>
-                                                                            </TableCell>
                                                                             <TableCell>
-                                                                                <div className="flex flex-col text-left">
-                                                                                    <span className="text-xs font-bold text-slate-700 capitalize">{sub.type?.replace(/_/g, ' ') || 'Commercial'}</span>
-                                                                                    {sub.associatedClientId && (
-                                                                                        <span className="text-[9px] text-muted-foreground font-black uppercase">Pair: {clientMap.get(sub.associatedClientId) || 'Member'}</span>
-                                                                                    )}
-                                                                                </div>
+                                                                                <Badge variant="outline" className="capitalize text-[10px] font-bold border-slate-300">
+                                                                                    {sub.type?.replace(/_/g, ' ') || 'Agreement'}
+                                                                                </Badge>
                                                                             </TableCell>
                                                                             <TableCell className="text-right font-black text-sm text-foreground">
                                                                                 {formatCurrency(sub.limit)}
@@ -327,14 +430,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                             <TableCell className="text-right">
                                                                                 <div className="flex justify-end gap-1">
                                                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => handleEdit(sub)}><Edit className="h-3.5 w-3.5" /></Button>
-                                                                                    <Button 
-                                                                                        variant="ghost" 
-                                                                                        size="icon" 
-                                                                                        className={cn("h-7 w-7 text-destructive")} 
-                                                                                        onClick={() => { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); }}
-                                                                                    >
-                                                                                        <Trash2 className="h-3.5 w-3.5" />
-                                                                                    </Button>
+                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                                                                                 </div>
                                                                             </TableCell>
                                                                         </TableRow>
@@ -344,7 +440,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                         </div>
                                                     ) : (
                                                         <div className="py-12 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
-                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Sub-Limits Partitioned</p>
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Agreement Facilities Partitioned</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -355,7 +451,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                             );
                         }) : (
                             <TableRow>
-                                <TableCell colSpan={5} className="py-32 text-center text-muted-foreground">
+                                <TableCell colSpan={6} className="py-32 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                         <Landmark className="h-16 w-16" />
                                         <p className="text-sm font-bold uppercase tracking-widest text-center">No facilities matched.</p>
