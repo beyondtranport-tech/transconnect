@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -42,7 +43,8 @@ import {
   Wrench,
   FileText,
   TrendingUp,
-  Gavel
+  Gavel,
+  History
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -63,6 +65,9 @@ const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content
 const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const CollateralContent = dynamic(() => import('@/app/lending/collateral-content'), { ssr: false });
+const DocumentVaultContent = dynamic(() => import('@/app/lending/documents-content'), { ssr: false });
+const SecurityVaultContent = dynamic(() => import('@/app/lending/security-content'), { ssr: false });
 
 // Admin Modules
 const PlatformStaffManagement = dynamic(() => import('@/app/adminaccount/platform-staff'), { ssr: false });
@@ -101,6 +106,9 @@ function LendingPortalContent() {
       case 'agreements': return <AgreementsContent />;
       case 'assets': return <AssetRegisterContent />;
       case 'facilities': return <FacilitiesContent />;
+      case 'collateral': return <CollateralContent />;
+      case 'documents': return <DocumentVaultContent />;
+      case 'security-vault': return <SecurityVaultContent />;
       case 'staff': return <PlatformStaffManagement />;
       case 'permissions': return <PermissionsContent />;
       case 'policies': return <PoliciesContent />;
@@ -134,21 +142,32 @@ function LendingPortalContent() {
                 <SidebarMenuItem>
                     <SidebarMenuButton tooltip="Admin Ledger" isActive={activeView === 'desk'} onClick={() => navigate('desk')}>
                         <ListChecks /><span>Master Action Ledger</span>
-                    </SidebarMenuButton>
+                    </SidebarMenuItem>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Clients" isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
+                    <SidebarMenuButton tooltip="Debtors" isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
                         <Users /><span>Debtor Registry</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities'].includes(activeView)}>
+                    <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities', 'collateral'].includes(activeView)}>
                         <ClipboardList /><span>Lending Portfolios</span>
                     </SidebarMenuButton>
                     <SidebarMenuSub>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>Active Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>Asset Register</SidebarMenuSubButton></SidebarMenuSubItem>
                         <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>Credit Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'collateral'} onClick={() => navigate('collateral')}>Collateral Register</SidebarMenuSubButton></SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                    <SidebarMenuButton tooltip="Vaults" isActive={['documents', 'security-vault'].includes(activeView)}>
+                        <Lock /><span>Registry Vaults</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuSub>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'documents'} onClick={() => navigate('documents')}>Document Register</SidebarMenuSubButton></SidebarMenuSubItem>
+                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'security-vault'} onClick={() => navigate('security-vault')}>Security Register</SidebarMenuSubButton></SidebarMenuSubItem>
                     </SidebarMenuSub>
                 </SidebarMenuItem>
             </SidebarGroup>

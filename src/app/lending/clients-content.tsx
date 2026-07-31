@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, 
   Download, Upload, Zap, Search, Globe, ShieldCheck, Scale, FileCheck 
-} from 'lucide-react';
+} from 'lucide-center';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -110,21 +111,21 @@ export default function ClientsContent() {
     const columns: ColumnDef<any>[] = useMemo(() => [
         { 
             accessorKey: 'name', 
-            header: 'Client / Debtor',
+            header: 'Debtor Entity',
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.name}</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <Badge variant="outline" className="text-[8px] h-3.5 border-primary/20 text-primary uppercase font-black">Node Verified</Badge>
-                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.code || row.original.id}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-left">
+                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Cessionary Node</Badge>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.code || row.original.id.slice(-6)}</span>
                     </div>
                 </div>
             )
         },
         { 
-            header: 'Data Fidelity', 
+            header: 'Fidelity', 
             cell: ({row}) => (
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 text-left">
                     {row.original.website ? <Globe className="h-3.5 w-3.5 text-primary" /> : <Globe className="h-3.5 w-3.5 text-muted-foreground opacity-20" />}
                     {row.original.email ? <Zap className="h-3.5 w-3.5 text-amber-500 fill-current" /> : <Zap className="h-3.5 w-3.5 text-muted-foreground opacity-20" />}
                     {row.original.auditStatus === 'completed' && <FileCheck className="h-3.5 w-3.5 text-green-600" />}
@@ -135,14 +136,13 @@ export default function ClientsContent() {
             accessorKey: 'status', 
             header: 'Status', 
             cell: ({ row }) => (
-                <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black">
+                <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black text-left">
                     {row.original.status}
                 </Badge>
             )
         },
-        { id: 'actions', header: <div className="text-right">Audit Actions</div>, cell: ({ row }) => (
+        { id: 'actions', header: <div className="text-right">Oversight</div>, cell: ({ row }) => (
             <div className="flex justify-end items-center gap-1 text-left">
-                {/* FORENSIC AUDIT TOOLS */}
                 <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
                 <Button asChild variant="ghost" size="icon" title="Digital Scorecard">
                     <Link href={`/lending/clients/${row.original.id}?tab=analysis`}>
@@ -185,16 +185,16 @@ export default function ClientsContent() {
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Users className="h-8 w-8 text-primary" />
-                        Client & Debtor Portfolio
+                        Debtor Registry
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Manage active lending relationships and execute forensic audits.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Specialized portfolio of cessionaries for Factoring and Rights Discounting.</p>
                 </div>
             </div>
 
             <Tabs defaultValue="registry" className="w-full text-left">
                 <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start">
                     <TabsTrigger value="registry" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <Database className="h-3.5 w-3.5" /> Client Registry
+                        <Database className="h-3.5 w-3.5" /> Registry Ledger
                     </TabsTrigger>
                     <TabsTrigger value="discovery" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
                         <SearchCode className="h-3.5 w-3.5" /> Debtor Scouting (AI)
@@ -208,7 +208,7 @@ export default function ClientsContent() {
                     <Card className="border-none shadow-xl bg-white text-left">
                         <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
                             <div className="text-left">
-                                <CardTitle className="text-lg font-bold text-left">Master Registry</CardTitle>
+                                <CardTitle className="text-lg font-bold text-left">Authorized Debtors</CardTitle>
                                 <CardDescription className="text-left">Verified entities currently active in the audit system.</CardDescription>
                             </div>
                             <div className="flex gap-2 text-left">
@@ -246,7 +246,7 @@ export default function ClientsContent() {
                 <TabsContent value="oversight" className="mt-8">
                     <Card className="border-none shadow-xl bg-white text-left text-foreground">
                         <CardHeader className="border-b bg-muted/10">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2 text-left">
                                 <History className="h-5 w-5 text-primary" /> Relationship Activity Stream
                             </CardTitle>
                         </CardHeader>

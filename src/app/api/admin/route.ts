@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -31,11 +32,12 @@ export async function POST(req: NextRequest) {
         const decodedToken = await adminAuth.verifyIdToken(token);
         const db = getFirestore(app);
 
-        const isAdmin = decodedToken.email === 'beyondtransport@gmail.com' || 
-                        decodedToken.email === 'mkoton100@gmail.com' || 
-                        decodedToken.email === 'michael@logisticsflow.co.za' ||
-                        decodedToken.admin === true ||
-                        ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'].includes(decodedToken.uid);
+        const adminUids = ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'];
+        const adminEmails = ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'];
+
+        const isAdmin = adminEmails.includes(decodedToken.email || '') || 
+                        adminUids.includes(decodedToken.uid) ||
+                        decodedToken.admin === true;
 
         const body = await req.json();
         const action = (body.action || '').trim();
@@ -173,7 +175,7 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            // --- LENDING HUB ACTIONS ---
+            // --- LENDING PORTFOLIO ACTIONS ---
             case 'getLendingData': {
                 const { collectionName } = payload;
                 const collMap: Record<string, string> = {
@@ -181,8 +183,11 @@ export async function POST(req: NextRequest) {
                     'agreements': 'lendingAgreements',
                     'assets': 'lendingAssets',
                     'securities': 'lendingSecurities',
-                    'lendingClients': 'lendingClients',
-                    'lendingPartners': 'lendingPartners'
+                    'clients': 'lendingClients',
+                    'debtors': 'lendingClients',
+                    'collateral': 'lendingCollateral',
+                    'documents': 'lendingDocuments',
+                    'partners': 'lendingPartners'
                 };
                 const collectionToFetch = collMap[collectionName] || collectionName;
                 const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(500).get();
