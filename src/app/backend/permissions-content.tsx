@@ -8,17 +8,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, Lock, Edit, RefreshCcw, AlertCircle, ShieldCheck, Scale, Landmark, Zap, FileCheck, Gavel, UserCheck, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, query, doc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn, fetchFromAdminAPI } from '@/lib/utils';
-import { usePermissions } from '@/hooks/use-permissions';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
+import { Label } from '@/components/ui/label';
 
 // --- LENDING-CENTRIC PERMISSION SCHEMA ---
 
@@ -368,7 +368,7 @@ export default function PermissionsContent() {
                     <div className="space-y-2 text-left text-white">
                         <h4 className="text-xl font-black uppercase text-left text-white">Institutional Oversight Protocol</h4>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left text-white">
-                            Permissions in the lending portal are mapped to the specific stages of the credit life-cycle. Ensure that 'Authorize' actions are only granted to senior credit officers. Every change to this matrix is logged in the forensic audit feed.
+                            Permissions in the lending portal are mapped to the specific stages of the credit life-cycle. Every change to this matrix is logged in the forensic audit feed.
                         </p>
                     </div>
                 </div>
