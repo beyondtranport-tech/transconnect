@@ -1,9 +1,12 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban, Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw } from "lucide-react";
+import { 
+    Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
+    Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
+    ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle
+} from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -12,14 +15,14 @@ import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn, fetchFromAdminAPI } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-    pending: 'secondary',
-    active: 'default',
-    inactive: 'destructive',
+const statusColors: { [key: string]: string } = {
+    pending: 'bg-amber-100 text-amber-700 border-amber-200',
+    active: 'bg-green-100 text-green-700 border-green-200',
+    inactive: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
 export default function FacilitiesContent() {
@@ -27,28 +30,23 @@ export default function FacilitiesContent() {
     const [clients, setClients] = useState<any[]>([]);
     const [debtors, setDebtors] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const { toast } = useToast();
-    const router = useRouter();
-    const searchParams = useSearchParams();
     
     const [view, setView] = useState<'list' | 'wizard'>('list');
     const [selectedFacility, setSelectedFacility] = useState<any | null>(null);
-    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+    const [parentFacility, setParentFacility] = useState<any | null>(null);
     const [facilityToDelete, setFacilityToDelete] = useState<any | null>(null);
-    const [isProcessing, setIsProcessing] = useState<string | null>(null);
-
-    const [statusChangeAlert, setStatusChangeAlert] = useState<{ open: boolean; facility: any; newStatus: 'active' | 'inactive' | 'pending' | null }>({ open: false, facility: null, newStatus: null });
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
     const debtorMap = useMemo(() => new Map(debtors.map(d => [d.id, d.name])), [debtors]);
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
-        setError(null);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
+            if (!token) return;
             
             const [facilitiesRes, clientsRes, debtorsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities' }),
@@ -59,239 +57,283 @@ export default function FacilitiesContent() {
             setFacilities(facilitiesRes.data || []);
             setClients(clientsRes.data || []);
             setDebtors(debtorsRes.data || []);
-
         } catch (e: any) {
-            setError(e.message);
-            toast({ variant: 'destructive', title: 'Error loading data', description: e.message });
+            toast({ variant: 'destructive', title: 'Sync Failed', description: e.message });
         } finally {
             setIsLoading(false);
         }
     }, [toast]);
     
-    useEffect(() => {
-        forceRefresh();
-    }, [forceRefresh]);
-    
+    useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
+    const toggleExpand = (id: string) => {
+        const next = new Set(expandedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setExpandedIds(next);
+    };
+
     const handleEdit = (facility: any) => {
         setSelectedFacility(facility);
+        setParentFacility(null);
         setView('wizard');
     };
 
-    const handleAddNew = () => {
+    const handleAddSubLimit = (parent: any) => {
         setSelectedFacility(null);
+        setParentFacility(parent);
         setView('wizard');
     };
-    
-    const handleBackToList = () => {
-        setView('list');
-        setSelectedFacility(null);
-    };
 
-    const handleSaveSuccess = () => {
-        forceRefresh();
-        handleBackToList();
-    };
-
-    const processStatusChange = async () => {
-        const { facility, newStatus } = statusChangeAlert;
-        if (!facility || !newStatus) return;
-
+    const handleStatusUpdate = async (facility: any, status: string) => {
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            await fetchFromAdminAPI(token, 'updateFacilityStatus', {
-                facilityId: facility.id,
-                status: newStatus
-            });
-            
-            toast({ title: `Status Updated`, description: `Facility status set to ${newStatus}.` });
+            if (!token) return;
+            await fetchFromAdminAPI(token, 'updateFacilityStatus', { facilityId: facility.id, status });
+            toast({ title: "Node Updated" });
             forceRefresh();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: e.message });
-        } finally {
-            setStatusChangeAlert({ open: false, facility: null, newStatus: null });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Update Failed" });
         }
     };
-    
+
     const handleDelete = async () => {
         if (!facilityToDelete) return;
-        setIsProcessing(facilityToDelete.id);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            await fetchFromAdminAPI(token, 'deleteLendingFacility', { 
-                facilityId: facilityToDelete.id 
-            });
-            toast({ title: 'Facility Deleted' });
+            if (!token) return;
+            await fetchFromAdminAPI(token, 'deleteLendingFacility', { facilityId: facilityToDelete.id });
+            toast({ title: 'Facility Expunged' });
             forceRefresh();
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Delete Failed' });
+        } finally {
             setFacilityToDelete(null);
             setIsDeleteAlertOpen(false);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
-        } finally {
-            setIsProcessing(null);
         }
     };
 
+    const globals = useMemo(() => 
+        facilities.filter(f => f.facilityClass === 'global' || !f.parentId).sort((a,b) => b.limit - a.limit), 
+    [facilities]);
 
-    const columns: ColumnDef<any>[] = useMemo(() => [
-        { 
-            header: 'Authority Node', 
-            cell: ({ row }) => {
-                const ownerType = row.original.ownerType || 'client';
-                const ownerId = ownerType === 'client' ? row.original.clientId : row.original.debtorId;
-                const name = ownerType === 'client' ? clientMap.get(ownerId) : debtorMap.get(ownerId);
-                return (
-                    <div className="flex flex-col text-left">
-                        <span className="font-bold text-foreground text-left">{name || 'Unknown Entity'}</span>
-                        <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase font-black">
-                            {ownerType} Registry
-                        </Badge>
-                    </div>
-                );
-            }
-        },
-        { 
-            header: 'Protocol Type',
-            cell: ({ row }) => {
-                const isGlobal = row.original.facilityClass === 'global';
-                return (
-                    <div className="flex flex-col text-left">
-                        <Badge className={cn("capitalize text-[9px] font-black tracking-widest w-fit", isGlobal ? "bg-slate-900 text-white" : "bg-primary/10 text-primary")}>
-                            {isGlobal ? 'Global Ceiling' : 'Sub Limit'}
-                        </Badge>
-                        {row.original.ownerType === 'client' && row.original.agreementType && (
-                            <span className="text-[10px] font-bold text-slate-600 mt-1 uppercase tracking-tight">Product: {row.original.agreementType}</span>
-                        )}
-                        {row.original.ownerType === 'debtor' && row.original.associatedClientId && (
-                            <div className="flex items-center gap-1.5 mt-1 text-left">
-                                <ArrowRight className="h-2.5 w-2.5 text-muted-foreground" />
-                                <span className="text-[10px] font-bold text-slate-600 text-left">Member: {clientMap.get(row.original.associatedClientId)}</span>
-                            </div>
-                        )}
-                    </div>
-                );
-            }
-        },
-        { accessorKey: 'type', header: 'Lending Group', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px] font-bold">{row.original.type?.replace(/_/g, ' ')}</Badge> },
-        { accessorKey: 'limit', header: 'Authorized Limit', cell: ({ row }) => <span className="font-black text-foreground">{formatCurrency(row.original.limit)}</span> },
-        { accessorKey: 'status', header: 'Standing', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize text-[10px] font-black tracking-widest">{row.original.status || 'Active'}</Badge> },
-        { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({ row }) => (
-            <div className="text-right flex items-center justify-end gap-1">
-                 <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-destructive"
-                    disabled={row.original.status !== 'inactive' || isProcessing === row.original.id}
-                    onClick={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}
-                    title={row.original.status !== 'inactive' ? "Set status to 'inactive' to enable deletion" : "Expunge Node"}
-                 >
-                    <Trash2 className="h-4 w-4" />
-                 </Button>
-
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="text-left">
-                        <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Parameters
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            onClick={() => setStatusChangeAlert({ open: true, facility: row.original, newStatus: 'active' })}
-                            disabled={row.original.status === 'active'}
-                        >
-                            <CheckCircle className="mr-2 h-4 w-4" /> Set Active
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => setStatusChangeAlert({ open: true, facility: row.original, newStatus: 'inactive' })}
-                            disabled={row.original.status === 'inactive'}
-                        >
-                            <XCircle className="mr-2 h-4 w-4" /> Set Inactive
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            className="text-destructive"
-                            onSelect={() => { if(row.original.status === 'inactive') { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); } }}
-                            disabled={row.original.status !== 'inactive'}
-                        >
-                            <Trash2 className="mr-2 h-4 w-4" /> Expunge Node
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-        )},
-    ], [clientMap, debtorMap, isProcessing]);
-    
-    if (error) {
-        return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
-    }
-    
     if (view === 'wizard') {
-        return <EditFacilityWizard facility={selectedFacility} clients={clients} debtors={debtors} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+        return (
+            <EditFacilityWizard 
+                facility={selectedFacility} 
+                parentFacility={parentFacility}
+                clients={clients} 
+                debtors={debtors} 
+                onSave={handleSaveSuccess} 
+                onBack={handleBackToList} 
+            />
+        );
+    }
+
+    function handleSaveSuccess() {
+        forceRefresh();
+        handleBackToList();
+    }
+
+    function handleBackToList() {
+        setView('list');
+        setSelectedFacility(null);
+        setParentFacility(null);
     }
 
     return (
         <div className="space-y-8 text-left text-foreground">
-             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle className="text-left">Expunge Facility Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">Permanent removal from the institutional ledger. This action cannot be undone.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left">
-                        <AlertDialogCancel onClick={() => setFacilityToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Confirm Delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <AlertDialog open={statusChangeAlert.open} onOpenChange={(open) => !open && setStatusChangeAlert({ open: false, facility: null, newStatus: null })}>
-                <AlertDialogContent className="text-left text-foreground">
-                     <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle className="text-left">Update Authority Node</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">
-                            Confirm status change to <span className="font-bold capitalize">{statusChangeAlert.newStatus}</span> for this facility.
-                        </AlertDialogDescription>
+            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <AlertDialogContent className="text-left">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Expunge Authority Node?</AlertDialogTitle>
+                        <AlertDialogDescription>Permanent removal of "{facilityToDelete?.id}" from the ledger.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={processStatusChange}>Confirm Change</AlertDialogAction>
+                        <AlertDialogCancel onClick={() => setFacilityToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: 'destructive' }))}>Delete Node</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
-                <div className="text-left text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
-                        <Banknote className="h-8 w-8 text-primary" />
-                        Facility Ledger
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+                        <Scale className="h-8 w-8 text-primary" />
+                        Facility Matrix
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Strategic oversight of authorized credit boundaries for borrowing members and cessionary nodes.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Strategic oversight of Global Ceilings and partitioned Sub-Agreement limits.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
-                        <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading}>
+                        <RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh Matrix
                     </Button>
-                    <Button onClick={handleAddNew} className="gap-2 font-bold text-white shadow-lg">
-                        <PlusCircle className="h-4 w-4"/> Initialize Facility
+                    <Button onClick={() => { setSelectedFacility(null); setParentFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6">
+                        <PlusCircle className="h-4 w-4" /> Initialize Master Ceiling
                     </Button>
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white text-left text-foreground">
-                <CardContent className="pt-6">
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Ledger...</p>
-                        </div>
-                    ) : (
-                        <DataTable columns={columns} data={facilities} />
-                    )}
-                </CardContent>
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
+                <Table>
+                    <TableHeader className="bg-slate-900">
+                        <TableRow className="hover:bg-slate-900 border-none">
+                            <TableHead className="w-12"></TableHead>
+                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Fiduciary Entity</TableHead>
+                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Context</TableHead>
+                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Master Limit</TableHead>
+                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-center">Status</TableHead>
+                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Audit</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow><TableCell colSpan={6} className="h-64 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></TableCell></TableRow>
+                        ) : globals.length > 0 ? globals.map((global) => {
+                            const isExpanded = expandedIds.has(global.id);
+                            const ownerName = global.ownerType === 'client' ? clientMap.get(global.clientId) : debtorMap.get(global.debtorId);
+                            const subs = facilities.filter(f => f.parentId === global.id);
+
+                            return (
+                                <React.Fragment key={global.id}>
+                                    <TableRow className="group hover:bg-slate-50 transition-colors">
+                                        <TableCell>
+                                            <Button variant="ghost" size="icon" onClick={() => toggleExpand(global.id)} className="h-8 w-8 text-primary">
+                                                {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+                                            </Button>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex flex-col text-left">
+                                                <span className="font-black text-sm text-slate-900">{ownerName || 'Unknown node'}</span>
+                                                <span className="text-[9px] text-muted-foreground font-mono uppercase">{global.id}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline" className="capitalize text-[9px] font-black border-primary/20 text-primary">
+                                                {global.ownerType} Branch
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right font-black text-lg text-foreground">
+                                            {formatCurrency(global.limit)}
+                                        </TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge className={cn("capitalize text-[9px] font-black border-none", statusColors[global.status || 'active'])}>
+                                                {global.status || 'Active'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="text-left">
+                                                    <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Ceiling</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Add Sub-Limit</DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
+                                                        {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => { if(global.status === 'inactive') { setFacilityToDelete(global); setIsDeleteAlertOpen(true); } }} disabled={global.status !== 'inactive'}>
+                                                        <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                    
+                                    {isExpanded && (
+                                        <TableRow className="bg-slate-50 border-y-2 border-primary/10">
+                                            <TableCell colSpan={6} className="p-0">
+                                                <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
+                                                    <div className="flex justify-between items-center text-left">
+                                                        <div className="text-left">
+                                                            <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                                                <Zap className="h-4 w-4 fill-current" /> Sub-Limit Authorization ledger
+                                                            </h4>
+                                                            <p className="text-[10px] text-muted-foreground mt-1">Specific product or client authorizations partitioned from the {formatCurrency(global.limit)} ceiling.</p>
+                                                        </div>
+                                                        <Button size="sm" onClick={() => handleAddSubLimit(global)} className="h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-white">
+                                                            <PlusCircle className="h-3 w-3" /> Initialize Sub-Node
+                                                        </Button>
+                                                    </div>
+
+                                                    {subs.length > 0 ? (
+                                                        <div className="border rounded-xl bg-white shadow-inner overflow-hidden">
+                                                            <Table>
+                                                                <TableHeader className="bg-muted/50">
+                                                                    <TableRow>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Protocol Target</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Product Group</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Sub-Limit</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {subs.map(sub => (
+                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors">
+                                                                            <TableCell className="py-3">
+                                                                                <div className="flex items-center gap-2">
+                                                                                    {sub.ownerType === 'client' ? (
+                                                                                        <Badge variant="outline" className="text-[9px] font-bold uppercase">{sub.agreementType?.replace(/_/g, ' ')}</Badge>
+                                                                                    ) : (
+                                                                                        <span className="text-xs font-bold text-slate-700">{clientMap.get(sub.associatedClientId) || 'Member Node'}</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            </TableCell>
+                                                                            <TableCell>
+                                                                                <Badge variant="secondary" className="capitalize text-[8px] font-black">{sub.type?.replace(/_/g, ' ')}</Badge>
+                                                                            </TableCell>
+                                                                            <TableCell className="text-right font-bold text-sm text-foreground">
+                                                                                {formatCurrency(sub.limit)}
+                                                                            </TableCell>
+                                                                            <TableCell className="text-right">
+                                                                                <div className="flex justify-end gap-1">
+                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(sub)}><Edit className="h-3.5 w-3.5" /></Button>
+                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if(sub.status === 'inactive') { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); } }} disabled={sub.status !== 'inactive'}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                                                                </div>
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="py-10 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest">No Sub-Limits Established</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </React.Fragment>
+                            );
+                        }) : (
+                            <TableRow>
+                                <TableCell colSpan={6} className="py-32 text-center text-muted-foreground">
+                                    <div className="flex flex-col items-center gap-4 opacity-20">
+                                        <Landmark className="h-16 w-16" />
+                                        <p className="text-sm font-black uppercase tracking-widest">Registry Standby</p>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
             </Card>
+
+            <div className="p-8 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
+                <div className="absolute top-0 right-0 p-12 opacity-5"><Gavel className="h-40 w-40 text-primary" /></div>
+                <div className="relative z-10 flex items-start gap-6 text-left">
+                    <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
+                    <div className="space-y-2 text-left">
+                        <h4 className="text-xl font-black uppercase text-left">The Master-Sub Protocol</h4>
+                        <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left">
+                            The **Master Ceiling** defines the total institutional exposure to a node. **Sub-Limits** are granular authorizations that "partition" that ceiling into specific agreement types or member-debtor pairs. Deleting or suspending a Master Ceiling instantly revokes all underlying sub-node authorities.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
