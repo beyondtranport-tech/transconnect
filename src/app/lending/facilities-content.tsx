@@ -213,7 +213,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         ) : filteredGlobals.length > 0 ? filteredGlobals.map((global) => {
                             const isExpanded = expandedIds.has(global.id);
                             const ownerName = global.ownerType === 'client' ? clientMap.get(global.clientId) : debtorMap.get(global.debtorId);
-                            // FORENSIC MATCH: Correctly filter sub-limits for the nested sub-table
                             const subs = facilities.filter(f => f.parentId === global.id);
 
                             return (
@@ -284,10 +283,10 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Sub-Limit Node</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Product / Partner</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Authorized Limit</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Sub-Limit Node</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Product / Partner</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Authorized Limit</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Actions</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>

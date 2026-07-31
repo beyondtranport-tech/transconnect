@@ -30,7 +30,7 @@ const facilitySchema = z.object({
   associatedClientId: z.string().optional().nullable(), 
   agreementType: z.string().optional().nullable(), 
   type: z.string().min(1, 'Product type or identifier is required'),
-  limit: z.coerce.number().positive('Limit must be a positive number'),
+  limit: z.coerce.number().min(1, 'Limit must be a positive number'),
   status: z.string().default('active'),
 });
 
@@ -68,7 +68,6 @@ export function EditFacilityWizard({
     const [currentStep, setCurrentStep] = useState(0);
     const [internalId, setInternalId] = useState<string | null>(facility?.id || null);
     const { toast } = useToast();
-    const firestore = useFirestore();
     
     const isSubLimitMode = !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub';
 
@@ -120,43 +119,10 @@ export function EditFacilityWizard({
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
-        return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
-    };
-
-    const autosave = async (values: FacilityFormValues) => {
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) return;
-            const res = await fetchFromAdminAPI(token, 'saveLendingFacility', { 
-                facility: { ...values, id: internalId || undefined } 
-            });
-            if (!internalId && res.id) {
-                setInternalId(res.id);
-                methods.setValue('id', res.id);
-            }
-        } catch (e) {
-            console.warn("Autosave standby", e);
-        }
-    };
-
-    const handleNext = async () => {
-        const stepFields = steps[currentStep].fields;
-        const isValid = await methods.trigger(stepFields as any);
-        if (isValid) {
-            await autosave(methods.getValues());
-            if (currentStep < steps.length - 1) setCurrentStep(prev => prev + 1);
-        } else {
-            toast({ variant: "destructive", title: "Complete all fields to proceed." });
-        }
-    };
-    
-    const handleBackStep = async () => {
-        await autosave(methods.getValues());
-        if (currentStep === 0) {
-            onBack();
-            return;
-        }
-        setCurrentStep(prev => prev - 1);
+        return step.fields.every(field => {
+            const fieldState = methods.getFieldState(field as any, methods.formState);
+            return !fieldState.error;
+        });
     };
 
     const onSubmit = async (values: FacilityFormValues) => {
@@ -165,11 +131,12 @@ export function EditFacilityWizard({
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // EXPLICIT PERSISTENCE: Ensure skipped fields (context) are merged into the final payload
+            // EXPLICIT PERSISTENCE: Ensure all context fields are merged into final payload
             const finalPayload = {
                 ...methods.getValues(),
                 ...values,
-                id: internalId || undefined
+                id: internalId || undefined,
+                limit: Number(values.limit)
             };
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { 
@@ -185,13 +152,30 @@ export function EditFacilityWizard({
         }
     };
 
+    const handleNext = async () => {
+        const stepFields = steps[currentStep].fields;
+        const isValid = await methods.trigger(stepFields as any);
+        if (isValid && currentStep < steps.length - 1) {
+            setCurrentStep(prev => prev + 1);
+        } else if (!isValid) {
+            toast({ variant: "destructive", title: "Complete all fields to proceed." });
+        }
+    };
+    
+    const handleBackStep = () => {
+        if (currentStep === 0) {
+            onBack();
+            return;
+        }
+        setCurrentStep(prev => prev - 1);
+    };
+
     const handleStepTransition = async (index: number) => {
         if (index > currentStep) {
             const stepFields = steps[currentStep].fields;
             const isValid = await methods.trigger(stepFields as any);
             if (!isValid) return;
         }
-        await autosave(methods.getValues());
         setCurrentStep(index);
     };
 
@@ -239,7 +223,7 @@ export function EditFacilityWizard({
                     <FormField control={methods.control} name="limit" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel className="text-primary font-black uppercase text-[10px] text-left">Authorized Limit Ceiling (ZAR)</FormLabel>
-                            <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
+                            <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-12 border-2 bg-white text-xl font-black" /></FormControl>
                         </FormItem>
                     )} />
                 </div>
@@ -286,7 +270,7 @@ export function EditFacilityWizard({
                         <FormField control={methods.control} name="limit" render={({ field }) => (
                             <FormItem className="text-left">
                                 <FormLabel className="text-[10px] font-black uppercase text-primary ml-1">Authorized Sub-Node Limit (ZAR)</FormLabel>
-                                <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
+                                <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-12 border-2 bg-white text-xl font-black" /></FormControl>
                             </FormItem>
                         )} />
                     </div>
@@ -320,9 +304,9 @@ export function EditFacilityWizard({
                         </div>
 
                         <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between text-left">
-                            <div className="flex items-center gap-2 text-left">
+                            <div className="flex items-center gap-2 text-left text-white">
                                 <Landmark className="h-4 w-4 text-primary" />
-                                <span className="text-[10px] font-bold uppercase text-slate-400 text-left">Functional Group</span>
+                                <span className="text-[10px] font-bold uppercase text-slate-400 text-left text-white">Functional Group</span>
                             </div>
                             <Badge variant="outline" className="text-primary border-primary/40 capitalize text-left">{watched.type?.replace(/_/g, ' ') || 'General Authority'}</Badge>
                         </div>
