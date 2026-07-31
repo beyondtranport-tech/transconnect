@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
                 
                 if (type === 'lead') {
                     q = db.collection('leads');
-                } else if (type === 'transporter' || type === 'supplier' || type === 'finance' || type === 'distributor' || type === 'driver' || type === 'warehouse') {
+                } else if (['transporter', 'supplier', 'finance', 'distributor', 'driver', 'warehouse', 'isa', 'investor', 'developer'].includes(type)) {
                     q = db.collection('partners').where('type', '==', type);
                 } else if (type === 'all') {
                     const leads = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
@@ -123,7 +123,6 @@ export async function POST(req: NextRequest) {
             case 'saveLendingFacility': {
                 const { facility } = payload;
                 const ref = db.collection('lendingFacilities').doc(facility.id || db.collection('lendingFacilities').doc().id);
-                // FORCE NUMERIC TYPES
                 const dataToSave = {
                     ...facility,
                     id: ref.id,
@@ -135,6 +134,103 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: ref.id });
             }
 
+            case 'updateFacilityStatus': {
+                const { facilityId, status } = payload;
+                await db.collection('lendingFacilities').doc(facilityId).update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteLendingFacility': {
+                const { facilityId } = payload;
+                await db.collection('lendingFacilities').doc(facilityId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveDigitalScorecard': {
+                const { clientId, scorecard } = payload;
+                await db.collection('lendingClients').doc(clientId).update({
+                    latestScorecard: { ...scorecard, generatedAt: FieldValue.serverTimestamp() },
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveForensicExtraction': {
+                const { clientId, extraction, docType, confidence, summary } = payload;
+                await db.collection('lendingClients').doc(clientId).collection('forensicExtractions').add({
+                    docType, extraction, confidence, summary,
+                    createdAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            // --- BUY & SELL MALL ACTIONS ---
+            case 'getGlobalSales': {
+                const snap = await db.collection('sales').orderBy('updatedAt', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'finalizeSale': {
+                const { saleId, commissionRate } = payload;
+                const saleRef = db.collection('sales').doc(saleId);
+                const saleSnap = await saleRef.get();
+                if (!saleSnap.exists) throw new Error("Sale node not found.");
+                
+                const sale = saleSnap.data()!;
+                const commission = sale.agreedPrice * (commissionRate / 100);
+                const sellerNet = sale.agreedPrice - commission;
+
+                await db.runTransaction(async (t) => {
+                    t.update(saleRef, { status: 'concluded', updatedAt: FieldValue.serverTimestamp() });
+                    // Logic to credit seller wallet and record platform revenue would go here
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'updateHandshakeResult': {
+                const { pingId, status, result } = payload;
+                await db.collection('engagementPings').doc(pingId).update({
+                    status, result, updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            // --- ADS & VISIBILITY ---
+            case 'getGlobalAds': {
+                const snap = await db.collectionGroup('adCampaigns').orderBy('updatedAt', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'updateAdStatus': {
+                const { adId, companyId, status } = payload;
+                await db.doc(`companies/${companyId}/adCampaigns/${adId}`).update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            // --- WALLET & PAYOUTS ---
+            case 'approvePayout': {
+                const { companyId, payoutId, amount } = payload;
+                const payoutRef = db.doc(`companies/${companyId}/payoutRequests/${payoutId}`);
+                const companyRef = db.doc(`companies/${companyId}`);
+
+                await db.runTransaction(async (t) => {
+                    t.update(payoutRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
+                    t.update(companyRef, { 
+                        walletBalance: FieldValue.increment(-amount),
+                        availableBalance: FieldValue.increment(-amount),
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'rejectPayout': {
+                const { companyId, payoutId } = payload;
+                await db.doc(`companies/${companyId}/payoutRequests/${payoutId}`).update({ status: 'rejected', updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            // --- AUTOMATION ---
             case 'autoEnrichRecord': {
                 const { id, type: recType } = payload;
                 if (!id) throw new Error("Record ID required.");
@@ -161,75 +257,19 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(enrichment) });
             }
 
-            // --- CRM & COMMUNICATIONS ---
-            case 'getAudienceCommunications': {
-                const { type } = payload;
-                const snap = await db.collectionGroup('communications')
-                    .orderBy('timestamp', 'desc')
-                    .limit(200)
-                    .get();
-                
-                let results = snap.docs.map(d => ({ id: d.id, ...d.data(), path: d.ref.path }));
-                if (type && type !== 'all') {
-                    results = results.filter((r: any) => r.partnerType === type);
-                }
-                return NextResponse.json({ success: true, data: serializeData(results) });
+            case 'getGlobalSearchLogs': {
+                const snap = await db.collectionGroup('searchLogs').orderBy('timestamp', 'desc').limit(200).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
-            case 'logCommunication': {
-                const { partnerId, type: commType, subject, notes, collection: col = 'partners' } = payload;
-                const ref = db.collection(col).doc(partnerId).collection('communications').doc();
-                const logData = {
-                    id: ref.id,
-                    partnerId,
-                    type: commType,
-                    subject,
-                    notes,
-                    timestamp: FieldValue.serverTimestamp(),
-                    adminId: decodedToken.uid
-                };
-                await ref.set(logData);
-                
-                await db.collection(col).doc(partnerId).update({
-                    lastActivityAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    status: 'contacted'
-                });
-
-                return NextResponse.json({ success: true });
-            }
-
-            case 'getPipelineQueue': {
-                const leadsSnap = await db.collection('leads')
-                    .where('status', '==', 'contacted')
-                    .orderBy('nextStepDueAt', 'asc')
-                    .limit(100)
-                    .get();
-                
-                const results = leadsSnap.docs.map(d => ({ id: d.id, type: 'lead', ...d.data() }));
-                return NextResponse.json({ success: true, data: serializeData(results) });
-            }
-
-            case 'getAuditLogs': {
-                const snap = await db.collection('auditLogs').orderBy('timestamp', 'desc').limit(200).get();
+            case 'getGlobalHandshakes': {
+                const snap = await db.collection('engagementPings').orderBy('timestamp', 'desc').limit(200).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'savePartner': {
-                const { partner, collection: col = 'partners' } = payload;
-                const ref = db.collection(col).doc(partner.id || db.collection(col).doc().id);
-                await ref.set({ 
-                    ...partner, 
-                    id: ref.id, 
-                    updatedAt: FieldValue.serverTimestamp() 
-                }, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
             }
 
             default: 

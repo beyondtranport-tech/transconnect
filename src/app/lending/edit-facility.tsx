@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle, Gavel, UserCheck, Scale, FileText } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle, Gavel, UserCheck, Scale, FileText, CheckCircle2 } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
@@ -93,11 +93,8 @@ export function EditFacilityWizard({
     // DYNAMIC STEP FILTERING
     const steps = useMemo(() => {
         return allSteps.filter(step => {
-            // Hide Branch selection if pre-selected via view/menu
             if (step.id === 'type' && (initialOwnerType || isSubLimitMode)) return false;
-            // Hide Global Association if in sub-limit mode (handled in step 2)
             if (step.id === 'association' && (initialFacilityClass === 'sub' || isSubLimitMode)) return false;
-            // Hide Sub-Limit step if strictly global mode
             if (step.id === 'agreement_limit' && initialFacilityClass === 'global' && !isSubLimitMode) return false;
             return true;
         });
@@ -315,9 +312,9 @@ export function EditFacilityWizard({
                 </div>
             );
             case 'review': return (
-                <div className="space-y-8 animate-in zoom-in-95 duration-500 text-left">
-                    <div className="text-center space-y-2 mb-8">
-                        <CheckCircle className="h-12 w-12 text-primary mx-auto mb-2" />
+                <div className="space-y-8 animate-in zoom-in-95 duration-500 text-left text-foreground">
+                    <div className="text-center space-y-2 mb-8 text-foreground">
+                        <CheckCircle2 className="h-12 w-12 text-primary mx-auto mb-2" />
                         <h3 className="text-2xl font-black uppercase">Final Protocol Check</h3>
                         <p className="text-sm text-muted-foreground">Verify authority boundaries before registry commit.</p>
                     </div>
@@ -360,9 +357,9 @@ export function EditFacilityWizard({
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left">
-                        <div className="flex justify-between items-center text-left">
+                        <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
-                                <CardTitle className="text-3xl font-black font-headline uppercase text-left">Authority Node Terminal</CardTitle>
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-left text-white text-left">Authority Node Terminal</CardTitle>
                                 <CardDescription className="text-slate-400 text-lg mt-1 text-left">Registry: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
@@ -383,7 +380,7 @@ export function EditFacilityWizard({
                                             className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                             onClick={() => handleStepTransition(index)}
                                         >
-                                            {isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
                                             <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                         </Button>
