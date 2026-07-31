@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { 
     Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
     Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
-    ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle
+    ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon
 } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
@@ -152,13 +153,10 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
     }, [mode]);
 
     if (view === 'wizard') {
-        const wizardFacility = selectedFacility;
-        const wizardParent = parentFacility;
-        
         return (
             <EditFacilityWizard 
-                facility={wizardFacility} 
-                parentFacility={wizardParent}
+                facility={selectedFacility} 
+                parentFacility={parentFacility}
                 clients={clients} 
                 debtors={debtors} 
                 onSave={() => { forceRefresh(); setView('list'); }} 
@@ -193,10 +191,10 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     <p className="text-muted-foreground mt-1 text-left">{viewConfig.desc}</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
-                    <Button onClick={() => { setSelectedFacility(null); setParentFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6">
+                    <Button onClick={() => { setSelectedFacility(null); setParentFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white">
                         <PlusCircle className="h-4 w-4" /> {viewConfig.btn}
                     </Button>
                 </div>
@@ -238,7 +236,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                         </TableCell>
                                         <TableCell>
                                             <Badge variant="outline" className="capitalize text-[10px] font-black border-primary/20 text-primary">
-                                                {global.ownerType} {global.facilityClass || 'global'}
+                                                {global.ownerType} Master
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-black text-lg text-foreground">
@@ -256,7 +254,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="text-left">
                                                     <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Node</DropdownMenuItem>
-                                                    {global.facilityClass !== 'sub' && <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Add Sub-Limit</DropdownMenuItem>}
+                                                    <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Initialize Sub-Limit</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
@@ -273,12 +271,12 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                         <TableRow className="bg-slate-50 border-y-2 border-primary/10">
                                             <TableCell colSpan={6} className="p-0">
                                                 <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
-                                                    <div className="flex justify-between items-center text-left">
+                                                    <div className="flex justify-between items-center">
                                                         <div className="text-left">
                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
-                                                                <Zap className="h-4 w-4 fill-current" /> Sub-Limit Authorization ledger
+                                                                <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {ownerName}
                                                             </h4>
-                                                            <p className="text-[10px] text-muted-foreground mt-1">Specific partitions for products or member-debtor pairs.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-1">Granular sub-limits partitioned from the master ceiling.</p>
                                                         </div>
                                                         <Button size="sm" onClick={() => handleAddSubLimit(global)} className="h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-white">
                                                             <PlusCircle className="h-3 w-3" /> Initialize Sub-Node
@@ -290,9 +288,9 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Protocol Target</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Sub-Limit Context</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2">Product Group</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Sub-Limit</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Authorized Limit</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
@@ -302,22 +300,30 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                             <TableCell className="py-3">
                                                                                 <div className="flex items-center gap-2">
                                                                                     {sub.ownerType === 'client' ? (
-                                                                                        <Badge variant="outline" className="text-[9px] font-bold uppercase">{sub.agreementType?.replace(/_/g, ' ')}</Badge>
+                                                                                        <Badge variant="outline" className="text-[9px] font-bold uppercase">{sub.agreementType?.replace(/_/g, ' ') || 'General'}</Badge>
                                                                                     ) : (
                                                                                         <span className="text-xs font-bold text-slate-700">{clientMap.get(sub.associatedClientId) || 'Member Node'}</span>
                                                                                     )}
                                                                                 </div>
                                                                             </TableCell>
                                                                             <TableCell>
-                                                                                <Badge variant="secondary" className="capitalize text-[8px] font-black">{sub.type?.replace(/_/g, ' ')}</Badge>
+                                                                                <Badge variant="secondary" className="capitalize text-[8px] font-black">{sub.type?.replace(/_/g, ' ') || 'Commercial'}</Badge>
                                                                             </TableCell>
-                                                                            <TableCell className="text-right font-bold text-sm text-foreground">
+                                                                            <TableCell className="text-right font-black text-sm text-foreground">
                                                                                 {formatCurrency(sub.limit)}
                                                                             </TableCell>
                                                                             <TableCell className="text-right">
                                                                                 <div className="flex justify-end gap-1">
                                                                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(sub)}><Edit className="h-3.5 w-3.5" /></Button>
-                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { if(sub.status === 'inactive') { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); } }} disabled={sub.status !== 'inactive'}><Trash2 className="h-3.5 w-3.5" /></Button>
+                                                                                    <Button 
+                                                                                        variant="ghost" 
+                                                                                        size="icon" 
+                                                                                        className={cn("h-7 w-7 text-destructive", sub.status !== 'inactive' && "opacity-20")} 
+                                                                                        onClick={() => { if(sub.status === 'inactive') { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); } }} 
+                                                                                        disabled={sub.status !== 'inactive'}
+                                                                                    >
+                                                                                        <Trash2 className="h-3.5 w-3.5" />
+                                                                                    </Button>
                                                                                 </div>
                                                                             </TableCell>
                                                                         </TableRow>
@@ -341,7 +347,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                 <TableCell colSpan={6} className="py-32 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                         <Landmark className="h-16 w-16" />
-                                        <p className="text-sm font-black uppercase tracking-widest">Registry Standby</p>
+                                        <p className="text-sm font-black uppercase tracking-widest text-center">No facilities matched in this registry segment.</p>
                                     </div>
                                 </TableCell>
                             </TableRow>
