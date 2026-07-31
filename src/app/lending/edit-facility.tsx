@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -7,6 +8,7 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Zap, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
@@ -101,9 +103,15 @@ export function EditFacilityWizard({
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
+        
+        const errors = methods.formState.errors;
         return step.fields.every(field => {
-            const fieldState = methods.getFieldState(field as any, methods.formState);
-            return !fieldState.error;
+            const path = field.split('.');
+            let error: any = errors;
+            for (const segment of path) {
+                error = error?.[segment];
+            }
+            return !error;
         });
     };
 
@@ -113,15 +121,18 @@ export function EditFacilityWizard({
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // DEEP CONTEXT MERGE: Ensure parentId and entityId are locked in
+            // DEEP CONTEXT MERGE: Use getValues() to ensure we don't drop fields from previous/hidden steps
+            const currentFormState = methods.getValues();
+            
             const finalPayload = {
-                ...methods.getValues(), 
-                ...values,
+                ...currentFormState,
                 id: facility?.id || undefined,
-                limit: Number(values.limit),
-                parentId: parentFacility?.id || facility?.parentId || null,
+                limit: Number(currentFormState.limit),
+                parentId: parentFacility?.id || currentFormState.parentId || null,
                 facilityClass: isSubLimitMode ? 'sub' : 'global',
-                ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || values.ownerType
+                ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || currentFormState.ownerType,
+                clientId: parentFacility?.clientId || currentFormState.clientId || null,
+                debtorId: parentFacility?.debtorId || currentFormState.debtorId || null,
             };
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { 
@@ -305,7 +316,7 @@ export function EditFacilityWizard({
     return (
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
-                <form onSubmit={methods.handleSubmit(onSubmit)}>
+                <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left">
                         <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
@@ -362,3 +373,4 @@ export function EditFacilityWizard({
         </Card>
     );
 }
+
