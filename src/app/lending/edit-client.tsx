@@ -298,7 +298,7 @@ function StepEntity({ clientId, targetCollection }: { clientId?: string, targetC
                     <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="e.g. 2024/123456/07" className="h-11 border-2 font-mono" /></FormControl></FormItem>)} />
                     <FormField control={control} name="inceptionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Inception Date</FormLabel><FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2" /></FormControl></FormItem>)} />
                 </div>
-                <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
+                <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
                     <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                     <p className="text-xs text-slate-400 text-left">Upload official CIPC, CM or Trust documentation.</p>
                     <FileUploadField 
@@ -327,15 +327,8 @@ function StepDocumentSummary() {
             docs.push({ name: 'Board/Signing Resolution', attached: !!values.signingResolutionUrl });
         }
 
-        docs.push({ name: 'Latest Audited Financials (AFS)', attached: !!values.afsDocUrl });
         docs.push({ name: 'Credit Bureau Report', attached: !!values.bureauReportUrl });
         
-        if (values.truckCount > 0 || values.trailerCount > 0) {
-            docs.push({ name: 'Fleet Inventory / RC1 Batch', attached: !!values.fleetInventoryUrl });
-        }
-
-        docs.push({ name: 'Management Accounts (YTD)', attached: !!values.mgmtAccountsUrl });
-
         if (values.ownsOperatingProperty) docs.push({ name: 'Title Deed / Bond Statement', attached: !!values.propertyDeedUrl });
         else docs.push({ name: 'Signed Lease Agreement', attached: !!values.leaseAgreementUrl });
 
@@ -433,10 +426,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
         if (Number(watchedValues.shareholderCount) > 0) base.push({ id: 'shareholders', title: 'Shareholders', icon: Users, fields: ['shareholders'] });
         if (Number(watchedValues.directorCount) > 0) base.push({ id: 'directors', title: 'Directors', icon: UserCircle, fields: ['directors'] });
     }
-    base.push({ id: 'nca', title: 'NCA Data', icon: Landmark, fields: ['annualTurnover', 'afsDocUrl'] });
     base.push({ id: 'credit', title: 'Forensic Risk', icon: ShieldAlert, fields: ['hasJudgements', 'hasDefaults', 'hasArrears', 'bureauReportUrl'] });
-    base.push({ id: 'background', title: 'Footprint', icon: Truck, fields: ['truckCount', 'trailerCount', 'fleetInventoryUrl'] });
-    base.push({ id: 'finance_mgmt', title: 'Management', icon: Banknote, fields: ['bookkeepingType', 'mgmtAccountsUrl'] });
     base.push({ id: 'infrastructure', title: 'Infrastructure', icon: Building, fields: ['ownsOperatingProperty', 'propertyDeedUrl', 'leaseAgreementUrl'] });
     base.push({ id: 'review', title: 'Review', icon: CheckCircle, fields: [] });
     base.push({ id: 'doc_summary', title: 'Doc Summary', icon: ListChecks, fields: [] });
@@ -582,24 +572,6 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                 )}
                 {currentStepConfig.id === 'shareholders' && <StakeholderForm type="shareholders" label="Shareholder" />}
                 {currentStepConfig.id === 'directors' && <StakeholderForm type="directors" label="Director" />}
-                {currentStepConfig.id === 'nca' && (
-                    <div className="space-y-8 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                            <div className="space-y-6 text-left">
-                                <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
-                                    <FormItem className="text-left">
-                                        <FormLabel>Annual Turnover (L12M)</FormLabel>
-                                        <FormControl><Input type="number" {...field} className="h-12 border-2 text-lg font-bold" /></FormControl>
-                                    </FormItem>
-                                )} />
-                            </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Financial Evidence</h4>
-                                <FileUploadField name="afsDocUrl" label="Latest Audited Financials (AFS)" folder="forensic-nca" />
-                            </div>
-                        </div>
-                    </div>
-                )}
                 {currentStepConfig.id === 'credit' && (
                     <div className="space-y-8 text-left text-foreground text-foreground">
                         <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left">
@@ -609,33 +581,6 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                         <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left text-white">
                             <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Scale className="h-4 w-4" /> Credit Intelligence</h4><p className="text-xs text-slate-400 text-left">Upload bureau evidence or settlement letters.</p></div>
                             <FileUploadField name="bureauReportUrl" label="Bureau Report / Settlement Letter" folder="forensic-risk" />
-                        </div>
-                    </div>
-                )}
-                {currentStepConfig.id === 'background' && (
-                     <div className="space-y-10 text-left text-foreground text-foreground">
-                        <div className="grid grid-cols-2 gap-8 text-left">
-                            <FormField control={methods.control} name="truckCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Truck Nodes (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
-                            <FormField control={methods.control} name="trailerCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Trailer Nodes</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
-                        </div>
-                        <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 flex justify-between items-center text-left text-foreground">
-                            <div className="space-y-1 text-left">
-                                <p className="text-sm font-bold flex items-center gap-2 text-left"><Truck className="h-4 w-4 text-primary"/> Fleet Register Audit</p>
-                                <p className="text-xs text-muted-foreground italic max-w-xs text-left">Upload fleet inventory list for RC1 cross-referencing.</p>
-                            </div>
-                            <FileUploadField name="fleetInventoryUrl" label="Fleet Inventory / RC1 Batch" folder="forensic-background" />
-                        </div>
-                    </div>
-                )}
-                {currentStepConfig.id === 'finance_mgmt' && (
-                    <div className="space-y-12 text-left text-foreground text-foreground">
-                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-white">
-                            <div className="space-y-1 text-left">
-                                <div className="bg-primary/20 p-2 rounded-lg w-fit text-left"><FileText className="h-5 w-5 text-primary" /></div>
-                                <h4 className="font-bold text-sm uppercase text-primary text-left text-white">Ledger Evidence</h4>
-                                <p className="text-xs text-slate-400 leading-relaxed max-w-sm text-left">Upload latest management accounts (YTD) for audit.</p>
-                            </div>
-                            <FileUploadField name="mgmtAccountsUrl" label="Management Accounts (YTD)" folder="forensic-finance" />
                         </div>
                     </div>
                 )}
