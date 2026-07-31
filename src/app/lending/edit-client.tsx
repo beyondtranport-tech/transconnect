@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -32,6 +31,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { doc, serverTimestamp, setDoc, collection } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
@@ -297,7 +297,7 @@ function StepEntity({ clientId, targetCollection }: { clientId?: string, targetC
                     <FormField control={control} name="inceptionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Inception Date</FormLabel><FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2" /></FormControl></FormItem>)} />
                 </div>
                 <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-foreground text-foreground"><FileText className="h-4 w-4" /> Founding Evidence</h4>
+                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                     <p className="text-xs text-slate-400 text-left">Upload official CIPC, CM or Trust documentation.</p>
                     <FileUploadField 
                         name="registrationDocUrl" 
@@ -357,7 +357,7 @@ function StepDocumentSummary() {
                             <div className={cn("p-2 rounded-lg text-left", doc.attached ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400")}>
                                 {doc.attached ? <CheckCircle2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                             </div>
-                            <div className="text-left text-foreground">
+                            <div className="text-left text-foreground text-left">
                                 <p className={cn("font-bold text-sm text-left", doc.attached ? "text-green-900" : "text-slate-600")}>{doc.name}</p>
                                 <p className="text-[10px] font-black uppercase tracking-widest opacity-50 text-left">Evidentiary Requirement</p>
                             </div>
@@ -487,7 +487,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                 {currentStepConfig.id === 'main' && <StepMain />}
                 {currentStepConfig.id === 'entity' && <StepEntity clientId={client?.id} targetCollection={targetCollection} />}
                 {currentStepConfig.id === 'compliance' && (
-                    <div className="space-y-10 text-left">
+                    <div className="space-y-10 text-left text-foreground">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                             <div className="space-y-6 text-left">
                                 <FormField control={methods.control} name="vatRegistered" render={({ field }) => (
@@ -509,7 +509,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'governance' && (
-                    <div className="space-y-8 text-left">
+                    <div className="space-y-8 text-left text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
                             <div className="space-y-6 text-left text-foreground">
                                 <div className="grid grid-cols-2 gap-6 text-left text-foreground">
@@ -556,7 +556,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'credit' && (
-                    <div className="space-y-8 text-left text-foreground">
+                    <div className="space-y-8 text-left text-foreground text-foreground">
                         <div className="p-6 bg-destructive/5 border-2 border-destructive/10 rounded-3xl space-y-4 text-left">
                             <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left"><ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure</div>
                             <FormField control={methods.control} name="hasJudgements" render={({ field }) => (<FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left"><FormLabel className="text-sm font-medium text-left">Any active judgements?</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
@@ -568,7 +568,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'background' && (
-                     <div className="space-y-10 text-left text-foreground">
+                     <div className="space-y-10 text-left text-foreground text-foreground">
                         <div className="grid grid-cols-2 gap-8 text-left">
                             <FormField control={methods.control} name="truckCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Truck Nodes (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                             <FormField control={methods.control} name="trailerCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Trailer Nodes</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
@@ -583,8 +583,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'finance_mgmt' && (
-                    <div className="space-y-12 text-left text-foreground">
-                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-foreground text-foreground">
+                    <div className="space-y-12 text-left text-foreground text-foreground">
+                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-foreground text-foreground text-foreground">
                             <div className="space-y-1 text-left text-white">
                                 <div className="bg-primary/20 p-2 rounded-lg w-fit text-left"><FileText className="h-5 w-5 text-primary" /></div>
                                 <h4 className="font-bold text-sm uppercase text-primary text-left">Ledger Evidence</h4>
@@ -595,7 +595,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'infrastructure' && (
-                    <div className="space-y-12 text-left text-foreground">
+                    <div className="space-y-12 text-left text-foreground text-foreground">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
                                <div className="space-y-1 text-left">
@@ -611,7 +611,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (
-                    <div className="text-center py-20 space-y-6 text-left">
+                    <div className="text-center py-20 space-y-6 text-left text-foreground">
                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40 text-center" />
                         <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
                         <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before formally committing this node to the registry.</p>
