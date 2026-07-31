@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -11,7 +10,7 @@ import {
     Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
     Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
     ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon,
-    CheckCircle2, FileSignature, Lock
+    CheckCircle2, FileSignature, Lock, Save
 } from "lucide-react";
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -43,6 +42,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { doc, serverTimestamp } from 'firebase/firestore';
 
 // --- MODAL COMPONENT ---
 
@@ -60,13 +60,13 @@ function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { 
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Auth failed");
+            if (!token) throw new Error("Authentication failed.");
 
             // DEFINTIVE PERSISTENCE LOGIC: 
-            // We use the parent record to hard-code all relationship fields.
+            // We use the parent record context to hard-code the hierarchy.
             const payload = {
                 parentId: parent.id,
-                ownerType: parent.ownerType,
+                ownerType: parent.ownerType || 'client',
                 facilityClass: 'sub',
                 clientId: parent.clientId || null,
                 debtorId: parent.debtorId || null,
@@ -98,7 +98,7 @@ function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { 
                         <Gavel className="h-5 w-5 text-primary" />
                         Initialize Agreement Facility
                     </DialogTitle>
-                    <DialogDescription className="text-left">
+                    <DialogDescription className="text-left text-foreground">
                         Partition a sub-limit from the global ceiling for <strong>{parent.ownerName || 'Selected Member'}</strong>.
                     </DialogDescription>
                 </DialogHeader>
@@ -281,12 +281,12 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Scale className="h-8 w-8 text-primary" />
-                        {mode === 'client-global' ? 'Client Global Ceilings' : 'Debtor Registry Ceilings'}
+                        {mode === 'client-global' ? 'Client Global Facilities' : 'Debtor Registry Ceilings'}
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Management of master limits and partitioned agreement nodes.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground">Management of master limits and partitioned agreement nodes.</p>
                 </div>
                 <div className="flex gap-2 text-left">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
@@ -307,7 +307,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
                 <Table>
                     <TableHeader className="bg-slate-900">
                         <TableRow className="hover:bg-slate-900 border-none">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -10,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
@@ -201,11 +200,11 @@ export function EditFacilityWizard({
                             <FormControl>
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4 text-left">
                                     <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all text-left", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="font-black text-xs uppercase cursor-pointer text-left">Client Branch</Label></div>
+                                        <div className="flex items-center gap-3 text-left text-foreground"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="font-black text-xs uppercase cursor-pointer text-left">Client Branch</Label></div>
                                         <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed text-left">Exposure limits for borrowing member nodes.</p>
                                     </div>
                                     <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all text-left", field.value === 'debtor' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="font-black text-xs uppercase cursor-pointer text-left">Debtor Branch</Label></div>
+                                        <div className="flex items-center gap-3 text-left text-foreground"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="font-black text-xs uppercase cursor-pointer text-left">Debtor Branch</Label></div>
                                         <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed text-left">Exposure limits for cessionary load providers.</p>
                                     </div>
                                 </RadioGroup>
@@ -215,7 +214,7 @@ export function EditFacilityWizard({
                 </div>
             );
             case 'association': return (
-                <div className="space-y-8 animate-in fade-in duration-500 text-left">
+                <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
                     {watched.ownerType === 'client' ? (
                         <FormField control={methods.control} name="clientId" render={({ field }) => (
                             <FormItem className="text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
@@ -280,7 +279,7 @@ export function EditFacilityWizard({
 
                         <FormField control={methods.control} name="limit" render={({ field }) => (
                             <FormItem className="text-left">
-                                <FormLabel className="text-[10px] font-black uppercase text-primary ml-1">Authorized Sub-Node Limit (ZAR)</FormLabel>
+                                <FormLabel className="text-[10px] font-black uppercase text-primary ml-1">Authorized Sub-Limit (ZAR)</FormLabel>
                                 <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-12 border-2 bg-white text-xl font-black" /></FormControl>
                             </FormItem>
                         )} />
@@ -314,7 +313,7 @@ export function EditFacilityWizard({
                             </div>
                         </div>
 
-                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between text-left">
+                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between text-left text-white">
                             <div className="flex items-center gap-2 text-left text-white">
                                 <Landmark className="h-4 w-4 text-primary" />
                                 <span className="text-[10px] font-bold uppercase text-slate-400 text-left text-white">Functional Group</span>
@@ -332,8 +331,8 @@ export function EditFacilityWizard({
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-                    <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left">
-                        <div className="flex justify-between items-center text-left">
+                    <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-white">
+                        <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
                                 <CardTitle className="text-3xl font-black font-headline uppercase text-left text-white">Authority Node Terminal</CardTitle>
                                 <CardDescription className="text-slate-400 text-lg mt-1 text-left text-white">Registry: {steps[currentStep]?.title || 'Audit'}</CardDescription>
@@ -343,7 +342,7 @@ export function EditFacilityWizard({
                     </CardHeader>
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left text-foreground">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -378,7 +377,7 @@ export function EditFacilityWizard({
                             </Button>
                         ) : (
                             <Button type="submit" disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white text-left">
-                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
+                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
                                 Commit Node to Ledger
                             </Button>
                         )}
