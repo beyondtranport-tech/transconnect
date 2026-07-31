@@ -10,11 +10,11 @@ import {
     Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
     Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
     ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon,
-    CheckCircle2, FileSignature, Lock, Save
+    CheckCircle2, FileSignature, Lock, Save, Clock, User, ArrowRightLeft
 } from "lucide-react";
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, cn, fetchFromAdminAPI } from '@/lib/utils';
+import { formatCurrency, cn, fetchFromAdminAPI, formatDateSafe } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
 import { 
     AlertDialog, 
@@ -37,16 +37,18 @@ import {
     DialogTrigger 
 } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { doc, serverTimestamp } from 'firebase/firestore';
+import { Separator } from '@/components/ui/separator';
 
 // --- MODAL COMPONENT ---
 
 function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { parent: any, onComplete: () => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    const { user } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [type, setType] = useState('factoring');
@@ -72,7 +74,8 @@ function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { 
                 debtorId: parent.debtorId || null,
                 type: type,
                 limit: Number(limit),
-                status: 'active'
+                status: 'active',
+                createdByName: user?.displayName || 'Admin'
             };
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { facility: payload });
@@ -302,7 +305,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         <FileSignature className="h-4 w-4" /> Agreement Facility
                     </Button>
                     <Button onClick={() => { setSelectedFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white">
-                        <PlusCircle className="h-4 w-4" /> New Client Global Facility
+                        <PlusCircle className="h-4 w-4" /> New Global Facility
                     </Button>
                 </div>
             </div>
@@ -326,6 +329,9 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                             const isExpanded = expandedIds.has(global.id);
                             const isChecked = selectedMasterId === global.id;
                             const subs = facilities.filter(f => f.parentId === global.id);
+                            
+                            const totalPartitioned = subs.reduce((sum, s) => sum + (s.limit || 0), 0);
+                            const availableBalance = (global.limit || 0) - totalPartitioned;
 
                             return (
                                 <React.Fragment key={global.id}>
@@ -366,7 +372,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                     <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="text-left text-foreground">
-                                                    <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Ceiling</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => { setSelectedFacility(global); setView('wizard'); }}><Edit className="h-4 w-4 mr-2" /> Adjust Ceiling</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
@@ -411,7 +417,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">Agreement Type</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">Agreement Node & Audit Trail</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Sub-Limit</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
                                                                     </TableRow>
@@ -420,22 +426,40 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                     {subs.map(sub => (
                                                                         <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors">
                                                                             <TableCell>
-                                                                                <Badge variant="outline" className="capitalize text-[10px] font-bold border-slate-300">
-                                                                                    {sub.type?.replace(/_/g, ' ') || 'Agreement'}
-                                                                                </Badge>
+                                                                                <div className="flex flex-col text-left">
+                                                                                    <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit">
+                                                                                        {sub.type?.replace(/_/g, ' ') || 'Agreement'}
+                                                                                    </Badge>
+                                                                                    <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left">
+                                                                                        <div className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
+                                                                                        <Separator orientation="vertical" className="h-2.5 bg-slate-300" />
+                                                                                        <div className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
+                                                                                    </div>
+                                                                                </div>
                                                                             </TableCell>
                                                                             <TableCell className="text-right font-black text-sm text-foreground">
                                                                                 {formatCurrency(sub.limit)}
                                                                             </TableCell>
                                                                             <TableCell className="text-right">
                                                                                 <div className="flex justify-end gap-1">
-                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => handleEdit(sub)}><Edit className="h-3.5 w-3.5" /></Button>
+                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => { setSelectedFacility(sub); setView('wizard'); }}><Edit className="h-3.5 w-3.5" /></Button>
                                                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                                                                                 </div>
                                                                             </TableCell>
                                                                         </TableRow>
                                                                     ))}
                                                                 </TableBody>
+                                                                <TableFooter className="bg-slate-50 border-t">
+                                                                    <TableRow>
+                                                                        <TableCell className="text-[10px] font-black uppercase text-muted-foreground tracking-widest text-right">
+                                                                            Remaining Available Ceiling
+                                                                        </TableCell>
+                                                                        <TableCell className="text-right font-black text-sm text-primary">
+                                                                            {formatCurrency(availableBalance)}
+                                                                        </TableCell>
+                                                                        <TableCell />
+                                                                    </TableRow>
+                                                                </TableFooter>
                                                             </Table>
                                                         </div>
                                                     ) : (
