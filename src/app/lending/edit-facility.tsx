@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle, Gavel } from 'lucide-react';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, fetchFromAdminAPI } from '@/lib/utils';
@@ -34,9 +35,9 @@ type FacilityFormValues = z.infer<typeof facilitySchema>;
 
 const steps = [
     { id: 'type', title: 'Context & Branch', icon: Landmark, fields: ['ownerType'] },
-    { id: 'association', title: 'Global limit', icon: Building, fields: ['clientId', 'debtorId'] },
+    { id: 'association', title: 'Global limit', icon: Building, fields: ['clientId', 'debtorId', 'limit'] },
     { id: 'agreement_limit', title: 'Agreement limit', icon: Gavel, fields: ['facilityClass', 'associatedClientId', 'agreementType'] },
-    { id: 'details', title: 'Facility Metrics', icon: Banknote, fields: ['type', 'limit'] },
+    { id: 'details', title: 'Facility Metrics', icon: Banknote, fields: ['type'] },
     { id: 'review', title: 'Review & Commit', icon: ShieldCheck, fields: [] },
 ];
 
@@ -190,6 +191,13 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                             <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     )}
+
+                    <FormField control={methods.control} name="limit" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel className="text-primary font-black uppercase text-[10px]">Authorized Limit (ZAR)</FormLabel>
+                            <FormControl><Input type="number" {...field} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
+                        </FormItem>
+                    )} />
                 </div>
             );
             case 'agreement_limit': return (
@@ -258,12 +266,6 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                                         <SelectItem value="working_capital">Working Capital</SelectItem>
                                     </SelectContent>
                                 </Select>
-                            </FormItem>
-                        )} />
-                        <FormField control={methods.control} name="limit" render={({ field }) => (
-                            <FormItem className="text-left">
-                                <FormLabel className="text-primary font-black uppercase text-[10px]">Authorized Limit (ZAR)</FormLabel>
-                                <FormControl><Input type="number" {...field} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
                             </FormItem>
                         )} />
                     </div>
