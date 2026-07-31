@@ -1,8 +1,8 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -19,12 +19,6 @@ import { EditFacilityWizard } from './edit-facility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-const statusColors: { [key: string]: string } = {
-    pending: 'bg-amber-100 text-amber-700 border-amber-200',
-    active: 'bg-green-100 text-green-700 border-green-200',
-    inactive: 'bg-slate-100 text-slate-700 border-slate-200',
-};
 
 interface FacilitiesContentProps {
     mode?: 'client-global' | 'debtor';
