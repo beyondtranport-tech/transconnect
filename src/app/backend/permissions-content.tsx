@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Edit, RefreshCcw, AlertCircle, ShieldCheck, Scale, Landmark, Zap, FileCheck, Gavel, UserCheck, Info } from 'lucide-react';
+import { Loader2, Lock, Edit, RefreshCcw, AlertCircle, ShieldCheck, Scale, Landmark, Zap, FileCheck, Gavel, UserCheck, Info, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
@@ -150,7 +150,7 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                  <Button variant="ghost" size="icon" title="Edit Authority"><Edit className="h-4 w-4" /></Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-5xl text-left text-foreground overflow-hidden flex flex-col h-[85vh]">
-                <DialogHeader className="p-6 border-b bg-muted/30">
+                <DialogHeader className="p-6 border-b bg-muted/30 shrink-0">
                     <div className="flex items-center gap-4 text-left">
                         <div className="bg-primary/10 p-3 rounded-xl"><Lock className="h-6 w-6 text-primary"/></div>
                         <div className="text-left">
