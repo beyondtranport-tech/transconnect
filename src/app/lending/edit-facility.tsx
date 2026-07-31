@@ -1,14 +1,12 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Zap, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
@@ -20,7 +18,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const facilitySchema = z.object({
   id: z.string().optional(),
@@ -30,7 +27,6 @@ const facilitySchema = z.object({
   clientId: z.string().optional().nullable(),
   debtorId: z.string().optional().nullable(),
   associatedClientId: z.string().optional().nullable(), 
-  agreementType: z.string().optional().nullable(), 
   type: z.string().min(1, 'Product type or identifier is required'),
   limit: z.coerce.number().min(1, 'Limit must be a positive number'),
   status: z.string().default('active'),
@@ -70,7 +66,7 @@ export function EditFacilityWizard({
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
     
-    const isSubLimitMode = !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub';
+    const isSubLimitMode = useMemo(() => !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub', [parentFacility, initialFacilityClass, facility]);
 
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
@@ -90,6 +86,22 @@ export function EditFacilityWizard({
 
     const watched = methods.watch();
 
+    // FORCED SYNC: Ensure form state is updated when parent/facility context changes
+    useEffect(() => {
+        const defaults = { 
+            ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || 'client', 
+            facilityClass: initialFacilityClass || (isSubLimitMode ? 'sub' : 'global'),
+            parentId: parentFacility?.id || facility?.parentId || null,
+            clientId: parentFacility?.clientId || facility?.clientId || null,
+            debtorId: parentFacility?.debtorId || facility?.debtorId || null,
+            limit: facility?.limit || 0, 
+            status: facility?.status || 'active',
+            type: facility?.type || (isSubLimitMode ? 'Sub-Limit' : 'Global Ceiling'),
+            associatedClientId: facility?.associatedClientId || null,
+        };
+        methods.reset(defaults);
+    }, [facility, parentFacility, initialOwnerType, initialFacilityClass, isSubLimitMode, methods]);
+
     const steps = useMemo(() => {
         return allSteps.filter(step => {
             if (step.id === 'type' && (initialOwnerType || isSubLimitMode)) return false;
@@ -103,7 +115,6 @@ export function EditFacilityWizard({
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
-        
         const errors = methods.formState.errors;
         return step.fields.every(field => {
             const path = field.split('.');
@@ -121,7 +132,7 @@ export function EditFacilityWizard({
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // DEEP CONTEXT MERGE: Use getValues() to ensure we don't drop fields from previous/hidden steps
+            // EXPLICIT CONTEXT MERGE: Ensures fields hidden in sub-wizard are preserved
             const currentFormState = methods.getValues();
             
             const finalPayload = {
@@ -208,11 +219,11 @@ export function EditFacilityWizard({
                 <div className="space-y-8 animate-in fade-in duration-500 text-left">
                     {watched.ownerType === 'client' ? (
                         <FormField control={methods.control} name="clientId" render={({ field }) => (
-                            <FormItem className="text-left text-foreground text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     ) : (
                         <FormField control={methods.control} name="debtorId" render={({ field }) => (
-                            <FormItem className="text-left text-foreground"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     )}
 
@@ -231,10 +242,10 @@ export function EditFacilityWizard({
                         
                         {watched.ownerType === 'client' ? (
                              <FormField control={methods.control} name="type" render={({ field }) => (
-                                <FormItem className="text-left text-foreground">
+                                <FormItem className="text-left">
                                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 text-left">Partition for Product Agreement</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left font-bold text-left"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left font-bold"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="factoring">Factoring (Discounting)</SelectItem>
                                             <SelectItem value="asset_finance">Asset Finance (Lease/Sale)</SelectItem>
@@ -373,4 +384,3 @@ export function EditFacilityWizard({
         </Card>
     );
 }
-
