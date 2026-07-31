@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -172,10 +171,10 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent className="text-left">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Expunge Authority Node?</AlertDialogTitle>
-                        <AlertDialogDescription>Permanent removal of "{facilityToDelete?.id}" from the ledger.</AlertDialogDescription>
+                        <AlertDialogTitle className="text-left">Expunge Authority Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">Permanent removal of "{facilityToDelete?.id}" from the ledger.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className="text-left">
                         <AlertDialogCancel onClick={() => setFacilityToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: 'destructive' }))}>Delete Node</AlertDialogAction>
                     </AlertDialogFooter>
@@ -190,7 +189,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left">{viewConfig.desc}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 text-left">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
@@ -222,7 +221,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
                             return (
                                 <React.Fragment key={global.id}>
-                                    <TableRow className="group hover:bg-slate-50 transition-colors">
+                                    <TableRow className="group hover:bg-slate-50 transition-colors text-left text-foreground">
                                         <TableCell>
                                             <Button variant="ghost" size="icon" onClick={() => toggleExpand(global.id)} className="h-8 w-8 text-primary">
                                                 {isExpanded ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
@@ -271,9 +270,9 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                         <TableRow className="bg-slate-50 border-y-2 border-primary/10">
                                             <TableCell colSpan={6} className="p-0">
                                                 <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
-                                                    <div className="flex justify-between items-center">
+                                                    <div className="flex justify-between items-center text-left text-foreground">
                                                         <div className="text-left">
-                                                            <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                                            <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                                                                 <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {ownerName}
                                                             </h4>
                                                             <p className="text-[10px] text-muted-foreground mt-1">Granular sub-limits partitioned from the master ceiling.</p>
@@ -284,7 +283,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                     </div>
 
                                                     {subs.length > 0 ? (
-                                                        <div className="border rounded-xl bg-white shadow-inner overflow-hidden">
+                                                        <div className="border rounded-xl bg-white shadow-inner overflow-hidden text-left text-foreground">
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
@@ -333,7 +332,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                         </div>
                                                     ) : (
                                                         <div className="py-10 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
-                                                            <p className="text-[10px] font-bold uppercase tracking-widest">No Sub-Limits Established</p>
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Sub-Limits Established</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -347,7 +346,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                 <TableCell colSpan={6} className="py-32 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                         <Landmark className="h-16 w-16" />
-                                        <p className="text-sm font-black uppercase tracking-widest text-center">No facilities matched in this registry segment.</p>
+                                        <p className="text-sm font-bold uppercase tracking-widest text-center">No facilities matched in this registry segment.</p>
                                     </div>
                                 </TableCell>
                             </TableRow>

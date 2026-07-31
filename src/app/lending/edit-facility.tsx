@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -71,7 +70,7 @@ export function EditFacilityWizard({
     const { toast } = useToast();
     const firestore = useFirestore();
     
-    const isSubLimitMode = !!parentFacility || initialFacilityClass === 'sub';
+    const isSubLimitMode = !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub';
 
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
@@ -80,11 +79,11 @@ export function EditFacilityWizard({
             ownerType: initialOwnerType || parentFacility?.ownerType || 'client', 
             facilityClass: initialFacilityClass || (isSubLimitMode ? 'sub' : 'global'),
             parentId: parentFacility?.id || null,
-            clientId: parentFacility?.clientId || null,
-            debtorId: parentFacility?.debtorId || null,
+            clientId: parentFacility?.clientId || facility?.clientId || null,
+            debtorId: parentFacility?.debtorId || facility?.debtorId || null,
             limit: 0, 
             status: 'active',
-            type: ''
+            type: 'General Authority'
         }
     });
 
@@ -218,7 +217,7 @@ export function EditFacilityWizard({
                 <div className="space-y-8 animate-in fade-in duration-500 text-left">
                     {watched.ownerType === 'client' ? (
                         <FormField control={methods.control} name="clientId" render={({ field }) => (
-                            <FormItem className="text-left text-foreground"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left text-foreground text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     ) : (
                         <FormField control={methods.control} name="debtorId" render={({ field }) => (
@@ -240,11 +239,11 @@ export function EditFacilityWizard({
                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 h-5 mb-2">Sub-Limit Initialization</Badge>
                         
                         {watched.ownerType === 'client' ? (
-                             <FormField control={methods.control} name="type" render={({ field }) => (
-                                <FormItem className="text-left">
+                             <FormField control={methods.control} name="agreementType" render={({ field }) => (
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 text-left">Partition for Product Agreement</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left font-bold"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
+                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left font-bold text-left"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="factoring">Factoring (Discounting)</SelectItem>
                                             <SelectItem value="asset_finance">Asset Finance (Lease/Sale)</SelectItem>
@@ -292,21 +291,21 @@ export function EditFacilityWizard({
                         
                         <div className="grid grid-cols-2 gap-6 text-left">
                             <div className="space-y-1 text-left">
-                                <Label className="text-[9px] font-black uppercase text-slate-500">Target Entity</Label>
-                                <p className="font-bold text-sm text-white">{resolvedTargetName}</p>
+                                <Label className="text-[9px] font-black uppercase text-slate-500 text-left">Target Entity</Label>
+                                <p className="font-bold text-sm text-white text-left">{resolvedTargetName}</p>
                             </div>
                             <div className="space-y-1 text-right">
-                                <Label className="text-[9px] font-black uppercase text-slate-500">Node Class</Label>
-                                <p className="font-bold text-sm text-white capitalize">{watched.facilityClass} {watched.ownerType}</p>
+                                <Label className="text-[9px] font-black uppercase text-slate-500 text-right">Node Class</Label>
+                                <p className="font-bold text-sm text-white capitalize text-right">{watched.facilityClass} {watched.ownerType}</p>
                             </div>
                         </div>
 
                         <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between text-left">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-left">
                                 <Landmark className="h-4 w-4 text-primary" />
-                                <span className="text-[10px] font-bold uppercase text-slate-400">Functional Group</span>
+                                <span className="text-[10px] font-bold uppercase text-slate-400 text-left">Functional Group</span>
                             </div>
-                            <Badge variant="outline" className="text-primary border-primary/40 capitalize">{watched.type?.replace('_', ' ') || 'General'}</Badge>
+                            <Badge variant="outline" className="text-primary border-primary/40 capitalize text-left">{watched.agreementType?.replace('_', ' ') || watched.type?.replace('_', ' ') || 'General'}</Badge>
                         </div>
                     </div>
                 </div>
@@ -321,9 +320,9 @@ export function EditFacilityWizard({
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left">
                         <div className="flex justify-between items-center text-left">
-                            <div className="text-left">
-                                <CardTitle className="text-3xl font-black font-headline uppercase text-left text-white text-left">Authority Node Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1 text-left">Registry: {steps[currentStep]?.title || 'Audit'}</CardDescription>
+                            <div className="text-left text-white">
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-left text-white text-left text-white">Authority Node Terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-left text-white">Registry: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
                         </div>
@@ -345,12 +344,12 @@ export function EditFacilityWizard({
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
-                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em] text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                         </Button>
                                     );
                                 })}
                             </div>
-                             <div className="p-12 space-y-12 bg-white min-h-[550px] text-left">
+                             <div className="p-12 space-y-12 bg-white min-h-[550px] text-left text-foreground">
                                 {renderStepContent()}
                              </div>
                         </div>
