@@ -36,6 +36,27 @@ export function formatNumber(value: number | null | undefined): string {
 }
 
 /**
+ * Shared utility for interacting with the /api/admin endpoint.
+ */
+export async function fetchFromAdminAPI(token: string, action: string, payload: any = {}) {
+    const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 
+            'Authorization': `Bearer ${token}`, 
+            'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ action, payload }),
+        cache: 'no-store'
+    });
+
+    const result = await response.json();
+    if (!response.ok || !result.success) {
+        throw new Error(result.error || `API Error: ${action}`);
+    }
+    return result;
+}
+
+/**
  * Resilient HTML clipboard utility.
  * DEFINITIVELY avoids 'TypeError: Illegal constructor' by avoiding 'new ClipboardItem'.
  * Uses a hidden element approach for maximum compatibility across prototype environments.
