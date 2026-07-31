@@ -108,7 +108,6 @@ function LendingPortalContent() {
       case 'agreements': return <AgreementsContent />;
       case 'assets': return <AssetRegisterContent />;
       case 'facilities-clients': return <FacilitiesContent mode="client-global" />;
-      case 'facilities-agreements': return <FacilitiesContent mode="client-sub" />;
       case 'facilities-debtors': return <FacilitiesContent mode="debtor" />;
       case 'collateral': return <CollateralContent />;
       case 'documents': return <DocumentVaultContent />;
@@ -196,11 +195,6 @@ function LendingPortalContent() {
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton isActive={activeView === 'facilities-clients'} onClick={() => navigate('facilities-clients')}>
                       Client Global
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'facilities-agreements'} onClick={() => navigate('facilities-agreements')}>
-                      Client Sub-Limits
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>

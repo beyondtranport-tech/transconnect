@@ -26,7 +26,7 @@ const statusColors: { [key: string]: string } = {
 };
 
 interface FacilitiesContentProps {
-    mode?: 'client-global' | 'client-sub' | 'debtor';
+    mode?: 'client-global' | 'debtor';
 }
 
 export default function FacilitiesContent({ mode = 'client-global' }: FacilitiesContentProps) {
@@ -110,7 +110,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             toast({ title: 'Facility Expunged' });
             forceRefresh();
         } catch (e) {
-            toast({ variant: 'destructive', title: 'Delete Failed' });
+            toast({ variant: 'destructive', title: "Delete Failed" });
         } finally {
             setFacilityToDelete(null);
             setIsDeleteAlertOpen(false);
@@ -123,9 +123,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             
             if (mode === 'client-global') {
                 return isGlobalOrNoParent && f.ownerType === 'client';
-            }
-            if (mode === 'client-sub') {
-                return f.ownerType === 'client' && f.facilityClass === 'sub';
             }
             if (mode === 'debtor') {
                 return isGlobalOrNoParent && f.ownerType === 'debtor';
@@ -142,13 +139,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     desc: 'Master limits for primary member borrowers.',
                     btn: 'Initialize Client Ceiling',
                     wizardDefaults: { ownerType: 'client', facilityClass: 'global' }
-                };
-            case 'client-sub':
-                return {
-                    title: 'Client Sub-Limit Authorizations',
-                    desc: 'Specific product partitions linked to member agreements.',
-                    btn: 'Initialize Product Sub-Limit',
-                    wizardDefaults: { ownerType: 'client', facilityClass: 'sub' }
                 };
             case 'debtor':
                 return {
@@ -173,7 +163,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                 debtors={debtors} 
                 onSave={() => { forceRefresh(); setView('list'); }} 
                 onBack={() => setView('list')}
-                // Pass entry context to skip wizard steps
                 initialOwnerType={viewConfig.wizardDefaults.ownerType as any}
                 initialFacilityClass={viewConfig.wizardDefaults.facilityClass as any}
             />
@@ -204,8 +193,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     <p className="text-muted-foreground mt-1 text-left">{viewConfig.desc}</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading}>
-                        <RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Sync Matrix
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                        <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
                     <Button onClick={() => { setSelectedFacility(null); setParentFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6">
                         <PlusCircle className="h-4 w-4" /> {viewConfig.btn}
@@ -376,4 +365,3 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
         </div>
     );
 }
-
