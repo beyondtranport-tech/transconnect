@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -9,7 +10,8 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { 
     Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
     Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
-    ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon
+    ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon,
+    CheckCircle2
 } from "lucide-react";
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -181,7 +183,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left text-foreground">
+                <div className="text-left text-foreground text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
                         <Scale className="h-8 w-8 text-primary" />
                         {viewConfig.title}
@@ -256,9 +258,23 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive" onClick={() => { setFacilityToDelete(global); setIsDeleteAlertOpen(true); }}>
-                                                        <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
-                                                    </DropdownMenuItem>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                                <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="text-left text-foreground">
+                                                            <AlertDialogHeader className="text-left">
+                                                                <AlertDialogTitle className="text-left text-foreground">Confirm Permanent Deletion</AlertDialogTitle>
+                                                                <AlertDialogDescription className="text-left text-foreground">This will remove the facility from the registry. This action is immutable.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter className="text-left">
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => { setFacilityToDelete(global); handleDelete(); }} className={cn(buttonVariants({ variant: 'destructive' }))}>Delete Node</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -9,7 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
@@ -159,15 +160,16 @@ export function EditFacilityWizard({
         }
     };
 
-    const handleNext = async (e: React.MouseEvent) => {
+    const handleNext = (e: React.MouseEvent) => {
         e.preventDefault();
         const stepFields = steps[currentStep].fields;
-        const isValid = await methods.trigger(stepFields as any);
-        if (isValid && currentStep < steps.length - 1) {
-            setCurrentStep(prev => prev + 1);
-        } else if (!isValid) {
-            toast({ variant: "destructive", title: "Incomplete Node", description: "Fill in all requirements for this protocol stage." });
-        }
+        methods.trigger(stepFields as any).then(isValid => {
+            if (isValid && currentStep < steps.length - 1) {
+                setCurrentStep(prev => prev + 1);
+            } else if (!isValid) {
+                toast({ variant: "destructive", title: "Incomplete Node", description: "Fill in all requirements for this protocol stage." });
+            }
+        });
     };
     
     const handleBackStep = (e: React.MouseEvent) => {
@@ -329,7 +331,7 @@ export function EditFacilityWizard({
     return (
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
-                <form onSubmit={(e) => { e.preventDefault(); }} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
+                <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left">
                         <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
@@ -352,7 +354,7 @@ export function EditFacilityWizard({
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
                                             className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
-                                            onClick={(e) => handleStepTransition(index, e)}
+                                            onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
@@ -375,7 +377,7 @@ export function EditFacilityWizard({
                                 Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (
-                            <Button type="button" onClick={methods.handleSubmit(onSubmit)} disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white text-left">
+                            <Button type="submit" disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white text-left">
                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
                                 Commit Node to Ledger
                             </Button>
@@ -385,14 +387,4 @@ export function EditFacilityWizard({
             </FormProvider>
         </Card>
     );
-
-    async function handleStepTransition(index: number, e: React.MouseEvent) {
-        e.preventDefault();
-        if (index <= currentStep) {
-            setCurrentStep(index);
-            return;
-        }
-        const isValid = await methods.trigger(steps[currentStep].fields as any);
-        if (isValid) setCurrentStep(index);
-    }
 }
