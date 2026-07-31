@@ -233,7 +233,7 @@ export function EditFacilityWizard({
                     <FormField control={methods.control} name="limit" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel className="text-primary font-black uppercase text-[10px] text-left">Authorized Limit Ceiling (ZAR)</FormLabel>
-                            <FormControl><Input type="number" {...field} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
+                            <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
                         </FormItem>
                     )} />
                 </div>
@@ -281,7 +281,7 @@ export function EditFacilityWizard({
                         <FormField control={methods.control} name="limit" render={({ field }) => (
                             <FormItem className="text-left">
                                 <FormLabel className="text-[10px] font-black uppercase text-primary ml-1">Authorized Sub-Node Limit (ZAR)</FormLabel>
-                                <FormControl><Input type="number" {...field} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
+                                <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
                             </FormItem>
                         )} />
                     </div>

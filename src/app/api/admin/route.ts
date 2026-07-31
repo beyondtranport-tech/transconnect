@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -76,7 +75,6 @@ export async function POST(req: NextRequest) {
                 } else if (type === 'transporter' || type === 'supplier' || type === 'finance' || type === 'distributor' || type === 'driver' || type === 'warehouse') {
                     q = db.collection('partners').where('type', '==', type);
                 } else if (type === 'all') {
-                    // Capped read across both for global search
                     const leads = await db.collection('leads').orderBy('updatedAt', 'desc').limit(100).get();
                     const partners = await db.collection('partners').orderBy('updatedAt', 'desc').limit(100).get();
                     const combined = [
@@ -125,12 +123,15 @@ export async function POST(req: NextRequest) {
             case 'saveLendingFacility': {
                 const { facility } = payload;
                 const ref = db.collection('lendingFacilities').doc(facility.id || db.collection('lendingFacilities').doc().id);
-                await ref.set({
+                // FORCE NUMERIC TYPES
+                const dataToSave = {
                     ...facility,
                     id: ref.id,
+                    limit: Number(facility.limit) || 0,
                     updatedAt: FieldValue.serverTimestamp(),
                     createdAt: facility.createdAt || FieldValue.serverTimestamp()
-                }, { merge: true });
+                };
+                await ref.set(dataToSave, { merge: true });
                 return NextResponse.json({ success: true, id: ref.id });
             }
 
@@ -189,7 +190,6 @@ export async function POST(req: NextRequest) {
                 };
                 await ref.set(logData);
                 
-                // Also update the parent record's last activity
                 await db.collection(col).doc(partnerId).update({
                     lastActivityAt: FieldValue.serverTimestamp(),
                     lastOutreachSubject: subject,

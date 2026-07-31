@@ -6,11 +6,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatCurrency(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined || typeof amount !== 'number' || isNaN(amount)) {
+export function formatCurrency(amount: number | string | null | undefined): string {
+  const val = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (val === null || val === undefined || isNaN(val)) {
     return 'R 0.00';
   }
-  const parts = amount.toFixed(2).toString().split('.');
+  const parts = val.toFixed(2).toString().split('.');
   const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
   return `R ${integerPart}.${parts[1]}`;
 }
@@ -27,11 +28,12 @@ export function formatDateSafe(dateValue: any, formatString: string = "dd MMM yy
     return formatDateFns(date, formatString);
 }
 
-export function formatNumber(value: number | null | undefined): string {
-    if (value === null || value === undefined || typeof value !== 'number' || isNaN(value)) {
+export function formatNumber(value: number | string | null | undefined): string {
+    const val = typeof value === 'string' ? parseFloat(value) : value;
+    if (val === null || val === undefined || isNaN(val)) {
         return '0';
     }
-    const fixedValue = value.toFixed(0);
+    const fixedValue = val.toFixed(0);
     return fixedValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
