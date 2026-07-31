@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -66,6 +67,11 @@ export async function POST(req: NextRequest) {
                     'facilities': 'lendingFacilities',
                     'clients': 'lendingClients',
                     'debtors': 'lendingDebtors',
+                    'agreements': 'lendingAgreements',
+                    'assets': 'lendingAssets',
+                    'securities': 'lendingSecurities',
+                    'collateral': 'lendingCollateral',
+                    'documents': 'lendingDocuments'
                 };
                 const collectionToFetch = collMap[collectionName] || collectionName;
                 const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(1000).get();
@@ -76,11 +82,9 @@ export async function POST(req: NextRequest) {
                 const { facility } = payload;
                 if (!facility) throw new Error("Missing facility payload.");
                 
-                // EXPLICIT ID RESOLUTION
                 const facilityId = facility.id || db.collection('lendingFacilities').doc().id;
                 const ref = db.collection('lendingFacilities').doc(facilityId);
                 
-                // FORENSIC PAYLOAD ENFORCEMENT
                 const dataToSave = {
                     ...facility,
                     id: facilityId,
@@ -89,7 +93,6 @@ export async function POST(req: NextRequest) {
                     facilityClass: facility.facilityClass || 'global',
                     ownerType: facility.ownerType || 'client',
                     updatedAt: FieldValue.serverTimestamp(),
-                    // Preserve createdAt if editing
                     createdAt: facility.createdAt ? (typeof facility.createdAt === 'string' ? Timestamp.fromDate(new Date(facility.createdAt)) : facility.createdAt) : FieldValue.serverTimestamp()
                 };
                 

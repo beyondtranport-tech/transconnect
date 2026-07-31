@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -157,19 +158,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent className="text-left">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="text-left">Expunge Authority Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">Permanent removal of "{facilityToDelete?.id}" from the ledger.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left">
-                        <AlertDialogCancel onClick={() => setFacilityToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: 'destructive' }))}>Delete Node</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
@@ -201,11 +189,10 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     </TableHeader>
                     <TableBody>
                         {isLoading ? (
-                            <TableRow><TableCell colSpan={6} className="h-64 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></TableCell></TableRow>
+                            <TableRow><TableCell colSpan={5} className="h-64 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></TableCell></TableRow>
                         ) : filteredGlobals.length > 0 ? filteredGlobals.map((global) => {
                             const isExpanded = expandedIds.has(global.id);
                             const ownerName = global.ownerType === 'client' ? clientMap.get(global.clientId) : debtorMap.get(global.debtorId);
-                            // Strictly find sub-limits for this parent
                             const subs = facilities.filter(f => f.parentId === global.id);
 
                             return (
@@ -240,16 +227,30 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="text-left">
+                                                <DropdownMenuContent align="end" className="text-left text-foreground">
                                                     <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Ceiling</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Partition Sub-Limit</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive" onClick={() => { setFacilityToDelete(global); setIsDeleteAlertOpen(true); }} disabled={global.status !== 'inactive'}>
-                                                        <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
-                                                    </DropdownMenuItem>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                                <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent className="text-left text-foreground">
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Expunge Authority Node?</AlertDialogTitle>
+                                                                <AlertDialogDescription>Permanent removal from the ledger.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => { setFacilityToDelete(global); handleDelete(); }} className={cn(buttonVariants({ variant: 'destructive' }))}>Delete Node</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -305,9 +306,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                                     <Button 
                                                                                         variant="ghost" 
                                                                                         size="icon" 
-                                                                                        className={cn("h-7 w-7 text-destructive", sub.status !== 'inactive' && "opacity-20")} 
-                                                                                        onClick={() => { if(sub.status === 'inactive') { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); } }} 
-                                                                                        disabled={sub.status !== 'inactive'}
+                                                                                        className={cn("h-7 w-7 text-destructive")} 
+                                                                                        onClick={() => { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); }}
                                                                                     >
                                                                                         <Trash2 className="h-3.5 w-3.5" />
                                                                                     </Button>
@@ -334,7 +334,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                 <TableCell colSpan={5} className="py-32 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                         <Landmark className="h-16 w-16" />
-                                        <p className="text-sm font-bold uppercase tracking-widest text-center">No facilities matched in this registry segment.</p>
+                                        <p className="text-sm font-bold uppercase tracking-widest text-center">No facilities matched.</p>
                                     </div>
                                 </TableCell>
                             </TableRow>

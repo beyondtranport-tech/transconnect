@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -8,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Zap, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
-import { getClientSideAuthToken } from '@/firebase';
+import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
@@ -66,7 +67,6 @@ export function EditFacilityWizard({
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
     
-    // Explicitly determine if we are in sub-limit mode
     const isSubLimitMode = useMemo(() => !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub', [parentFacility, initialFacilityClass, facility]);
 
     const methods = useForm<FacilityFormValues>({
@@ -87,7 +87,6 @@ export function EditFacilityWizard({
 
     const watched = methods.watch();
 
-    // FORCE SYNC: Reset form when context changes
     useEffect(() => {
         const defaults = { 
             ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || 'client', 
@@ -134,7 +133,6 @@ export function EditFacilityWizard({
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // DEEP CONTEXT MERGE: Prevents data loss for background fields
             const finalPayload = {
                 ...values,
                 id: facility?.id || undefined,
@@ -142,8 +140,8 @@ export function EditFacilityWizard({
                 parentId: parentFacility?.id || values.parentId || null,
                 facilityClass: isSubLimitMode ? 'sub' : 'global',
                 ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || values.ownerType,
-                clientId: parentFacility?.clientId || values.clientId || null,
-                debtorId: parentFacility?.debtorId || values.debtorId || null,
+                clientId: parentFacility?.clientId || facility?.clientId || values.clientId || null,
+                debtorId: parentFacility?.debtorId || facility?.debtorId || values.debtorId || null,
             };
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { 
@@ -160,7 +158,7 @@ export function EditFacilityWizard({
     };
 
     const handleNext = async (e: React.MouseEvent) => {
-        e.preventDefault(); // Stop form submission
+        e.preventDefault();
         const stepFields = steps[currentStep].fields;
         const isValid = await methods.trigger(stepFields as any);
         if (isValid && currentStep < steps.length - 1) {
@@ -352,7 +350,7 @@ export function EditFacilityWizard({
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
                                             className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
-                                            onClick={() => handleStepTransition(index)}
+                                            onClick={() => setCurrentStep(index)}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
