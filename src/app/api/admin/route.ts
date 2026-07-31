@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
                     'assets': 'lendingAssets',
                     'securities': 'lendingSecurities',
                     'clients': 'lendingClients',
-                    'debtors': 'lendingClients',
+                    'debtors': 'lendingDebtors',
                     'collateral': 'lendingCollateral',
                     'documents': 'lendingDocuments',
                     'partners': 'lendingPartners'

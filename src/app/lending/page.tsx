@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -44,7 +45,8 @@ import {
   TrendingUp,
   Gavel,
   History,
-  Archive
+  Archive,
+  User
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -61,6 +63,7 @@ import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // --- Dynamic Imports for Modular Content ---
 const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const DebtorsContent = dynamic(() => import('@/app/lending/debtors-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
@@ -103,6 +106,7 @@ function LendingPortalContent() {
     switch (activeView) {
       case 'desk': return <LenderDeskContent />;
       case 'clients': return <ClientsContent />;
+      case 'debtors': return <DebtorsContent />;
       case 'agreements': return <AgreementsContent />;
       case 'assets': return <AssetRegisterContent />;
       case 'facilities': return <FacilitiesContent />;
@@ -119,9 +123,9 @@ function LendingPortalContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex flex-col justify-center items-center py-40 gap-4">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Authenticating Portal Access...</p>
+        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Authenticating Portal Access...</p>
         </div>
     );
   }
@@ -132,7 +136,7 @@ function LendingPortalContent() {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
+          <div className="flex items-center gap-2 p-2 text-left">
             <div className="bg-primary/10 p-2 rounded-lg text-left">
               <Landmark className="h-6 w-6 text-primary" />
             </div>
@@ -150,13 +154,18 @@ function LendingPortalContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'agreements', 'assets', 'facilities'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'debtors', 'agreements', 'assets', 'facilities'].includes(activeView)}>
                   <ClipboardList />
                   <span>Lending Portfolios</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
+                      Clients
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                   <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'debtors'} onClick={() => navigate('debtors')}>
                       Debtors
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
@@ -250,11 +259,11 @@ function LendingPortalContent() {
                 <ArrowRightLeft className="h-3.5 w-3.5" /> Platform Backend
               </Link>
             </Button>
-            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-white font-bold text-xs">AD</AvatarFallback>
               </Avatar>
-              <div className="flex flex-col truncate text-left text-foreground">
+              <div className="flex flex-col truncate text-left">
                 <span className="text-xs font-bold text-sidebar-foreground truncate text-left">{user.displayName || 'Admin'}</span>
                 <span className="text-[10px] text-sidebar-foreground/70 truncate text-left">{user.email}</span>
               </div>

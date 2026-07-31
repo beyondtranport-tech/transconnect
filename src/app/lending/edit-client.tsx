@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -138,14 +139,14 @@ function FileUploadField({ name, label, folder, variant = 'standard' }: { name: 
 
             setProgress(30);
             const fileName = `${name.replace(/\./g, '_')}_${Date.now()}_${file.name}`;
-            const res = await fetch('/api/uploadImageAsset', {
+            const response = await fetch('/api/uploadImageAsset', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileDataUri: dataUri, folder: `${folder}/${user.uid}`, fileName, contentType: file.type })
             });
 
-            const result = await res.json();
-            if (!res.ok) throw new Error(result.error);
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error);
 
             setValue(name, result.url, { shouldValidate: true });
             setProgress(100);
@@ -236,7 +237,7 @@ function StepMain() {
     );
 }
 
-function StepEntity({ clientId }: { clientId?: string }) {
+function StepEntity({ clientId, targetCollection }: { clientId?: string, targetCollection: string }) {
     const { control, watch } = useFormContext<ApplicationFormValues>();
     const entType = watch('entityType');
     const { toast } = useToast();
@@ -258,6 +259,7 @@ function StepEntity({ clientId }: { clientId?: string }) {
                     action: 'saveForensicExtraction',
                     payload: {
                         clientId,
+                        targetCollection,
                         docType: 'company_formation',
                         extraction: result,
                         confidence: 0.95,
@@ -295,8 +297,8 @@ function StepEntity({ clientId }: { clientId?: string }) {
                     <FormField control={control} name="inceptionDate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Inception Date</FormLabel><FormControl><Input {...field} value={field.value || ''} type="date" className="h-11 border-2" /></FormControl></FormItem>)} />
                 </div>
                 <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Evidence</h4>
-                    <p className="text-xs text-slate-400">Upload official CIPC, CM or Trust documentation.</p>
+                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-foreground text-foreground"><FileText className="h-4 w-4" /> Founding Evidence</h4>
+                    <p className="text-xs text-slate-400 text-left">Upload official CIPC, CM or Trust documentation.</p>
                     <FileUploadField 
                         name="registrationDocUrl" 
                         label={entType === 'Trust' ? 'Trust Deed' : 'CIPC / Founding Document'} 
@@ -340,36 +342,36 @@ function StepDocumentSummary() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="space-y-2">
+            <div className="space-y-2 text-left">
                 <h3 className="text-2xl font-black font-headline uppercase tracking-tight text-left">Forensic Document Summary</h3>
                 <p className="text-muted-foreground text-sm text-left">Review your evidence nodes. Green indicators confirm the handshake is backed by documentation.</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-3 text-left">
+            <div className="grid grid-cols-1 gap-3 text-left text-foreground">
                 {requiredDocs.map((doc, i) => (
                     <div key={i} className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all",
+                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left",
                         doc.attached ? "bg-green-50 border-green-100" : "bg-white border-slate-100 opacity-60"
                     )}>
-                        <div className="flex items-center gap-4">
-                            <div className={cn("p-2 rounded-lg", doc.attached ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400")}>
+                        <div className="flex items-center gap-4 text-left">
+                            <div className={cn("p-2 rounded-lg text-left", doc.attached ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400")}>
                                 {doc.attached ? <CheckCircle2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                             </div>
-                            <div className="text-left">
-                                <p className={cn("font-bold text-sm", doc.attached ? "text-green-900" : "text-slate-600")}>{doc.name}</p>
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-50">Evidentiary Requirement</p>
+                            <div className="text-left text-foreground">
+                                <p className={cn("font-bold text-sm text-left", doc.attached ? "text-green-900" : "text-slate-600")}>{doc.name}</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-50 text-left">Evidentiary Requirement</p>
                             </div>
                         </div>
-                        {!doc.attached && <Badge variant="outline" className="text-[9px] font-black uppercase">Missing Evidence</Badge>}
+                        {!doc.attached && <Badge variant="outline" className="text-[9px] font-black uppercase text-left">Missing Evidence</Badge>}
                     </div>
                 ))}
             </div>
 
             {requiredDocs.some(d => !d.attached) && (
-                <Alert className="bg-amber-50 border-amber-200 text-left">
+                <Alert className="bg-amber-50 border-amber-200 text-left text-foreground">
                     <Info className="h-5 w-5 text-amber-600" />
-                    <div className="ml-2 text-left">
-                        <AlertTitle className="text-amber-800 font-bold">Incomplete Handshake</AlertTitle>
+                    <div className="ml-2 text-left text-foreground">
+                        <AlertTitle className="text-amber-800 font-bold text-left">Incomplete Handshake</AlertTitle>
                         <AlertDescription className="text-amber-700 text-xs text-left">
                             The credit vetting division requires all high-fidelity documents to be attached before formal matching can commence.
                         </AlertDescription>
@@ -382,7 +384,7 @@ function StepDocumentSummary() {
 
 // --- MAIN WIZARD COMPONENT ---
 
-export function EditClientWizard({ client, onSave, onBack }: { client?: any, onSave: () => void, onBack: () => void }) {
+export function EditClientWizard({ client, onSave, onBack, targetCollection = 'lendingClients' }: { client?: any, onSave: () => void, onBack: () => void, targetCollection?: 'lendingClients' | 'lendingDebtors' }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -427,7 +429,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
     const values = methods.getValues();
     const token = await getClientSideAuthToken();
     if (token && client?.id) {
-        const clientRef = doc(firestore, 'lendingClients', client.id);
+        const clientRef = doc(firestore, targetCollection, client.id);
         setDoc(clientRef, { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(e => console.warn("Autosave failed", e));
     }
 
@@ -442,10 +444,10 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Auth failed.");
         
-        const clientRef = client?.id ? doc(firestore, 'lendingClients', client.id) : doc(collection(firestore, 'lendingClients'));
+        const clientRef = client?.id ? doc(firestore, targetCollection, client.id) : doc(collection(firestore, targetCollection));
         await setDoc(clientRef, { ...values, id: clientRef.id, updatedAt: serverTimestamp() }, { merge: true });
 
-        toast({ title: 'Application Processed' });
+        toast({ title: 'Record Processed' });
         onSave();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
@@ -463,7 +465,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)}>
           <CardHeader className="bg-slate-900 text-white p-8 text-left">
-            <div className="flex justify-between items-center text-left">
+            <div className="flex justify-between items-center text-left text-white">
               <div className="text-left text-white">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-left text-white">Forensic Onboarding Terminal</CardTitle>
                 <CardDescription className="text-slate-400 text-left text-white">Section: {currentStepConfig.title}</CardDescription>
@@ -483,7 +485,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
               </div>
               <div className="p-10 space-y-12 bg-white min-h-[600px] text-left text-foreground">
                 {currentStepConfig.id === 'main' && <StepMain />}
-                {currentStepConfig.id === 'entity' && <StepEntity clientId={client?.id} />}
+                {currentStepConfig.id === 'entity' && <StepEntity clientId={client?.id} targetCollection={targetCollection} />}
                 {currentStepConfig.id === 'compliance' && (
                     <div className="space-y-10 text-left">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
@@ -536,7 +538,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                 {currentStepConfig.id === 'shareholders' && <StakeholderForm type="shareholders" label="Shareholder" />}
                 {currentStepConfig.id === 'directors' && <StakeholderForm type="directors" label="Director" />}
                 {currentStepConfig.id === 'nca' && (
-                    <div className="space-y-8 text-left">
+                    <div className="space-y-8 text-left text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                             <div className="space-y-6 text-left">
                                 <FormField control={methods.control} name="annualTurnover" render={({ field }) => (
@@ -559,19 +561,19 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                             <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left"><ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure</div>
                             <FormField control={methods.control} name="hasJudgements" render={({ field }) => (<FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left"><FormLabel className="text-sm font-medium text-left">Any active judgements?</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
                         </div>
-                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left text-foreground text-foreground">
-                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Scale className="h-4 w-4" /> Credit Intelligence</h4><p className="text-xs text-slate-400 text-left">Upload bureau evidence or settlement letters.</p></div>
+                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left">
+                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><Scale className="h-4 w-4" /> Credit Intelligence</h4><p className="text-xs text-slate-400 text-left text-white">Upload bureau evidence or settlement letters.</p></div>
                             <FileUploadField name="bureauReportUrl" label="Bureau Report / Settlement Letter" folder="forensic-risk" />
                         </div>
                     </div>
                 )}
                 {currentStepConfig.id === 'background' && (
-                     <div className="space-y-10 text-left">
+                     <div className="space-y-10 text-left text-foreground">
                         <div className="grid grid-cols-2 gap-8 text-left">
                             <FormField control={methods.control} name="truckCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Truck Nodes (RC1)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                             <FormField control={methods.control} name="trailerCount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Trailer Nodes</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                         </div>
-                        <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 flex justify-between items-center text-left text-foreground text-foreground">
+                        <div className="p-8 border-2 border-dashed rounded-[3rem] bg-slate-50 flex justify-between items-center text-left text-foreground">
                             <div className="space-y-1 text-left">
                                 <p className="text-sm font-bold flex items-center gap-2 text-left"><Truck className="h-4 w-4 text-primary"/> Fleet Register Audit</p>
                                 <p className="text-xs text-muted-foreground italic max-w-xs text-left">Upload fleet inventory list for RC1 cross-referencing.</p>
@@ -581,9 +583,9 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                     </div>
                 )}
                 {currentStepConfig.id === 'finance_mgmt' && (
-                    <div className="space-y-12 text-left">
-                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-foreground">
-                            <div className="space-y-1 text-left">
+                    <div className="space-y-12 text-left text-foreground">
+                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-foreground text-foreground">
+                            <div className="space-y-1 text-left text-white">
                                 <div className="bg-primary/20 p-2 rounded-lg w-fit text-left"><FileText className="h-5 w-5 text-primary" /></div>
                                 <h4 className="font-bold text-sm uppercase text-primary text-left">Ledger Evidence</h4>
                                 <p className="text-xs text-slate-400 leading-relaxed max-w-sm text-left">Upload latest management accounts (YTD) for audit.</p>
@@ -609,7 +611,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (
-                    <div className="text-center py-20 space-y-6 text-left text-foreground">
+                    <div className="text-center py-20 space-y-6 text-left">
                         <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40 text-center" />
                         <h3 className="text-2xl font-black uppercase text-center">Audit Finalization</h3>
                         <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before formally committing this node to the registry.</p>
@@ -619,7 +621,7 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
               </div>
             </div>
           </CardContent>
-          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground text-foreground">
+          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} disabled={currentStep === 0}>Back</Button>
             {currentStep < memoizedSteps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs text-white">Next Section <ArrowRight className="ml-2 h-4 w-4" /></Button>
@@ -631,71 +633,4 @@ export function EditClientWizard({ client, onSave, onBack }: { client?: any, onS
       </FormProvider>
     </Card>
   );
-}
-
-function ApplyForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { user } = useUser();
-  const firestore = useFirestore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const enquiryId = searchParams.get('enquiryId');
-
-  const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
-  }, [firestore, user]);
-  const { data: userData } = useDoc(userDocRef);
-
-  const methods = useForm<ApplicationFormValues>({
-    resolver: zodResolver(combinedSchema),
-    mode: 'onChange',
-    defaultValues: {
-      applyingCapacity: 'entity',
-      name: '',
-      status: 'draft',
-      shareholderCount: 0,
-      directorCount: 0,
-      industrial_tags: [],
-    },
-  });
-
-  const onSubmit = async (values: ApplicationFormValues) => {
-    setIsSubmitting(true);
-    try {
-        const token = await getClientSideAuthToken();
-        if (!token) throw new Error("Auth failed.");
-        
-        const companyId = userData?.companyId;
-        if (!companyId) throw new Error("User company profile not found.");
-
-        const clientRef = enquiryId ? doc(firestore, 'lendingClients', enquiryId) : doc(collection(firestore, 'lendingClients'));
-        await setDoc(clientRef, { ...values, id: clientRef.id, updatedAt: serverTimestamp() }, { merge: true });
-
-        onSave();
-    } catch (error: any) {
-        console.error("Save Error:", error);
-    } finally {
-        setIsSubmitting(false);
-    }
-  };
-  
-  const onSave = () => {
-    router.push('/account?view=dashboard');
-  };
-
-  return (
-    <div className="p-8 text-left text-foreground">
-      <EditClientWizard onSave={onSave} onBack={() => router.back()} />
-    </div>
-  );
-}
-
-export default function ApplyPage() {
-    return (
-        <div className="container mx-auto flex min-h-screen items-center justify-center px-4 py-20 bg-slate-50 text-left">
-            <Suspense fallback={<div className="flex justify-center p-20"><Loader2 className="animate-spin h-12 w-12 text-primary" /></div>}><ApplyForm /></Suspense>
-        </div>
-    )
 }

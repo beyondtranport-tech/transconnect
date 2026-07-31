@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -16,8 +17,6 @@ import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { EditClientWizard } from './edit-client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import DebtorDiscoveryEngine from './debtor-discovery';
-import { BulkImportDialog } from '@/app/adminaccount/marketing/BulkImportDialog';
 import { cn, downloadDataAsCSV, formatDateSafe } from '@/lib/utils';
 import AudienceCommunicationsTable from '@/app/adminaccount/marketing/AudienceCommunicationsTable';
 import { Separator } from '@/components/ui/separator';
@@ -110,13 +109,13 @@ export default function ClientsContent() {
     const columns: ColumnDef<any>[] = useMemo(() => [
         { 
             accessorKey: 'name', 
-            header: 'Debtor Entity',
+            header: 'Client Entity',
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5 text-left">
-                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Cessionary Node</Badge>
-                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.code || row.original.id.slice(-6)}</span>
+                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Member Node</Badge>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id.slice(-6)}</span>
                     </div>
                 </div>
             )
@@ -140,7 +139,7 @@ export default function ClientsContent() {
                 </Badge>
             )
         },
-        { id: 'actions', header: <div className="text-right">Oversight</div>, cell: ({ row }) => (
+        { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({ row }) => (
             <div className="flex justify-end items-center gap-1 text-left">
                 <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
                 <Button asChild variant="ghost" size="icon" title="Digital Scorecard">
@@ -162,16 +161,16 @@ export default function ClientsContent() {
     ], [forceRefresh]);
     
     if (view === 'wizard') {
-        return <EditClientWizard client={selectedClient} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+        return <EditClientWizard client={selectedClient} targetCollection="lendingClients" onSave={handleSaveSuccess} onBack={handleBackToList} />;
     }
 
     return (
         <div className="space-y-8 text-left text-foreground">
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent className="text-left">
+                <AlertDialogContent className="text-left text-foreground">
                     <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle className="text-left">Expunge Debtor Record?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">Permanent removal of "{clientToDelete?.name}" from the lending registry.</AlertDialogDescription>
+                        <AlertDialogTitle className="text-left">Expunge Client Record?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">Permanent removal of "{clientToDelete?.name}" from the client portfolio.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="text-left">
                         <AlertDialogCancel onClick={() => setClientToDelete(null)}>Cancel</AlertDialogCancel>
@@ -184,77 +183,38 @@ export default function ClientsContent() {
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Users className="h-8 w-8 text-primary" />
-                        Debtor Registry
+                        Client Portfolio
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Specialized portfolio of cessionaries for Factoring and Rights Discounting.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Strategic list of primary borrowers approved for platform facilities.</p>
                 </div>
             </div>
 
-            <Tabs defaultValue="registry" className="w-full text-left">
-                <TabsList className="bg-muted/30 p-1 h-auto flex-wrap justify-start">
-                    <TabsTrigger value="registry" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <Database className="h-3.5 w-3.5" /> Registry Ledger
-                    </TabsTrigger>
-                    <TabsTrigger value="discovery" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <SearchCode className="h-3.5 w-3.5" /> Debtor Scouting (AI)
-                    </TabsTrigger>
-                    <TabsTrigger value="oversight" className="gap-2 px-6 py-2.5 font-bold uppercase tracking-widest text-[10px]">
-                        <History className="h-3.5 w-3.5" /> Audit Timeline
-                    </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="registry" className="mt-8 space-y-6 text-left text-foreground">
-                    <Card className="border-none shadow-xl bg-white text-left">
-                        <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
-                            <div className="text-left">
-                                <CardTitle className="text-lg font-bold text-left">Authorized Debtors</CardTitle>
-                                <CardDescription className="text-left">Verified entities currently active in the audit system.</CardDescription>
-                            </div>
-                            <div className="flex gap-2 text-left">
-                                <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
-                                    <RotateCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(clients, `debtors-registry-${Date.now()}.csv`)} className="gap-2">
-                                    <Download className="h-4 w-4" /> Export
-                                </Button>
-                                <BulkImportDialog type="lendingClient" onComplete={forceRefresh}>
-                                    <Button variant="outline" size="sm" className="gap-2"><Upload className="h-4 w-4" /> Import</Button>
-                                </BulkImportDialog>
-                                <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg">
-                                    <PlusCircle className="h-4 w-4" /> Add Debtor
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pt-6 text-left text-foreground">
-                            {isLoading ? (
-                                <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
-                                    <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Ledger...</p>
-                                </div>
-                            ) : (
-                                <DataTable columns={columns} data={clients} />
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="discovery" className="mt-8">
-                    <DebtorDiscoveryEngine />
-                </TabsContent>
-
-                <TabsContent value="oversight" className="mt-8">
-                    <Card className="border-none shadow-xl bg-white text-left text-foreground">
-                        <CardHeader className="border-b bg-muted/10">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2 text-left">
-                                <History className="h-5 w-5 text-primary" /> Relationship Activity Stream
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 text-left">
-                            <AudienceCommunicationsTable audience="debtor" />
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
+            <Card className="border-none shadow-xl bg-white text-left text-foreground">
+                <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
+                    <div className="text-left">
+                        <CardTitle className="text-lg font-bold text-left text-foreground">Active Clients</CardTitle>
+                        <CardDescription className="text-left text-foreground">Verified entities with authorized capital limits.</CardDescription>
+                    </div>
+                    <div className="flex gap-2 text-left">
+                        <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                            <RotateCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Portfolio
+                        </Button>
+                        <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg">
+                            <PlusCircle className="h-4 w-4" /> Add Client
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="pt-6 text-left text-foreground">
+                    {isLoading ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Ledger...</p>
+                        </div>
+                    ) : (
+                        <DataTable columns={columns} data={clients} />
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }
