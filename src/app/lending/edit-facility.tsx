@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle } from 'lucide-react';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
@@ -83,6 +82,9 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             const token = await getClientSideAuthToken();
             if (!token) return;
 
+            // Only attempt save if there's enough minimal data (e.g. ownerType)
+            if (!values.ownerType) return;
+
             const res = await fetchFromAdminAPI(token, 'saveLendingFacility', { 
                 facility: { ...values, id: internalId || undefined } 
             });
@@ -101,7 +103,6 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
         const isValid = await methods.trigger(stepFields as any);
         
         if (isValid) {
-            // Persistent transition
             const currentValues = methods.getValues();
             await autosave(currentValues);
             
@@ -135,12 +136,24 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             setIsLoading(false);
         }
     };
-    
+
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
         const step = steps[stepIndex];
         if (!step.fields || step.fields.length === 0) return true;
         return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
+    };
+
+    const handleStepTransition = async (index: number) => {
+        if (index > currentStep) {
+            const stepFields = steps[currentStep].fields;
+            const isValid = await methods.trigger(stepFields as any);
+            if (!isValid) return;
+        }
+        
+        const currentValues = methods.getValues();
+        await autosave(currentValues);
+        setCurrentStep(index);
     };
     
     const renderStepContent = () => {
@@ -154,11 +167,11 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                             <FormControl>
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
                                     <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-3"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="font-black text-xs uppercase cursor-pointer">Client Branch</Label></div>
+                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="font-black text-xs uppercase cursor-pointer">Client Branch</Label></div>
                                         <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Exposure limits for borrowing member nodes.</p>
                                     </div>
                                     <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all", field.value === 'debtor' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-3"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="font-black text-xs uppercase cursor-pointer">Debtor Branch</Label></div>
+                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="font-black text-xs uppercase cursor-pointer">Debtor Branch</Label></div>
                                         <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Exposure limits for cessionary load providers.</p>
                                     </div>
                                 </RadioGroup>
@@ -198,7 +211,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                                     <FormItem className="animate-in slide-in-from-top-2">
                                         <FormLabel>Link to Product Agreement</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
-                                            <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
+                                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
                                             <SelectContent>
                                                 <SelectItem value="factoring">Factoring</SelectItem>
                                                 <SelectItem value="loan">Asset Loan</SelectItem>
@@ -213,7 +226,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                     ) : (
                         <div className="space-y-8">
                             <FormField control={methods.control} name="debtorId" render={({ field }) => (
-                                <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                                <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
                             )} />
 
                             <FormField control={methods.control} name="facilityClass" render={({ field }) => (
@@ -236,10 +249,10 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
 
                             {watched.facilityClass === 'sub' && (
                                 <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
-                                    <FormItem className="animate-in slide-in-from-top-2">
+                                    <FormItem className="animate-in slide-in-from-top-2 text-left">
                                         <FormLabel>Authorize for Specific Client</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
-                                            <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
+                                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
                                             <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                                         </Select>
                                     </FormItem>
@@ -256,7 +269,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                             <FormItem className="text-left">
                                 <FormLabel>Lending category</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
-                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="factoring">Factoring</SelectItem>
                                         <SelectItem value="asset_finance">Asset Finance</SelectItem>
@@ -274,9 +287,9 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                     </div>
 
                     <div className="p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 text-left">
                             <Info className="h-5 w-5 text-primary" />
-                            <h4 className="text-xs font-black uppercase tracking-widest">Authority node Logic</h4>
+                            <h4 className="text-xs font-black uppercase tracking-widest text-left">Authority node Logic</h4>
                         </div>
                         <p className="text-[11px] text-slate-400 leading-relaxed text-left">
                             {watched.ownerType === 'client' ? (
@@ -294,10 +307,10 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             );
             case 'review': return (
                 <div className="text-center py-20 space-y-6">
-                    <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
+                    <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40 text-center" />
                     <div className="space-y-2 text-center">
                         <h3 className="text-2xl font-black uppercase">Protocol Confirmation</h3>
-                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed">Verify the authority node boundaries before committing to the global facility ledger.</p>
+                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify the authority node boundaries before committing to the global facility ledger.</p>
                     </div>
                 </div>
             );
@@ -306,21 +319,21 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
     };
     
     return (
-        <Card className="max-w-5xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
+        <Card>
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5">
                         <div className="flex justify-between items-center">
                             <div className="text-left">
-                                <CardTitle className="text-2xl font-black font-headline uppercase">Initialize Facility Node</CardTitle>
-                                <CardDescription className="text-slate-400">Step: {steps[currentStep].title}</CardDescription>
+                                <CardTitle className="text-2xl font-black font-headline uppercase text-left">Initialize Facility Node</CardTitle>
+                                <CardDescription className="text-slate-400 text-left">Step: {steps[currentStep].title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to Ledger</Button>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
                         <div className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
-                             <div className="bg-slate-50 border-r p-6 space-y-2">
+                             <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -357,16 +370,4 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             </FormProvider>
         </Card>
     );
-
-    async function handleStepTransition(index: number) {
-        if (index > currentStep) {
-            const stepFields = steps[currentStep].fields;
-            const isValid = await methods.trigger(stepFields as any);
-            if (!isValid) return;
-        }
-        
-        const currentValues = methods.getValues();
-        await autosave(currentValues);
-        setCurrentStep(index);
-    }
 }
