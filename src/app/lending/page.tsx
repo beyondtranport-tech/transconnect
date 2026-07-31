@@ -58,7 +58,6 @@ import { signOut } from 'firebase/auth';
 
 import dynamic from 'next/dynamic';
 import React from 'react';
-import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // --- Dynamic Imports for Modular Content ---
 const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
@@ -122,6 +121,13 @@ function LendingPortalContent() {
     }
   }, [activeView]);
 
+  const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
+
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return "AD";
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
   if (isUserLoading || !user) {
     return (
         <div className="flex flex-col justify-center items-center py-40 gap-4 text-center">
@@ -130,8 +136,6 @@ function LendingPortalContent() {
         </div>
     );
   }
-
-  const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
 
   return (
     <SidebarProvider>
@@ -268,11 +272,26 @@ function LendingPortalContent() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
-        </Sidebar>
-        <SidebarInset>
-          <div className="p-8 text-left text-foreground">
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+            <Avatar className="h-10 w-10">
+                <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col truncate text-left">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Member'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+            </div>
+            <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
+                <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <div className="p-8 text-left text-foreground">
             <Suspense fallback={<div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
-              {renderContent()}
+                {renderContent()}
             </Suspense>
         </div>
       </SidebarInset>
