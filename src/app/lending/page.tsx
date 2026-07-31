@@ -148,21 +148,21 @@ function LendingPortalContent() {
                   <span>Master Action Ledger</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Debtors" isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
-                  <Users />
-                  <span>Debtor Registry</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'agreements', 'assets', 'facilities'].includes(activeView)}>
                   <ClipboardList />
                   <span>Lending Portfolios</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
                   <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
+                      Debtors
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
                     <SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>
-                      Active Agreements
+                      Agreements
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
