@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle, Gavel } from 'lucide-react';
-import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, fetchFromAdminAPI } from '@/lib/utils';
@@ -17,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 
 const facilitySchema = z.object({
   id: z.string().optional(),
@@ -36,10 +37,10 @@ type FacilityFormValues = z.infer<typeof facilitySchema>;
 
 const allSteps = [
     { id: 'type', title: 'Context & Branch', icon: Landmark, fields: ['ownerType'] },
-    { id: 'association', title: 'Entity & Limit', icon: Building, fields: ['clientId', 'debtorId', 'limit'] },
-    { id: 'agreement_limit', title: 'Sub-Authorization', icon: Gavel, fields: ['facilityClass', 'associatedClientId', 'agreementType'] },
-    { id: 'details', title: 'Product Group', icon: Banknote, fields: ['type'] },
-    { id: 'review', title: 'Review & Commit', icon: ShieldCheck, fields: [] },
+    { id: 'association', title: 'Global Limit', icon: Building, fields: ['clientId', 'debtorId', 'limit'] },
+    { id: 'agreement_limit', title: 'Agreement Limit', icon: Gavel, fields: ['facilityClass', 'associatedClientId', 'agreementType'] },
+    { id: 'details', title: 'Facility Metrics', icon: Banknote, fields: ['type'] },
+    { id: 'review', title: 'Audit Readiness', icon: ShieldCheck, fields: [] },
 ];
 
 interface EditFacilityWizardProps {
@@ -347,7 +348,7 @@ export function EditFacilityWizard({
                                             className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                             onClick={() => handleStepTransition(index)}
                                         >
-                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-600" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            {isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
                                             <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                         </Button>
@@ -379,4 +380,3 @@ export function EditFacilityWizard({
         </Card>
     );
 }
-
