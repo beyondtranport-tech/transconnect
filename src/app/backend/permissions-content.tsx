@@ -17,6 +17,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { cn, fetchFromAdminAPI } from '@/lib/utils';
 import { usePermissions } from '@/hooks/use-permissions';
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
 
 // --- LENDING-CENTRIC PERMISSION SCHEMA ---
 
@@ -308,7 +310,7 @@ export default function PermissionsContent() {
           cell: ({ row }) => {
             const perms = row.original.permissions || [];
             return (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-left">
                     {perms.length > 0 ? (
                         <Badge className="bg-primary/10 text-primary border-none font-black text-[9px] uppercase">
                             {perms.length} Functions Active
