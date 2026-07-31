@@ -17,6 +17,7 @@ import { cn, fetchFromAdminAPI } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 const facilitySchema = z.object({
   id: z.string().optional(),
@@ -54,6 +55,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
     const [currentStep, setCurrentStep] = useState(0);
     const [internalId, setInternalId] = useState<string | null>(facility?.id || null);
     const { toast } = useToast();
+    const firestore = useFirestore();
     
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
@@ -203,52 +205,62 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             case 'agreement_limit': return (
                 <div className="space-y-8 animate-in fade-in duration-500 text-left">
                     <FormField control={methods.control} name="facilityClass" render={({ field }) => (
-                        <FormItem className="space-y-4">
-                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Limit Authority Class</FormLabel>
+                        <FormItem className="flex items-center justify-between p-6 border-2 rounded-[2rem] bg-white text-left">
+                            <div className="space-y-1 text-left">
+                                <FormLabel className="text-sm font-black flex items-center gap-2 uppercase tracking-tight text-foreground">
+                                    <Scale className="h-5 w-5 text-primary" />
+                                    Sub-Limit Authorization
+                                </FormLabel>
+                                <FormDescription className="text-xs text-muted-foreground text-left">
+                                    Enable to define a cap for a specific {watched.ownerType === 'client' ? 'agreement type' : 'member client pair'}.
+                                </FormDescription>
+                            </div>
                             <FormControl>
-                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
-                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'global' ? "border-primary bg-primary/5" : "bg-white")}>
-                                        <div className="flex items-center gap-3"><RadioGroupItem value="global" id="class-global" /><Label htmlFor="class-global" className="font-bold text-xs uppercase cursor-pointer text-left">Global limit</Label></div>
-                                        <p className="text-[9px] text-muted-foreground mt-1">Total exposure across all agreements or entities.</p>
-                                    </div>
-                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'sub' ? "border-primary bg-primary/5" : "bg-white")}>
-                                        <div className="flex items-center gap-3"><RadioGroupItem value="sub" id="class-sub" /><Label htmlFor="class-sub" className="font-bold text-xs uppercase cursor-pointer text-left">{watched.ownerType === 'client' ? 'Sub Agreement' : 'Sub Client'} Limit</Label></div>
-                                        <p className="text-[9px] text-muted-foreground mt-1">Cap for specific product or individual member pair.</p>
-                                    </div>
-                                </RadioGroup>
+                                <Switch 
+                                    checked={field.value === 'sub'} 
+                                    onCheckedChange={(checked) => field.onChange(checked ? 'sub' : 'global')}
+                                    className="data-[state=checked]:bg-primary" 
+                                />
                             </FormControl>
                         </FormItem>
                     )} />
 
                     {watched.facilityClass === 'sub' && (
-                        <div className="space-y-6 animate-in slide-in-from-top-2">
-                            {watched.ownerType === 'client' ? (
-                                <FormField control={methods.control} name="agreementType" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Link to Product Agreement</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="factoring">Factoring</SelectItem>
-                                                <SelectItem value="loan">Asset Loan</SelectItem>
-                                                <SelectItem value="installment_sale">Installment Sale</SelectItem>
-                                                <SelectItem value="working_capital">Working Capital</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )} />
-                            ) : (
-                                <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
-                                    <FormItem className="text-left">
-                                        <FormLabel>Authorize for Specific Member Client</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value || ''}>
-                                            <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
-                                            <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                    </FormItem>
-                                )} />
-                            )}
-                        </div>
+                        <Card className="border-primary/20 bg-primary/5 shadow-lg animate-in slide-in-from-top-2 text-left">
+                            <CardHeader className="p-6 pb-2 text-left">
+                                <CardTitle className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                    <Zap className="h-4 w-4" /> Specialized Node Parameters
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-6 space-y-6 text-left">
+                                {watched.ownerType === 'client' ? (
+                                    <FormField control={methods.control} name="agreementType" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Target Product Agreement</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                                                <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="factoring">Factoring</SelectItem>
+                                                    <SelectItem value="loan">Asset Loan</SelectItem>
+                                                    <SelectItem value="installment_sale">Installment Sale</SelectItem>
+                                                    <SelectItem value="working_capital">Working Capital</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </FormItem>
+                                    )} />
+                                ) : (
+                                    <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
+                                        <FormItem className="text-left">
+                                            <FormLabel>Authorize for Specific Member Client</FormLabel>
+                                            <Select onValueChange={field.onChange} value={field.value || ''}>
+                                                <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
+                                                <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                        </FormItem>
+                                    )} />
+                                )}
+                            </CardContent>
+                        </Card>
                     )}
                 </div>
             );
