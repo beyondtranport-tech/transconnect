@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, PlusCircle, ShieldCheck, Lock, Search, Download, Trash2, Clock, Landmark, Gavel, FileUp, Save } from "lucide-react";
+import { Loader2, PlusCircle, ShieldCheck, Lock, Search, Download, Trash2, Clock, Landmark, Gavel, FileUp, Save, ArrowRightLeft } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -18,14 +17,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 
 /**
- * COLLATERAL INTAKE TERMINAL
- * Specialized register for registered (Bonds) and unregistered collateral items.
+ * COLLATERAL REGISTER (OWNERSHIP TRANSFERRED)
+ * Formal ledger for assets where ownership is legally transferred to the cedent.
+ * Focus: Cessions of book debts, Out-and-out Pledges, Registered Bonds.
  */
 function UploadCollateralDialog({ onComplete }: { onComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [docName, setDocName] = useState('');
-    const [docType, setDocType] = useState('Notarial Bond');
+    const [docType, setDocType] = useState('Out-and-Out Cession');
     const [fileUrl, setFileUrl] = useState('');
     const [progress, setProgress] = useState(0);
     const { toast } = useToast();
@@ -71,7 +71,6 @@ function UploadCollateralDialog({ onComplete }: { onComplete: () => void }) {
             toast({ title: "Collateral Record Archived" });
             setIsOpen(false);
             onComplete();
-            // Reset
             setDocName('');
             setFileUrl('');
         } catch (e) {
@@ -88,25 +87,28 @@ function UploadCollateralDialog({ onComplete }: { onComplete: () => void }) {
             </DialogTrigger>
             <DialogContent className="text-left text-foreground">
                 <DialogHeader>
-                    <DialogTitle>Secure Collateral Intake</DialogTitle>
-                    <DialogDescription>Archive Bonds, Sureties, and Registered Pledges granted in favor of the financier.</DialogDescription>
+                    <DialogTitle className="flex items-center gap-2">
+                        <ArrowRightLeft className="h-5 w-5 text-primary" />
+                        Secure Collateral Intake
+                    </DialogTitle>
+                    <DialogDescription className="text-left">
+                        Archive assets where <strong>Ownership is Transferred</strong> (Cessionary model).
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left text-foreground">
                     <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Collateral Label</Label>
-                        <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. General Notarial Bond - Fleet A" className="h-11 border-2" />
+                        <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. Master Cession of Book Debts" className="h-11 border-2" />
                     </div>
                     <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Classification</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Transfer Class</Label>
                         <Select value={docType} onValueChange={setDocType}>
                             <SelectTrigger className="h-11 border-2"><SelectValue/></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="Notarial Bond">General Notarial Bond</SelectItem>
-                                <SelectItem value="Mortgage Bond">Mortgage Bond</SelectItem>
-                                <SelectItem value="Surety">Personal Surety</SelectItem>
-                                <SelectItem value="Pledge">General Pledge</SelectItem>
-                                <SelectItem value="Lien">Lien Agreement</SelectItem>
-                                <SelectItem value="Unregistered">Unregistered Collateral</SelectItem>
+                                <SelectItem value="Out-and-Out Cession">Out-and-Out Cession</SelectItem>
+                                <SelectItem value="Asset Transfer Agreement">Direct Asset Transfer</SelectItem>
+                                <SelectItem value="Registered Notarial Bond">Registered Notarial Bond</SelectItem>
+                                <SelectItem value="Pledge (Ownership)">Ownership-Transferring Pledge</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -114,7 +116,7 @@ function UploadCollateralDialog({ onComplete }: { onComplete: () => void }) {
                         <input type="file" id="collateral-vault-up" className="hidden" onChange={handleFile} />
                         <Button variant="outline" className={cn("w-full h-14 border-2 border-dashed gap-3", fileUrl && "border-green-50 bg-green-50 text-green-700")} onClick={() => document.getElementById('collateral-vault-up')?.click()}>
                             {isUploading ? <Loader2 className="h-5 w-5 animate-spin"/> : fileUrl ? <ShieldCheck className="h-6 w-6" /> : <FileUp className="h-6 w-6" />}
-                            {fileUrl ? 'Collateral Secured' : 'Select Collateral Scan'}
+                            {fileUrl ? 'Collateral Node Secured' : 'Select Ownership Document'}
                         </Button>
                         {isUploading && <Progress value={progress} className="h-1 mt-2" />}
                     </div>
@@ -157,18 +159,18 @@ export default function CollateralRegisterContent() {
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.documentName || 'Collateral Record'}</span>
                     <div className="flex items-center gap-1.5 mt-1 text-left">
-                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Security Node</Badge>
+                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Ownership Node</Badge>
                         <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id}</span>
                     </div>
                 </div>
             )
         },
         { 
-            header: 'Security Class', 
-            cell: ({row}) => <Badge variant="secondary" className="capitalize text-[10px] font-black">{row.original.documentType || 'General'}</Badge> 
+            header: 'Fiduciary Class', 
+            cell: ({row}) => <Badge variant="secondary" className="capitalize text-[10px] font-black">{row.original.documentType || 'Transferred'}</Badge> 
         },
         { 
-            header: 'Fiduciary Audit', 
+            header: 'Vault Entry', 
             cell: ({row}) => (
                 <div className="flex items-center gap-2 text-muted-foreground text-left">
                     <Gavel className="h-3 w-3" />
@@ -193,10 +195,10 @@ export default function CollateralRegisterContent() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
-                        <Lock className="h-8 w-8 text-primary" />
-                        Master Collateral Register
+                        <ArrowRightLeft className="h-8 w-8 text-primary" />
+                        Collateral Register
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Formal ledger of all registered and unregistered collateral items granted to the financier.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Formal ledger of assets where <strong>Ownership is Legally Transferred</strong> to the financier.</p>
                 </div>
                 <UploadCollateralDialog onComplete={loadData} />
             </div>
@@ -210,7 +212,7 @@ export default function CollateralRegisterContent() {
                     ) : (
                         <div className="py-24 text-center space-y-4 text-left">
                             <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Register Standby</p>
+                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Collateral Ledger Standby</p>
                         </div>
                     )}
                 </CardContent>

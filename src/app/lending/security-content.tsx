@@ -1,13 +1,12 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, PlusCircle, ShieldCheck, Lock, Search, Download, Trash2, Clock, Landmark, Gavel, FileUp, Save } from "lucide-react";
+import { Loader2, PlusCircle, ShieldCheck, Lock, Search, Download, Trash2, Clock, Landmark, Gavel, FileUp, Save, Scale } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatDateSafe, cn, fetchFromAdminAPI } from '@/lib/utils';
@@ -18,8 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 
 /**
- * SECURITY INTAKE TERMINAL
- * Synchronized with Document Register for a unified vault experience.
+ * SECURITY VAULT (RIGHTS GRANTED)
+ * Repository for instruments where rights are granted but require legal perfection.
+ * Focus: Personal Sureties, Guarantees, Indemnities.
  */
 function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -53,7 +53,7 @@ function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
             setFileUrl(result.url);
             if (!docName) setDocName(file.name);
             setProgress(100);
-            toast({ title: "Security Node Secured" });
+            toast({ title: "Security Document Secured" });
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Upload Failed", description: e.message });
         } finally {
@@ -71,7 +71,6 @@ function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
             toast({ title: "Security Record Archived" });
             setIsOpen(false);
             onComplete();
-            // Reset
             setDocName('');
             setFileUrl('');
         } catch (e) {
@@ -88,24 +87,29 @@ function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
             </DialogTrigger>
             <DialogContent className="text-left text-foreground">
                 <DialogHeader>
-                    <DialogTitle>Secure Document Intake</DialogTitle>
-                    <DialogDescription>Archive sureties, pledges, and supporting security documentation.</DialogDescription>
+                    <DialogTitle className="flex items-center gap-2">
+                        <Scale className="h-5 w-5 text-primary" />
+                        Secure Security Intake
+                    </DialogTitle>
+                    <DialogDescription className="text-left">
+                        Archive instruments where <strong>Rights are Granted</strong> but ownership is not transferred (e.g. Sureties).
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
                     <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Document Label</Label>
-                        <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. Personal Surety - John Doe" className="h-11 border-2" />
+                        <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. Personal Surety - Director X" className="h-11 border-2" />
                     </div>
                     <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Security Type</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Instrument Type</Label>
                         <Select value={docType} onValueChange={setDocType}>
                             <SelectTrigger className="h-11 border-2"><SelectValue/></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Personal Surety">Personal Surety</SelectItem>
-                                <SelectItem value="Pledge & Cession">Pledge & Cession</SelectItem>
-                                <SelectItem value="Notarial Bond">Notarial Bond</SelectItem>
-                                <SelectItem value="Mortgage Bond">Mortgage Bond</SelectItem>
-                                <SelectItem value="Resolution">Directors Resolution</SelectItem>
+                                <SelectItem value="Unlimited Guarantee">Unlimited Guarantee</SelectItem>
+                                <SelectItem value="Lien Agreement">Fiduciary Lien</SelectItem>
+                                <SelectItem value="Pledge & Cession">Pledge & Cession (Rights)</SelectItem>
+                                <SelectItem value="Resolution">Supporting Resolution</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -113,7 +117,7 @@ function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
                         <input type="file" id="security-vault-up" className="hidden" onChange={handleFile} />
                         <Button variant="outline" className={cn("w-full h-14 border-2 border-dashed gap-3", fileUrl && "border-green-50 bg-green-50 text-green-700")} onClick={() => document.getElementById('security-vault-up')?.click()}>
                             {isUploading ? <Loader2 className="h-5 w-5 animate-spin"/> : fileUrl ? <ShieldCheck className="h-6 w-6" /> : <FileUp className="h-6 w-6" />}
-                            {fileUrl ? 'Collateral Secured' : 'Select Security Scan'}
+                            {fileUrl ? 'Security Node Secured' : 'Select Security Scan'}
                         </Button>
                         {isUploading && <Progress value={progress} className="h-1 mt-2" />}
                     </div>
@@ -151,27 +155,27 @@ export default function SecurityVaultContent() {
 
     const columns: ColumnDef<any>[] = [
         {
-            header: 'Security / Collateral',
+            header: 'Security Instrument',
             cell: ({ row }) => (
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.documentName || 'Security Doc'}</span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Collateral Node</Badge>
+                    <div className="flex items-center gap-1.5 mt-1 text-left">
+                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Rights Node</Badge>
                         <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id}</span>
                     </div>
                 </div>
             )
         },
         { 
-            header: 'Registry Type', 
-            cell: ({row}) => <Badge variant="secondary" className="capitalize text-[10px] font-black">{row.original.documentType || 'Unregistered'}</Badge> 
+            header: 'Instrument Type', 
+            cell: ({row}) => <Badge variant="secondary" className="capitalize text-[10px] font-black">{row.original.documentType || 'Surety'}</Badge> 
         },
         { 
-            header: 'Oversight', 
+            header: 'Perfection Standing', 
             cell: ({row}) => (
                 <div className="flex items-center gap-2 text-muted-foreground text-left">
-                    <Gavel className="h-3 w-3" />
-                    <span className="text-[10px] font-bold uppercase">{formatDateSafe(row.original.createdAt, "dd MMM yyyy")}</span>
+                    <Clock className="h-3 w-3" />
+                    <span className="text-[10px] font-bold uppercase">Archived: {formatDateSafe(row.original.createdAt, "dd MMM yyyy")}</span>
                 </div>
             )
         },
@@ -192,10 +196,10 @@ export default function SecurityVaultContent() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
-                        <Lock className="h-8 w-8 text-primary" />
-                        Security & Collateral Vault
+                        <Scale className="h-8 w-8 text-primary" />
+                        Security Vault (Rights Granted)
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">Repository for all collateral scans, pledges, and surety documentation.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground">Repository for instruments where rights are granted but require legal perfection (e.g. Personal Sureties).</p>
                 </div>
                 <UploadSecurityDialog onComplete={loadData} />
             </div>
@@ -208,8 +212,8 @@ export default function SecurityVaultContent() {
                         <DataTable columns={columns} data={securities} />
                     ) : (
                         <div className="py-24 text-center space-y-4 text-left text-foreground">
-                            <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
-                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Vault Standby</p>
+                            <Lock className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Security Vault Standby</p>
                         </div>
                     )}
                 </CardContent>

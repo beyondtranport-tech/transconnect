@@ -121,7 +121,7 @@ function LendingPortalContent() {
     return (
         <div className="flex flex-col justify-center items-center py-40 gap-4">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Authenticating Portal Access...</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Authenticating Portal Access...</p>
         </div>
     );
   }
@@ -176,8 +176,12 @@ function LendingPortalContent() {
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'collateral'} onClick={() => navigate('collateral')}>
-                      Collateral Register
+                    <SidebarMenuSubButton 
+                      isActive={activeView === 'collateral'} 
+                      onClick={() => navigate('collateral')}
+                      className="text-xs"
+                    >
+                      Collateral (Ownership Transferred)
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
@@ -195,8 +199,12 @@ function LendingPortalContent() {
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'security-vault'} onClick={() => navigate('security-vault')}>
-                      Security Register
+                    <SidebarMenuSubButton 
+                      isActive={activeView === 'security-vault'} 
+                      onClick={() => navigate('security-vault')}
+                      className="text-xs"
+                    >
+                      Security Vault (Rights Granted)
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
