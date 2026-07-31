@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Edit, RefreshCcw, AlertCircle, ShieldCheck, Scale, Landmark, Zap, FileCheck, Gavel, UserCheck } from 'lucide-react';
+import { Loader2, Lock, Edit, RefreshCcw, AlertCircle, ShieldCheck, Scale, Landmark, Zap, FileCheck, Gavel, UserCheck, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,7 +15,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, fetchFromAdminAPI } from '@/lib/utils';
 import { usePermissions } from '@/hooks/use-permissions';
 
 // --- LENDING-CENTRIC PERMISSION SCHEMA ---
@@ -109,9 +109,9 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
         return generatedPermissions;
     };
     
-    const onSubmit = async (values: PermissionsFormValues) => {
+    const onSubmit = async (data: PermissionsFormValues) => {
         setIsLoading(true);
-        const finalPermissions = processPermissionsForSave(values);
+        const finalPermissions = processPermissionsForSave(data);
         
         try {
             const token = await getClientSideAuthToken();
