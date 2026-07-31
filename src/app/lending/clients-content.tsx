@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, 
   Download, Upload, Zap, Search, Globe, ShieldCheck, Scale, FileCheck 
-} from 'lucide-center';
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';

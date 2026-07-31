@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -44,7 +43,8 @@ import {
   FileText,
   TrendingUp,
   Gavel,
-  History
+  History,
+  Archive
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -59,7 +59,7 @@ import dynamic from 'next/dynamic';
 import React from 'react';
 import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
-// --- Dynamic Imports ---
+// --- Dynamic Imports for Modular Content ---
 const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
@@ -69,7 +69,7 @@ const CollateralContent = dynamic(() => import('@/app/lending/collateral-content
 const DocumentVaultContent = dynamic(() => import('@/app/lending/documents-content'), { ssr: false });
 const SecurityVaultContent = dynamic(() => import('@/app/lending/security-content'), { ssr: false });
 
-// Admin Modules
+// Admin / Fiduciary Control Modules
 const PlatformStaffManagement = dynamic(() => import('@/app/adminaccount/platform-staff'), { ssr: false });
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { ssr: false });
 const PoliciesContent = dynamic(() => import('./policies-content'), { ssr: false });
@@ -87,7 +87,7 @@ function LendingPortalContent() {
     setActiveView(initialView);
   }, [initialView]);
 
-   useEffect(() => {
+  useEffect(() => {
     if (!isUserLoading && !user) {
         router.replace('/signin?redirect=/lending');
     }
@@ -129,111 +129,151 @@ function LendingPortalContent() {
   const navigate = (view: string) => router.push(`/lending?view=${view}`, { scroll: false });
 
   return (
-      <SidebarProvider>
-        <Sidebar>
-          <SidebarHeader>
-            <div className="flex items-center gap-2 p-2">
-              <div className="bg-primary/10 p-2 rounded-lg"><Landmark className="h-6 w-6 text-primary" /></div>
-              <h2 className="text-lg font-black uppercase tracking-tight text-sidebar-foreground">Lending Desk</h2>
+    <SidebarProvider>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex items-center gap-2 p-2">
+            <div className="bg-primary/10 p-2 rounded-lg text-left">
+              <Landmark className="h-6 w-6 text-primary" />
             </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Admin Ledger" isActive={activeView === 'desk'} onClick={() => navigate('desk')}>
-                        <ListChecks /><span>Master Action Ledger</span>
-                    </SidebarMenuItem>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Debtors" isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
-                        <Users /><span>Debtor Registry</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities', 'collateral'].includes(activeView)}>
-                        <ClipboardList /><span>Lending Portfolios</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>Active Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>Asset Register</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>Credit Facilities</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'collateral'} onClick={() => navigate('collateral')}>Collateral Register</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-                
-                <SidebarMenuItem>
-                    <SidebarMenuButton tooltip="Vaults" isActive={['documents', 'security-vault'].includes(activeView)}>
-                        <Lock /><span>Registry Vaults</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuSub>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'documents'} onClick={() => navigate('documents')}>Document Register</SidebarMenuSubButton></SidebarMenuSubItem>
-                        <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'security-vault'} onClick={() => navigate('security-vault')}>Security Register</SidebarMenuSubButton></SidebarMenuSubItem>
-                    </SidebarMenuSub>
-                </SidebarMenuItem>
-            </SidebarGroup>
+            <h2 className="text-lg font-black uppercase tracking-tight text-sidebar-foreground text-left">Lending Desk</h2>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Admin Ledger" isActive={activeView === 'desk'} onClick={() => navigate('desk')}>
+                  <ListChecks />
+                  <span>Master Action Ledger</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Debtors" isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
+                  <Users />
+                  <span>Debtor Registry</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities', 'collateral'].includes(activeView)}>
+                  <ClipboardList />
+                  <span>Lending Portfolios</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>
+                      Active Agreements
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>
+                      Asset Register
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>
+                      Credit Facilities
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'collateral'} onClick={() => navigate('collateral')}>
+                      Collateral Register
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
 
-            <SidebarGroup>
-                <SidebarGroupLabel>Administrative Control</SidebarGroupLabel>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
-                            <UserCheck /><span>Internal Team</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Security" isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>
-                            <Lock /><span>Security Matrix</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Policies" isActive={activeView === 'policies'} onClick={() => navigate('policies')}>
-                            <Gavel /><span>Lending Policies</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton tooltip="Utilities" isActive={activeView === 'utilities'} onClick={() => navigate('utilities')}>
-                            <Wrench /><span>Global Utilities</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarGroup>
-          </SidebarContent>
-          <SidebarFooter>
-             <div className="p-4 border-t space-y-4 text-left">
-                <VisionOnboardingDialog onExtractionComplete={(data) => {
-                    router.push(`/lending?view=clients&action=create&prefill=${encodeURIComponent(JSON.stringify(data))}`);
-                }} />
-                <Button variant="outline" className="w-full justify-start gap-2 h-9 text-[10px] font-black uppercase tracking-widest" asChild>
-                    <Link href="/backend"><ArrowRightLeft className="h-3.5 w-3.5" /> Platform Backend</Link>
-                </Button>
-                <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
-                    <Avatar className="h-8 w-8"><AvatarFallback className="bg-primary text-white font-bold text-xs">AD</AvatarFallback></Avatar>
-                    <div className="flex flex-col truncate text-left">
-                        <span className="text-xs font-bold text-sidebar-foreground truncate text-left">{user.displayName || 'Admin'}</span>
-                        <span className="text-[10px] text-sidebar-foreground/70 truncate text-left">{user.email}</span>
-                    </div>
-                </div>
-             </div>
-          </SidebarFooter>
-        </Sidebar>
-        <SidebarInset>
-            <div className="p-8 text-left text-foreground">
-                <Suspense fallback={<div className="py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
-                    {renderContent()}
-                </Suspense>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Vaults" isActive={['documents', 'security-vault'].includes(activeView)}>
+                  <Lock />
+                  <span>Registry Vaults</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'documents'} onClick={() => navigate('documents')}>
+                      Document Register
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'security-vault'} onClick={() => navigate('security-vault')}>
+                      Security Register
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
+                  <UserCheck />
+                  <span>Internal Team</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Security" isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>
+                  <Lock />
+                  <span>Security Matrix</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Policies" isActive={activeView === 'policies'} onClick={() => navigate('policies')}>
+                  <Gavel />
+                  <span>Lending Policies</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Utilities" isActive={activeView === 'utilities'} onClick={() => navigate('utilities')}>
+                  <Wrench />
+                  <span>Global Utilities</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <div className="p-4 border-t space-y-4 text-left">
+            <VisionOnboardingDialog onExtractionComplete={(data) => {
+              router.push(`/lending?view=clients&action=create&prefill=${encodeURIComponent(JSON.stringify(data))}`);
+            }} />
+            <Button variant="outline" className="w-full justify-start gap-2 h-9 text-[10px] font-black uppercase tracking-widest text-left" asChild>
+              <Link href="/backend">
+                <ArrowRightLeft className="h-3.5 w-3.5" /> Platform Backend
+              </Link>
+            </Button>
+            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-white font-bold text-xs">AD</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col truncate text-left text-foreground">
+                <span className="text-xs font-bold text-sidebar-foreground truncate text-left">{user.displayName || 'Admin'}</span>
+                <span className="text-[10px] text-sidebar-foreground/70 truncate text-left">{user.email}</span>
+              </div>
             </div>
-        </SidebarInset>
-      </SidebarProvider>
+          </div>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset>
+        <div className="p-8 text-left text-foreground">
+          <Suspense fallback={<div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+            {renderContent()}
+          </Suspense>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
 export default function LendingPage() {
   return (
     <Suspense fallback={
-        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-8rem)] text-foreground gap-4">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">Initializing Portal...</p>
-        </div>
+      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4 text-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
+        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground text-center">Initializing Portal...</p>
+      </div>
     }>
       <LendingPortalContent />
     </Suspense>
