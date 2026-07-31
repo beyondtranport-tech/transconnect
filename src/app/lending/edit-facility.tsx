@@ -1,23 +1,24 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle, Gavel } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle, Gavel, UserCheck, Scale, FileText } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn, fetchFromAdminAPI } from '@/lib/utils';
+import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const facilitySchema = z.object({
   id: z.string().optional(),
@@ -82,7 +83,8 @@ export function EditFacilityWizard({
             clientId: parentFacility?.clientId || null,
             debtorId: parentFacility?.debtorId || null,
             limit: 0, 
-            status: 'active' 
+            status: 'active',
+            type: ''
         }
     });
 
@@ -186,6 +188,11 @@ export function EditFacilityWizard({
         await autosave(methods.getValues());
         setCurrentStep(index);
     };
+
+    const resolvedTargetName = useMemo(() => {
+        if (watched.ownerType === 'client') return clients.find(c => c.id === watched.clientId)?.name || 'Unassigned Client';
+        return debtors.find(d => d.id === watched.debtorId)?.name || 'Unassigned Debtor';
+    }, [watched.ownerType, watched.clientId, watched.debtorId, clients, debtors]);
     
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
@@ -198,11 +205,11 @@ export function EditFacilityWizard({
                             <FormControl>
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
                                     <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="font-black text-xs uppercase cursor-pointer">Client Branch</Label></div>
+                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="font-black text-xs uppercase cursor-pointer text-left">Client Branch</Label></div>
                                         <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed text-left">Exposure limits for borrowing member nodes.</p>
                                     </div>
                                     <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all", field.value === 'debtor' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="font-black text-xs uppercase cursor-pointer">Debtor Branch</Label></div>
+                                        <div className="flex items-center gap-3 text-left"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="font-black text-xs uppercase cursor-pointer text-left">Debtor Branch</Label></div>
                                         <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed text-left">Exposure limits for cessionary load providers.</p>
                                     </div>
                                 </RadioGroup>
@@ -215,11 +222,11 @@ export function EditFacilityWizard({
                 <div className="space-y-8 animate-in fade-in duration-500 text-left">
                     {watched.ownerType === 'client' ? (
                         <FormField control={methods.control} name="clientId" render={({ field }) => (
-                            <FormItem className="text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     ) : (
                         <FormField control={methods.control} name="debtorId" render={({ field }) => (
-                            <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     )}
 
@@ -238,7 +245,7 @@ export function EditFacilityWizard({
                         {watched.ownerType === 'client' ? (
                             <>
                                 <FormField control={methods.control} name="clientId" render={({ field }) => (
-                                    <FormItem className="text-left"><FormLabel>Target Member Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                                    <FormItem className="text-left"><FormLabel>Target Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
                                 )} />
                                 <FormField control={methods.control} name="agreementType" render={({ field }) => (
                                     <FormItem className="text-left">
@@ -257,7 +264,7 @@ export function EditFacilityWizard({
                         ) : (
                             <>
                                 <FormField control={methods.control} name="debtorId" render={({ field }) => (
-                                    <FormItem className="text-left"><FormLabel>Target Debtor</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                                    <FormItem className="text-left"><FormLabel>Target Debtor</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
                                 )} />
                                 <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
                                     <FormItem className="text-left">
@@ -308,11 +315,39 @@ export function EditFacilityWizard({
                 </div>
             );
             case 'review': return (
-                <div className="text-center py-20 space-y-6 text-left">
-                    <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40 text-center" />
-                    <div className="space-y-2 text-center text-foreground text-left">
-                        <h3 className="text-3xl font-black uppercase">Final Protocol Check</h3>
-                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Confirm functional boundaries before committing this node to the global authority ledger.</p>
+                <div className="space-y-8 animate-in zoom-in-95 duration-500 text-left">
+                    <div className="text-center space-y-2 mb-8">
+                        <CheckCircle className="h-12 w-12 text-primary mx-auto mb-2" />
+                        <h3 className="text-2xl font-black uppercase">Final Protocol Check</h3>
+                        <p className="text-sm text-muted-foreground">Verify authority boundaries before registry commit.</p>
+                    </div>
+
+                    <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] space-y-6 shadow-2xl text-left">
+                        <div className="flex justify-between items-baseline text-left">
+                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Authorized Limit Ceiling</span>
+                            <span className="text-4xl font-black text-primary">{formatCurrency(watched.limit)}</span>
+                        </div>
+                        
+                        <Separator className="bg-white/10" />
+                        
+                        <div className="grid grid-cols-2 gap-6 text-left">
+                            <div className="space-y-1">
+                                <Label className="text-[9px] font-black uppercase text-slate-500">Target Entity</Label>
+                                <p className="font-bold text-sm text-white">{resolvedTargetName}</p>
+                            </div>
+                            <div className="space-y-1 text-right">
+                                <Label className="text-[9px] font-black uppercase text-slate-500">Node Class</Label>
+                                <p className="font-bold text-sm text-white capitalize">{watched.facilityClass} {watched.ownerType}</p>
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-xl border border-white/10 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Landmark className="h-4 w-4 text-primary" />
+                                <span className="text-[10px] font-bold uppercase text-slate-400">Functional Group</span>
+                            </div>
+                            <Badge variant="outline" className="text-primary border-primary/40 capitalize">{watched.type?.replace('_', ' ') || 'General'}</Badge>
+                        </div>
                     </div>
                 </div>
             );
@@ -328,7 +363,7 @@ export function EditFacilityWizard({
                         <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
                                 <CardTitle className="text-3xl font-black font-headline uppercase text-left">Authority Node Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1 text-left">Registry: {steps[currentStep].title}</CardDescription>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-left">Registry: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
                         </div>
