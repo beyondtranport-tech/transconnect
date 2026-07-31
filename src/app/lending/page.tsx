@@ -155,7 +155,7 @@ function LendingPortalContent() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities', 'collateral'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Portfolios" isActive={['agreements', 'assets', 'facilities'].includes(activeView)}>
                   <ClipboardList />
                   <span>Lending Portfolios</span>
                 </SidebarMenuButton>
@@ -175,20 +175,11 @@ function LendingPortalContent() {
                       Credit Facilities
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton 
-                      isActive={activeView === 'collateral'} 
-                      onClick={() => navigate('collateral')}
-                      className="text-xs"
-                    >
-                      Collateral (Ownership Transferred)
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Vaults" isActive={['documents', 'security-vault'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Vaults" isActive={['documents', 'security-vault', 'collateral'].includes(activeView)}>
                   <Lock />
                   <span>Registry Vaults</span>
                 </SidebarMenuButton>
@@ -205,6 +196,15 @@ function LendingPortalContent() {
                       className="text-xs"
                     >
                       Security Vault (Rights Granted)
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton 
+                      isActive={activeView === 'collateral'} 
+                      onClick={() => navigate('collateral')}
+                      className="text-xs"
+                    >
+                      Collateral (Ownership Transferred)
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
