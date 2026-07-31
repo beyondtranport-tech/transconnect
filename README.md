@@ -39,7 +39,14 @@ git pull
 npm install
 ```
 
-### Recent Updates: Forensic V14 (The Triple Engine) - PUBLISHED
+### Recent Updates: Forensic V15 (Hierarchical Capital Nodes) - PUBLISHED
+- **Sub-Node Authorization**: Implemented a selection-driven workflow for partitioning capital. Sub-limits are now explicitly hard-coded to parent ceilings via the `parentId` link.
+- **Hierarchical Ledger**: Re-engineered the Expandable UI to render a forensic **Authorization Ledger** sub-table with creator tracking and real-time balance reconciliation.
+- **Onboarding Streamlining**: Removed legacy NCA, Footprint, and Management Account steps to optimize the forensic intake velocity.
+- **Stakeholder Sync**: Implemented automated `useEffect` triggers to ensure Shareholder and Director forms initialize correctly based on governance counts.
+- **Persistence Stability**: Resolved critical API ReferenceErrors and form submission logic to ensure 100% data durability.
+
+## Forensic V14 (The Triple Engine)
 - **Commercial Node Ledger**: Partitioned the membership model into **Access Tiers** (for functional limits) and **Data Silos** (for B2B IP).
 - **Inbound Interest Ledger**: Implemented "Blind Lead" signal tracking on the Member Dashboard to drive Intelligence upgrades.
 - **V14 Forensic Protocol**: Upgraded the AI Scavenger to V14, introduced "Inductive Reconstruction" for social-media bio mining and employee-to-contact resolution.
