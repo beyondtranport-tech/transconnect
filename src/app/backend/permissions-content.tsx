@@ -5,12 +5,18 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Edit, RefreshCcw, AlertCircle, ShieldCheck, Scale, Landmark, Zap, FileCheck, Gavel, UserCheck, Info, Save } from 'lucide-react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+    Loader2, Lock, Edit, RefreshCcw, ShieldCheck, Scale, Landmark, Zap, FileCheck, 
+    Gavel, UserCheck, Info, Save, Ban, Trash2, MoreVertical, CheckCircle2, ShieldAlert
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, doc } from 'firebase/firestore';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { 
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger 
+} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
@@ -19,6 +25,14 @@ import { cn, fetchFromAdminAPI } from '@/lib/utils';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Label } from '@/components/ui/label';
+import { 
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { 
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, 
+    AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 // --- LENDING-CENTRIC PERMISSION SCHEMA ---
 
@@ -149,8 +163,8 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
             <DialogTrigger asChild>
                  <Button variant="ghost" size="icon" title="Edit Authority"><Edit className="h-4 w-4" /></Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-5xl text-left text-foreground overflow-hidden flex flex-col h-[85vh]">
-                <DialogHeader className="p-6 border-b bg-muted/30 shrink-0">
+            <DialogContent className="sm:max-w-5xl text-left text-foreground overflow-hidden flex flex-col h-[85vh] p-0">
+                <DialogHeader className="p-6 border-b bg-muted/30 shrink-0 text-left">
                     <div className="flex items-center gap-4 text-left">
                         <div className="bg-primary/10 p-3 rounded-xl"><Lock className="h-6 w-6 text-primary"/></div>
                         <div className="text-left">
@@ -160,21 +174,21 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                     </div>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 text-left text-foreground">
-                    <div className="flex items-center gap-2 px-2">
+                <div className="flex-1 overflow-y-auto p-8 space-y-8 text-left text-foreground">
+                    <div className="flex items-center gap-2 px-2 text-left">
                         <Checkbox
                             id="select-all-matrix"
                             checked={isAllSelected}
                             onCheckedChange={(checked) => handleSelectAll(!!checked)}
                         />
-                        <Label htmlFor="select-all-matrix" className="text-xs font-black uppercase tracking-widest cursor-pointer">Authorize All Capabilities (Full Oversight)</Label>
+                        <Label htmlFor="select-all-matrix" className="text-xs font-black uppercase tracking-widest cursor-pointer text-left">Authorize All Capabilities (Full Oversight)</Label>
                     </div>
 
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                            <div className="rounded-2xl border shadow-inner overflow-hidden bg-slate-50/50">
-                                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 sticky top-0 bg-slate-100 p-4 border-b z-20">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Lending Infrastructure Nodes</div>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 text-left">
+                            <div className="rounded-2xl border shadow-inner overflow-hidden bg-slate-50/50 text-left">
+                                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 sticky top-0 bg-slate-100 p-4 border-b z-20 text-left">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground text-left">Lending Infrastructure Nodes</div>
                                     {lendingActions.map(action => (
                                         <div key={action.id} className="text-center">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{action.label}</p>
@@ -226,12 +240,15 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
     );
 }
 
+// --- MAIN COMPONENT ---
+
 export default function PermissionsContent() {
     const { toast } = useToast();
     const [staff, setStaff] = useState<any[]>([]);
     const [platformStaff, setPlatformStaff] = useState<any[]>([]);
     const [companies, setCompanies] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const forceRefresh = useCallback(async () => {
@@ -241,7 +258,6 @@ export default function PermissionsContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed");
             
-            // Unified data pull for authority mapping
             const [staffRes, platformRes, companiesRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getStaff'),
                 fetchFromAdminAPI(token, 'getPlatformStaff'),
@@ -261,6 +277,57 @@ export default function PermissionsContent() {
     }, [toast]);
 
     useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
+    const handleUpdateStatus = async (staffMember: any, status: 'active' | 'inactive') => {
+        setIsProcessing(staffMember.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            const path = staffMember.type === 'platform' 
+                ? `platformStaff/${staffMember.id}`
+                : `companies/${staffMember.companyId}/staff/${staffMember.id}`;
+
+            await fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path, data: { status, updatedAt: { _methodName: 'serverTimestamp' } } }),
+            });
+
+            toast({ title: `Node ${status === 'active' ? 'Reactivated' : 'Suspended'}` });
+            forceRefresh();
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Update Failed" });
+        } finally {
+            setIsProcessing(null);
+        }
+    };
+
+    const handleDelete = async (staffMember: any) => {
+        setIsProcessing(staffMember.id);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            const action = staffMember.type === 'platform' ? 'deletePlatformStaff' : 'deleteStaffMember';
+            const payload = staffMember.type === 'platform' 
+                ? { staffId: staffMember.id }
+                : { companyId: staffMember.companyId, staffId: staffMember.id };
+
+            await fetch('/api/admin', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, payload }),
+            });
+
+            toast({ title: "Node Expunged", description: "The staff record has been removed from the registry." });
+            forceRefresh();
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Delete Failed" });
+        } finally {
+            setIsProcessing(null);
+        }
+    };
 
     const enrichedStaff = useMemo(() => {
         if (!staff || !companies || !platformStaff) return [];
@@ -288,7 +355,7 @@ export default function PermissionsContent() {
         {
           header: 'Identity Node',
           cell: ({ row }) => (
-            <div className="flex flex-col text-left">
+            <div className={cn("flex flex-col text-left transition-opacity", row.original.status === 'inactive' && "opacity-40")}>
               <span className="font-bold text-foreground text-left">{row.original.firstName} {row.original.lastName}</span>
               <span className="text-[10px] text-muted-foreground font-mono text-left">{row.original.email}</span>
             </div>
@@ -297,13 +364,27 @@ export default function PermissionsContent() {
         {
           header: 'Role / Organization',
           cell: ({ row }) => (
-            <div className="flex flex-col text-left">
+            <div className={cn("flex flex-col text-left", row.original.status === 'inactive' && "opacity-40")}>
                 <span className="text-xs font-bold text-slate-700 text-left">{row.original.companyName}</span>
-                <Badge variant={row.original.type === 'platform' ? 'default' : 'outline'} className="w-fit text-[8px] h-4 mt-1 uppercase font-black tracking-widest">
+                <Badge variant={row.original.type === 'platform' ? 'default' : 'outline'} className="w-fit text-[8px] h-4 mt-1 uppercase font-black tracking-widest text-left">
                     {row.original.type === 'platform' ? 'Internal Team' : 'Member Staff'}
                 </Badge>
             </div>
           ),
+        },
+        {
+          header: 'Account Standing',
+          cell: ({ row }) => {
+            const status = row.original.status || 'active';
+            return (
+                <Badge variant={status === 'active' ? 'default' : 'secondary'} className={cn(
+                    "capitalize text-[9px] font-black tracking-widest",
+                    status === 'active' ? "bg-green-600" : "bg-slate-200 text-slate-600"
+                )}>
+                    {status}
+                </Badge>
+            );
+          }
         },
         {
           header: 'Authority Matrix',
@@ -315,7 +396,7 @@ export default function PermissionsContent() {
                         <Badge className="bg-primary/10 text-primary border-none font-black text-[9px] uppercase">
                             {perms.length} Functions Active
                         </Badge>
-                    ) : <span className="text-[10px] text-muted-foreground italic">No Authority</span>}
+                    ) : <span className="text-[10px] text-muted-foreground italic text-left">No Authority</span>}
                 </div>
             )
           }
@@ -324,8 +405,47 @@ export default function PermissionsContent() {
             id: 'actions',
             header: <div className="text-right">Audit</div>,
             cell: ({ row }) => (
-                <div className="text-right flex justify-end">
+                <div className="text-right flex justify-end gap-1">
                     <PermissionsDialog staffMember={row.original} onSave={forceRefresh} />
+                    
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                {isProcessing === row.original.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <MoreVertical className="h-4 w-4" />}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="text-left">
+                            <DropdownMenuItem onClick={() => handleUpdateStatus(row.original, row.original.status === 'inactive' ? 'active' : 'inactive')}>
+                                {row.original.status === 'inactive' ? (
+                                    <><CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Reactivate Node</>
+                                ) : (
+                                    <><Ban className="h-4 w-4 mr-2 text-amber-600" /> Suspend Authority</>
+                                )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                        <Trash2 className="h-4 w-4 mr-2" /> Expunge Identity
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="text-left text-foreground">
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-left text-foreground">Confirm Permanent Termination</AlertDialogTitle>
+                                        <AlertDialogDescription className="text-left text-foreground">
+                                            This will permanently delete "{row.original.firstName} {row.original.lastName}" from the lending registry and revoke all functional authorities immediately. This action cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(row.original)} className={cn(buttonVariants({ variant: 'destructive' }))}>
+                                            Confirm Termination
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             ),
         }
@@ -336,11 +456,11 @@ export default function PermissionsContent() {
         <div className="space-y-8 text-left text-foreground">
             <div className="flex justify-between items-end">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
                         <Lock className="h-8 w-8 text-primary" />
                         Lending Security Matrix
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Manage functional authorities for the capital division and authorized member staff.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Manage functional authorities and account standing for the capital division and member staff.</p>
                 </div>
                 <Button variant="outline" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-left">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
@@ -348,7 +468,7 @@ export default function PermissionsContent() {
                 </Button>
             </div>
 
-            <Card className="border-none shadow-2xl bg-white text-left">
+            <Card className="border-none shadow-2xl bg-white text-left text-foreground">
                 <CardContent className="pt-6 text-left">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
@@ -361,14 +481,14 @@ export default function PermissionsContent() {
                 </CardContent>
             </Card>
 
-            <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
-                <div className="absolute top-0 right-0 p-12 opacity-5"><Gavel className="h-40 w-40 text-primary" /></div>
+            <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left text-white">
+                <div className="absolute top-0 right-0 p-12 opacity-5 text-left"><Gavel className="h-40 w-40 text-primary" /></div>
                 <div className="relative z-10 flex items-start gap-6 text-left text-white">
                     <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
                     <div className="space-y-2 text-left text-white">
                         <h4 className="text-xl font-black uppercase text-left text-white">Institutional Oversight Protocol</h4>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left text-white">
-                            Permissions in the lending portal are mapped to the specific stages of the credit life-cycle. Every change to this matrix is logged in the forensic audit feed.
+                            Permissions are mapped to the specific stages of the credit life-cycle. Deactivating a node instantly blocks all functional access to the registry, audit tools, and payout authorizations.
                         </p>
                     </div>
                 </div>

@@ -65,7 +65,12 @@ export async function POST(req: NextRequest) {
             case 'savePlatformStaff': {
                 const { staff } = payload;
                 const ref = db.collection('platformStaff').doc(staff.id || db.collection('platformStaff').doc().id);
-                await ref.set({ ...staff, id: ref.id, updatedAt: FieldValue.serverTimestamp() }, { merge: true });
+                await ref.set({ 
+                    ...staff, 
+                    id: ref.id, 
+                    status: staff.status || 'active',
+                    updatedAt: FieldValue.serverTimestamp() 
+                }, { merge: true });
                 return NextResponse.json({ success: true, id: ref.id });
             }
 
@@ -75,47 +80,10 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
-            case 'saveForensicExtraction': {
-                const { clientId, extraction, docType, confidence, summary } = payload;
-                if (!clientId) throw new Error("Client ID required for extraction storage.");
-                
-                const ref = db.collection('lendingClients').doc(clientId).collection('forensicExtractions').doc();
-                await ref.set({
-                    id: ref.id,
-                    docType,
-                    extraction,
-                    confidence,
-                    summary,
-                    status: 'raw',
-                    createdAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-
-            case 'saveDigitalScorecard': {
-                const { clientId, scorecard } = payload;
-                const ref = db.collection('lendingClients').doc(clientId).collection('digitalScorecards').doc();
-                await ref.set({
-                    ...scorecard,
-                    id: ref.id,
-                    createdAt: FieldValue.serverTimestamp()
-                });
-                await db.collection('lendingClients').doc(clientId).update({
-                    lastAuditAt: FieldValue.serverTimestamp(),
-                    auditStatus: 'completed'
-                });
-                return NextResponse.json({ success: true, id: ref.id });
-            }
-
-            case 'getLatestScorecard': {
-                const { clientId } = payload;
-                const snap = await db.collection('lendingClients').doc(clientId).collection('digitalScorecards').orderBy('createdAt', 'desc').limit(1).get();
-                return NextResponse.json({ 
-                    success: true, 
-                    data: snap.empty ? null : serializeData({ id: snap.docs[0].id, ...snap.docs[0].data() })
-                });
+            case 'deleteStaffMember': {
+                const { companyId, staffId } = payload;
+                await db.doc(`companies/${companyId}/staff/${staffId}`).delete();
+                return NextResponse.json({ success: true });
             }
 
             case 'bulkSavePartners': {
@@ -135,14 +103,6 @@ export async function POST(req: NextRequest) {
                 });
                 await batch.commit();
                 return NextResponse.json({ success: true, count: partners.length });
-            }
-
-            case 'getLendingData': {
-                const { collectionName, clientId } = payload;
-                let q: any = db.collection(collectionName);
-                if (clientId) q = q.where('clientId', '==', clientId);
-                const snap = await q.orderBy('updatedAt', 'desc').limit(500).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getPlatformStaff': {
@@ -177,13 +137,7 @@ export async function POST(req: NextRequest) {
                 const lSnap = await lQuery.orderBy('updatedAt', 'desc').limit(limitNum).get();
                 const lResults = lSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Lead' }));
 
-                let dResults: any[] = [];
-                if (rType === 'debtor' || rType === 'all') {
-                    const dSnap = await db.collection('lendingClients').orderBy('updatedAt', 'desc').limit(limitNum).get();
-                    dResults = dSnap.docs.map((d: QueryDocumentSnapshot) => ({ ...d.data(), id: d.id, source: 'Debtor', entryType: 'Debtor' }));
-                }
-
-                let combined = [...pResults, ...lResults, ...dResults];
+                let combined = [...pResults, ...lResults];
                 if (term) {
                     const norm = term.toLowerCase().trim();
                     combined = combined.filter(item => (item.companyName || item.firstName || item.name || '').toLowerCase().includes(norm));
