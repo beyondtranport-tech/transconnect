@@ -17,6 +17,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 
+/**
+ * SECURITY INTAKE TERMINAL
+ * Synchronized with Document Register for a unified vault experience.
+ */
 function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -67,6 +71,7 @@ function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
             toast({ title: "Security Record Archived" });
             setIsOpen(false);
             onComplete();
+            // Reset
             setDocName('');
             setFileUrl('');
         } catch (e) {
@@ -78,12 +83,12 @@ function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
                 <Button className="font-bold gap-2 text-white shadow-lg h-11 px-8">
-                    <PlusCircle className="h-4 w-4" /> Archive Security Node
+                    <PlusCircle className="h-4 w-4" /> Upload Agreement Scan
                 </Button>
             </DialogTrigger>
             <DialogContent className="text-left text-foreground">
                 <DialogHeader>
-                    <DialogTitle>Security & Collateral Intake</DialogTitle>
+                    <DialogTitle>Secure Document Intake</DialogTitle>
                     <DialogDescription>Archive sureties, pledges, and supporting security documentation.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
@@ -106,7 +111,7 @@ function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
                     </div>
                     <div className="pt-4 text-left">
                         <input type="file" id="security-vault-up" className="hidden" onChange={handleFile} />
-                        <Button variant="outline" className={cn("w-full h-14 border-2 border-dashed gap-3", fileUrl && "border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById('security-vault-up')?.click()}>
+                        <Button variant="outline" className={cn("w-full h-14 border-2 border-dashed gap-3", fileUrl && "border-green-50 bg-green-50 text-green-700")} onClick={() => document.getElementById('security-vault-up')?.click()}>
                             {isUploading ? <Loader2 className="h-5 w-5 animate-spin"/> : fileUrl ? <ShieldCheck className="h-6 w-6" /> : <FileUp className="h-6 w-6" />}
                             {fileUrl ? 'Collateral Secured' : 'Select Security Scan'}
                         </Button>
