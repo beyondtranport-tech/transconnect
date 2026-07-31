@@ -11,7 +11,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn, fetchFromAdminAPI } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
@@ -119,16 +119,16 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
     const filteredGlobals = useMemo(() => {
         return facilities.filter(f => {
-            const isGlobalOrNoParent = f.facilityClass === 'global' || !f.parentId;
+            const isGlobal = f.facilityClass === 'global' || !f.parentId;
             
             if (mode === 'client-global') {
-                return isGlobalOrNoParent && f.ownerType === 'client';
+                return isGlobal && f.ownerType === 'client';
             }
             if (mode === 'debtor') {
-                return isGlobalOrNoParent && f.ownerType === 'debtor';
+                return isGlobal && f.ownerType === 'debtor';
             }
-            return isGlobalOrNoParent;
-        }).sort((a,b) => b.limit - a.limit);
+            return isGlobal;
+        }).sort((a,b) => (b.limit || 0) - (a.limit || 0));
     }, [facilities, mode]);
 
     const viewConfig = useMemo(() => {
@@ -229,7 +229,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex flex-col text-left">
-                                                <span className="font-black text-sm text-slate-900">{ownerName || 'Unknown node'}</span>
+                                                <span className="font-black text-sm text-slate-900">{ownerName || 'Unknown Node'}</span>
                                                 <span className="text-[9px] text-muted-foreground font-mono uppercase">{global.id}</span>
                                             </div>
                                         </TableCell>
@@ -242,7 +242,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                             {formatCurrency(global.limit)}
                                         </TableCell>
                                         <TableCell className="text-center">
-                                            <Badge className={cn("capitalize text-[9px] font-black border-none", statusColors[global.status || 'active'])}>
+                                            <Badge className={cn("capitalize text-[9px] font-black border-none text-white", global.status === 'active' ? 'bg-green-600' : 'bg-slate-400')}>
                                                 {global.status || 'Active'}
                                             </Badge>
                                         </TableCell>
@@ -252,13 +252,13 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                     <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="text-left">
-                                                    <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Node</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Initialize Sub-Limit</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Ceiling</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Partition Sub-Limit</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-destructive" onClick={() => { if(global.status === 'inactive') { setFacilityToDelete(global); setIsDeleteAlertOpen(true); } }} disabled={global.status !== 'inactive'}>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => { setFacilityToDelete(global); setIsDeleteAlertOpen(true); }} disabled={global.status !== 'inactive'}>
                                                         <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -287,8 +287,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Sub-Limit Context</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Product Group</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Sub-Limit Node</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2">Product / Partner</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Authorized Limit</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
                                                                     </TableRow>
@@ -297,16 +297,15 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                     {subs.map(sub => (
                                                                         <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors">
                                                                             <TableCell className="py-3">
-                                                                                <div className="flex items-center gap-2">
-                                                                                    {sub.ownerType === 'client' ? (
-                                                                                        <Badge variant="outline" className="text-[9px] font-bold uppercase">{sub.agreementType?.replace(/_/g, ' ') || 'General'}</Badge>
-                                                                                    ) : (
-                                                                                        <span className="text-xs font-bold text-slate-700">{clientMap.get(sub.associatedClientId) || 'Member Node'}</span>
-                                                                                    )}
-                                                                                </div>
+                                                                                <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-300">Sub-Node</Badge>
                                                                             </TableCell>
                                                                             <TableCell>
-                                                                                <Badge variant="secondary" className="capitalize text-[8px] font-black">{sub.type?.replace(/_/g, ' ') || 'Commercial'}</Badge>
+                                                                                <div className="flex flex-col text-left">
+                                                                                    <span className="text-xs font-bold text-slate-700 capitalize">{sub.type?.replace(/_/g, ' ') || 'Commercial'}</span>
+                                                                                    {sub.associatedClientId && (
+                                                                                        <span className="text-[9px] text-muted-foreground font-black uppercase">Ref: {clientMap.get(sub.associatedClientId) || 'Member Pair'}</span>
+                                                                                    )}
+                                                                                </div>
                                                                             </TableCell>
                                                                             <TableCell className="text-right font-black text-sm text-foreground">
                                                                                 {formatCurrency(sub.limit)}
@@ -331,8 +330,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             </Table>
                                                         </div>
                                                     ) : (
-                                                        <div className="py-10 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
-                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Sub-Limits Established</p>
+                                                        <div className="py-12 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Sub-Limits Partitioned</p>
                                                         </div>
                                                     )}
                                                 </div>
@@ -354,19 +353,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     </TableBody>
                 </Table>
             </Card>
-
-            <div className="p-8 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
-                <div className="absolute top-0 right-0 p-12 opacity-5"><Gavel className="h-40 w-40 text-primary" /></div>
-                <div className="relative z-10 flex items-start gap-6 text-left">
-                    <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
-                    <div className="space-y-2 text-left">
-                        <h4 className="text-xl font-black uppercase text-left">Registry Oversight Protocol</h4>
-                        <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left">
-                            The facilities matrix operates on a hierarchical branch model. **Master Ceilings** authorize total institutional exposure, while **Sub-Limits** partition that capital into specific product agreements or member-debtor pairs.
-                        </p>
-                    </div>
-                </div>
-            </div>
         </div>
     );
 }

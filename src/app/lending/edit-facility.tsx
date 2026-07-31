@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap, CheckCircle, Gavel, UserCheck, Scale, FileText, CheckCircle2 } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Zap, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 
 const facilitySchema = z.object({
   id: z.string().optional(),
@@ -29,7 +29,7 @@ const facilitySchema = z.object({
   debtorId: z.string().optional().nullable(),
   associatedClientId: z.string().optional().nullable(), 
   agreementType: z.string().optional().nullable(), 
-  type: z.string().min(1, 'Product type is required'),
+  type: z.string().min(1, 'Product type or identifier is required'),
   limit: z.coerce.number().positive('Limit must be a positive number'),
   status: z.string().default('active'),
 });
@@ -68,14 +68,13 @@ export function EditFacilityWizard({
     const [currentStep, setCurrentStep] = useState(0);
     const [internalId, setInternalId] = useState<string | null>(facility?.id || null);
     const { toast } = useToast();
-    const firestore = useFirestore();
     
     const isSubLimitMode = !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub';
 
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
         mode: 'onChange',
-        defaultValues: facility || { 
+        defaultValues: { 
             ownerType: initialOwnerType || parentFacility?.ownerType || 'client', 
             facilityClass: initialFacilityClass || (isSubLimitMode ? 'sub' : 'global'),
             parentId: parentFacility?.id || null,
@@ -83,7 +82,7 @@ export function EditFacilityWizard({
             debtorId: parentFacility?.debtorId || facility?.debtorId || null,
             limit: 0, 
             status: 'active',
-            type: 'General Authority'
+            type: isSubLimitMode ? 'Sub-Limit' : 'Global Ceiling'
         }
     });
 
@@ -103,13 +102,16 @@ export function EditFacilityWizard({
             methods.reset(facility);
             setInternalId(facility.id);
         } else if (parentFacility) {
+            // STRATEGIC RESET: Ensure parent-child relationship is hard-coded into the form state
             methods.reset({
-                ...methods.getValues(),
                 ownerType: parentFacility.ownerType,
                 facilityClass: 'sub',
                 parentId: parentFacility.id,
                 clientId: parentFacility.clientId,
                 debtorId: parentFacility.debtorId,
+                limit: 0,
+                status: 'active',
+                type: 'Sub-Limit'
             });
         }
     }, [facility, parentFacility, methods]);
@@ -165,13 +167,6 @@ export function EditFacilityWizard({
         } finally {
             setIsLoading(false);
         }
-    };
-
-    const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0 || stepIndex >= steps.length) return true;
-        const step = steps[stepIndex];
-        if (!step.fields || step.fields.length === 0) return true;
-        return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
     };
 
     const handleStepTransition = async (index: number) => {
@@ -239,7 +234,7 @@ export function EditFacilityWizard({
                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 h-5 mb-2">Sub-Limit Initialization</Badge>
                         
                         {watched.ownerType === 'client' ? (
-                             <FormField control={methods.control} name="agreementType" render={({ field }) => (
+                             <FormField control={methods.control} name="type" render={({ field }) => (
                                 <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 text-left">Partition for Product Agreement</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
@@ -253,15 +248,23 @@ export function EditFacilityWizard({
                                 </FormItem>
                             )} />
                         ) : (
-                            <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
-                                <FormItem className="text-left">
-                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Partition for Member Pair</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left font-bold"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </FormItem>
-                            )} />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Select Member Pair</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value || ''}>
+                                            <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left font-bold"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
+                                            <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                    </FormItem>
+                                )} />
+                                <FormField control={methods.control} name="type" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Authority Label</FormLabel>
+                                        <FormControl><Input {...field} placeholder="e.g. Master Cession" className="h-12 border-2" /></FormControl>
+                                    </FormItem>
+                                )} />
+                            </div>
                         )}
 
                         <FormField control={methods.control} name="limit" render={({ field }) => (
@@ -305,7 +308,7 @@ export function EditFacilityWizard({
                                 <Landmark className="h-4 w-4 text-primary" />
                                 <span className="text-[10px] font-bold uppercase text-slate-400 text-left">Functional Group</span>
                             </div>
-                            <Badge variant="outline" className="text-primary border-primary/40 capitalize text-left">{watched.agreementType?.replace('_', ' ') || watched.type?.replace('_', ' ') || 'General'}</Badge>
+                            <Badge variant="outline" className="text-primary border-primary/40 capitalize text-left">{watched.type?.replace(/_/g, ' ') || 'General Authority'}</Badge>
                         </div>
                     </div>
                 </div>
