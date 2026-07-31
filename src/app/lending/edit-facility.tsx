@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -164,9 +164,18 @@ export function EditFacilityWizard({
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
+
+            // EXPLICIT PERSISTENCE: Ensure skipped fields (context) are merged into the final payload
+            const finalPayload = {
+                ...methods.getValues(),
+                ...values,
+                id: internalId || undefined
+            };
+
             await fetchFromAdminAPI(token, 'saveLendingFacility', { 
-                facility: { ...values, id: internalId || undefined } 
+                facility: finalPayload
             });
+
             toast({ title: 'Authority Node Committed' });
             onSave();
         } catch (e: any) {
@@ -331,7 +340,7 @@ export function EditFacilityWizard({
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left">
                         <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
-                                <CardTitle className="text-3xl font-black font-headline uppercase text-left text-white text-left text-white">Authority Node Terminal</CardTitle>
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-left text-white">Authority Node Terminal</CardTitle>
                                 <CardDescription className="text-slate-400 text-lg mt-1 text-left text-white">Registry: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>

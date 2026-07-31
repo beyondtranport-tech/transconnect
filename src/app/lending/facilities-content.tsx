@@ -213,6 +213,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         ) : filteredGlobals.length > 0 ? filteredGlobals.map((global) => {
                             const isExpanded = expandedIds.has(global.id);
                             const ownerName = global.ownerType === 'client' ? clientMap.get(global.clientId) : debtorMap.get(global.debtorId);
+                            // FORENSIC MATCH: Correctly filter sub-limits for the nested sub-table
                             const subs = facilities.filter(f => f.parentId === global.id);
 
                             return (
