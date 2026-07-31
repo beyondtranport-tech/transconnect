@@ -3,7 +3,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban } from "lucide-react";
+import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban, Users, Building, ArrowRight } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,7 @@ const statusColors: { [key: string]: 'default' | 'secondary' | 'destructive' | '
 export default function FacilitiesContent() {
     const [facilities, setFacilities] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
+    const [debtors, setDebtors] = useState<any[]>([]);
     const [partners, setPartners] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -54,6 +55,7 @@ export default function FacilitiesContent() {
     const [statusChangeAlert, setStatusChangeAlert] = useState<{ open: boolean; facility: any; newStatus: 'active' | 'inactive' | 'pending' | null }>({ open: false, facility: null, newStatus: null });
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
+    const debtorMap = useMemo(() => new Map(debtors.map(d => [d.id, d.name])), [debtors]);
     const partnerMap = useMemo(() => new Map(partners.map(p => [p.id, p.name])), [partners]);
 
     const forceRefresh = useCallback(async () => {
@@ -63,14 +65,16 @@ export default function FacilitiesContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const [facilitiesRes, clientsRes, partnersRes] = await Promise.all([
+            const [facilitiesRes, clientsRes, debtorsRes, partnersRes] = await Promise.all([
                 performAdminAction(token, 'getLendingData', { collectionName: 'facilities' }),
                 performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' }),
+                performAdminAction(token, 'getLendingData', { collectionName: 'lendingDebtors' }),
                 performAdminAction(token, 'getLendingData', { collectionName: 'lendingPartners' })
             ]);
             
             setFacilities(facilitiesRes.data || []);
             setClients(clientsRes.data || []);
+            setDebtors(debtorsRes.data || []);
             setPartners(partnersRes.data || []);
 
         } catch (e: any) {
@@ -88,7 +92,8 @@ export default function FacilitiesContent() {
     useEffect(() => {
         if (searchParams.get('action') === 'create') {
             const clientId = searchParams.get('clientId');
-            const prefilledData = clientId ? { clientId } : null;
+            const debtorId = searchParams.get('debtorId');
+            const prefilledData = clientId ? { ownerType: 'client', clientId } : (debtorId ? { ownerType: 'debtor', debtorId } : null);
             setSelectedFacility(prefilledData);
             setView('wizard');
             router.replace('/lending?view=facilities', { scroll: false });
@@ -125,7 +130,6 @@ export default function FacilitiesContent() {
             if (!token) throw new Error("Authentication failed.");
             
             await performAdminAction(token, 'updateFacilityStatus', {
-                clientId: facility.clientId,
                 facilityId: facility.id,
                 status: newStatus
             });
@@ -145,7 +149,6 @@ export default function FacilitiesContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             await performAdminAction(token, 'deleteLendingFacility', { 
-                clientId: facilityToDelete.clientId,
                 facilityId: facilityToDelete.id 
             });
             toast({ title: 'Facility Deleted' });
@@ -159,18 +162,51 @@ export default function FacilitiesContent() {
 
 
     const columns: ColumnDef<any>[] = useMemo(() => [
-        { header: 'Client', cell: ({ row }) => <div>{clientMap.get(row.original.clientId) || 'Unknown Client'}</div> },
-        { header: 'Partner', cell: ({ row }) => <div>{partnerMap.get(row.original.partnerId) || 'N/A'}</div> },
-        { accessorKey: 'type', header: 'Type', cell: ({row}) => <Badge variant="outline" className="capitalize">{row.original.type?.replace(/_/g, ' ')}</Badge> },
-        { accessorKey: 'limit', header: 'Limit', cell: ({ row }) => formatCurrency(row.original.limit) },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize">{row.original.status?.replace(/_/g, ' ')}</Badge> },
+        { 
+            header: 'Owner / Entity', 
+            cell: ({ row }) => {
+                const ownerType = row.original.ownerType || 'client';
+                const ownerId = ownerType === 'client' ? row.original.clientId : row.original.debtorId;
+                const name = ownerType === 'client' ? clientMap.get(ownerId) : debtorMap.get(ownerId);
+                return (
+                    <div className="flex flex-col text-left">
+                        <span className="font-bold text-foreground">{name || 'Unknown Node'}</span>
+                        <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase font-black">
+                            {ownerType} Node
+                        </Badge>
+                    </div>
+                );
+            }
+        },
+        { 
+            header: 'Facility Class',
+            cell: ({ row }) => {
+                const isGlobal = row.original.facilityClass === 'global';
+                return (
+                    <div className="flex flex-col text-left">
+                        <Badge className={cn("capitalize text-[9px] font-black tracking-widest w-fit", isGlobal ? "bg-slate-900 text-white" : "bg-primary/10 text-primary")}>
+                            {row.original.facilityClass || 'Standard'}
+                        </Badge>
+                        {row.original.associatedClientId && (
+                            <div className="flex items-center gap-1.5 mt-1">
+                                <ArrowRight className="h-2.5 w-2.5 text-muted-foreground" />
+                                <span className="text-[10px] font-bold text-slate-600">{clientMap.get(row.original.associatedClientId)}</span>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+        },
+        { accessorKey: 'type', header: 'Product', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px] font-bold">{row.original.type?.replace(/_/g, ' ')}</Badge> },
+        { accessorKey: 'limit', header: 'Facility Limit', cell: ({ row }) => <span className="font-black text-foreground">{formatCurrency(row.original.limit)}</span> },
+        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize text-[10px] font-black tracking-widest">{row.original.status || 'Active'}</Badge> },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
             <div className="text-right">
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="text-left">
                         <DropdownMenuItem onClick={() => handleEdit(row.original)}>
                             <Edit className="mr-2 h-4 w-4" /> Edit Details
                         </DropdownMenuItem>
@@ -198,66 +234,82 @@ export default function FacilitiesContent() {
                             className="text-destructive"
                             onSelect={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}
                         >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Node
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
         )},
-    ], [clientMap, partnerMap]);
+    ], [clientMap, debtorMap, partnerMap]);
     
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
     
     if (view === 'wizard') {
-        return <EditFacilityWizard facility={selectedFacility} clients={clients} partners={partners} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+        return <EditFacilityWizard facility={selectedFacility} clients={clients} debtors={debtors} partners={partners} onSave={handleSaveSuccess} onBack={handleBackToList} />;
     }
 
     return (
-        <>
+        <div className="space-y-8 text-left text-foreground">
              <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete this credit facility.</AlertDialogDescription>
+                <AlertDialogContent className="text-left text-foreground">
+                    <AlertDialogHeader className="text-left">
+                        <AlertDialogTitle className="text-left">Expunge Facility Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">This will permanently delete the credit line. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel onClick={() => setFacilityToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog open={statusChangeAlert.open} onOpenChange={(open) => !open && setStatusChangeAlert({ open: false, facility: null, newStatus: null })}>
-                <AlertDialogContent>
-                     <AlertDialogHeader>
-                        <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to change the status of this facility to <span className="font-bold capitalize">{statusChangeAlert.newStatus}</span>?
+                <AlertDialogContent className="text-left text-foreground">
+                     <AlertDialogHeader className="text-left">
+                        <AlertDialogTitle className="text-left">Update Authority Node</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">
+                            Confirm status change to <span className="font-bold capitalize">{statusChangeAlert.newStatus}</span> for this facility.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={processStatusChange}>Yes, Change Status</AlertDialogAction>
+                        <AlertDialogAction onClick={processStatusChange}>Confirm Change</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="flex items-center gap-2"><Banknote /> Credit Facilities</CardTitle>
-                        <CardDescription>Manage all credit facilities granted to clients.</CardDescription>
-                    </div>
-                    <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>New Facility</Button>
-                </CardHeader>
-                <CardContent>
+
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left text-foreground">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
+                        <Banknote className="h-8 w-8 text-primary" />
+                        Facility Ledger
+                    </h1>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground">Management of authorized credit lines for Clients and specialized Debtor nodes.</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                        <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
+                    </Button>
+                    <Button onClick={handleAddNew} className="gap-2 font-bold text-white shadow-lg">
+                        <PlusCircle className="h-4 w-4"/> Initialize Facility
+                    </Button>
+                </div>
+            </div>
+
+            <Card className="border-none shadow-xl bg-white text-left text-foreground">
+                <CardContent className="pt-6">
                     {isLoading ? (
-                        <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Ledger...</p>
+                        </div>
                     ) : (
                         <DataTable columns={columns} data={facilities} />
                     )}
                 </CardContent>
             </Card>
-        </>
+        </div>
     );
 }
+

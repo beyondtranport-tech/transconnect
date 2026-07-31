@@ -6,10 +6,10 @@ import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Users, CheckCircle, Handshake } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Users, CheckCircle, Handshake, Landmark, Building, Info, ShieldCheck, Zap } from 'lucide-react';
 import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useRouter } from 'next/navigation';
+import { Separator } from '@/components/ui/separator';
 
 // API Helper
 async function performAdminAction(token: string, action: string, payload: any) {
@@ -35,51 +36,56 @@ async function performAdminAction(token: string, action: string, payload: any) {
 }
 
 const facilitySchema = z.object({
-  clientId: z.string().min(1, 'Client is required'),
-  partnerId: z.string().optional(),
+  ownerType: z.enum(['client', 'debtor']).default('client'),
+  facilityClass: z.enum(['global', 'client_specific']).default('global'),
+  clientId: z.string().optional().nullable(),
+  debtorId: z.string().optional().nullable(),
+  associatedClientId: z.string().optional().nullable(),
+  partnerId: z.string().optional().nullable(),
   type: z.string().min(1, 'Facility type is required'),
   limit: z.coerce.number().positive('Limit must be a positive number'),
+  status: z.string().default('active'),
 });
 
 type FacilityFormValues = z.infer<typeof facilitySchema>;
 
 const steps = [
-    { id: 'entityType', title: 'Facility For', icon: Users, fields: [] },
-    { id: 'association', title: 'Association', icon: Handshake, fields: ['clientId'] },
-    { id: 'details', title: 'Facility Details', icon: Banknote, fields: ['type', 'limit'] },
-    { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
+    { id: 'type', title: 'Context & Type', icon: Landmark, fields: ['ownerType'] },
+    { id: 'association', title: 'Core Association', icon: Building, fields: ['clientId', 'debtorId', 'facilityClass'] },
+    { id: 'details', title: 'Facility Metrics', icon: Banknote, fields: ['type', 'limit'] },
+    { id: 'review', title: 'Review & Commit', icon: ShieldCheck, fields: [] },
 ];
 
 interface EditFacilityWizardProps {
   facility?: any;
   clients: any[];
+  debtors: any[];
   partners: any[];
   onSave: () => void;
   onBack: () => void;
 }
 
-export function EditFacilityWizard({ facility, clients, partners, onSave, onBack }: EditFacilityWizardProps) {
+export function EditFacilityWizard({ facility, clients, debtors, partners, onSave, onBack }: EditFacilityWizardProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
-    const [facilityFor, setFacilityFor] = useState<'client' | 'partner' | null>(null);
     const { toast } = useToast();
-    const router = useRouter();
     
     const methods = useForm<FacilityFormValues>({
         resolver: zodResolver(facilitySchema),
         mode: 'onChange',
+        defaultValues: facility || { 
+            ownerType: 'client', 
+            facilityClass: 'global',
+            limit: 0, 
+            status: 'active' 
+        }
     });
 
-    useEffect(() => {
-        const initialValues = facility || { limit: 0 };
-        methods.reset(initialValues);
+    const watched = methods.watch();
 
-        if (initialValues.clientId) {
-            setFacilityFor('client');
-            setCurrentStep(1);
-        } else {
-            setCurrentStep(0);
-            setFacilityFor(null);
+    useEffect(() => {
+        if (facility) {
+            methods.reset(facility);
         }
     }, [facility, methods]);
 
@@ -89,7 +95,7 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             await performAdminAction(token, 'saveLendingFacility', { facility: { id: facility?.id, ...values } });
-            toast({ title: facility ? 'Facility Updated' : 'Facility Created' });
+            toast({ title: facility?.id ? 'Facility Updated' : 'Facility Initialized' });
             onSave();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
@@ -99,21 +105,12 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     };
     
     const handleNext = async () => {
-        if (currentStep === 0) {
-            if (facilityFor === 'client') {
-                setCurrentStep(1);
-            } else {
-                toast({ variant: 'destructive', title: 'Selection Required', description: 'Please select "Client" to proceed.' });
-            }
-            return;
-        }
-
         const stepFields = steps[currentStep].fields;
         const isValid = await methods.trigger(stepFields as any);
         if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
         } else if (!isValid) {
-            toast({ variant: "destructive", title: "Please complete all required fields for this step." });
+            toast({ variant: "destructive", title: "Please complete mandatory fields for this step." });
         }
     };
     
@@ -129,97 +126,174 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
-            case 'entityType': return (
-                 <div>
-                    <Label className="text-lg font-semibold">Who is this facility for?</Label>
-                    <RadioGroup onValueChange={(value) => setFacilityFor(value as any)} value={facilityFor || ''} className="mt-4 space-y-2">
-                        <FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-md has-[:checked]:border-primary">
-                            <FormControl><RadioGroupItem value="client" /></FormControl>
-                            <FormLabel className="font-normal w-full cursor-pointer">A Client (Debtor) - to provide them with a credit facility.</FormLabel>
+            case 'type': return (
+                 <div className="space-y-6 text-left text-foreground">
+                    <FormField control={methods.control} name="ownerType" render={({ field }) => (
+                        <FormItem className="space-y-4 text-left">
+                            <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Establish Facility Context</FormLabel>
+                            <FormControl>
+                                <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
+                                    <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
+                                        <div className="flex items-center gap-3"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="cap-client" className="font-black text-xs uppercase cursor-pointer">Client Node</Label></div>
+                                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Direct exposure limit for a borrowing member.</p>
+                                    </div>
+                                    <div className={cn("p-6 border-2 rounded-[2rem] cursor-pointer transition-all", field.value === 'debtor' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
+                                        <div className="flex items-center gap-3"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="cap-debtor" className="font-black text-xs uppercase cursor-pointer">Debtor Node</Label></div>
+                                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Exposure limit for a Load Provider/Cessionary.</p>
+                                    </div>
+                                </RadioGroup>
+                            </FormControl>
                         </FormItem>
-                         <FormItem className="flex items-center space-x-3 space-y-0 p-4 border rounded-md has-[:checked]:border-primary">
-                            <FormControl><RadioGroupItem value="partner" /></FormControl>
-                            <FormLabel className="font-normal w-full cursor-pointer">A Lending Partner (Co-funder) - to set their global limit.</FormLabel>
-                        </FormItem>
-                    </RadioGroup>
-                    {facilityFor === 'partner' && (
-                        <Alert className="mt-4" variant="destructive">
-                            <AlertTitle className="font-bold">Incorrect Workflow</AlertTitle>
-                            <AlertDescription>
-                                To set a Global Facility Limit for a Lending Partner, please go to the Partners section and edit their profile directly. This wizard is only for creating specific credit facilities for Clients.
-                                <Button asChild variant="link" className="p-0 h-auto ml-1 font-semibold">
-                                    <Link href="/lending?view=partners">Go to Partners section</Link>
-                                </Button>
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                    )} />
                 </div>
             );
             case 'association': return (
-                <div className="space-y-4">
-                    <FormField control={methods.control} name="clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                    <FormField control={methods.control} name="partnerId" render={({ field }) => (<FormItem><FormLabel>Co-funding Partner (Optional)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a partner..." /></SelectTrigger></FormControl><SelectContent>{partners.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
+                    {watched.ownerType === 'client' ? (
+                        <FormField control={methods.control} name="clientId" render={({ field }) => (
+                            <FormItem className="text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                        )} />
+                    ) : (
+                        <div className="space-y-8 text-left text-foreground">
+                            <FormField control={methods.control} name="debtorId" render={({ field }) => (
+                                <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            )} />
+
+                            <FormField control={methods.control} name="facilityClass" render={({ field }) => (
+                                <FormItem className="space-y-4 text-left">
+                                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Debtor Facility class</FormLabel>
+                                    <FormControl>
+                                        <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
+                                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'global' ? "border-primary bg-primary/5" : "bg-white")}>
+                                                <div className="flex items-center gap-3"><RadioGroupItem value="global" id="class-global" /><Label htmlFor="class-global" className="font-bold text-xs uppercase cursor-pointer">Global Debtor Limit</Label></div>
+                                                <p className="text-[9px] text-muted-foreground mt-1">Total limit across all clients for this debtor.</p>
+                                            </div>
+                                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'client_specific' ? "border-primary bg-primary/5" : "bg-white")}>
+                                                <div className="flex items-center gap-3"><RadioGroupItem value="client_specific" id="class-client" /><Label htmlFor="class-client" className="font-bold text-xs uppercase cursor-pointer">Client-Specific Limit</Label></div>
+                                                <p className="text-[9px] text-muted-foreground mt-1">Authorized limit for a specific Client-Debtor pair.</p>
+                                            </div>
+                                        </RadioGroup>
+                                    </FormControl>
+                                </FormItem>
+                            )} />
+
+                            {watched.facilityClass === 'client_specific' && (
+                                <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
+                                    <FormItem className="animate-in slide-in-from-top-2 text-left text-foreground">
+                                        <FormLabel>Link to Member Client</FormLabel>
+                                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                                            <FormControl><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
+                                            <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                        </Select>
+                                        <FormDescription className="text-[10px] italic">This sets the "accepted per-client" limit for this Load Provider.</FormDescription>
+                                    </FormItem>
+                                )} />
+                            )}
+                        </div>
+                    )}
                 </div>
             );
              case 'details': return (
-                <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <FormField control={methods.control} name="type" render={({ field }) => (<FormItem><FormLabel>Facility Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent><SelectItem value="loan">Loan</SelectItem><SelectItem value="lease">Lease</SelectItem><SelectItem value="factoring">Factoring</SelectItem><SelectItem value="installment_sale">Installment Sale</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                        {/* Status field is removed from here */}
+                <div className="space-y-6 text-left text-foreground">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                        <FormField control={methods.control} name="type" render={({ field }) => (
+                            <FormItem className="text-left text-foreground">
+                                <FormLabel>Product Group</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="factoring">Factoring (Debtors)</SelectItem>
+                                        <SelectItem value="loan">Asset Loan</SelectItem>
+                                        <SelectItem value="lease">Asset Lease</SelectItem>
+                                        <SelectItem value="installment_sale">Installment Sale</SelectItem>
+                                        <SelectItem value="working_capital">Working Capital</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </FormItem>
+                        )} />
+                        <FormField control={methods.control} name="limit" render={({ field }) => (
+                            <FormItem className="text-left">
+                                <FormLabel className="text-primary font-black uppercase text-[10px]">Authorized Limit (ZAR)</FormLabel>
+                                <FormControl><Input type="number" {...field} className="h-11 border-2 bg-white text-lg font-black" /></FormControl>
+                            </FormItem>
+                        )} />
                     </div>
-                    <FormField control={methods.control} name="limit" render={({ field }) => (<FormItem><FormLabel>Facility Limit (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+
+                    <div className="p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4">
+                        <div className="flex items-center gap-3">
+                            <Info className="h-5 w-5 text-primary" />
+                            <h4 className="text-xs font-black uppercase tracking-widest">Protocol Logic</h4>
+                        </div>
+                        <p className="text-[11px] text-slate-400 leading-relaxed">
+                            {watched.ownerType === 'debtor' && watched.facilityClass === 'global' ? (
+                                "This Global Limit caps the total exposure the platform will accept for this Load Provider across all member handshakes."
+                            ) : watched.ownerType === 'debtor' && watched.facilityClass === 'client_specific' ? (
+                                "This Client-Specific limit ensures that the platform only accepts a set volume of debt from this debtor for this specific member."
+                            ) : (
+                                "This Client Limit defines the total credit facility authorized for this member business node."
+                            )}
+                        </p>
+                    </div>
                 </div>
             );
-            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving.</p></div>
+            case 'review': return (
+                <div className="text-center py-20 space-y-6 text-left text-foreground">
+                    <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
+                    <div className="space-y-2 text-center text-foreground">
+                        <h3 className="text-2xl font-black uppercase text-center text-foreground">Ready for Authorization</h3>
+                        <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed text-center text-foreground">Confirm node metrics before committing to the global facility ledger.</p>
+                    </div>
+                </div>
+            );
             default: return null;
         }
     };
     
     return (
-        <Card>
+        <Card className="max-w-5xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h2 className="text-2xl font-bold font-headline">{facility ? 'Edit' : 'Create New'} Facility</h2>
-                                <p className="text-muted-foreground">{steps[currentStep].title}</p>
+                    <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5">
+                        <div className="flex justify-between items-center text-left text-white">
+                            <div className="text-left text-white">
+                                <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Initialize Facility node</CardTitle>
+                                <CardDescription className="text-slate-400 text-left text-white">Step: {steps[currentStep].title}</CardDescription>
                             </div>
-                            <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
+                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to Ledger</Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                             <div className="flex flex-col gap-2 border-r pr-4">
+                    <CardContent className="p-0 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
+                             <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
-                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
-                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
-                                            <Icon className="h-4 w-4 mr-1" />
-                                            {step.title}
+                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(index)}>
+                                            {isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            <Icon className={cn("h-4 w-4", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
+                                            <span className={cn("text-[10px] font-black uppercase tracking-widest", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                         </Button>
                                     );
                                 })}
                             </div>
-                             <div className="space-y-6 min-h-[400px]">
+                             <div className="p-10 space-y-12 bg-white min-h-[500px] text-left">
                                 {renderStepContent()}
                              </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t pt-6 mt-6">
-                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading}>
+                    <CardFooter className="bg-slate-50 border-t p-8 flex justify-between">
+                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading} className="font-bold">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext} disabled={facilityFor === 'partner'}>
-                                Next <ArrowRight className="ml-2 h-4 w-4"/>
+                            <Button type="button" onClick={handleNext} className="h-12 px-10 font-black uppercase text-xs text-white">
+                                Next Section <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (
-                            <Button type="submit" disabled={isLoading}>
+                            <Button type="submit" disabled={isLoading} className="h-12 bg-primary hover:bg-primary/90 shadow-lg font-black uppercase tracking-tight text-white">
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                {facility ? 'Update Facility' : 'Create Facility'}
+                                Commit Authority Node
                             </Button>
                         )}
                     </CardFooter>
@@ -228,3 +302,4 @@ export function EditFacilityWizard({ facility, clients, partners, onSave, onBack
         </Card>
     );
 }
+
