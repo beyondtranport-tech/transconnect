@@ -267,7 +267,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField control={methods.control} name="type" render={({ field }) => (
                             <FormItem className="text-left">
-                                <FormLabel>Lending category</FormLabel>
+                                <FormLabel>Agreement Type</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                     <FormControl><SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl>
                                     <SelectContent>
@@ -328,7 +328,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                                 <CardTitle className="text-2xl font-black font-headline uppercase text-left">Initialize Facility Node</CardTitle>
                                 <CardDescription className="text-slate-400 text-left">Step: {steps[currentStep].title}</CardDescription>
                             </div>
-                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to Ledger</Button>
+                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
