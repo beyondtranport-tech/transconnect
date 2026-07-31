@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -133,15 +132,18 @@ export function EditFacilityWizard({
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
+            // EXPLICIT CONTEXT MERGE: Ensure hidden context fields are preserved
+            const allValues = methods.getValues();
+
             const finalPayload = {
-                ...values,
+                ...allValues,
                 id: facility?.id || undefined,
-                limit: Number(values.limit),
-                parentId: parentFacility?.id || values.parentId || null,
+                limit: Number(allValues.limit),
+                parentId: parentFacility?.id || allValues.parentId || null,
                 facilityClass: isSubLimitMode ? 'sub' : 'global',
-                ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || values.ownerType,
-                clientId: parentFacility?.clientId || facility?.clientId || values.clientId || null,
-                debtorId: parentFacility?.debtorId || facility?.debtorId || values.debtorId || null,
+                ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || allValues.ownerType,
+                clientId: parentFacility?.clientId || facility?.clientId || allValues.clientId || null,
+                debtorId: parentFacility?.debtorId || facility?.debtorId || allValues.debtorId || null,
             };
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { 
@@ -327,7 +329,7 @@ export function EditFacilityWizard({
     return (
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
-                <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
+                <form onSubmit={(e) => { e.preventDefault(); }} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left">
                         <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
@@ -350,7 +352,7 @@ export function EditFacilityWizard({
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
                                             className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
-                                            onClick={() => setCurrentStep(index)}
+                                            onClick={(e) => handleStepTransition(index, e)}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
@@ -373,7 +375,7 @@ export function EditFacilityWizard({
                                 Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (
-                            <Button type="submit" disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white text-left">
+                            <Button type="button" onClick={methods.handleSubmit(onSubmit)} disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white text-left">
                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <ShieldCheck className="mr-2 h-5 w-5" />}
                                 Commit Node to Ledger
                             </Button>
@@ -383,4 +385,14 @@ export function EditFacilityWizard({
             </FormProvider>
         </Card>
     );
+
+    async function handleStepTransition(index: number, e: React.MouseEvent) {
+        e.preventDefault();
+        if (index <= currentStep) {
+            setCurrentStep(index);
+            return;
+        }
+        const isValid = await methods.trigger(steps[currentStep].fields as any);
+        if (isValid) setCurrentStep(index);
+    }
 }

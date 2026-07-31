@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -97,7 +96,7 @@ export async function POST(req: NextRequest) {
                 };
                 
                 await ref.set(dataToSave, { merge: true });
-                return NextResponse.json({ success: true, id: facilityId });
+                return NextResponse.json({ success: true, data: { id: facilityId } });
             }
 
             case 'updateFacilityStatus': {

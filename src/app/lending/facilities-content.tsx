@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -16,7 +15,17 @@ import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFi
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn, fetchFromAdminAPI } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle,
+    AlertDialogTrigger
+} from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -158,6 +167,19 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
     return (
         <div className="space-y-8 text-left text-foreground">
+            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <AlertDialogContent className="text-left text-foreground">
+                    <AlertDialogHeader className="text-left">
+                        <AlertDialogTitle className="text-left">Expunge Authority Node?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently remove the facility from the ledger.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="text-left">
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: 'destructive' })}>Confirm Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
@@ -234,23 +256,9 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
                                                     </DropdownMenuItem>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                                                                <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
-                                                            </DropdownMenuItem>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent className="text-left text-foreground">
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Expunge Authority Node?</AlertDialogTitle>
-                                                                <AlertDialogDescription>Permanent removal from the ledger.</AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => { setFacilityToDelete(global); handleDelete(); }} className={cn(buttonVariants({ variant: 'destructive' }))}>Delete Node</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => { setFacilityToDelete(global); setIsDeleteAlertOpen(true); }}>
+                                                        <Trash2 className="h-4 w-4 mr-2" /> Expunge Node
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
