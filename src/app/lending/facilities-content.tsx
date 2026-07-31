@@ -194,7 +194,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         <TableRow className="hover:bg-slate-900 border-none">
                             <TableHead className="w-12"></TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Fiduciary Entity</TableHead>
-                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Context</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Limit Ceiling</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-center">Status</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Audit</TableHead>
@@ -206,6 +205,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         ) : filteredGlobals.length > 0 ? filteredGlobals.map((global) => {
                             const isExpanded = expandedIds.has(global.id);
                             const ownerName = global.ownerType === 'client' ? clientMap.get(global.clientId) : debtorMap.get(global.debtorId);
+                            // Strictly find sub-limits for this parent
                             const subs = facilities.filter(f => f.parentId === global.id);
 
                             return (
@@ -219,13 +219,13 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                         <TableCell>
                                             <div className="flex flex-col text-left">
                                                 <span className="font-black text-sm text-slate-900">{ownerName || 'Unknown Node'}</span>
-                                                <span className="text-[9px] text-muted-foreground font-mono uppercase">{global.id}</span>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Badge variant="outline" className="capitalize text-[8px] h-3.5 font-black border-primary/20 text-primary">
+                                                        {global.ownerType} Master
+                                                    </Badge>
+                                                    <span className="text-[9px] text-muted-foreground font-mono uppercase">ID: {global.id.slice(-6)}</span>
+                                                </div>
                                             </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className="capitalize text-[10px] font-black border-primary/20 text-primary">
-                                                {global.ownerType} Master
-                                            </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-black text-lg text-foreground">
                                             {formatCurrency(global.limit)}
@@ -257,7 +257,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                     
                                     {isExpanded && (
                                         <TableRow className="bg-slate-50 border-y-2 border-primary/10">
-                                            <TableCell colSpan={6} className="p-0">
+                                            <TableCell colSpan={5} className="p-0">
                                                 <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
                                                     <div className="flex justify-between items-center text-left text-foreground">
                                                         <div className="text-left">
@@ -276,9 +276,9 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Sub-Limit Node</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Product / Partner</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Authorized Limit</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Hierarchy</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Product / Association</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Sub-Limit</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Actions</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
@@ -292,7 +292,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                                 <div className="flex flex-col text-left">
                                                                                     <span className="text-xs font-bold text-slate-700 capitalize">{sub.type?.replace(/_/g, ' ') || 'Commercial'}</span>
                                                                                     {sub.associatedClientId && (
-                                                                                        <span className="text-[9px] text-muted-foreground font-black uppercase">Ref: {clientMap.get(sub.associatedClientId) || 'Member Pair'}</span>
+                                                                                        <span className="text-[9px] text-muted-foreground font-black uppercase">Pair: {clientMap.get(sub.associatedClientId) || 'Member'}</span>
                                                                                     )}
                                                                                 </div>
                                                                             </TableCell>
@@ -301,7 +301,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                             </TableCell>
                                                                             <TableCell className="text-right">
                                                                                 <div className="flex justify-end gap-1">
-                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEdit(sub)}><Edit className="h-3.5 w-3.5" /></Button>
+                                                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => handleEdit(sub)}><Edit className="h-3.5 w-3.5" /></Button>
                                                                                     <Button 
                                                                                         variant="ghost" 
                                                                                         size="icon" 
@@ -331,7 +331,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                             );
                         }) : (
                             <TableRow>
-                                <TableCell colSpan={6} className="py-32 text-center text-muted-foreground">
+                                <TableCell colSpan={5} className="py-32 text-center text-muted-foreground">
                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                         <Landmark className="h-16 w-16" />
                                         <p className="text-sm font-bold uppercase tracking-widest text-center">No facilities matched in this registry segment.</p>

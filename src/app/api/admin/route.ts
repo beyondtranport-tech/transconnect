@@ -76,21 +76,25 @@ export async function POST(req: NextRequest) {
                 const { facility } = payload;
                 if (!facility) throw new Error("Missing facility payload.");
                 
-                const ref = db.collection('lendingFacilities').doc(facility.id || db.collection('lendingFacilities').doc().id);
+                // EXPLICIT ID RESOLUTION
+                const facilityId = facility.id || db.collection('lendingFacilities').doc().id;
+                const ref = db.collection('lendingFacilities').doc(facilityId);
                 
+                // FORENSIC PAYLOAD ENFORCEMENT
                 const dataToSave = {
                     ...facility,
-                    id: ref.id,
+                    id: facilityId,
                     parentId: facility.parentId || null,
                     limit: Number(facility.limit) || 0,
                     facilityClass: facility.facilityClass || 'global',
                     ownerType: facility.ownerType || 'client',
                     updatedAt: FieldValue.serverTimestamp(),
-                    createdAt: facility.createdAt ? Timestamp.fromDate(new Date(facility.createdAt)) : FieldValue.serverTimestamp()
+                    // Preserve createdAt if editing
+                    createdAt: facility.createdAt ? (typeof facility.createdAt === 'string' ? Timestamp.fromDate(new Date(facility.createdAt)) : facility.createdAt) : FieldValue.serverTimestamp()
                 };
                 
                 await ref.set(dataToSave, { merge: true });
-                return NextResponse.json({ success: true, id: ref.id });
+                return NextResponse.json({ success: true, id: facilityId });
             }
 
             case 'updateFacilityStatus': {

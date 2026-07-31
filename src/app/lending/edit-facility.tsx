@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useFormContext } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, Zap, Gavel, CheckCircle2, Info, Scale, Lock } from 'lucide-react';
-import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
@@ -28,7 +28,7 @@ const facilitySchema = z.object({
   debtorId: z.string().optional().nullable(),
   associatedClientId: z.string().optional().nullable(), 
   type: z.string().min(1, 'Product type or identifier is required'),
-  limit: z.coerce.number().min(1, 'Limit must be a positive number'),
+  limit: z.coerce.number().min(0, 'Limit must be a positive number'),
   status: z.string().default('active'),
 });
 
@@ -66,6 +66,7 @@ export function EditFacilityWizard({
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
     
+    // Explicitly determine if we are in sub-limit mode
     const isSubLimitMode = useMemo(() => !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub', [parentFacility, initialFacilityClass, facility]);
 
     const methods = useForm<FacilityFormValues>({
@@ -86,7 +87,7 @@ export function EditFacilityWizard({
 
     const watched = methods.watch();
 
-    // FORCED SYNC: Ensure form state is updated when parent/facility context changes
+    // FORCE SYNC: Reset form when context changes
     useEffect(() => {
         const defaults = { 
             ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || 'client', 
@@ -100,6 +101,7 @@ export function EditFacilityWizard({
             associatedClientId: facility?.associatedClientId || null,
         };
         methods.reset(defaults);
+        setCurrentStep(0);
     }, [facility, parentFacility, initialOwnerType, initialFacilityClass, isSubLimitMode, methods]);
 
     const steps = useMemo(() => {
@@ -132,25 +134,23 @@ export function EditFacilityWizard({
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // EXPLICIT CONTEXT MERGE: Ensures fields hidden in sub-wizard are preserved
-            const currentFormState = methods.getValues();
-            
+            // DEEP CONTEXT MERGE: Prevents data loss for background fields
             const finalPayload = {
-                ...currentFormState,
+                ...values,
                 id: facility?.id || undefined,
-                limit: Number(currentFormState.limit),
-                parentId: parentFacility?.id || currentFormState.parentId || null,
+                limit: Number(values.limit),
+                parentId: parentFacility?.id || values.parentId || null,
                 facilityClass: isSubLimitMode ? 'sub' : 'global',
-                ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || currentFormState.ownerType,
-                clientId: parentFacility?.clientId || currentFormState.clientId || null,
-                debtorId: parentFacility?.debtorId || currentFormState.debtorId || null,
+                ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || values.ownerType,
+                clientId: parentFacility?.clientId || values.clientId || null,
+                debtorId: parentFacility?.debtorId || values.debtorId || null,
             };
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { 
                 facility: finalPayload
             });
 
-            toast({ title: 'Authority Node Committed', description: 'Registry has been updated.' });
+            toast({ title: 'Authority Node Committed', description: 'Registry updated successfully.' });
             onSave();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: e.message });
@@ -159,17 +159,19 @@ export function EditFacilityWizard({
         }
     };
 
-    const handleNext = async () => {
+    const handleNext = async (e: React.MouseEvent) => {
+        e.preventDefault(); // Stop form submission
         const stepFields = steps[currentStep].fields;
         const isValid = await methods.trigger(stepFields as any);
         if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
         } else if (!isValid) {
-            toast({ variant: "destructive", title: "Complete all fields to proceed." });
+            toast({ variant: "destructive", title: "Incomplete Node", description: "Fill in all requirements for this protocol stage." });
         }
     };
     
-    const handleBackStep = () => {
+    const handleBackStep = (e: React.MouseEvent) => {
+        e.preventDefault();
         if (currentStep === 0) {
             onBack();
             return;
@@ -177,19 +179,14 @@ export function EditFacilityWizard({
         setCurrentStep(prev => prev - 1);
     };
 
-    const handleStepTransition = async (index: number) => {
-        if (index > currentStep) {
-            const stepFields = steps[currentStep].fields;
-            const isValid = await methods.trigger(stepFields as any);
-            if (!isValid) return;
-        }
-        setCurrentStep(index);
-    };
-
     const resolvedTargetName = useMemo(() => {
-        if (watched.ownerType === 'client') return clients.find(c => c.id === watched.clientId)?.name || 'Unassigned Client';
-        return debtors.find(d => d.id === watched.debtorId)?.name || 'Unassigned Debtor';
-    }, [watched.ownerType, watched.clientId, watched.debtorId, clients, debtors]);
+        const type = initialOwnerType || parentFacility?.ownerType || facility?.ownerType || watched.ownerType;
+        const cId = parentFacility?.clientId || facility?.clientId || watched.clientId;
+        const dId = parentFacility?.debtorId || facility?.debtorId || watched.debtorId;
+        
+        if (type === 'client') return clients.find(c => c.id === cId)?.name || 'Unassigned Client';
+        return debtors.find(d => d.id === dId)?.name || 'Unassigned Debtor';
+    }, [watched.ownerType, watched.clientId, watched.debtorId, initialOwnerType, parentFacility, facility, clients, debtors]);
     
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
@@ -240,6 +237,11 @@ export function EditFacilityWizard({
                     <div className="p-8 border-2 rounded-[2.5rem] bg-white space-y-6 shadow-sm text-left">
                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 h-5 mb-2">Sub-Limit Initialization</Badge>
                         
+                        <div className="p-4 bg-muted/30 rounded-xl border border-dashed text-left">
+                            <Label className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Parent Node</Label>
+                            <p className="text-sm font-bold text-slate-900">{resolvedTargetName}</p>
+                        </div>
+
                         {watched.ownerType === 'client' ? (
                              <FormField control={methods.control} name="type" render={({ field }) => (
                                 <FormItem className="text-left">
