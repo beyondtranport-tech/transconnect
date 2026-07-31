@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -13,7 +12,7 @@ import { Loader2, Save, ArrowLeft, ArrowRight, Landmark, Building, ShieldCheck, 
 import { getClientSideAuthToken, useUser, useFirestore } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -37,24 +36,10 @@ const facilitySchema = z.object({
 
 type FacilityFormValues = z.infer<typeof facilitySchema>;
 
-// Shared API Helper defined locally for maximum stability in wizard environment
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
 const allSteps = [
     { id: 'type', title: 'Context & Branch', icon: Landmark, fields: ['ownerType'] },
     { id: 'association', title: 'Global Limit', icon: Building, fields: ['clientId', 'debtorId', 'limit'] },
-    { id: 'agreement_limit', title: 'Sub-Node Authorization', icon: Gavel, fields: ['type', 'limit'] },
+    { id: 'agreement_limit', title: 'Sub-Node Authorization', icon: Gavel, fields: ['type', 'limit', 'associatedClientId'] },
     { id: 'review', title: 'Audit Readiness', icon: ShieldCheck, fields: [] },
 ];
 
@@ -96,7 +81,8 @@ export function EditFacilityWizard({
             debtorId: parentFacility?.debtorId || facility?.debtorId || null,
             limit: facility?.limit || 0, 
             status: facility?.status || 'active',
-            type: facility?.type || (isSubLimitMode ? 'Sub-Limit' : 'Global Ceiling')
+            type: facility?.type || (isSubLimitMode ? 'Sub-Limit' : 'Global Ceiling'),
+            associatedClientId: facility?.associatedClientId || null,
         }
     });
 
@@ -127,25 +113,22 @@ export function EditFacilityWizard({
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // EXPLICIT CONTEXT MERGE: Ensures fields hidden/skipped by the wizard are preserved
+            // DEEP CONTEXT MERGE: Ensure parentId and entityId are locked in
             const finalPayload = {
-                ...methods.getValues(), // Catch all hidden defaultValues (parentId, etc.)
-                ...values,             // Merge current step inputs
+                ...methods.getValues(), 
+                ...values,
                 id: facility?.id || undefined,
                 limit: Number(values.limit),
-                facilityClass: isSubLimitMode ? 'sub' : 'global',
                 parentId: parentFacility?.id || facility?.parentId || null,
+                facilityClass: isSubLimitMode ? 'sub' : 'global',
+                ownerType: initialOwnerType || parentFacility?.ownerType || facility?.ownerType || values.ownerType
             };
 
-            if (isSubLimitMode && !finalPayload.parentId) {
-                throw new Error("Data Integrity Error: Sub-limit must have a parent ID.");
-            }
-
-            await performAdminAction(token, 'saveLendingFacility', { 
+            await fetchFromAdminAPI(token, 'saveLendingFacility', { 
                 facility: finalPayload
             });
 
-            toast({ title: 'Authority Node Committed' });
+            toast({ title: 'Authority Node Committed', description: 'Registry has been updated.' });
             onSave();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Save Failed', description: e.message });

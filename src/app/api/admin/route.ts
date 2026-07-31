@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -79,7 +78,6 @@ export async function POST(req: NextRequest) {
                 
                 const ref = db.collection('lendingFacilities').doc(facility.id || db.collection('lendingFacilities').doc().id);
                 
-                // ENSURE PARENT BINDING: Force fields into number/string types to prevent serialization errors
                 const dataToSave = {
                     ...facility,
                     id: ref.id,
