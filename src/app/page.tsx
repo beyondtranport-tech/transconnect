@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -55,7 +56,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/70 to-slate-950" />
 
         <div className="container relative z-10 mx-auto px-4 text-center text-white">
-            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 text-[10px] font-black uppercase tracking-widest text-center text-white">The Industrial Commerce Engine</Badge>
+            <Badge className="mb-6 bg-primary/20 text-primary border-primary/30 py-1.5 px-6 font-black uppercase tracking-widest text-center text-white">The Industrial Commerce Engine</Badge>
             <h1 className="text-5xl md:text-8xl font-black font-headline leading-[0.9] mb-8 tracking-tighter text-center text-white uppercase">
                 Sell More. <br/>Find Work. <span className="text-primary">Fast.</span>
             </h1>
@@ -97,7 +98,7 @@ export default function HomePage() {
                           Establish a branch in front of 5,400+ hauliers actively maintaining fleets.
                         </p>
                         <Button asChild variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary justify-start group">
-                            <Link href="/commerce#shops">Explore Mechanism <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" /></Link>
+                            <Link href="/commerce">Explore Mechanism <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" /></Link>
                         </Button>
                     </Card>
 
@@ -109,7 +110,7 @@ export default function HomePage() {
                           Eliminate empty return miles. Post freight or find loads in real-time.
                         </p>
                         <Button asChild variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary justify-start group">
-                            <Link href="/commerce#loads">Explore Mechanism <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" /></Link>
+                            <Link href="/commerce">Explore Mechanism <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" /></Link>
                         </Button>
                     </Card>
 
@@ -121,7 +122,7 @@ export default function HomePage() {
                           Trade trucks and equipment within a high-trust, verified peer-to-peer marketplace.
                         </p>
                         <Button asChild variant="link" className="p-0 h-auto font-black uppercase text-[10px] tracking-widest text-primary justify-start group">
-                            <Link href="/commerce#marketplace">Explore Mechanism <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" /></Link>
+                            <Link href="/commerce">Explore Mechanism <ArrowRight className="ml-1 h-3 w-3 transition-transform group-hover:translate-x-1" /></Link>
                         </Button>
                     </Card>
 

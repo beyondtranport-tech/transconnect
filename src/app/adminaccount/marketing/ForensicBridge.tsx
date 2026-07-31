@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -22,15 +23,14 @@ async function performAdminAction(token: string, action: string, payload: any) {
         body: JSON.stringify({ action, payload }),
     });
     
-    const result = await response.json();
     if (!response.ok) {
-        // Bubble up specific status code or error text
-        throw new Error(result.error || `API Error ${response.status}`);
+        const text = await response.text();
+        throw new Error(text.startsWith('{') ? JSON.parse(text).error : `API Error ${response.status}`);
     }
-    return result;
+    return await response.json();
 }
 
-const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state_v4';
+const BRIDGE_STORAGE_KEY = 'lf_forensic_bridge_state_v5';
 
 export default function ForensicBridge({ audience }: { audience: string }) {
     const { toast } = useToast();
@@ -39,6 +39,10 @@ export default function ForensicBridge({ audience }: { audience: string }) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [logs, setLogs] = useState<any[]>([]);
     const [isScanning, setIsScanning] = useState(false);
+    
+    // Use a ref to keep track of the status for the async loop without triggering re-renders
+    const statusRef = useRef(status);
+    useEffect(() => { statusRef.current = status; }, [status]);
 
     const [stats, setStats] = useState({
         domains: 0,
@@ -47,6 +51,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         errors: 0
     });
 
+    // 1. Initial State Restoration
     useEffect(() => {
         const saved = localStorage.getItem(BRIDGE_STORAGE_KEY);
         if (saved) {
@@ -64,8 +69,9 @@ export default function ForensicBridge({ audience }: { audience: string }) {
         }
     }, [audience]);
 
+    // 2. Persistent State Synchronization
     useEffect(() => {
-        if (queue.length > 0) {
+        if (queue.length > 0 && status !== 'idle') {
             localStorage.setItem(BRIDGE_STORAGE_KEY, JSON.stringify({
                 audience,
                 queue,
@@ -74,7 +80,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                 timestamp: Date.now()
             }));
         }
-    }, [queue, currentIndex, stats, audience]);
+    }, [queue, currentIndex, stats, audience, status]);
 
     const progress = useMemo(() => {
         if (queue.length === 0) return 0;
@@ -134,16 +140,14 @@ export default function ForensicBridge({ audience }: { audience: string }) {
     };
 
     const startEnrichment = async () => {
-        if (status === 'running' || queue.length === 0) return;
+        if (statusRef.current === 'running' || queue.length === 0) return;
         
         setStatus('running');
         let pointer = currentIndex;
 
         while (pointer < queue.length) {
-            // Check if user paused mid-loop
-            let localStatus: string = 'running';
-            setStatus(s => { localStatus = s; return s; });
-            if (localStatus !== 'running') break;
+            // Check current status via ref to see if user paused mid-loop
+            if (statusRef.current !== 'running' && statusRef.current !== 'cooldown') break;
 
             const record = queue[pointer];
             const name = record.companyName || record.firstName || 'Unknown';
@@ -161,50 +165,40 @@ export default function ForensicBridge({ audience }: { audience: string }) {
 
                 if (res.success) {
                     setStats(prev => ({
+                        ...prev,
                         domains: prev.domains + (res.data?.website ? 1 : 0),
                         emails: prev.emails + (res.data?.email ? 1 : 0),
                         leadership: prev.leadership + (res.data?.marketingManager ? 1 : 0),
-                        errors: prev.errors
                     }));
 
-                    setLogs(prev => [{ 
-                        id: Date.now() + 1, 
-                        msg: `Bridge Successful: ${name} verified.`, 
-                        type: 'success'
-                    }, ...prev].slice(0, 50));
+                    setLogs(prev => [{ id: Date.now() + 1, msg: `Bridge Successful: ${name} verified.`, type: 'success' }, ...prev].slice(0, 50));
                     
-                    // ON SUCCESS: Increment pointer and update shared state
                     pointer++;
                     setCurrentIndex(pointer);
 
-                    // SAFE DELAY: 20s between records to respect Search & AI daily/burst quotas
-                    await new Promise(resolve => setTimeout(resolve, 20000));
+                    // FIXED DELAY: 15s between records to respect search and AI burst quotas
+                    await new Promise(resolve => setTimeout(resolve, 15000));
                 }
 
             } catch (err: any) {
                 const msg = err.message || "";
                 
-                if (msg.includes('SEARCH_QUOTA_EXHAUSTED')) {
-                    setStatus('quota_exhausted');
-                    setLogs(prev => [{ id: Date.now() + 2, msg: `CRITICAL: Google Search Daily Quota Exhausted. Registry bridging halted.`, type: 'error' }, ...prev].slice(0, 50));
-                    toast({ variant: 'destructive', title: "Search Limit Reached", description: "Wait until tomorrow for quota reset." });
-                    break; 
-                } 
-                
-                if (msg.includes('AI_RATE_LIMIT_EXHAUSTED') || msg.includes('429') || msg.includes('exhausted')) {
+                if (msg.includes('429') || msg.includes('Quota') || msg.includes('exhausted')) {
                     setStatus('cooldown');
-                    setLogs(prev => [{ id: Date.now() + 3, msg: `AI Rate Limit Hit. Sleeping for 65s before retrying current record...`, type: 'error' }, ...prev].slice(0, 50));
+                    setLogs(prev => [{ id: Date.now() + 2, msg: `AI Throttled: Sleeping for 65s before retrying current record...`, type: 'error' }, ...prev].slice(0, 50));
+                    
                     await new Promise(resolve => setTimeout(resolve, 65000));
                     
-                    // RECOVERY: Put status back to running, but DO NOT increment pointer. 
-                    // The loop will try the SAME record again.
-                    setStatus('running');
-                    continue; 
+                    if (statusRef.current === 'cooldown') {
+                        setStatus('running');
+                        continue; // RETRY SAME RECORD
+                    } else {
+                        break; // Loop terminated
+                    }
                 }
 
-                // If it's a non-quota error, log it and move to next record
                 setStats(prev => ({ ...prev, errors: prev.errors + 1 }));
-                setLogs(prev => [{ id: Date.now() + 4, msg: `Record Failure (${name}): ${msg}`, type: 'error' }, ...prev].slice(0, 50));
+                setLogs(prev => [{ id: Date.now() + 3, msg: `Record Failure (${name}): ${msg}`, type: 'error' }, ...prev].slice(0, 50));
                 pointer++;
                 setCurrentIndex(pointer);
                 await new Promise(resolve => setTimeout(resolve, 5000));
@@ -219,17 +213,17 @@ export default function ForensicBridge({ audience }: { audience: string }) {
     };
 
     return (
-        <div className="space-y-6 text-left text-foreground">
+        <div className="space-y-6 text-left">
             <Card className="border-primary/20 bg-slate-900 text-white shadow-2xl overflow-hidden">
                 <CardHeader className="border-b border-white/5">
                     <div className="flex justify-between items-start text-left">
-                        <div className="text-left">
+                        <div className="text-left text-white">
                             <CardTitle className="text-2xl font-black font-headline flex items-center gap-3 text-white">
                                 <Zap className={cn("h-8 w-8 text-primary", status === 'running' && "animate-pulse")} />
-                                Forensic Bridge V4
+                                Forensic Bridge V5
                             </CardTitle>
                             <CardDescription className="text-slate-400 mt-1">
-                                High-fidelity registry enrichment with automated record-level retry logic.
+                                Unified registry enrichment with automated error recovery and rate-limit buffering.
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -239,43 +233,43 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-8 p-8 text-left">
+                <CardContent className="space-y-8 p-8 text-left text-white">
                     {status === 'idle' ? (
-                        <div className="py-12 text-center space-y-6">
-                            <div className="bg-white/5 p-8 rounded-full w-fit mx-auto border border-white/10">
+                        <div className="py-12 text-center space-y-6 text-white">
+                            <div className="bg-white/5 p-8 rounded-full w-fit mx-auto border border-white/10 text-center">
                                 <Database className="h-16 w-16 text-primary opacity-50" />
                             </div>
                             <div className="space-y-2 text-center">
-                                <h3 className="text-xl font-bold text-white">Analysis Standby</h3>
-                                <p className="text-slate-400 max-w-sm mx-auto">Scan the {audience} registry to bridge gaps in domains, emails, and leadership data.</p>
+                                <h3 className="text-xl font-bold text-white">Registry Standby</h3>
+                                <p className="text-slate-400 max-w-sm mx-auto">Scan the {audience} registry to identify records missing forensic technical data.</p>
                             </div>
-                            <Button size="lg" onClick={handleScanGaps} disabled={isScanning} className="h-14 px-12 font-black uppercase text-xs tracking-widest shadow-lg">
+                            <Button size="lg" onClick={handleScanGaps} disabled={isScanning} className="h-14 px-12 font-black uppercase text-xs tracking-widest shadow-lg text-white">
                                 {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Search className="mr-2 h-4 w-4" />}
                                 Analyze Registry Gaps
                             </Button>
                         </div>
                     ) : (
-                        <div className="space-y-6 text-left">
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left">
-                                <Card className="bg-white/5 border-white/10 text-white shadow-none">
-                                    <CardContent className="pt-6">
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1 text-left">Queue</p>
+                        <div className="space-y-6 text-left text-white">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-left text-white">
+                                <Card className="bg-white/5 border-white/10 text-white shadow-none text-left">
+                                    <CardContent className="pt-6 text-left">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Queue</p>
                                         <p className="text-3xl font-black">{currentIndex} <span className="text-xs text-slate-500 font-bold">/ {queue.length}</span></p>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-white/5 border-white/10 text-white shadow-none">
+                                <Card className="bg-white/5 border-white/10 text-white shadow-none text-left">
                                     <CardContent className="pt-6 text-left">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Domains</p>
                                         <p className="text-3xl font-black text-blue-400">{stats.domains}</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-white/5 border-white/10 text-white shadow-none">
+                                <Card className="bg-white/5 border-white/10 text-white shadow-none text-left">
                                     <CardContent className="pt-6 text-left">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Emails</p>
                                         <p className="text-3xl font-black text-green-400">{stats.emails}</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="bg-white/5 border-white/10 text-white shadow-none">
+                                <Card className="bg-white/5 border-white/10 text-white shadow-none text-left">
                                     <CardContent className="pt-6 text-left">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Errors</p>
                                         <p className="text-3xl font-black text-destructive">{stats.errors}</p>
@@ -284,34 +278,29 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                             </div>
 
                             <div className="space-y-3 text-left">
-                                <div className="flex justify-between items-end px-1 text-left">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pipeline: {status.toUpperCase().replace('_', ' ')}</Label>
+                                <div className="flex justify-between items-end px-1">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pipeline Status: {status.toUpperCase().replace('_', ' ')}</Label>
                                     <span className="text-[10px] font-mono text-primary font-bold">{progress.toFixed(1)}%</span>
                                 </div>
                                 <Progress value={progress} className="h-3 bg-white/5" />
                             </div>
 
-                            <div className="flex flex-col items-center gap-4 text-left">
+                            <div className="flex flex-col items-center gap-4 text-center">
                                 {status === 'cooldown' && (
-                                    <div className="flex items-center gap-2 text-amber-500 animate-pulse text-xs font-bold uppercase tracking-widest">
-                                        <Clock className="h-4 w-4" /> AI Throttled: Retrying current record in 65s...
+                                    <div className="flex items-center gap-2 text-amber-500 animate-pulse text-xs font-bold uppercase tracking-widest text-center">
+                                        <Clock className="h-4 w-4" /> AI Throttled: Retrying current record in 60s...
                                     </div>
                                 )}
-                                {status === 'quota_exhausted' && (
-                                    <div className="flex items-center gap-2 text-destructive animate-pulse text-xs font-bold uppercase tracking-widest">
-                                        <SearchCode className="h-4 w-4" /> Search Quota Exhausted: Retry Tomorrow
-                                    </div>
-                                )}
-                                <div className="flex justify-center gap-4 text-left">
-                                    {status !== 'running' && status !== 'cooldown' && status !== 'quota_exhausted' ? (
+                                <div className="flex justify-center gap-4 text-center">
+                                    {status !== 'running' && status !== 'cooldown' ? (
                                         <Button size="lg" className="h-14 px-12 font-black uppercase text-xs tracking-widest bg-primary hover:bg-primary/90 text-white" onClick={startEnrichment} disabled={status === 'completed'}>
-                                            <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Bridge' : 'Start Bridge'}
+                                            <Play className="mr-2 h-4 w-4" /> {currentIndex > 0 ? 'Resume Pipeline' : 'Initiate Pipeline'}
                                         </Button>
-                                    ) : (status === 'running' || status === 'cooldown') ? (
+                                    ) : (
                                         <Button size="lg" variant="outline" className="h-14 px-12 font-black uppercase text-xs tracking-widest border-white/20 text-white" onClick={() => setStatus('paused')}>
-                                            <Pause className="mr-2 h-4 w-4" /> Pause Pipeline
+                                            <Pause className="mr-2 h-4 w-4" /> Pause Engine
                                         </Button>
-                                    ) : null}
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -336,7 +325,7 @@ export default function ForensicBridge({ audience }: { audience: string }) {
                                          log.type === 'error' ? <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" /> :
                                          <Loader2 className="h-4 w-4 text-primary animate-spin mt-0.5 shrink-0" />}
                                         <div className="text-left flex-1">
-                                            <p className={cn("text-[11px] font-bold leading-tight text-left", log.type === 'error' && "text-destructive")}>{log.msg}</p>
+                                            <p className={cn("text-[11px] font-bold leading-tight", log.type === 'error' && "text-destructive")}>{log.msg}</p>
                                         </div>
                                     </div>
                                 ))}
