@@ -173,6 +173,118 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true });
             }
 
+            // --- LENDING HUB ACTIONS ---
+            case 'getLendingData': {
+                const { collectionName } = payload;
+                const collMap: Record<string, string> = {
+                    'facilities': 'lendingFacilities',
+                    'agreements': 'lendingAgreements',
+                    'assets': 'lendingAssets',
+                    'securities': 'lendingSecurities',
+                    'lendingClients': 'lendingClients',
+                    'lendingPartners': 'lendingPartners'
+                };
+                const collectionToFetch = collMap[collectionName] || collectionName;
+                const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(500).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'saveLendingFacility': {
+                const { facility } = payload;
+                const ref = db.collection('lendingFacilities').doc(facility.id || db.collection('lendingFacilities').doc().id);
+                await ref.set({
+                    ...facility,
+                    id: ref.id,
+                    status: facility.status || 'pending',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'updateFacilityStatus': {
+                const { facilityId, status } = payload;
+                await db.collection('lendingFacilities').doc(facilityId).update({
+                    status,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteLendingFacility': {
+                const { facilityId } = payload;
+                await db.collection('lendingFacilities').doc(facilityId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingAgreement': {
+                const { agreement } = payload;
+                const ref = db.collection('lendingAgreements').doc(agreement.id || db.collection('lendingAgreements').doc().id);
+                await ref.set({
+                    ...agreement,
+                    id: ref.id,
+                    status: agreement.status || 'pending',
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deleteLendingAgreement': {
+                const { agreementId } = payload;
+                await db.collection('lendingAgreements').doc(agreementId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingAsset': {
+                const { asset } = payload;
+                const ref = db.collection('lendingAssets').doc(asset.id || db.collection('lendingAssets').doc().id);
+                await ref.set({
+                    ...asset,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deleteLendingAsset': {
+                const { assetId } = payload;
+                await db.collection('lendingAssets').doc(assetId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingSecurity': {
+                const { security } = payload;
+                const ref = db.collection('lendingSecurities').doc(security.id || db.collection('lendingSecurities').doc().id);
+                await ref.set({
+                    ...security,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deleteLendingSecurity': {
+                const { securityId } = payload;
+                await db.collection('lendingSecurities').doc(securityId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingPartner': {
+                const { partner } = payload;
+                const ref = db.collection('lendingPartners').doc(partner.id || db.collection('lendingPartners').doc().id);
+                await ref.set({
+                    ...partner,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
+            case 'deleteLendingPartner': {
+                const { partnerId, collection: collName = 'lendingClients' } = payload;
+                await db.collection(collName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             default: 
                 return NextResponse.json({ success: false, error: `Action "${action}" not implemented.` }, { status: 400 });
         }
