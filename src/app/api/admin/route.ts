@@ -62,6 +62,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
+            case 'saveLendingFacility': {
+                const { facility } = payload;
+                const ref = db.collection('lendingFacilities').doc(facility.id || db.collection('lendingFacilities').doc().id);
+                await ref.set({
+                    ...facility,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp(),
+                    createdAt: facility.createdAt || FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
             case 'saveLendingDocument': {
                 const { document } = payload;
                 const ref = db.collection('lendingDocuments').doc(document.id || db.collection('lendingDocuments').doc().id);

@@ -9,37 +9,23 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Users, CheckCircle, Handshake, Landmark, Building, Info, ShieldCheck, Zap, FileText } from 'lucide-react';
-import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
+import { Loader2, Save, ArrowLeft, ArrowRight, Banknote, Landmark, Building, Info, ShieldCheck, Zap } from 'lucide-react';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { cn, fetchFromAdminAPI } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 
-// API Helper
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
 const facilitySchema = z.object({
+  id: z.string().optional(),
   ownerType: z.enum(['client', 'debtor']).default('client'),
   facilityClass: z.enum(['global', 'sub']).default('global'),
   clientId: z.string().optional().nullable(),
   debtorId: z.string().optional().nullable(),
-  associatedClientId: z.string().optional().nullable(), // For Debtor Sub-limits
-  agreementType: z.string().optional().nullable(), // For Client Sub-limits
+  associatedClientId: z.string().optional().nullable(), 
+  agreementType: z.string().optional().nullable(), 
   type: z.string().min(1, 'Product type is required'),
   limit: z.coerce.number().positive('Limit must be a positive number'),
   status: z.string().default('active'),
@@ -65,6 +51,7 @@ interface EditFacilityWizardProps {
 export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack }: EditFacilityWizardProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
+    const [internalId, setInternalId] = useState<string | null>(facility?.id || null);
     const { toast } = useToast();
     
     const methods = useForm<FacilityFormValues>({
@@ -83,15 +70,63 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
     useEffect(() => {
         if (facility) {
             methods.reset(facility);
+            setInternalId(facility.id);
         }
     }, [facility, methods]);
+
+    /**
+     * PERSISTENT AUTOSAVE HANDLER
+     * Triggered as you move between steps to ensure zero data loss.
+     */
+    const autosave = async (values: FacilityFormValues) => {
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+
+            const res = await fetchFromAdminAPI(token, 'saveLendingFacility', { 
+                facility: { ...values, id: internalId || undefined } 
+            });
+            
+            if (!internalId && res.id) {
+                setInternalId(res.id);
+                methods.setValue('id', res.id);
+            }
+        } catch (e) {
+            console.warn("Autosave standby - proceeding with local state", e);
+        }
+    };
+
+    const handleNext = async () => {
+        const stepFields = steps[currentStep].fields;
+        const isValid = await methods.trigger(stepFields as any);
+        
+        if (isValid) {
+            // Persistent transition
+            const currentValues = methods.getValues();
+            await autosave(currentValues);
+            
+            if (currentStep < steps.length - 1) {
+                setCurrentStep(prev => prev + 1);
+            }
+        } else {
+            toast({ variant: "destructive", title: "Please complete mandatory fields for this step." });
+        }
+    };
+    
+    const handleBackStep = async () => {
+        const currentValues = methods.getValues();
+        await autosave(currentValues);
+        setCurrentStep(prev => Math.max(prev - 1, 0));
+    };
 
     const onSubmit = async (values: FacilityFormValues) => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'saveLendingFacility', { facility: { id: facility?.id, ...values } });
+            await fetchFromAdminAPI(token, 'saveLendingFacility', { 
+                facility: { ...values, id: internalId || undefined } 
+            });
             toast({ title: facility?.id ? 'Facility Node Updated' : 'Facility Node Initialized' });
             onSave();
         } catch (e: any) {
@@ -100,18 +135,6 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             setIsLoading(false);
         }
     };
-    
-    const handleNext = async () => {
-        const stepFields = steps[currentStep].fields;
-        const isValid = await methods.trigger(stepFields as any);
-        if (isValid && currentStep < steps.length - 1) {
-            setCurrentStep(prev => prev + 1);
-        } else if (!isValid) {
-            toast({ variant: "destructive", title: "Please complete mandatory fields for this step." });
-        }
-    };
-    
-    const handleBackStep = () => setCurrentStep(prev => prev - 1);
     
     const isStepValid = (stepIndex: number) => {
         if (stepIndex < 0 || stepIndex >= steps.length) return true;
@@ -124,9 +147,9 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'type': return (
-                 <div className="space-y-6 text-left text-foreground">
+                 <div className="space-y-6 text-left">
                     <FormField control={methods.control} name="ownerType" render={({ field }) => (
-                        <FormItem className="space-y-4 text-left">
+                        <FormItem className="space-y-4">
                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Identify Authority Branch</FormLabel>
                             <FormControl>
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
@@ -145,15 +168,15 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                 </div>
             );
             case 'association': return (
-                <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
+                <div className="space-y-8 animate-in fade-in duration-500 text-left">
                     {watched.ownerType === 'client' ? (
-                        <div className="space-y-8 text-left">
+                        <div className="space-y-8">
                             <FormField control={methods.control} name="clientId" render={({ field }) => (
                                 <FormItem className="text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
                             )} />
 
                             <FormField control={methods.control} name="facilityClass" render={({ field }) => (
-                                <FormItem className="space-y-4 text-left">
+                                <FormItem className="space-y-4">
                                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Client Authority Type</FormLabel>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
@@ -172,7 +195,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
 
                             {watched.facilityClass === 'sub' && (
                                 <FormField control={methods.control} name="agreementType" render={({ field }) => (
-                                    <FormItem className="animate-in slide-in-from-top-2 text-left">
+                                    <FormItem className="animate-in slide-in-from-top-2">
                                         <FormLabel>Link to Product Agreement</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                             <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select Product..." /></SelectTrigger></FormControl>
@@ -188,13 +211,13 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                             )}
                         </div>
                     ) : (
-                        <div className="space-y-8 text-left text-foreground">
+                        <div className="space-y-8">
                             <FormField control={methods.control} name="debtorId" render={({ field }) => (
                                 <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
                             )} />
 
                             <FormField control={methods.control} name="facilityClass" render={({ field }) => (
-                                <FormItem className="space-y-4 text-left">
+                                <FormItem className="space-y-4">
                                     <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Debtor Authority Type</FormLabel>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
@@ -213,7 +236,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
 
                             {watched.facilityClass === 'sub' && (
                                 <FormField control={methods.control} name="associatedClientId" render={({ field }) => (
-                                    <FormItem className="animate-in slide-in-from-top-2 text-left">
+                                    <FormItem className="animate-in slide-in-from-top-2">
                                         <FormLabel>Authorize for Specific Client</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                             <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
@@ -227,8 +250,8 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                 </div>
             );
              case 'details': return (
-                <div className="space-y-6 text-left text-foreground">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField control={methods.control} name="type" render={({ field }) => (
                             <FormItem className="text-left">
                                 <FormLabel>Lending category</FormLabel>
@@ -250,10 +273,10 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                         )} />
                     </div>
 
-                    <div className="p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
+                    <div className="p-6 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4">
                         <div className="flex items-center gap-3">
                             <Info className="h-5 w-5 text-primary" />
-                            <h4 className="text-xs font-black uppercase tracking-widest text-white">Authority node Logic</h4>
+                            <h4 className="text-xs font-black uppercase tracking-widest">Authority node Logic</h4>
                         </div>
                         <p className="text-[11px] text-slate-400 leading-relaxed text-left">
                             {watched.ownerType === 'client' ? (
@@ -270,11 +293,11 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                 </div>
             );
             case 'review': return (
-                <div className="text-center py-20 space-y-6 text-left">
+                <div className="text-center py-20 space-y-6">
                     <CheckCircle className="h-16 w-16 text-primary mx-auto opacity-40" />
-                    <div className="space-y-2 text-center text-foreground">
-                        <h3 className="text-2xl font-black uppercase text-center">Protocol Confirmation</h3>
-                        <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed text-center">Verify the authority node boundaries before committing to the global facility ledger.</p>
+                    <div className="space-y-2 text-center">
+                        <h3 className="text-2xl font-black uppercase">Protocol Confirmation</h3>
+                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed">Verify the authority node boundaries before committing to the global facility ledger.</p>
                     </div>
                 </div>
             );
@@ -287,22 +310,22 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5">
-                        <div className="flex justify-between items-center text-white">
+                        <div className="flex justify-between items-center">
                             <div className="text-left">
-                                <CardTitle className="text-2xl font-black font-headline uppercase text-white">Initialize Facility Node</CardTitle>
+                                <CardTitle className="text-2xl font-black font-headline uppercase">Initialize Facility Node</CardTitle>
                                 <CardDescription className="text-slate-400">Step: {steps[currentStep].title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/> Back to Ledger</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
+                    <CardContent className="p-0">
+                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr]">
+                             <div className="bg-slate-50 border-r p-6 space-y-2">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
-                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => setCurrentStep(index)}>
+                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(index)}>
                                             {isCompleted ? <CheckCircle className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-bold", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-4 w-4", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
                                             <span className={cn("text-[10px] font-black uppercase tracking-widest", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
@@ -310,7 +333,7 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
                                     );
                                 })}
                             </div>
-                             <div className="p-10 space-y-12 bg-white min-h-[500px] text-left">
+                             <div className="p-10 space-y-12 bg-white min-h-[500px]">
                                 {renderStepContent()}
                              </div>
                         </div>
@@ -334,4 +357,16 @@ export function EditFacilityWizard({ facility, clients, debtors, onSave, onBack 
             </FormProvider>
         </Card>
     );
+
+    async function handleStepTransition(index: number) {
+        if (index > currentStep) {
+            const stepFields = steps[currentStep].fields;
+            const isValid = await methods.trigger(stepFields as any);
+            if (!isValid) return;
+        }
+        
+        const currentValues = methods.getValues();
+        await autosave(currentValues);
+        setCurrentStep(index);
+    }
 }
