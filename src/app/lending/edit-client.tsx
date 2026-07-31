@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useUser, getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, getClientSideAuthToken, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -196,9 +196,9 @@ function StakeholderForm({ type, label }: { type: 'shareholders' | 'directors', 
                         <Badge variant="secondary" className="font-black uppercase text-[10px] tracking-widest">{label} {index + 1}</Badge>
                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4"/></Button>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                        <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} className="h-9 border-2" /></FormControl></FormItem>)} />
-                        <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-9 border-2 font-mono" /></FormControl></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
+                        <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Legal Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2 text-left">
                         <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="RSA Identity Document" folder="stakeholder-ids" variant="standard" />
@@ -206,6 +206,12 @@ function StakeholderForm({ type, label }: { type: 'shareholders' | 'directors', 
                     </div>
                 </div>
             ))}
+            {fields.length === 0 && (
+                <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30">
+                    <Users className="h-12 w-12 mx-auto mb-2" />
+                    <p className="text-xs font-black uppercase tracking-widest">No {label}s Initialized</p>
+                </div>
+            )}
         </div>
     );
 }
@@ -221,16 +227,16 @@ function StepMain() {
                     <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Applying Capacity</FormLabel>
                     <FormControl>
                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
-                            <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'individual' ? "border-primary bg-primary/5" : "bg-white")}><RadioGroupItem value="individual" id="cap-ind" /><Label htmlFor="cap-ind" className="cursor-pointer font-bold uppercase text-xs">Individual</Label></div>
-                            <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'entity' ? "border-primary bg-primary/5" : "bg-white")}><RadioGroupItem value="entity" id="cap-ent" /><Label htmlFor="cap-ent" className="cursor-pointer font-bold uppercase text-xs">Legal Entity</Label></div>
+                            <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'individual' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="individual" id="cap-ind" /><Label htmlFor="cap-ind" className="cursor-pointer font-bold uppercase text-xs">Individual</Label></div>
+                            <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'entity' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="entity" id="cap-ent" /><Label htmlFor="cap-ent" className="cursor-pointer font-bold uppercase text-xs">Legal Entity</Label></div>
                         </RadioGroup>
                     </FormControl>
                 </FormItem>
             )} />
             <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Primary Operational Name</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
-            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4">
-                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
-                <p className="text-xs text-slate-400">Attach proof of identity for the primary applicant/owner.</p>
+            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left text-white">
+                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
+                <p className="text-xs text-slate-400 text-left">Attach proof of identity for the primary applicant/owner.</p>
                 <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="forensic-main" />
             </div>
         </div>
@@ -242,10 +248,6 @@ function StepEntity({ clientId, targetCollection }: { clientId?: string, targetC
     const entType = watch('entityType');
     const { toast } = useToast();
 
-    /**
-     * SHADOW SILO PERSISTENCE
-     * When Vision AI completes, we save the raw extraction to the hidden sub-collection.
-     */
     const handleForensicExtraction = async (result: any) => {
         if (!clientId) return;
         try {
@@ -357,9 +359,9 @@ function StepDocumentSummary() {
                             <div className={cn("p-2 rounded-lg text-left", doc.attached ? "bg-green-100 text-green-600" : "bg-slate-100 text-slate-400")}>
                                 {doc.attached ? <CheckCircle2 className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
                             </div>
-                            <div className="text-left text-foreground text-left">
+                            <div className="text-left text-foreground text-left text-foreground">
                                 <p className={cn("font-bold text-sm text-left", doc.attached ? "text-green-900" : "text-slate-600")}>{doc.name}</p>
-                                <p className="text-[10px] font-black uppercase tracking-widest opacity-50 text-left">Evidentiary Requirement</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest opacity-50 text-left text-foreground">Evidentiary Requirement</p>
                             </div>
                         </div>
                         {!doc.attached && <Badge variant="outline" className="text-[9px] font-black uppercase text-left">Missing Evidence</Badge>}
@@ -393,10 +395,32 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
   const methods = useForm<ApplicationFormValues>({
     resolver: zodResolver(combinedSchema),
     mode: 'onChange',
-    defaultValues: client || { applyingCapacity: 'entity', status: 'draft', shareholderCount: 0, directorCount: 0 }
+    defaultValues: client || { applyingCapacity: 'entity', status: 'draft', shareholderCount: 0, directorCount: 0, shareholders: [], directors: [] }
   });
 
   const watchedValues = methods.watch();
+
+  const { fields: shareholderFields, append: appendShareholder } = useFieldArray({ control: methods.control, name: 'shareholders' });
+  const { fields: directorFields, append: appendDirector } = useFieldArray({ control: methods.control, name: 'directors' });
+
+  // AUTOSYNC: Initialize field arrays based on Governance step counts
+  useEffect(() => {
+    const sCount = Number(watchedValues.shareholderCount) || 0;
+    if (shareholderFields.length < sCount) {
+        for (let i = shareholderFields.length; i < sCount; i++) {
+            appendShareholder({ name: '', isDirector: false });
+        }
+    }
+  }, [watchedValues.shareholderCount, shareholderFields.length, appendShareholder]);
+
+  useEffect(() => {
+    const dCount = Number(watchedValues.directorCount) || 0;
+    if (directorFields.length < dCount) {
+        for (let i = directorFields.length; i < dCount; i++) {
+            appendDirector({ name: '', position: 'Director', isDirector: true });
+        }
+    }
+  }, [watchedValues.directorCount, directorFields.length, appendDirector]);
 
   const memoizedSteps = useMemo(() => {
     const base = [
@@ -425,7 +449,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
         if (!isValid) return;
     }
 
-    // AUTOSAVE PERSISTENCE
+    // AUTOSAVE: Persistent state preservation between steps
     const values = methods.getValues();
     const token = await getClientSideAuthToken();
     if (token && client?.id) {
@@ -433,9 +457,15 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
         setDoc(clientRef, { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(e => console.warn("Autosave failed", e));
     }
 
-    if (typeof direction === 'number') setCurrentStep(direction);
-    else if (direction === 'next') setCurrentStep(prev => Math.min(prev + 1, memoizedSteps.length - 1));
-    else setCurrentStep(prev => Math.max(prev - 1, 0));
+    if (typeof direction === 'number') {
+        if (direction <= currentStep || (await methods.trigger(memoizedSteps[currentStep].fields as any))) {
+            setCurrentStep(direction);
+        }
+    } else if (direction === 'next') {
+        setCurrentStep(prev => Math.min(prev + 1, memoizedSteps.length - 1));
+    } else {
+        setCurrentStep(prev => Math.max(prev - 1, 0));
+    }
   };
 
   const onSubmit = async (values: ApplicationFormValues) => {
@@ -455,6 +485,21 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
         setIsSubmitting(false);
     }
   };
+
+  const isStepValid = (stepIndex: number) => {
+    if (stepIndex < 0 || stepIndex >= memoizedSteps.length) return true;
+    const step = memoizedSteps[stepIndex];
+    if (!step.fields || step.fields.length === 0) return true;
+    const errors = methods.formState.errors;
+    return step.fields.every(field => {
+        const path = field.split('.');
+        let error: any = errors;
+        for (const segment of path) {
+            error = error?.[segment];
+        }
+        return !error;
+    });
+  };
   
   if (isSubmitting) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /><p className="mt-4 font-bold text-sm text-center">Committing Node...</p></div>;
 
@@ -463,7 +508,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
   return (
     <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
       <FormProvider {...methods}>
-        <form onSubmit={methods.handleSubmit(onSubmit)}>
+        <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
           <CardHeader className="bg-slate-900 text-white p-8 text-left">
             <div className="flex justify-between items-center text-left text-white">
               <div className="text-left text-white">
@@ -500,7 +545,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                     <FormField control={methods.control} name="vatNumber" render={({ field }) => (<FormItem className="animate-in fade-in slide-in-from-left-2 text-left"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
                                 )}
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
                                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><CheckCircle className="h-4 w-4" /> Compliance Node</h4>
                                 <FileUploadField name="vatCertificateUrl" label="VAT Certificate / Tax Clearance" folder="forensic-compliance" />
                                 <FileUploadField name="ficaDocUrl" label="FICA Proof of Business Address" folder="forensic-compliance" />
@@ -528,7 +573,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
                                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Gavel className="h-4 w-4" /> Authority Node</h4>
                                 <FileUploadField name="signingResolutionUrl" label="Signing Resolution / Authorization" folder="forensic-governance" />
                             </div>
@@ -548,7 +593,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
                                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Financial Evidence</h4>
                                 <FileUploadField name="afsDocUrl" label="Latest Audited Financials (AFS)" folder="forensic-nca" />
                             </div>
@@ -561,8 +606,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                             <div className="flex items-center gap-2 text-destructive font-black uppercase text-xs text-left"><ShieldAlert className="h-5 w-5" /> Hard Risk Disclosure</div>
                             <FormField control={methods.control} name="hasJudgements" render={({ field }) => (<FormItem className="flex items-center justify-between p-3 bg-white rounded-xl border text-left"><FormLabel className="text-sm font-medium text-left">Any active judgements?</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)} />
                         </div>
-                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left">
-                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><Scale className="h-4 w-4" /> Credit Intelligence</h4><p className="text-xs text-slate-400 text-left text-white">Upload bureau evidence or settlement letters.</p></div>
+                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left text-white">
+                            <div className="space-y-1 text-left"><h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Scale className="h-4 w-4" /> Credit Intelligence</h4><p className="text-xs text-slate-400 text-left">Upload bureau evidence or settlement letters.</p></div>
                             <FileUploadField name="bureauReportUrl" label="Bureau Report / Settlement Letter" folder="forensic-risk" />
                         </div>
                     </div>
@@ -584,10 +629,10 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                 )}
                 {currentStepConfig.id === 'finance_mgmt' && (
                     <div className="space-y-12 text-left text-foreground text-foreground">
-                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-foreground text-foreground text-foreground">
-                            <div className="space-y-1 text-left text-white">
+                        <div className="p-8 bg-slate-900 text-white rounded-[2.5rem] shadow-xl flex justify-between items-center text-left text-white">
+                            <div className="space-y-1 text-left">
                                 <div className="bg-primary/20 p-2 rounded-lg w-fit text-left"><FileText className="h-5 w-5 text-primary" /></div>
-                                <h4 className="font-bold text-sm uppercase text-primary text-left">Ledger Evidence</h4>
+                                <h4 className="font-bold text-sm uppercase text-primary text-left text-white">Ledger Evidence</h4>
                                 <p className="text-xs text-slate-400 leading-relaxed max-w-sm text-left">Upload latest management accounts (YTD) for audit.</p>
                             </div>
                             <FileUploadField name="mgmtAccountsUrl" label="Management Accounts (YTD)" folder="forensic-finance" />
@@ -626,7 +671,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
             {currentStep < memoizedSteps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs text-white">Next Section <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="h-14 px-12 font-black uppercase shadow-2xl bg-primary hover:bg-primary/90 text-white">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Record</Button>
+              <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Record</Button>
             )}
           </CardFooter>
         </form>
