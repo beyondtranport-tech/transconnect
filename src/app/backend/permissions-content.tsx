@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lock, Edit, RefreshCcw, AlertCircle } from 'lucide-react';
+import { Loader2, Lock, Edit, RefreshCcw, AlertCircle, ShieldCheck, Scale, Landmark, Zap, FileCheck, Gavel, UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken } from '@/firebase';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -15,68 +15,31 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { type ColumnDef } from '@/hooks/use-data-table';
-import { DataTable } from '@/components/ui/data-table';
 import { cn } from '@/lib/utils';
+import { usePermissions } from '@/hooks/use-permissions';
 
+// --- LENDING-CENTRIC PERMISSION SCHEMA ---
 
-// --- Helper Functions and Data ---
-async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
-const resources = [
-    { id: 'shop', label: 'Shop Management' },
-    { id: 'products', label: 'Shop Products' },
-    { id: 'staff', label: 'Staff Management' },
-    { id: 'billing', label: 'Billing & Invoices' },
-    { id: 'enquiries', label: 'Funding Enquiries' },
-    { id: 'quotes', label: 'Funding Quotes' },
-    { id: 'wallet', label: 'Member Wallet' },
-    { id: 'supplierMall', label: 'Supplier Mall' },
-    { id: 'transporterMall', label: 'Transporter Mall' },
-    { id: 'financeMall', label: 'Finance Mall' },
-    { id: 'loads', label: 'Loads Mall' },
-    { id: 'buySellMall', label: 'Buy & Sell Mall' },
-    { id: 'distributionMall', label: 'Distribution Mall' },
-    { id: 'warehouseMall', label: 'Warehouse Mall' },
-    { id: 'repurposeMall', label: 'Repurpose Mall' },
-    { id: 'aftermarketMall', label: 'Aftermarket Mall' },
-    { id: 'marketplaceDigital', label: 'Marketplace: Digital Marketing' },
-    { id: 'marketplaceData', label: 'Marketplace: Data Services' },
-    { id: 'marketplaceLogistics', label: 'Marketplace: Logistics Networks' },
-    { id: 'marketplaceLoyalty', label: 'Marketplace: Loyalty/Incentives' },
-    { id: 'tech', label: 'Tech Division Tools' },
-    { id: 'contributions', label: 'Data Contributions' },
-    { id: 'permissions', label: 'Permissions Management' },
+const lendingResources = [
+    { id: 'debtor', label: 'Debtor Registry', description: 'Client profiles, KYC standing, and historical data.' },
+    { id: 'discovery', label: 'Forensic Discovery', description: 'Vision AI extractions, sitemap mining, and KYC audits.' },
+    { id: 'agreement', label: 'Lending Agreements', description: 'Repayment schedules, contract terms, and disbursements.' },
+    { id: 'asset', label: 'Asset Register', description: 'Financed equipment, RC1 verification, and valuations.' },
+    { id: 'collateral', label: 'Collateral Vault', description: 'Security documents, sureties, pledges, and cessions.' },
+    { id: 'policy', label: 'Lending Policies', description: 'Business model, target margins, and risk thresholds.' },
+    { id: 'utility', label: 'Global Utilities', description: 'Installment raising, prime rate sync, and batch interest.' },
+    { id: 'staff', label: 'Staff & Authority', description: 'Management of internal team and functional permissions.' },
 ] as const;
 
-
-const actions = [
-    { id: 'view', label: 'View' },
-    { id: 'create', label: 'Create' },
-    { id: 'edit', label: 'Edit' },
-    { id: 'delete', label: 'Delete' },
-    { id: 'manage', label: 'Manage' },
-    { id: 'publish', label: 'Publish' },
+const lendingActions = [
+    { id: 'view', label: 'View', description: 'Read-only access to registry records.' },
+    { id: 'edit', label: 'Edit', description: 'Ability to update data nodes or technical specs.' },
+    { id: 'analyze', label: 'Analyze', description: 'Execute forensic engines, discovery, or scorecards.' },
+    { id: 'authorize', label: 'Authorize', description: 'Final credit approval or disbursement authority.' },
 ] as const;
-
-
-// --- Zod Schema for the Form ---
 
 const permissionsSchema = z.object({
-  // Dynamically create keys for each resource
-  ...resources.reduce((acc, resource) => {
+  ...lendingResources.reduce((acc, resource) => {
     acc[resource.id] = z.array(z.string()).optional();
     return acc;
   }, {} as Record<string, z.ZodOptional<z.ZodArray<z.ZodString, "many">>>),
@@ -84,22 +47,21 @@ const permissionsSchema = z.object({
 
 type PermissionsFormValues = z.infer<typeof permissionsSchema>;
 
-// --- Components ---
+// --- HELPER COMPONENTS ---
 
 function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: () => void }) {
     const [isOpen, setIsOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
 
-    // Utility to parse permissions from 'resource:action' format
     const parsePermissions = (permissions: string[] = []): PermissionsFormValues => {
         const parsed: any = {};
-        for (const resource of resources) {
+        for (const resource of lendingResources) {
             parsed[resource.id] = [];
         }
         for (const p of permissions) {
             const [actionId, resourceId] = p.split(':');
-            if (resourceId && parsed[resourceId] && actions.some(a => a.id === actionId)) {
+            if (resourceId && parsed[resourceId] && lendingActions.some(a => a.id === actionId)) {
                 parsed[resourceId].push(actionId);
             }
         }
@@ -114,16 +76,16 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
     const watchedPermissions = form.watch();
 
     const isAllSelected = useMemo(() => {
-        return resources.every(resource =>
-            actions.every(action =>
+        return lendingResources.every(resource =>
+            lendingActions.every(action =>
                 watchedPermissions[resource.id]?.includes(action.id)
             )
         );
     }, [watchedPermissions]);
     
     const handleSelectAll = (checked: boolean) => {
-        const allActionIds = actions.map(a => a.id);
-        resources.forEach(resource => {
+        const allActionIds = lendingActions.map(a => a.id);
+        lendingResources.forEach(resource => {
             form.setValue(resource.id, checked ? allActionIds : []);
         });
     };
@@ -155,7 +117,6 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // Path resolution: platformStaff are root, company staff are nested
             const path = staffMember.type === 'platform' 
                 ? `platformStaff/${staffMember.id}`
                 : `companies/${staffMember.companyId}/staff/${staffMember.id}`;
@@ -169,9 +130,9 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
                 }),
             });
 
-            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save permissions.');
+            if (!response.ok) throw new Error((await response.json()).error || 'Failed to save authority.');
             
-            toast({ title: 'Permissions Saved!', description: `Permissions for ${staffMember.firstName} have been updated.` });
+            toast({ title: 'Authority Updated', description: `Lending permissions for ${staffMember.firstName} are now synchronized.` });
             onSave();
             setIsOpen(false);
         } catch (e: any) {
@@ -184,62 +145,80 @@ function PermissionsDialog({ staffMember, onSave }: { staffMember: any, onSave: 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                 <Button variant="ghost" size="icon"><Edit className="h-4 w-4" /></Button>
+                 <Button variant="ghost" size="icon" title="Edit Authority"><Edit className="h-4 w-4" /></Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-4xl">
-                <DialogHeader>
-                    <DialogTitle>Edit Permissions for {staffMember.firstName} {staffMember.lastName}</DialogTitle>
-                    <DialogDescription>
-                        Select the actions this staff member can perform on each resource.
-                    </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                         <div className="rounded-md border p-4 max-h-[60vh] overflow-y-auto">
-                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 sticky top-0 bg-background/95 py-2">
-                                 <div className="font-semibold flex items-center gap-2 text-left">
-                                    <Checkbox
-                                        checked={isAllSelected}
-                                        onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                                        aria-label="Select all permissions"
-                                    />
-                                     Resource
-                                 </div>
-                                 {actions.map(action => <div key={action.id} className="font-semibold text-center">{action.label}</div>)}
-                            </div>
-                            <Separator className="my-2" />
-                            {resources.map((resource) => (
-                                <FormField
-                                    key={resource.id}
-                                    control={form.control}
-                                    name={resource.id as any}
-                                    render={({ field }) => (
-                                    <FormItem className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 py-2 border-b last:border-b-0 text-left">
-                                        <FormLabel className="font-normal pl-8">{resource.label}</FormLabel>
-                                        {actions.map(action => (
-                                            <FormControl key={action.id} className="flex justify-center">
-                                                 <Checkbox
-                                                    checked={field.value?.includes(action.id)}
-                                                    onCheckedChange={(checked) => {
-                                                        return checked
-                                                        ? field.onChange([...(field.value || []), action.id])
-                                                        : field.onChange((field.value || []).filter((value) => value !== action.id))
-                                                    }}
-                                                />
-                                            </FormControl>
-                                        ))}
-                                    </FormItem>
-                                    )}
-                                />
-                            ))}
+            <DialogContent className="sm:max-w-5xl text-left text-foreground overflow-hidden flex flex-col h-[85vh]">
+                <DialogHeader className="p-6 border-b bg-muted/30">
+                    <div className="flex items-center gap-4 text-left">
+                        <div className="bg-primary/10 p-3 rounded-xl"><Lock className="h-6 w-6 text-primary"/></div>
+                        <div className="text-left">
+                            <DialogTitle className="text-xl font-black uppercase tracking-tight text-left">Edit Authority: {staffMember.firstName} {staffMember.lastName}</DialogTitle>
+                            <DialogDescription className="text-left text-foreground">Define functional boundaries within the lending cycle.</DialogDescription>
                         </div>
-                        <DialogFooter>
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Save Permissions
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </Form>
+                    </div>
+                </DialogHeader>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-8 text-left text-foreground">
+                    <div className="flex items-center gap-2 px-2">
+                        <Checkbox
+                            id="select-all-matrix"
+                            checked={isAllSelected}
+                            onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                        />
+                        <Label htmlFor="select-all-matrix" className="text-xs font-black uppercase tracking-widest cursor-pointer">Authorize All Capabilities (Full Oversight)</Label>
+                    </div>
+
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <div className="rounded-2xl border shadow-inner overflow-hidden bg-slate-50/50">
+                                <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 sticky top-0 bg-slate-100 p-4 border-b z-20">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Lending Infrastructure Nodes</div>
+                                    {lendingActions.map(action => (
+                                        <div key={action.id} className="text-center">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{action.label}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="divide-y text-left">
+                                    {lendingResources.map((resource) => (
+                                        <FormField
+                                            key={resource.id}
+                                            control={form.control}
+                                            name={resource.id as any}
+                                            render={({ field }) => (
+                                            <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] items-center gap-2 p-4 hover:bg-white transition-colors text-left">
+                                                <div className="text-left">
+                                                    <p className="font-bold text-sm text-foreground">{resource.label}</p>
+                                                    <p className="text-[10px] text-muted-foreground leading-tight">{resource.description}</p>
+                                                </div>
+                                                {lendingActions.map(action => (
+                                                    <div key={action.id} className="flex justify-center">
+                                                        <Checkbox
+                                                            checked={field.value?.includes(action.id)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                ? field.onChange([...(field.value || []), action.id])
+                                                                : field.onChange((field.value || []).filter((value) => value !== action.id))
+                                                            }}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </form>
+                    </Form>
+                </div>
+
+                <DialogFooter className="p-6 border-t bg-slate-50">
+                    <Button type="button" onClick={form.handleSubmit(onSubmit)} disabled={isLoading} className="w-full h-12 font-black uppercase tracking-tight shadow-lg text-white">
+                        {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />} 
+                        Commit Authority node
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
@@ -260,6 +239,7 @@ export default function PermissionsContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed");
             
+            // Unified data pull for authority mapping
             const [staffRes, platformRes, companiesRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getStaff'),
                 fetchFromAdminAPI(token, 'getPlatformStaff'),
@@ -272,15 +252,13 @@ export default function PermissionsContent() {
 
         } catch (e: any) {
             setError(e.message);
-            toast({ variant: 'destructive', title: 'Error Loading Data', description: e.message });
+            toast({ variant: 'destructive', title: 'Error Loading Matrix', description: e.message });
         } finally {
             setIsLoading(false);
         }
     }, [toast]);
 
-    useEffect(() => {
-        forceRefresh();
-    }, [forceRefresh]);
+    useEffect(() => { forceRefresh(); }, [forceRefresh]);
 
     const enrichedStaff = useMemo(() => {
         if (!staff || !companies || !platformStaff) return [];
@@ -290,49 +268,54 @@ export default function PermissionsContent() {
             ...s,
             type: 'company',
             uniqueId: `company-${s.companyId}-${s.id}`,
-            companyName: companyMap.get(s.companyId) || 'Unknown Company'
+            companyName: companyMap.get(s.companyId) || 'External Member'
         }));
 
         const mappedPlatformStaff = platformStaff.map(s => ({
             ...s,
             type: 'platform',
             uniqueId: `platform-${s.id}`,
-            companyName: 'INTERNAL: Logistics Flow'
+            companyName: 'Lending Division (Internal)'
         }));
 
         return [...mappedPlatformStaff, ...mappedCompanyStaff];
     }, [staff, companies, platformStaff]);
 
 
-    const columns: ColumnDef<any>[] = useMemo(() => [
+    const columns: ColumnDef<any>[] = [
         {
-          accessorKey: 'name',
-          header: 'Staff Member',
-           cell: ({ row }) => (
-            <div className="text-left">
-              <p className="font-medium text-left">{row.original.firstName} {row.original.lastName}</p>
-              <p className="text-xs text-muted-foreground text-left">{row.original.email}</p>
+          header: 'Identity Node',
+          cell: ({ row }) => (
+            <div className="flex flex-col text-left">
+              <span className="font-bold text-foreground text-left">{row.original.firstName} {row.original.lastName}</span>
+              <span className="text-[10px] text-muted-foreground font-mono text-left">{row.original.email}</span>
             </div>
           ),
         },
         {
-          accessorKey: 'companyName',
-          header: 'Organization / Context',
-           cell: ({ row }) => <div className="text-left"><Badge variant={row.original.type === 'platform' ? 'default' : 'outline'}>{row.original.companyName}</Badge></div>,
+          header: 'Role / Organization',
+          cell: ({ row }) => (
+            <div className="flex flex-col text-left">
+                <span className="text-xs font-bold text-slate-700 text-left">{row.original.companyName}</span>
+                <Badge variant={row.original.type === 'platform' ? 'default' : 'outline'} className="w-fit text-[8px] h-4 mt-1 uppercase font-black tracking-widest">
+                    {row.original.type === 'platform' ? 'Internal Team' : 'Member Staff'}
+                </Badge>
+            </div>
+          ),
         },
         {
-          accessorKey: 'title',
-          header: 'Title',
-           cell: ({ row }) => <div className="text-left">{row.original.title || row.original.department || 'N/A'}</div>,
-        },
-        {
-          accessorKey: 'permissions',
-          header: 'Capability Matrix',
+          header: 'Authority Matrix',
           cell: ({ row }) => {
-            const perms = row.original.permissions;
-            return perms && perms.length > 0 
-                ? <Badge variant="secondary" className="font-bold">{perms.length} assigned</Badge> 
-                : <Badge variant="outline" className="opacity-40">None</Badge>;
+            const perms = row.original.permissions || [];
+            return (
+                <div className="flex items-center gap-2">
+                    {perms.length > 0 ? (
+                        <Badge className="bg-primary/10 text-primary border-none font-black text-[9px] uppercase">
+                            {perms.length} Functions Active
+                        </Badge>
+                    ) : <span className="text-[10px] text-muted-foreground italic">No Authority</span>}
+                </div>
+            )
           }
         },
         {
@@ -344,18 +327,18 @@ export default function PermissionsContent() {
                 </div>
             ),
         }
-    ], [forceRefresh]);
+    ];
     
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="flex justify-between items-end text-left">
+            <div className="flex justify-between items-end">
                 <div className="text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Lock className="h-8 w-8 text-primary" />
-                        Security Matrix
+                        Lending Security Matrix
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Audit and manage functional authorities for internal team members and member staff.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Manage functional authorities for the capital division and authorized member staff.</p>
                 </div>
                 <Button variant="outline" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-left">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} />
@@ -363,24 +346,31 @@ export default function PermissionsContent() {
                 </Button>
             </div>
 
-            <Card className="border-none shadow-xl">
+            <Card className="border-none shadow-2xl bg-white text-left">
                 <CardContent className="pt-6 text-left">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Reconstructing Permission State...</p>
-                        </div>
-                    ) : error ? (
-                        <div className="text-destructive text-center py-10">
-                            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                            <p className="font-bold">Matrix Load Failed</p>
-                            <p className="text-sm text-muted-foreground">{error}</p>
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Authority Ledger...</p>
                         </div>
                     ) : (
                         <DataTable columns={columns} data={enrichedStaff} />
                     )}
                 </CardContent>
             </Card>
+
+            <div className="p-10 bg-slate-900 text-white rounded-[3rem] shadow-2xl relative overflow-hidden text-left">
+                <div className="absolute top-0 right-0 p-12 opacity-5"><Gavel className="h-40 w-40 text-primary" /></div>
+                <div className="relative z-10 flex items-start gap-6 text-left text-white">
+                    <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
+                    <div className="space-y-2 text-left text-white">
+                        <h4 className="text-xl font-black uppercase text-left text-white">Institutional Oversight Protocol</h4>
+                        <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left text-white">
+                            Permissions in the lending portal are mapped to the specific stages of the credit life-cycle. Ensure that 'Authorize' actions are only granted to senior credit officers. Every change to this matrix is logged in the forensic audit feed.
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
