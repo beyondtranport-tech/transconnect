@@ -2,172 +2,219 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Paperclip, Edit, Trash2, Download } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Loader2, PlusCircle, ShieldCheck, Lock, Search, Download, Trash2, Clock, Landmark, Gavel, FileUp, Save } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateSafe } from '@/lib/utils';
-import { EditSecurityWizard } from './edit-security';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import Link from 'next/link';
+import { formatDateSafe, cn, fetchFromAdminAPI } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 
-// API Helper
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
-
-export default function CollateralContent() {
-    const [securities, setSecurities] = useState<any[]>([]);
-    const [clients, setClients] = useState<any[]>([]);
-    const [agreements, setAgreements] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+/**
+ * COLLATERAL INTAKE TERMINAL
+ * Specialized register for registered (Bonds) and unregistered collateral items.
+ */
+function UploadCollateralDialog({ onComplete }: { onComplete: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [docName, setDocName] = useState('');
+    const [docType, setDocType] = useState('Notarial Bond');
+    const [fileUrl, setFileUrl] = useState('');
+    const [progress, setProgress] = useState(0);
     const { toast } = useToast();
-    
-    const [view, setView] = useState<'list' | 'wizard'>('list');
-    const [selectedSecurity, setSelectedSecurity] = useState<any | null>(null);
-    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
-    const [securityToDelete, setSecurityToDelete] = useState<any | null>(null);
 
-    const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
-    const agreementMap = useMemo(() => new Map(agreements.map(a => [a.id, a.description])), [agreements]);
-
-    const forceRefresh = useCallback(async () => {
-        setIsLoading(true);
-        setError(null);
+    const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsUploading(true);
+        setProgress(10);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-            
-            const [securitiesRes, clientsRes, agreementsRes] = await Promise.all([
-                performAdminAction(token, 'getLendingData', { collectionName: 'securities' }),
-                performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' }),
-                performAdminAction(token, 'getLendingData', { collectionName: 'agreements' })
-            ]);
-            
-            setSecurities(securitiesRes.data || []);
-            setClients(clientsRes.data || []);
-            setAgreements(agreementsRes.data || []);
-
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>(res => {
+                reader.onload = () => res(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+            setProgress(40);
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: 'lending-vault/collateral', fileName: `${Date.now()}_${file.name}` })
+            });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error);
+            setFileUrl(result.url);
+            if (!docName) setDocName(file.name);
+            setProgress(100);
+            toast({ title: "Collateral Node Secured" });
         } catch (e: any) {
-            setError(e.message);
-            toast({ variant: 'destructive', title: 'Error loading data', description: e.message });
+            toast({ variant: 'destructive', title: "Upload Failed", description: e.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            await fetchFromAdminAPI(token, 'saveLendingCollateral', {
+                collateral: { documentName: docName, documentType: docType, fileUrl }
+            });
+            toast({ title: "Collateral Record Archived" });
+            setIsOpen(false);
+            onComplete();
+            // Reset
+            setDocName('');
+            setFileUrl('');
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Save Failed" });
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button className="font-bold gap-2 text-white shadow-lg h-11 px-8">
+                    <PlusCircle className="h-4 w-4" /> Upload Agreement Scan
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="text-left text-foreground">
+                <DialogHeader>
+                    <DialogTitle>Secure Collateral Intake</DialogTitle>
+                    <DialogDescription>Archive Bonds, Sureties, and Registered Pledges granted in favor of the financier.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 text-left text-foreground">
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Collateral Label</Label>
+                        <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. General Notarial Bond - Fleet A" className="h-11 border-2" />
+                    </div>
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Classification</Label>
+                        <Select value={docType} onValueChange={setDocType}>
+                            <SelectTrigger className="h-11 border-2"><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Notarial Bond">General Notarial Bond</SelectItem>
+                                <SelectItem value="Mortgage Bond">Mortgage Bond</SelectItem>
+                                <SelectItem value="Surety">Personal Surety</SelectItem>
+                                <SelectItem value="Pledge">General Pledge</SelectItem>
+                                <SelectItem value="Lien">Lien Agreement</SelectItem>
+                                <SelectItem value="Unregistered">Unregistered Collateral</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="pt-4 text-left">
+                        <input type="file" id="collateral-vault-up" className="hidden" onChange={handleFile} />
+                        <Button variant="outline" className={cn("w-full h-14 border-2 border-dashed gap-3", fileUrl && "border-green-50 bg-green-50 text-green-700")} onClick={() => document.getElementById('collateral-vault-up')?.click()}>
+                            {isUploading ? <Loader2 className="h-5 w-5 animate-spin"/> : fileUrl ? <ShieldCheck className="h-6 w-6" /> : <FileUp className="h-6 w-6" />}
+                            {fileUrl ? 'Collateral Secured' : 'Select Collateral Scan'}
+                        </Button>
+                        {isUploading && <Progress value={progress} className="h-1 mt-2" />}
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleSave} disabled={!fileUrl || !docName} className="w-full h-12 font-bold uppercase tracking-widest">
+                        Commit to Collateral Register
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export default function CollateralRegisterContent() {
+    const [collateral, setCollateral] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+
+    const loadData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            const res = await fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'collateral' });
+            setCollateral(res.data || []);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Register Load Failed", description: e.message });
         } finally {
             setIsLoading(false);
         }
     }, [toast]);
-    
-    useEffect(() => {
-        forceRefresh();
-    }, [forceRefresh]);
 
-    const handleEdit = (security: any) => {
-        setSelectedSecurity(security);
-        setView('wizard');
-    };
+    useEffect(() => { loadData(); }, [loadData]);
 
-    const handleAddNew = () => {
-        setSelectedSecurity(null);
-        setView('wizard');
-    };
-    
-    const handleBackToList = () => {
-        setView('list');
-        setSelectedSecurity(null);
-    };
-    
-    const handleSaveSuccess = () => {
-        forceRefresh();
-        handleBackToList();
-    };
-
-    const handleDelete = async () => {
-        if (!securityToDelete) return;
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-
-            await performAdminAction(token, 'deleteLendingSecurity', {
-                clientId: securityToDelete.clientId,
-                agreementId: securityToDelete.agreementId,
-                securityId: securityToDelete.id,
-            });
-
-            toast({ title: 'Security Document Deleted' });
-            forceRefresh();
-        } catch (e: any) {
-             toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
-        } finally {
-            setSecurityToDelete(null);
-            setIsDeleteAlertOpen(false);
+    const columns: ColumnDef<any>[] = [
+        {
+            header: 'Collateral Identity',
+            cell: ({ row }) => (
+                <div className="flex flex-col text-left">
+                    <span className="font-bold text-foreground text-left">{row.original.documentName || 'Collateral Record'}</span>
+                    <div className="flex items-center gap-1.5 mt-1 text-left">
+                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Security Node</Badge>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id}</span>
+                    </div>
+                </div>
+            )
+        },
+        { 
+            header: 'Security Class', 
+            cell: ({row}) => <Badge variant="secondary" className="capitalize text-[10px] font-black">{row.original.documentType || 'General'}</Badge> 
+        },
+        { 
+            header: 'Fiduciary Audit', 
+            cell: ({row}) => (
+                <div className="flex items-center gap-2 text-muted-foreground text-left">
+                    <Gavel className="h-3 w-3" />
+                    <span className="text-[10px] font-bold uppercase">{formatDateSafe(row.original.createdAt, "dd MMM yyyy")}</span>
+                </div>
+            )
+        },
+        {
+            id: 'actions',
+            header: <div className="text-right">Audit</div>,
+            cell: ({ row }) => (
+                <div className="flex justify-end gap-1 text-left">
+                    <Button variant="ghost" size="icon" asChild title="Download"><a href={row.original.fileUrl} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4" /></a></Button>
+                    <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                </div>
+            )
         }
-    };
-
-    const columns: ColumnDef<any>[] = useMemo(() => [
-        { header: 'Client', cell: ({ row }) => <Link href={`/lending/clients/${row.original.clientId}`} className="text-primary hover:underline">{clientMap.get(row.original.clientId) || 'Unknown'}</Link> },
-        { header: 'Agreement', cell: ({ row }) => <div className="truncate max-w-xs">{agreementMap.get(row.original.agreementId) || 'N/A'}</div> },
-        { accessorKey: 'documentName', header: 'Document Name' },
-        { accessorKey: 'documentType', header: 'Type' },
-        { header: 'Uploaded', cell: ({ row }) => formatDateSafe(row.original.createdAt) },
-        { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-            <div className="text-right">
-                <Button asChild variant="ghost" size="icon"><a href={row.original.fileUrl} target="_blank" rel="noopener noreferrer" title="Download"><Download className="h-4 w-4"/></a></Button>
-                <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)} title="Edit"><Edit className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" onClick={() => { setSecurityToDelete(row.original); setIsDeleteAlertOpen(true); }} title="Delete"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            </div>
-        )},
-    ], [clientMap, agreementMap, forceRefresh]);
-    
-    if (error) {
-        return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
-    }
-    
-    if (view === 'wizard') {
-        return <EditSecurityWizard security={selectedSecurity} clients={clients} agreements={agreements} onSave={handleSaveSuccess} onBack={handleBackToList} />;
-    }
+    ];
 
     return (
-        <>
-            <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently delete security document "{securityToDelete?.documentName}".</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setSecurityToDelete(null)}>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Yes, delete</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                        <CardTitle className="flex items-center gap-2"><Paperclip /> Collateral Management</CardTitle>
-                        <CardDescription>Manage all security documents related to lending agreements.</CardDescription>
-                    </div>
-                    <Button onClick={handleAddNew}><PlusCircle className="mr-2 h-4 w-4"/>Add Document</Button>
-                </CardHeader>
-                <CardContent>
+        <div className="space-y-8 text-left text-foreground">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+                        <Lock className="h-8 w-8 text-primary" />
+                        Master Collateral Register
+                    </h1>
+                    <p className="text-muted-foreground mt-1 text-left">Formal ledger of all registered and unregistered collateral items granted to the financier.</p>
+                </div>
+                <UploadCollateralDialog onComplete={loadData} />
+            </div>
+
+            <Card className="border-none shadow-xl bg-white text-left">
+                <CardContent className="pt-6 text-left">
                     {isLoading ? (
-                        <div className="flex justify-center items-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                        <div className="flex justify-center p-20 text-left"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>
+                    ) : collateral.length > 0 ? (
+                        <DataTable columns={columns} data={collateral} />
                     ) : (
-                        <DataTable columns={columns} data={securities} />
+                        <div className="py-24 text-center space-y-4 text-left">
+                            <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground opacity-20" />
+                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-center">Register Standby</p>
+                        </div>
                     )}
                 </CardContent>
             </Card>
-        </>
+        </div>
     );
 }

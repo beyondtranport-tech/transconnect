@@ -86,6 +86,18 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, id: ref.id });
             }
 
+            case 'saveLendingCollateral': {
+                const { collateral } = payload;
+                const ref = db.collection('lendingCollateral').doc(collateral.id || db.collection('lendingCollateral').doc().id);
+                await ref.set({
+                    ...collateral,
+                    id: ref.id,
+                    updatedAt: FieldValue.serverTimestamp(),
+                    createdAt: collateral.createdAt || FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, id: ref.id });
+            }
+
             case 'savePartner': {
                 const { partner, collection: col = 'partners' } = payload;
                 const ref = db.collection(col).doc(partner.id || db.collection(col).doc().id);
