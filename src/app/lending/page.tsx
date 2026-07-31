@@ -181,7 +181,7 @@ function LendingPortalContent() {
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>
-                      Credit Facilities
+                      Facilities
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>

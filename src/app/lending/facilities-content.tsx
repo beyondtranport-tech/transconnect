@@ -1,16 +1,16 @@
 
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban, Users, Building, ArrowRight } from "lucide-react";
+import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban, Users, Building, ArrowRight, ShieldCheck, Scale, Landmark } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -40,7 +40,6 @@ export default function FacilitiesContent() {
     const [facilities, setFacilities] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [debtors, setDebtors] = useState<any[]>([]);
-    const [partners, setPartners] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
@@ -56,7 +55,6 @@ export default function FacilitiesContent() {
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
     const debtorMap = useMemo(() => new Map(debtors.map(d => [d.id, d.name])), [debtors]);
-    const partnerMap = useMemo(() => new Map(partners.map(p => [p.id, p.name])), [partners]);
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
@@ -65,17 +63,15 @@ export default function FacilitiesContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             
-            const [facilitiesRes, clientsRes, debtorsRes, partnersRes] = await Promise.all([
+            const [facilitiesRes, clientsRes, debtorsRes] = await Promise.all([
                 performAdminAction(token, 'getLendingData', { collectionName: 'facilities' }),
                 performAdminAction(token, 'getLendingData', { collectionName: 'lendingClients' }),
-                performAdminAction(token, 'getLendingData', { collectionName: 'lendingDebtors' }),
-                performAdminAction(token, 'getLendingData', { collectionName: 'lendingPartners' })
+                performAdminAction(token, 'getLendingData', { collectionName: 'lendingDebtors' })
             ]);
             
             setFacilities(facilitiesRes.data || []);
             setClients(clientsRes.data || []);
             setDebtors(debtorsRes.data || []);
-            setPartners(partnersRes.data || []);
 
         } catch (e: any) {
             setError(e.message);
@@ -89,18 +85,6 @@ export default function FacilitiesContent() {
         forceRefresh();
     }, [forceRefresh]);
     
-    useEffect(() => {
-        if (searchParams.get('action') === 'create') {
-            const clientId = searchParams.get('clientId');
-            const debtorId = searchParams.get('debtorId');
-            const prefilledData = clientId ? { ownerType: 'client', clientId } : (debtorId ? { ownerType: 'debtor', debtorId } : null);
-            setSelectedFacility(prefilledData);
-            setView('wizard');
-            router.replace('/lending?view=facilities', { scroll: false });
-        }
-    }, [searchParams, router]);
-
-
     const handleEdit = (facility: any) => {
         setSelectedFacility(facility);
         setView('wizard');
@@ -163,44 +147,47 @@ export default function FacilitiesContent() {
 
     const columns: ColumnDef<any>[] = useMemo(() => [
         { 
-            header: 'Owner / Entity', 
+            header: 'Authority Node', 
             cell: ({ row }) => {
                 const ownerType = row.original.ownerType || 'client';
                 const ownerId = ownerType === 'client' ? row.original.clientId : row.original.debtorId;
                 const name = ownerType === 'client' ? clientMap.get(ownerId) : debtorMap.get(ownerId);
                 return (
                     <div className="flex flex-col text-left">
-                        <span className="font-bold text-foreground">{name || 'Unknown Node'}</span>
+                        <span className="font-bold text-foreground text-left">{name || 'Unknown Entity'}</span>
                         <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase font-black">
-                            {ownerType} Node
+                            {ownerType} Registry
                         </Badge>
                     </div>
                 );
             }
         },
         { 
-            header: 'Facility Class',
+            header: 'Protocol Type',
             cell: ({ row }) => {
                 const isGlobal = row.original.facilityClass === 'global';
                 return (
                     <div className="flex flex-col text-left">
                         <Badge className={cn("capitalize text-[9px] font-black tracking-widest w-fit", isGlobal ? "bg-slate-900 text-white" : "bg-primary/10 text-primary")}>
-                            {row.original.facilityClass || 'Standard'}
+                            {isGlobal ? 'Global Ceiling' : 'Sub Limit'}
                         </Badge>
-                        {row.original.associatedClientId && (
-                            <div className="flex items-center gap-1.5 mt-1">
+                        {row.original.ownerType === 'client' && row.original.agreementType && (
+                            <span className="text-[10px] font-bold text-slate-600 mt-1 uppercase tracking-tight">Product: {row.original.agreementType}</span>
+                        )}
+                        {row.original.ownerType === 'debtor' && row.original.associatedClientId && (
+                            <div className="flex items-center gap-1.5 mt-1 text-left">
                                 <ArrowRight className="h-2.5 w-2.5 text-muted-foreground" />
-                                <span className="text-[10px] font-bold text-slate-600">{clientMap.get(row.original.associatedClientId)}</span>
+                                <span className="text-[10px] font-bold text-slate-600 text-left">Member: {clientMap.get(row.original.associatedClientId)}</span>
                             </div>
                         )}
                     </div>
                 );
             }
         },
-        { accessorKey: 'type', header: 'Product', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px] font-bold">{row.original.type?.replace(/_/g, ' ')}</Badge> },
-        { accessorKey: 'limit', header: 'Facility Limit', cell: ({ row }) => <span className="font-black text-foreground">{formatCurrency(row.original.limit)}</span> },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize text-[10px] font-black tracking-widest">{row.original.status || 'Active'}</Badge> },
-        { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
+        { accessorKey: 'type', header: 'Lending Group', cell: ({row}) => <Badge variant="outline" className="capitalize text-[10px] font-bold">{row.original.type?.replace(/_/g, ' ')}</Badge> },
+        { accessorKey: 'limit', header: 'Authorized Limit', cell: ({ row }) => <span className="font-black text-foreground">{formatCurrency(row.original.limit)}</span> },
+        { accessorKey: 'status', header: 'Standing', cell: ({row}) => <Badge variant={statusColors[row.original.status] || 'secondary'} className="capitalize text-[10px] font-black tracking-widest">{row.original.status || 'Active'}</Badge> },
+        { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({ row }) => (
             <div className="text-right">
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -208,7 +195,7 @@ export default function FacilitiesContent() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="text-left">
                         <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Details
+                            <Edit className="mr-2 h-4 w-4" /> Edit Parameters
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -223,31 +210,25 @@ export default function FacilitiesContent() {
                         >
                             <XCircle className="mr-2 h-4 w-4" /> Set Inactive
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={() => setStatusChangeAlert({ open: true, facility: row.original, newStatus: 'pending' })}
-                            disabled={row.original.status === 'pending'}
-                        >
-                            <Ban className="mr-2 h-4 w-4" /> Revert to Pending
-                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                             className="text-destructive"
                             onSelect={() => { setFacilityToDelete(row.original); setIsDeleteAlertOpen(true); }}
                         >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Node
+                            <Trash2 className="mr-2 h-4 w-4" /> Expunge Node
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
         )},
-    ], [clientMap, debtorMap, partnerMap]);
+    ], [clientMap, debtorMap]);
     
     if (error) {
         return <Card className="bg-destructive/10 border-destructive text-destructive-foreground"><CardHeader><CardTitle>Error</CardTitle></CardHeader><CardContent>{error}</CardContent></Card>
     }
     
     if (view === 'wizard') {
-        return <EditFacilityWizard facility={selectedFacility} clients={clients} debtors={debtors} partners={partners} onSave={handleSaveSuccess} onBack={handleBackToList} />;
+        return <EditFacilityWizard facility={selectedFacility} clients={clients} debtors={debtors} onSave={handleSaveSuccess} onBack={handleBackToList} />;
     }
 
     return (
@@ -256,9 +237,9 @@ export default function FacilitiesContent() {
                 <AlertDialogContent className="text-left text-foreground">
                     <AlertDialogHeader className="text-left">
                         <AlertDialogTitle className="text-left">Expunge Facility Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">This will permanently delete the credit line. This action cannot be undone.</AlertDialogDescription>
+                        <AlertDialogDescription className="text-left">Permanent removal from the institutional ledger. This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
+                    <AlertDialogFooter className="text-left">
                         <AlertDialogCancel onClick={() => setFacilityToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
@@ -285,7 +266,7 @@ export default function FacilitiesContent() {
                         <Banknote className="h-8 w-8 text-primary" />
                         Facility Ledger
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">Management of authorized credit lines for Clients and specialized Debtor nodes.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Strategic oversight of authorized credit boundaries for borrowing members and cessionary nodes.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
@@ -300,7 +281,7 @@ export default function FacilitiesContent() {
             <Card className="border-none shadow-xl bg-white text-left text-foreground">
                 <CardContent className="pt-6">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
                             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Ledger...</p>
                         </div>
@@ -312,4 +293,3 @@ export default function FacilitiesContent() {
         </div>
     );
 }
-
