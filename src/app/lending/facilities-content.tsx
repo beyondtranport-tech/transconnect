@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban, Users, Building, ArrowRight, ShieldCheck, Scale, Landmark } from "lucide-react";
+import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Ban, Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -260,7 +259,7 @@ export default function FacilitiesContent() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
                         <Banknote className="h-8 w-8 text-primary" />
