@@ -2,25 +2,125 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, PlusCircle, ShieldCheck, Lock, Search, Download, Trash2, Clock, Landmark, Gavel } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Loader2, PlusCircle, ShieldCheck, Lock, Search, Download, Trash2, Clock, Landmark, Gavel, FileUp, Save } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { formatDateSafe, cn } from '@/lib/utils';
+import { formatDateSafe, cn, fetchFromAdminAPI } from '@/lib/utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
 
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) throw new Error(result.error || `API Error: ${action}`);
-    return result.data;
+function UploadSecurityDialog({ onComplete }: { onComplete: () => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [docName, setDocName] = useState('');
+    const [docType, setDocType] = useState('Personal Surety');
+    const [fileUrl, setFileUrl] = useState('');
+    const [progress, setProgress] = useState(0);
+    const { toast } = useToast();
+
+    const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setIsUploading(true);
+        setProgress(10);
+        try {
+            const token = await getClientSideAuthToken();
+            const reader = new FileReader();
+            const dataUri = await new Promise<string>(res => {
+                reader.onload = () => res(reader.result as string);
+                reader.readAsDataURL(file);
+            });
+            setProgress(40);
+            const res = await fetch('/api/uploadImageAsset', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fileDataUri: dataUri, folder: 'lending-vault/security', fileName: `${Date.now()}_${file.name}` })
+            });
+            const result = await res.json();
+            if (!res.ok) throw new Error(result.error);
+            setFileUrl(result.url);
+            if (!docName) setDocName(file.name);
+            setProgress(100);
+            toast({ title: "Security Node Secured" });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Upload Failed", description: e.message });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            const token = await getClientSideAuthToken();
+            if (!token) return;
+            await fetchFromAdminAPI(token, 'saveLendingSecurity', {
+                security: { documentName: docName, documentType: docType, fileUrl }
+            });
+            toast({ title: "Security Record Archived" });
+            setIsOpen(false);
+            onComplete();
+            setDocName('');
+            setFileUrl('');
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Save Failed" });
+        }
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+                <Button className="font-bold gap-2 text-white shadow-lg h-11 px-8">
+                    <PlusCircle className="h-4 w-4" /> Archive Security Node
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="text-left text-foreground">
+                <DialogHeader>
+                    <DialogTitle>Security & Collateral Intake</DialogTitle>
+                    <DialogDescription>Archive sureties, pledges, and supporting security documentation.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4 text-left">
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Document Label</Label>
+                        <Input value={docName} onChange={e => setDocName(e.target.value)} placeholder="e.g. Personal Surety - John Doe" className="h-11 border-2" />
+                    </div>
+                    <div className="space-y-2 text-left">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Security Type</Label>
+                        <Select value={docType} onValueChange={setDocType}>
+                            <SelectTrigger className="h-11 border-2"><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Personal Surety">Personal Surety</SelectItem>
+                                <SelectItem value="Pledge & Cession">Pledge & Cession</SelectItem>
+                                <SelectItem value="Notarial Bond">Notarial Bond</SelectItem>
+                                <SelectItem value="Mortgage Bond">Mortgage Bond</SelectItem>
+                                <SelectItem value="Resolution">Directors Resolution</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="pt-4 text-left">
+                        <input type="file" id="security-vault-up" className="hidden" onChange={handleFile} />
+                        <Button variant="outline" className={cn("w-full h-14 border-2 border-dashed gap-3", fileUrl && "border-green-500 bg-green-50 text-green-700")} onClick={() => document.getElementById('security-vault-up')?.click()}>
+                            {isUploading ? <Loader2 className="h-5 w-5 animate-spin"/> : fileUrl ? <ShieldCheck className="h-6 w-6" /> : <FileUp className="h-6 w-6" />}
+                            {fileUrl ? 'Collateral Secured' : 'Select Security Scan'}
+                        </Button>
+                        {isUploading && <Progress value={progress} className="h-1 mt-2" />}
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleSave} disabled={!fileUrl || !docName} className="w-full h-12 font-bold uppercase tracking-widest">
+                        Commit to Security Vault
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
 }
 
 export default function SecurityVaultContent() {
@@ -33,8 +133,8 @@ export default function SecurityVaultContent() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) return;
-            const res = await performAdminAction(token, 'getLendingData', { collectionName: 'securities' });
-            setSecurities(res || []);
+            const res = await fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'securities' });
+            setSecurities(res.data || []);
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Vault Load Failed", description: e.message });
         } finally {
@@ -74,7 +174,7 @@ export default function SecurityVaultContent() {
             id: 'actions',
             header: <div className="text-right">Audit</div>,
             cell: ({ row }) => (
-                <div className="flex justify-end gap-1 text-left">
+                <div className="flex justify-end gap-1 text-left text-foreground">
                     <Button variant="ghost" size="icon" asChild title="Download"><a href={row.original.fileUrl} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4" /></a></Button>
                     <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4" /></Button>
                 </div>
@@ -84,7 +184,7 @@ export default function SecurityVaultContent() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Lock className="h-8 w-8 text-primary" />
@@ -92,9 +192,7 @@ export default function SecurityVaultContent() {
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left text-foreground">Repository for all collateral scans, pledges, and surety documentation.</p>
                 </div>
-                <Button className="font-bold gap-2 text-white shadow-lg h-11 px-8 text-left">
-                    <PlusCircle className="h-4 w-4" /> Archive Security Node
-                </Button>
+                <UploadSecurityDialog onComplete={loadData} />
             </div>
 
             <Card className="border-none shadow-xl bg-white text-left text-foreground">
