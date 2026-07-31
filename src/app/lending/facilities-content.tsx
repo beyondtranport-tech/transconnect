@@ -47,18 +47,26 @@ import { Separator } from '@/components/ui/separator';
 
 // --- MODAL COMPONENT ---
 
-function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { parent: any, onComplete: () => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen, onOpenChange }: { parent: any, clients: any[], onComplete: () => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const { user } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     const [type, setType] = useState('factoring');
+    const [associatedClientId, setAssociatedClientId] = useState<string>('');
     const [limit, setLimit] = useState<string>('');
+
+    const isDebtorMode = parent?.ownerType === 'debtor';
 
     const handleSave = async () => {
         if (!limit || Number(limit) <= 0) {
             toast({ variant: 'destructive', title: "Limit Required", description: "Please enter a valid authorized amount." });
             return;
         }
+        if (isDebtorMode && !associatedClientId) {
+            toast({ variant: 'destructive', title: "Client Required", description: "Select the member client being allocated to this debtor." });
+            return;
+        }
+
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
@@ -70,9 +78,10 @@ function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { 
                 parentId: parent.id,
                 ownerType: parent.ownerType || 'client',
                 facilityClass: 'sub',
-                clientId: parent.clientId || null,
+                clientId: isDebtorMode ? associatedClientId : (parent.clientId || null),
                 debtorId: parent.debtorId || null,
-                type: type,
+                type: isDebtorMode ? 'Client Allocation' : type,
+                associatedClientId: isDebtorMode ? associatedClientId : null,
                 limit: Number(limit),
                 status: 'active',
                 createdByName: user?.displayName || 'Admin'
@@ -80,10 +89,11 @@ function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { 
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { facility: payload });
             
-            toast({ title: "Agreement Facility Created", description: "Sub-node committed to parent ceiling." });
+            toast({ title: isDebtorMode ? "Client Allocation Secured" : "Agreement Facility Created", description: "Sub-node committed to parent ceiling." });
             onComplete();
             onOpenChange(false);
             setLimit('');
+            setAssociatedClientId('');
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Commit Failed", description: e.message });
         } finally {
@@ -98,32 +108,43 @@ function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { 
             <DialogContent className="max-w-md text-left text-foreground">
                 <DialogHeader className="text-left">
                     <DialogTitle className="flex items-center gap-2">
-                        <Gavel className="h-5 w-5 text-primary" />
-                        Initialize Agreement Facility
+                        {isDebtorMode ? <UserPlus className="h-5 w-5 text-primary" /> : <Gavel className="h-5 w-5 text-primary" />}
+                        {isDebtorMode ? 'Partition for Member Client' : 'Initialize Agreement Facility'}
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
-                        Partition a sub-limit from the global ceiling for <strong>{parent.ownerName || 'Selected Member'}</strong>.
+                        Partition a sub-limit from the global ceiling for <strong>{parent.ownerName || 'Selected Node'}</strong>.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6 py-6 text-left">
                     <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Parent Ceiling (Available)</Label>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Parent Ceiling (Master)</Label>
                         <p className="px-4 py-3 bg-muted/30 rounded-xl border border-dashed font-bold text-sm">{formatCurrency(parent.limit)}</p>
                     </div>
 
-                    <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Agreement Product Type</Label>
-                        <Select value={type} onValueChange={setType}>
-                            <SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="factoring">Factoring (Discounting)</SelectItem>
-                                <SelectItem value="asset_finance">Asset Finance (Lease/Sale)</SelectItem>
-                                <SelectItem value="working_capital">Working Capital (Loan)</SelectItem>
-                                <SelectItem value="guarantee">Guarantee / Performance Bond</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {isDebtorMode ? (
+                        <div className="space-y-2 text-left">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Select Member Client</Label>
+                            <Select value={associatedClientId} onValueChange={setAssociatedClientId}>
+                                <SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose borrower..." /></SelectTrigger>
+                                <SelectContent>
+                                    {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    ) : (
+                        <div className="space-y-2 text-left">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Agreement Product Type</Label>
+                            <Select value={type} onValueChange={setType}>
+                                <SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="factoring">Factoring (Discounting)</SelectItem>
+                                    <SelectItem value="asset_finance">Asset Finance (Lease/Sale)</SelectItem>
+                                    <SelectItem value="working_capital">Working Capital (Loan)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
 
                     <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Authorized Sub-Limit (ZAR)</Label>
@@ -140,7 +161,7 @@ function AgreementFacilityModal({ parent, onComplete, isOpen, onOpenChange }: { 
                 <DialogFooter className="bg-slate-50 p-6 -mx-6 -mb-6 border-t rounded-b-lg">
                     <Button onClick={handleSave} disabled={isSaving} className="w-full h-12 font-black uppercase shadow-lg text-white">
                         {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        Save Agreement Node
+                        {isDebtorMode ? 'Bind Client to Debtor Pool' : 'Save Agreement Node'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -161,7 +182,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
     const [isLoading, setIsLoading] = useState(true);
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [selectedMasterId, setSelectedMasterId] = useState<string | null>(null);
-    const [isAgreementModalOpen, setIsAgreementModalOpen] = useState(false);
+    const [isSubModalOpen, setIsSubModalOpen] = useState(false);
     const { toast } = useToast();
     
     const [view, setView] = useState<'list' | 'wizard'>('list');
@@ -263,49 +284,51 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
     return (
         <div className="space-y-8 text-left text-foreground">
-            <AgreementFacilityModal 
+            <InitializeSubFacilityModal 
                 parent={selectedMaster} 
-                isOpen={isAgreementModalOpen} 
-                onOpenChange={setIsAgreementModalOpen} 
+                clients={clients}
+                isOpen={isSubModalOpen} 
+                onOpenChange={setIsSubModalOpen} 
                 onComplete={forceRefresh} 
             />
 
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle className="text-left">Expunge Authority Node?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently remove the facility from the ledger.</AlertDialogDescription>
+                    <AlertDialogHeader className="text-left text-foreground">
+                        <AlertDialogTitle className="text-left text-foreground">Expunge Authority Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-foreground">This will permanently remove the facility from the ledger.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left">
+                    <AlertDialogFooter className="text-left text-foreground">
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: 'destructive' })}>Confirm Delete</AlertDialogAction>
+                        <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: 'destructive' }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left text-foreground">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
+                <div className="text-left text-foreground text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
-                        <Scale className="h-8 w-8 text-primary" />
+                        {mode === 'client-global' ? <Scale className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />}
                         {mode === 'client-global' ? 'Client Global Facilities' : 'Debtor Registry Ceilings'}
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">Management of master limits and partitioned agreement nodes.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground">{mode === 'client-global' ? 'Management of master limits and partitioned agreement nodes.' : 'Managing master ceilings for cessionary debtors and member allocations.'}</p>
                 </div>
                 <div className="flex gap-2 text-left">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
                     <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => setIsAgreementModalOpen(true)} 
+                        onClick={() => setIsSubModalOpen(true)} 
                         disabled={!selectedMasterId}
                         className={cn("gap-2 font-bold h-10 px-6", selectedMasterId && "border-primary text-primary bg-primary/5")}
                     >
-                        <FileSignature className="h-4 w-4" /> Agreement Facility
+                        {mode === 'client-global' ? <FileSignature className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+                        {mode === 'client-global' ? 'Agreement Facility' : 'Client Allocation'}
                     </Button>
-                    <Button onClick={() => { setSelectedFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white">
-                        <PlusCircle className="h-4 w-4" /> New Global Facility
+                    <Button onClick={() => { setSelectedFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
+                        <PlusCircle className="h-4 w-4" /> {mode === 'client-global' ? 'New Client Global Facility' : 'New Debtor Master Facility'}
                     </Button>
                 </div>
             </div>
@@ -316,7 +339,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         <TableRow className="hover:bg-slate-900 border-none">
                             <TableHead className="w-12 text-center text-white text-[10px] uppercase font-black tracking-widest">Select</TableHead>
                             <TableHead className="w-10"></TableHead>
-                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Fiduciary Entity</TableHead>
+                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-left">Fiduciary Entity</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Limit Ceiling</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-center">Status</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Audit</TableHead>
@@ -400,7 +423,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                     </TableRow>
                                     
                                     {isExpanded && (
-                                        <TableRow className="bg-slate-50 border-y-2 border-primary/10">
+                                        <TableRow className="bg-slate-50 border-y-2 border-primary/10 text-left">
                                             <TableCell colSpan={6} className="p-0">
                                                 <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
                                                     <div className="flex justify-between items-center text-left text-foreground">
@@ -408,7 +431,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                                                                 <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {global.ownerName}
                                                             </h4>
-                                                            <p className="text-[10px] text-muted-foreground mt-1">Specific product partitions approved under this ceiling.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-1 text-left">Specific {mode === 'client-global' ? 'product' : 'member'} partitions approved under this ceiling.</p>
                                                         </div>
                                                     </div>
 
@@ -417,20 +440,20 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">Agreement Node & Audit Trail</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">{mode === 'client-global' ? 'Agreement Node & Audit Trail' : 'Member Node & Audit Trail'}</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Sub-Limit</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {subs.map(sub => (
-                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors">
+                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left text-foreground">
                                                                             <TableCell>
                                                                                 <div className="flex flex-col text-left">
-                                                                                    <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit">
-                                                                                        {sub.type?.replace(/_/g, ' ') || 'Agreement'}
+                                                                                    <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit text-left">
+                                                                                        {mode === 'client-global' ? (sub.type?.replace(/_/g, ' ') || 'Agreement') : (clientMap.get(sub.associatedClientId) || 'Unknown Member')}
                                                                                     </Badge>
-                                                                                    <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left">
+                                                                                    <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left text-foreground">
                                                                                         <div className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
                                                                                         <Separator orientation="vertical" className="h-2.5 bg-slate-300" />
                                                                                         <div className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
@@ -464,7 +487,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                         </div>
                                                     ) : (
                                                         <div className="py-12 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
-                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Agreement Facilities Partitioned</p>
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Partitions Allocated</p>
                                                         </div>
                                                     )}
                                                 </div>
