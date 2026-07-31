@@ -2,15 +2,16 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable } from '@/components/ui/data-table';
+import { type ColumnDef } from '@/hooks/use-data-table';
+import { Badge } from '@/components/ui/badge';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { 
     Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
     Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
     ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon
 } from "lucide-react";
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
-import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
 import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn, fetchFromAdminAPI } from '@/lib/utils';
@@ -120,13 +121,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
     const filteredGlobals = useMemo(() => {
         return facilities.filter(f => {
             const isGlobal = f.facilityClass === 'global' || !f.parentId;
-            
-            if (mode === 'client-global') {
-                return isGlobal && f.ownerType === 'client';
-            }
-            if (mode === 'debtor') {
-                return isGlobal && f.ownerType === 'debtor';
-            }
+            if (mode === 'client-global') return isGlobal && f.ownerType === 'client';
+            if (mode === 'debtor') return isGlobal && f.ownerType === 'debtor';
             return isGlobal;
         }).sort((a,b) => (b.limit || 0) - (a.limit || 0));
     }, [facilities, mode]);

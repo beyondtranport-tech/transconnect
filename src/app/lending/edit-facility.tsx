@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { doc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const facilitySchema = z.object({
   id: z.string().optional(),
@@ -68,6 +68,7 @@ export function EditFacilityWizard({
     const [currentStep, setCurrentStep] = useState(0);
     const [internalId, setInternalId] = useState<string | null>(facility?.id || null);
     const { toast } = useToast();
+    const firestore = useFirestore();
     
     const isSubLimitMode = !!parentFacility || initialFacilityClass === 'sub' || facility?.facilityClass === 'sub';
 
@@ -102,7 +103,6 @@ export function EditFacilityWizard({
             methods.reset(facility);
             setInternalId(facility.id);
         } else if (parentFacility) {
-            // STRATEGIC RESET: Ensure parent-child relationship is hard-coded into the form state
             methods.reset({
                 ownerType: parentFacility.ownerType,
                 facilityClass: 'sub',
@@ -115,6 +115,13 @@ export function EditFacilityWizard({
             });
         }
     }, [facility, parentFacility, methods]);
+
+    const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0 || stepIndex >= steps.length) return true;
+        const step = steps[stepIndex];
+        if (!step.fields || step.fields.length === 0) return true;
+        return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
+    };
 
     const autosave = async (values: FacilityFormValues) => {
         try {
@@ -230,7 +237,7 @@ export function EditFacilityWizard({
             );
             case 'agreement_limit': return (
                 <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
-                    <div className="p-8 border-2 rounded-[2.5rem] bg-white space-y-8 shadow-sm text-left">
+                    <div className="p-8 border-2 rounded-[2.5rem] bg-white space-y-6 shadow-sm text-left">
                         <Badge className="bg-primary text-white border-none uppercase font-black text-[10px] tracking-widest px-3 h-5 mb-2">Sub-Limit Initialization</Badge>
                         
                         {watched.ownerType === 'client' ? (
