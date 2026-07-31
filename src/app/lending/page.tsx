@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -109,7 +108,9 @@ function LendingPortalContent() {
       case 'debtors': return <DebtorsContent />;
       case 'agreements': return <AgreementsContent />;
       case 'assets': return <AssetRegisterContent />;
-      case 'facilities': return <FacilitiesContent />;
+      case 'facilities-clients': return <FacilitiesContent mode="client-global" />;
+      case 'facilities-agreements': return <FacilitiesContent mode="client-sub" />;
+      case 'facilities-debtors': return <FacilitiesContent mode="debtor" />;
       case 'collateral': return <CollateralContent />;
       case 'documents': return <DocumentVaultContent />;
       case 'security-vault': return <SecurityVaultContent />;
@@ -154,7 +155,7 @@ function LendingPortalContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'debtors', 'agreements', 'assets', 'facilities'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'debtors', 'agreements', 'assets'].includes(activeView)}>
                   <ClipboardList />
                   <span>Lending Portfolios</span>
                 </SidebarMenuButton>
@@ -179,9 +180,28 @@ function LendingPortalContent() {
                       Asset Register
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
+                </SidebarMenuSub>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Facilities" isActive={activeView.startsWith('facilities-')}>
+                  <Scale />
+                  <span>Facilities</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
                   <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'facilities'} onClick={() => navigate('facilities')}>
-                      Facilities
+                    <SidebarMenuSubButton isActive={activeView === 'facilities-clients'} onClick={() => navigate('facilities-clients')}>
+                      Client Global
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'facilities-agreements'} onClick={() => navigate('facilities-agreements')}>
+                      Client Sub-Limits
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'facilities-debtors'} onClick={() => navigate('facilities-debtors')}>
+                      Debtor Registry
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
@@ -248,34 +268,12 @@ function LendingPortalContent() {
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter>
-          <div className="p-4 border-t space-y-4 text-left">
-            <VisionOnboardingDialog onExtractionComplete={(data) => {
-              router.push(`/lending?view=clients&action=create&prefill=${encodeURIComponent(JSON.stringify(data))}`);
-            }} />
-            <Button variant="outline" className="w-full justify-start gap-2 h-9 text-[10px] font-black uppercase tracking-widest text-left" asChild>
-              <Link href="/backend">
-                <ArrowRightLeft className="h-3.5 w-3.5" /> Platform Backend
-              </Link>
-            </Button>
-            <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-white font-bold text-xs">AD</AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col truncate text-left">
-                <span className="text-xs font-bold text-sidebar-foreground truncate text-left">{user.displayName || 'Admin'}</span>
-                <span className="text-[10px] text-sidebar-foreground/70 truncate text-left">{user.email}</span>
-              </div>
-            </div>
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <div className="p-8 text-left text-foreground">
-          <Suspense fallback={<div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
-            {renderContent()}
-          </Suspense>
+        </Sidebar>
+        <SidebarInset>
+          <div className="p-8 text-left text-foreground">
+            <Suspense fallback={<div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+              {renderContent()}
+            </Suspense>
         </div>
       </SidebarInset>
     </SidebarProvider>
@@ -287,7 +285,7 @@ export default function LendingPage() {
     <Suspense fallback={
       <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4 text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
-        <p className="text-sm font-black uppercase tracking-widest text-muted-foreground text-center">Initializing Portal...</p>
+        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Initializing Portal...</p>
       </div>
     }>
       <LendingPortalContent />

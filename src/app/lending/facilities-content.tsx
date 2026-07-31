@@ -25,7 +25,11 @@ const statusColors: { [key: string]: string } = {
     inactive: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
-export default function FacilitiesContent() {
+interface FacilitiesContentProps {
+    mode?: 'client-global' | 'client-sub' | 'debtor';
+}
+
+export default function FacilitiesContent({ mode = 'client-global' }: FacilitiesContentProps) {
     const [facilities, setFacilities] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [debtors, setDebtors] = useState<any[]>([]);
@@ -113,32 +117,67 @@ export default function FacilitiesContent() {
         }
     };
 
-    const globals = useMemo(() => 
-        facilities.filter(f => f.facilityClass === 'global' || !f.parentId).sort((a,b) => b.limit - a.limit), 
-    [facilities]);
+    const filteredGlobals = useMemo(() => {
+        return facilities.filter(f => {
+            const isGlobalOrNoParent = f.facilityClass === 'global' || !f.parentId;
+            
+            if (mode === 'client-global') {
+                return isGlobalOrNoParent && f.ownerType === 'client';
+            }
+            if (mode === 'client-sub') {
+                return f.ownerType === 'client' && f.facilityClass === 'sub';
+            }
+            if (mode === 'debtor') {
+                return isGlobalOrNoParent && f.ownerType === 'debtor';
+            }
+            return isGlobalOrNoParent;
+        }).sort((a,b) => b.limit - a.limit);
+    }, [facilities, mode]);
+
+    const viewConfig = useMemo(() => {
+        switch(mode) {
+            case 'client-global': 
+                return { 
+                    title: 'Client Global Ceilings', 
+                    desc: 'Master limits for primary member borrowers.',
+                    btn: 'Initialize Client Ceiling',
+                    wizardDefaults: { ownerType: 'client', facilityClass: 'global' }
+                };
+            case 'client-sub':
+                return {
+                    title: 'Client Sub-Limit Authorizations',
+                    desc: 'Specific product partitions linked to member agreements.',
+                    btn: 'Initialize Product Sub-Limit',
+                    wizardDefaults: { ownerType: 'client', facilityClass: 'sub' }
+                };
+            case 'debtor':
+                return {
+                    title: 'Debtor Registry Ceilings',
+                    desc: 'Global and sub-client limits for Load Provider cessionaries.',
+                    btn: 'Initialize Debtor Ceiling',
+                    wizardDefaults: { ownerType: 'debtor', facilityClass: 'global' }
+                };
+            default: return { title: 'Facilities', desc: 'Lending matrix.', btn: 'Initialize Facility', wizardDefaults: {} };
+        }
+    }, [mode]);
 
     if (view === 'wizard') {
+        const wizardFacility = selectedFacility;
+        const wizardParent = parentFacility;
+        
         return (
             <EditFacilityWizard 
-                facility={selectedFacility} 
-                parentFacility={parentFacility}
+                facility={wizardFacility} 
+                parentFacility={wizardParent}
                 clients={clients} 
                 debtors={debtors} 
-                onSave={handleSaveSuccess} 
-                onBack={handleBackToList} 
+                onSave={() => { forceRefresh(); setView('list'); }} 
+                onBack={() => setView('list')}
+                // Pass entry context to skip wizard steps
+                initialOwnerType={viewConfig.wizardDefaults.ownerType as any}
+                initialFacilityClass={viewConfig.wizardDefaults.facilityClass as any}
             />
         );
-    }
-
-    function handleSaveSuccess() {
-        forceRefresh();
-        handleBackToList();
-    }
-
-    function handleBackToList() {
-        setView('list');
-        setSelectedFacility(null);
-        setParentFacility(null);
     }
 
     return (
@@ -160,16 +199,16 @@ export default function FacilitiesContent() {
                 <div className="text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Scale className="h-8 w-8 text-primary" />
-                        Facility Matrix
+                        {viewConfig.title}
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Strategic oversight of Global Ceilings and partitioned Sub-Agreement limits.</p>
+                    <p className="text-muted-foreground mt-1 text-left">{viewConfig.desc}</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading}>
-                        <RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Refresh Matrix
+                        <RefreshCcw className={cn("h-4 w-4 mr-2", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
                     <Button onClick={() => { setSelectedFacility(null); setParentFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6">
-                        <PlusCircle className="h-4 w-4" /> Initialize Master Ceiling
+                        <PlusCircle className="h-4 w-4" /> {viewConfig.btn}
                     </Button>
                 </div>
             </div>
@@ -181,7 +220,7 @@ export default function FacilitiesContent() {
                             <TableHead className="w-12"></TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Fiduciary Entity</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4">Context</TableHead>
-                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Master Limit</TableHead>
+                            <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Limit Ceiling</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-center">Status</TableHead>
                             <TableHead className="text-white font-black uppercase text-[10px] tracking-widest py-4 text-right">Audit</TableHead>
                         </TableRow>
@@ -189,7 +228,7 @@ export default function FacilitiesContent() {
                     <TableBody>
                         {isLoading ? (
                             <TableRow><TableCell colSpan={6} className="h-64 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></TableCell></TableRow>
-                        ) : globals.length > 0 ? globals.map((global) => {
+                        ) : filteredGlobals.length > 0 ? filteredGlobals.map((global) => {
                             const isExpanded = expandedIds.has(global.id);
                             const ownerName = global.ownerType === 'client' ? clientMap.get(global.clientId) : debtorMap.get(global.debtorId);
                             const subs = facilities.filter(f => f.parentId === global.id);
@@ -209,8 +248,8 @@ export default function FacilitiesContent() {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="capitalize text-[9px] font-black border-primary/20 text-primary">
-                                                {global.ownerType} Branch
+                                            <Badge variant="outline" className="capitalize text-[10px] font-black border-primary/20 text-primary">
+                                                {global.ownerType} {global.facilityClass || 'global'}
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right font-black text-lg text-foreground">
@@ -227,8 +266,8 @@ export default function FacilitiesContent() {
                                                     <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="text-left">
-                                                    <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Ceiling</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Add Sub-Limit</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleEdit(global)}><Edit className="h-4 w-4 mr-2" /> Adjust Node</DropdownMenuItem>
+                                                    {global.facilityClass !== 'sub' && <DropdownMenuItem onClick={() => handleAddSubLimit(global)} className="text-primary font-bold"><PlusCircle className="h-4 w-4 mr-2" /> Add Sub-Limit</DropdownMenuItem>}
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(global, global.status === 'inactive' ? 'active' : 'inactive')}>
                                                         {global.status === 'inactive' ? <><CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Reactivate</> : <><XCircle className="h-4 w-4 mr-2 text-amber-600" /> Suspend</>}
@@ -250,7 +289,7 @@ export default function FacilitiesContent() {
                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                                                                 <Zap className="h-4 w-4 fill-current" /> Sub-Limit Authorization ledger
                                                             </h4>
-                                                            <p className="text-[10px] text-muted-foreground mt-1">Specific product or client authorizations partitioned from the {formatCurrency(global.limit)} ceiling.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-1">Specific partitions for products or member-debtor pairs.</p>
                                                         </div>
                                                         <Button size="sm" onClick={() => handleAddSubLimit(global)} className="h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-white">
                                                             <PlusCircle className="h-3 w-3" /> Initialize Sub-Node
@@ -327,9 +366,9 @@ export default function FacilitiesContent() {
                 <div className="relative z-10 flex items-start gap-6 text-left">
                     <div className="bg-primary/20 p-4 rounded-3xl shrink-0"><Info className="h-8 w-8 text-primary" /></div>
                     <div className="space-y-2 text-left">
-                        <h4 className="text-xl font-black uppercase text-left">The Master-Sub Protocol</h4>
+                        <h4 className="text-xl font-black uppercase text-left">Registry Oversight Protocol</h4>
                         <p className="text-slate-400 text-sm leading-relaxed max-w-4xl text-left">
-                            The **Master Ceiling** defines the total institutional exposure to a node. **Sub-Limits** are granular authorizations that "partition" that ceiling into specific agreement types or member-debtor pairs. Deleting or suspending a Master Ceiling instantly revokes all underlying sub-node authorities.
+                            The facilities matrix operates on a hierarchical branch model. **Master Ceilings** authorize total institutional exposure, while **Sub-Limits** partition that capital into specific product agreements or member-debtor pairs.
                         </p>
                     </div>
                 </div>
@@ -337,3 +376,4 @@ export default function FacilitiesContent() {
         </div>
     );
 }
+
