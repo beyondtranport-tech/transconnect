@@ -68,7 +68,6 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
     const watchedSource = methods.watch('sourceType');
     const watchedClass = methods.watch('classification');
 
-    // Registry Fetching
     const suppliersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingSuppliers'), where('status', '==', 'active')) : null, [firestore]);
     const { data: suppliers } = useCollection(suppliersQuery);
 
@@ -82,21 +81,6 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
             return true;
         });
     }, [watchedClass]);
-
-    const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0 || stepIndex >= steps.length) return true;
-        const step = steps[stepIndex];
-        if (!step.fields || step.fields.length === 0) return true;
-        const errors = methods.formState.errors;
-        return step.fields.every(field => {
-            const path = field.split('.');
-            let error: any = errors;
-            for (const segment of path) {
-                error = error?.[segment];
-            }
-            return !error;
-        });
-    };
 
     const onSubmit = async (values: AssetFormValues) => {
         setIsLoading(true);
@@ -146,15 +130,24 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 <FormControl>
                                     <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'dealer' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                            <div className="flex items-center gap-2"><RadioGroupItem value="dealer" id="src-dealer" /><Label htmlFor="src-dealer" className="font-bold text-xs uppercase cursor-pointer">Dealer (Supplier)</Label></div>
+                                            <div className="flex items-center gap-2">
+                                                <RadioGroupItem value="dealer" id="src-dealer" />
+                                                <Label htmlFor="src-dealer" className="font-bold text-xs uppercase cursor-pointer">Dealer (Supplier)</Label>
+                                            </div>
                                             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Purchased from an authorized platform supplier.</p>
                                         </div>
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                            <div className="flex items-center gap-2"><RadioGroupItem value="client" id="src-client" /><Label htmlFor="src-client" className="font-bold text-xs uppercase cursor-pointer">Client (Trade-in)</Label></div>
+                                            <div className="flex items-center gap-2">
+                                                <RadioGroupItem value="client" id="src-client" />
+                                                <Label htmlFor="src-client" className="font-bold text-xs uppercase cursor-pointer">Client (Trade-in)</Label>
+                                            </div>
                                             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Sourced as a trade-in from an existing member.</p>
                                         </div>
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'stock' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                            <div className="flex items-center gap-2"><RadioGroupItem value="stock" id="src-stock" /><Label htmlFor="src-stock" className="font-bold text-xs uppercase cursor-pointer">Internal Stock</Label></div>
+                                            <div className="flex items-center gap-2">
+                                                <RadioGroupItem value="stock" id="src-stock" />
+                                                <Label htmlFor="src-stock" className="font-bold text-xs uppercase cursor-pointer">Internal Stock</Label>
+                                            </div>
                                             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Already in possession. Move from inventory.</p>
                                         </div>
                                     </RadioGroup>
@@ -167,8 +160,16 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 <FormItem className="animate-in slide-in-from-left-2">
                                     <FormLabel>Select Authorized Dealer</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left"><SelectValue placeholder="Choose supplier..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{suppliers?.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                                        <FormControl>
+                                            <SelectTrigger className="h-12 border-2 bg-white text-left">
+                                                <SelectValue placeholder="Choose supplier..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {suppliers?.map((s: any) => (
+                                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -179,8 +180,16 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 <FormItem className="animate-in slide-in-from-left-2">
                                     <FormLabel>Select Trade-in Client</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{clients?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                        <FormControl>
+                                            <SelectTrigger className="h-12 border-2 bg-white text-left">
+                                                <SelectValue placeholder="Choose member..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {clients?.map((c: any) => (
+                                                <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -192,16 +201,42 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     <div className="space-y-8 animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <FormField control={methods.control} name="classification" render={({ field }) => (
-                                <FormItem><FormLabel>Asset Class</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Truck">Heavy Vehicle (Truck)</SelectItem><SelectItem value="Trailer">Interlink / Trailer</SelectItem><SelectItem value="Bakkie">Light Commercial</SelectItem><SelectItem value="Equipment">Industrial Equipment</SelectItem></Select></FormItem>
+                                <FormItem>
+                                    <FormLabel>Asset Class</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value || ''}>
+                                        <FormControl>
+                                            <SelectTrigger className="h-12 border-2 bg-white font-bold text-left">
+                                                <SelectValue placeholder="Select class..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="Truck">Heavy Vehicle (Truck)</SelectItem>
+                                            <SelectItem value="Trailer">Interlink / Trailer</SelectItem>
+                                            <SelectItem value="Bakkie">Light Commercial</SelectItem>
+                                            <SelectItem value="Equipment">Industrial Equipment</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </FormItem>
                             )} />
                             <FormField control={methods.control} name="costOfSale" render={({ field }) => (
-                                <FormItem><FormLabel className="text-primary font-black uppercase text-[10px]">Purchase Valuation (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white text-xl font-black" /></FormControl></FormItem>
+                                <FormItem>
+                                    <FormLabel className="text-primary font-black uppercase text-[10px]">Purchase Valuation (Excl. VAT)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" {...field} className="h-12 border-2 bg-white text-xl font-black" />
+                                    </FormControl>
+                                </FormItem>
                             )} />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <FormField control={methods.control} name="make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>)} />
-                            <FormField control={methods.control} name="model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>)} />
-                            <FormField control={methods.control} name="year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>)} />
+                            <FormField control={methods.control} name="make" render={({ field }) => (
+                                <FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
+                            )} />
+                            <FormField control={methods.control} name="model" render={({ field }) => (
+                                <FormItem><FormLabel>Model</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
+                            )} />
+                            <FormField control={methods.control} name="year" render={({ field }) => (
+                                <FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>
+                            )} />
                         </div>
                     </div>
                 );
@@ -209,11 +244,32 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                 return (
                     <div className="space-y-8 animate-in fade-in duration-500">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <FormField control={methods.control} name="registrationNumber" render={({ field }) => (<FormItem><FormLabel>RSA Registration Number</FormLabel><FormControl><Input {...field} placeholder="e.g. AB 12 CD GP" className="h-12 border-2 font-black uppercase" /></FormControl></FormItem>)} />
-                            <FormField control={methods.control} name="vin" render={({ field }) => (<FormItem><FormLabel>VIN / Chassis Number</FormLabel><FormControl><Input {...field} className="h-12 border-2 font-mono uppercase" /></FormControl></FormItem>)} />
+                            <FormField control={methods.control} name="registrationNumber" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>RSA Registration Number</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} placeholder="e.g. AB 12 CD GP" className="h-12 border-2 font-black uppercase" />
+                                    </FormControl>
+                                </FormItem>
+                            )} />
+                            <FormField control={methods.control} name="vin" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>VIN / Chassis Number</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} className="h-12 border-2 font-mono uppercase" />
+                                    </FormControl>
+                                </FormItem>
+                            )} />
                         </div>
                         {watchedClass !== 'Trailer' && (
-                            <FormField control={methods.control} name="engineNumber" render={({ field }) => (<FormItem className="animate-in slide-in-from-top-2"><FormLabel>Engine Number</FormLabel><FormControl><Input {...field} className="h-12 border-2 font-mono uppercase" /></FormControl></FormItem>)} />
+                            <FormField control={methods.control} name="engineNumber" render={({ field }) => (
+                                <FormItem className="animate-in slide-in-from-top-2">
+                                    <FormLabel>Engine Number</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} className="h-12 border-2 font-mono uppercase" />
+                                    </FormControl>
+                                </FormItem>
+                            )} />
                         )}
                     </div>
                 );
@@ -235,7 +291,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-                    <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5">
+                    <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-white">
                          <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
                                 <CardTitle className="text-3xl font-black font-headline uppercase text-white">Asset Protocol Terminal</CardTitle>

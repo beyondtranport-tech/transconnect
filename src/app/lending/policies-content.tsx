@@ -15,11 +15,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from '@/lib/utils';
 
-/**
- * LENDING POLICY TERMINAL
- * This is the "Brain" of the capital division.
- * Defines the risk floor, pricing margins, and target entity appetite.
- */
 export default function PoliciesContent() {
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -137,8 +132,8 @@ export default function PoliciesContent() {
                             </CardHeader>
                             <CardContent className="p-8 space-y-6 text-left text-foreground">
                                 <div className="grid grid-cols-2 gap-6 text-left">
-                                    <div className="space-y-2 text-left text-foreground">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Min Years Trading</Label>
+                                    <div className="space-y-2 text-left">
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Min Years Trading</Label>
                                         <Input 
                                             type="number" 
                                             value={policies.minYearsInBusiness} 
@@ -146,7 +141,7 @@ export default function PoliciesContent() {
                                             className="h-11 border-2 font-bold bg-white" 
                                         />
                                     </div>
-                                    <div className="space-y-2 text-left text-foreground">
+                                    <div className="space-y-2 text-left">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Min Turnover (ZAR)</Label>
                                         <Input 
                                             type="number" 
@@ -271,7 +266,7 @@ export default function PoliciesContent() {
                     </div>
                 </TabsContent>
 
-                <TabsContent value="entities" className="mt-8 text-left text-foreground">
+                <TabsContent value="entities" className="mt-8 space-y-8 text-left text-foreground">
                     <Card className="border-none shadow-xl bg-white text-left">
                         <CardHeader className="p-8 border-b bg-muted/20">
                             <CardTitle className="text-xl font-bold text-left">Authorized Entity Risk Profiles</CardTitle>
