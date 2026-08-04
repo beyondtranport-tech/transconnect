@@ -37,7 +37,6 @@ interface FacilitiesContentProps {
 /**
  * MASTER FACILITIES LEDGER (V19.1)
  * High-fidelity oversight for Global Ceilings and partitioned Sub-Nodes.
- * RESOURCE HARDENED: Definitively prevents infinite loops and quota exhaustion.
  */
 export default function FacilitiesContent({ mode = 'client-global' }: FacilitiesContentProps) {
     const [facilities, setFacilities] = useState<any[]>([]);
@@ -65,7 +64,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             const token = await getClientSideAuthToken();
             if (!token) return;
             
-            // RESOURCE CAPPING: Hard 100 record limit applied to prevent quota flags
             const [facilitiesRes, clientsRes, debtorsRes, suppliersRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients', limit: 100 }),
@@ -184,8 +182,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left">Management of master limits and partitioned agreement nodes.</p>
                 </div>
-                <div className="flex gap-2 text-left">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
+                <div className="flex gap-2 text-left text-foreground">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
                     <Button 
@@ -204,7 +202,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground text-left">
                 <Table>
                     <TableHeader className="bg-slate-900">
                         <TableRow className="hover:bg-slate-900 border-none">
@@ -279,8 +277,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent className="text-left text-foreground">
                                                             <AlertDialogHeader className="text-left">
-                                                                <AlertDialogTitle className="text-left">Confirm Permanent Deletion</AlertDialogTitle>
-                                                                <AlertDialogDescription className="text-left">This will remove the facility from the ledger. This action is immutable.</AlertDialogDescription>
+                                                                <AlertDialogTitle className="text-left text-foreground">Confirm Permanent Deletion</AlertDialogTitle>
+                                                                <AlertDialogDescription className="text-left text-foreground">This will remove the facility from the ledger. This action is immutable.</AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter className="text-left">
                                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -298,11 +296,11 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                             <TableCell colSpan={6} className="p-0">
                                                 <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
                                                     <div className="flex justify-between items-center">
-                                                        <div className="text-left">
-                                                            <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                                        <div className="text-left text-foreground">
+                                                            <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                                                                 <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {global.ownerName}
                                                             </h4>
-                                                            <p className="text-[10px] text-muted-foreground mt-1 text-left">Specific sub-partitions approved under this ceiling.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-1 text-left text-foreground">Specific sub-partitions approved under this ceiling.</p>
                                                         </div>
                                                     </div>
 
@@ -311,14 +309,14 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">Agreement Node & Audit Trail</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Sub-Limit</TableHead>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left text-foreground">Agreement Node & Audit Trail</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Sub-Limit</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-right text-foreground">Actions</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {subs.map(sub => (
-                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left">
+                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left text-foreground text-left">
                                                                             <TableCell>
                                                                                 <div className="flex flex-col text-left">
                                                                                     <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit text-left">
@@ -331,11 +329,11 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                                     </div>
                                                                                 </div>
                                                                             </TableCell>
-                                                                            <TableCell className="text-right font-black text-sm text-foreground">
+                                                                            <TableCell className="text-right font-black text-sm text-foreground text-left">
                                                                                 {formatCurrency(sub.limit)}
                                                                             </TableCell>
-                                                                            <TableCell className="text-right">
-                                                                                <div className="flex justify-end gap-1">
+                                                                            <TableCell className="text-right text-foreground">
+                                                                                <div className="flex justify-end gap-1 text-left text-foreground">
                                                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => { setSelectedFacility(sub); setView('wizard'); }}><Edit className="h-3.5 w-3.5" /></Button>
                                                                                     <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => { setFacilityToDelete(sub); setIsDeleteAlertOpen(true); }}><Trash2 className="h-3.5 w-3.5" /></Button>
                                                                                 </div>
@@ -357,7 +355,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             </Table>
                                                         </div>
                                                     ) : (
-                                                        <div className="py-12 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
+                                                        <div className="py-12 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40 text-left text-foreground">
                                                             <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Partitions Allocated</p>
                                                         </div>
                                                     )}
@@ -369,8 +367,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                             );
                         }) : (
                             <TableRow>
-                                <TableCell colSpan={6} className="py-32 text-center text-muted-foreground">
-                                    <div className="flex flex-col items-center gap-4 opacity-20">
+                                <TableCell colSpan={6} className="py-32 text-center text-muted-foreground text-left text-foreground">
+                                    <div className="flex flex-col items-center gap-4 opacity-20 text-center text-foreground">
                                         <Landmark className="h-16 w-16" />
                                         <p className="text-sm font-bold uppercase tracking-widest text-center">No facilities matched.</p>
                                     </div>

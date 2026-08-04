@@ -15,9 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, fetchFromAdminAPI, formatCurrency } from '@/lib/utils';
 import { doc, collection, query, where, setDoc, serverTimestamp } from 'firebase/firestore';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
-// Schemas
+// Schema
 const agreementSubSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
   assetId: z.string().optional().nullable(),
@@ -53,6 +53,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
     const firestore = useFirestore();
+    const router = useRouter();
 
     const methods = useForm<WizardFormValues>({
         resolver: zodResolver(wizardSchema),
@@ -61,7 +62,6 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     
     const isEditing = !!agreement;
     const selectedClientId = methods.watch('agreement.clientId');
-    const selectedAssetId = methods.watch('agreement.assetId');
 
     // Fetch available assets for binding
     const assetsQuery = useMemoFirebase(() => {
@@ -93,18 +93,6 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                     numberOfInstallments: agreement.numberOfInstallments
                 }
             });
-        } else {
-            methods.reset({
-                agreement: {
-                    clientId: '',
-                    type: '',
-                    description: '',
-                    totalAdvanced: 0,
-                    interestRate: 15,
-                    numberOfInstallments: 48,
-                    assetId: null
-                }
-            });
         }
     }, [isEditing, agreement, methods]);
 
@@ -124,7 +112,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                 agreement: { id: agreement?.id, ...data.agreement, status: 'active' } 
             });
 
-            // 2. MARK ASSET AS FINANCED (Move Out of Register)
+            // 2. MARK ASSET AS FINANCED
             if (data.agreement.assetId) {
                 await fetch('/api/updateUserDoc', {
                     method: 'POST',
@@ -155,18 +143,26 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         const isValid = await methods.trigger(stepFields as any);
         if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
-        } else if (!isValid) {
-            toast({ variant: "destructive", title: "Incomplete Node", description: "Complete all fields before proceeding." });
         }
     };
     
-    const handleBackStep = () => setCurrentStep(prev => prev - 1);
+    const isStepValid = (index: number) => {
+        const step = steps[index];
+        if (!step.fields || step.fields.length === 0) return true;
+        const errors = methods.formState.errors;
+        return step.fields.every(field => {
+            const parts = field.split('.');
+            let err: any = errors;
+            for (const p of parts) { err = err?.[p]; }
+            return !err;
+        });
+    };
     
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'client': return (
-                 <div className="space-y-10 animate-in fade-in duration-500 text-left">
+                 <div className="space-y-10 animate-in fade-in duration-500">
                     <FormField control={methods.control} name="agreement.clientId" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Target Client</FormLabel>
@@ -180,7 +176,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                     )} />
 
                     {selectedClientId && (
-                        <div className="space-y-10 animate-in slide-in-from-top-4 duration-500 text-left">
+                        <div className="space-y-10 animate-in slide-in-from-top-4 duration-500">
                             <FormField control={methods.control} name="agreement.type" render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Facility Authority Node</FormLabel>
@@ -191,8 +187,8 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                 </FormItem>
                             )} />
                             
-                            <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6 text-left">
-                                <div className="flex justify-between items-center text-left">
+                            <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6">
+                                <div className="flex justify-between items-center">
                                     <div className="flex items-center gap-3">
                                         <div className="bg-primary/10 p-2 rounded-lg"><Truck className="h-6 w-6 text-primary"/></div>
                                         <h4 className="font-black uppercase tracking-tight">Physical Asset Bind</h4>
@@ -207,7 +203,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                         <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
                                             <FormControl>
                                                 <SelectTrigger className="h-14 border-2 bg-white font-bold text-left text-foreground">
-                                                    <SelectValue placeholder={isLoadingAssets ? "Scanning Register..." : "Select available asset from register..."} />
+                                                    <SelectValue placeholder={isLoadingAssets ? "Scanning Register..." : "Select available asset..."} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -216,10 +212,9 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                                         {asset.year} {asset.make} {asset.model} - {formatCurrency(asset.costOfSale)}
                                                     </SelectItem>
                                                 ))}
-                                                {availableAssets?.length === 0 && <SelectItem value="none" disabled>No available assets in register.</SelectItem>}
                                             </SelectContent>
                                         </Select>
-                                        <p className="text-[10px] text-muted-foreground mt-2 italic text-left text-foreground">Assets must be registered with "Available" status before they can be bound to an agreement.</p>
+                                        <p className="text-[10px] text-muted-foreground mt-2 italic">Only "Available" assets in the register can be bound.</p>
                                     </FormItem>
                                 )} />
                             </div>
@@ -228,14 +223,14 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                  </div>
             );
             case 'details': return (
-                 <div className="space-y-6 animate-in fade-in duration-500 text-left">
+                 <div className="space-y-6 animate-in fade-in duration-500">
                     <FormField control={methods.control} name="agreement.description" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel>Agreement Description</FormLabel>
                             <FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} className="min-h-[100px] border-2 bg-white" /></FormControl>
                         </FormItem>
                     )} />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem className="text-left"><FormLabel>Amount Advanced (R)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
                         <FormField control={methods.control} name="agreement.interestRate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Rate (% p.a.)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
                         <FormField control={methods.control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem className="text-left"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
@@ -243,11 +238,11 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                 </div>
             );
             case 'review': return (
-                <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left">
+                <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500">
                     <CheckCircle className="h-20 w-20 text-primary mx-auto opacity-30" />
                     <div className="space-y-2 text-center text-foreground">
-                        <h3 className="text-3xl font-black uppercase text-center text-foreground">Agreement Node Verified</h3>
-                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center text-foreground">Ready to commit this agreement and bind the selected asset to the client's ledger.</p>
+                        <h3 className="text-3xl font-black uppercase">Agreement Verified</h3>
+                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed">Ready to commit this agreement and bind the selected asset to the client's ledger.</p>
                     </div>
                 </div>
             );
@@ -259,18 +254,18 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader className="bg-slate-900 text-white p-10 text-left">
-                        <div className="flex justify-between items-center text-left text-white">
+                    <CardHeader className="bg-slate-900 text-white p-10">
+                        <div className="flex justify-between items-center">
                             <div className="text-left text-white">
-                                <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Agreement Authority Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1 text-white">Protocol: {steps[currentStep].title}</CardDescription>
+                                <CardTitle className="text-3xl font-black font-headline uppercase">Agreement Authority Terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1">Protocol: {steps[currentStep].title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Ledger</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                            <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
+                    <CardContent className="p-0">
+                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
+                            <div className="bg-slate-50 border-r p-8 space-y-2">
                                 {steps.map((step, index) => {
                                     const isCompleted = index < currentStep && isStepValid(index);
                                     return (
@@ -278,22 +273,23 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                                             key={step.id} 
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                             onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
-                                            {React.createElement(step.icon, { className: cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground") })}
-                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em] text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                            <step.icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
+                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                         </Button>
-                                    ))}
+                                    );
+                                })}
                             </div>
-                            <div className="p-12 space-y-12 bg-white min-h-[500px] text-left">
+                            <div className="p-12 space-y-12 bg-white min-h-[500px]">
                                 {renderStepContent()}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between text-left">
-                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading} className="font-bold h-12 px-8">
+                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between">
+                        <Button type="button" variant="outline" onClick={() => setCurrentStep(prev => Math.max(prev - 1, 0))} disabled={currentStep === 0 || isLoading} className="font-bold h-12 px-8">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (

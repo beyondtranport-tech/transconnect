@@ -185,15 +185,6 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
         }
     }
 
-    // PERVASIVE DATA SYNC: Autosave on transition
-    if (methods.formState.isDirty && client?.id) {
-        const token = await getClientSideAuthToken();
-        if (token) {
-            const values = methods.getValues();
-            setDoc(doc(firestore, targetCollection, client.id), { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
-        }
-    }
-
     if (typeof direction === 'number') {
         setCurrentStep(direction);
     } else if (direction === 'next') {
@@ -226,18 +217,18 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
     <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-          <CardHeader className="bg-slate-900 text-white p-8 text-left text-white">
-            <div className="flex justify-between items-center text-left text-white">
+          <CardHeader className="bg-slate-900 text-white p-8 text-left">
+            <div className="flex justify-between items-center text-left">
               <div className="text-left text-white">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Client Protocol Terminal</CardTitle>
-                <CardDescription className="text-slate-400">Section: {currentStepConfig.title}</CardDescription>
+                <CardDescription className="text-slate-400">{currentStepConfig.name}</CardDescription>
               </div>
               <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
             </div>
           </CardHeader>
           <CardContent className="p-0 text-left">
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] text-left">
-              <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
+              <div className="bg-slate-50 border-r p-6 space-y-2 text-left text-foreground">
                 {steps.map((step, i) => (
                   <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
                     {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
@@ -252,7 +243,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                             <FormItem className="space-y-4 text-left">
                                 <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Applying Capacity</FormLabel>
                                 <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4 text-left">
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'individual' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="individual" id="cap-ind" /><Label htmlFor="cap-ind" className="cursor-pointer font-bold uppercase text-xs">Individual</Label></div>
                                         <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'entity' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="entity" id="cap-ent" /><Label htmlFor="cap-ent" className="cursor-pointer font-bold uppercase text-xs">Legal Entity</Label></div>
                                     </RadioGroup>
@@ -260,8 +251,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                             </FormItem>
                         )} />
                         <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Full Name / Label</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
-                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left text-white">
-                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
+                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
+                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
                             <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="lending-identity" />
                         </div>
                     </div>
@@ -281,8 +272,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                                 <FileUploadField name="registrationDocUrl" label="CIPC / Founding Document" folder="lending-legal" />
                             </div>
                         </div>
@@ -306,7 +297,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                 )}
                  {currentStepConfig.id === 'governance' && (
                     <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground">
-                        <div className="grid grid-cols-2 gap-8 text-left">
+                        <div className="grid grid-cols-2 gap-8 text-left text-foreground">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
                                 <FormItem className="text-left"><FormLabel>Confirmed Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
                             )} />
@@ -318,14 +309,14 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (
-                    <div className="space-y-6 text-left text-foreground">
+                    <div className="space-y-6 text-left text-foreground text-foreground">
                         {shareholderFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="shareholders" onRemove={() => { removeShareholder(index); methods.setValue('shareholderCount', shareholderFields.length - 1); }} />
                         ))}
                     </div>
                 )}
                 {currentStepConfig.id === 'directors' && (
-                    <div className="space-y-6 text-left text-foreground">
+                    <div className="space-y-6 text-left text-foreground text-foreground">
                         {directorFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="directors" onRemove={() => { removeDirector(index); methods.setValue('directorCount', directorFields.length - 1); }} />
                         ))}
@@ -335,7 +326,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left">
                         <CheckCircle2 className="h-20 w-20 text-primary mx-auto opacity-30" />
                         <div className="space-y-2 text-center text-foreground">
-                            <h3 className="text-3xl font-black uppercase text-center text-foreground">Audit Check Complete</h3>
+                            <h3 className="text-3xl font-black uppercase text-center">Audit Check Complete</h3>
                             <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before committing this client node to the grid.</p>
                         </div>
                     </div>
@@ -348,7 +339,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
             {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary font-black uppercase tracking-tight text-white shadow-2xl">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Node</Button>
+              <Button type="submit" disabled={isSubmitting} className="h-12 bg-primary hover:bg-primary/90 shadow-lg font-black uppercase tracking-tight text-white">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Node</Button>
             )}
           </CardFooter>
         </form>

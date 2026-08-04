@@ -25,7 +25,6 @@ import { InitializeSubFacilityModal } from './InitializeSubFacilityModal';
 /**
  * SUPPLIER REGISTRY (DMS)
  * Strategic oversight of authorized asset dealers and equipment manufacturers.
- * RESOURCE HARDENED: Definitively prevents infinite loops and quota exhaustion.
  */
 export default function SuppliersContent() {
     const { toast } = useToast();
@@ -51,7 +50,6 @@ export default function SuppliersContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
             
-            // RESOURCE CAPPING: Hard 100 record limit applied
             const [suppliersRes, facilitiesRes, clientsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 }),
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),
@@ -115,7 +113,7 @@ export default function SuppliersContent() {
                     <span className="font-bold text-foreground text-left">{row.original.name}</span>
                     <div className="flex items-center gap-1.5 mt-0.5 text-left">
                         <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Authorized Provider</Badge>
-                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id.slice(-6)}</span>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">ID: {row.original.id.slice(-6)}</span>
                     </div>
                 </div>
             )
@@ -136,7 +134,7 @@ export default function SuppliersContent() {
         { 
             header: 'Fidelity',
             cell: ({row}) => (
-                <div className="flex items-center gap-2 text-left">
+                <div className="flex items-center gap-2 text-left text-foreground">
                     {row.original.website ? <Globe className="h-4 w-4 text-primary" /> : <Globe className="h-4 w-4 text-muted-foreground opacity-20" />}
                     {row.original.address ? <MapPin className="h-4 w-4 text-primary" /> : <MapPin className="h-4 w-4 text-muted-foreground opacity-20" />}
                 </div>
@@ -169,11 +167,11 @@ export default function SuppliersContent() {
 
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent className="text-left text-foreground text-foreground">
-                    <AlertDialogHeader className="text-left text-foreground text-foreground text-foreground">
-                        <AlertDialogTitle className="text-left text-foreground text-foreground">Expunge Supplier Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left text-foreground text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
+                    <AlertDialogHeader className="text-left text-foreground text-foreground text-foreground text-left text-foreground">
+                        <AlertDialogTitle className="text-left text-foreground text-foreground text-foreground">Expunge Supplier Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-foreground text-foreground text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground text-foreground">
+                    <AlertDialogFooter className="text-left text-foreground text-foreground text-left text-foreground">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
@@ -181,15 +179,15 @@ export default function SuppliersContent() {
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
-                <div className="text-left text-foreground">
+                <div className="text-left text-foreground text-left">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Building className="h-8 w-8 text-primary" />
                         Supplier Registry (DMS)
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left text-foreground text-foreground text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
                 </div>
-                <div className="flex gap-2 text-left text-foreground text-foreground">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground">
+                <div className="flex gap-2 text-left text-foreground text-foreground text-left">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground text-left">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Portfolio
                     </Button>
                     
@@ -210,17 +208,17 @@ export default function SuppliersContent() {
                         </Button>
                     )}
 
-                    <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left text-white text-left">
+                    <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left text-white text-left text-left">
                         <PlusCircle className="h-4 w-4" /> Initialize Supplier
                     </Button>
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground text-foreground">
-                <CardContent className="pt-6 text-left text-foreground text-foreground">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground text-foreground text-left">
+                <CardContent className="pt-6 text-left text-foreground text-foreground text-left text-foreground">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
+                            <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto text-left" />
                             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Mapping Authorized Dealers...</p>
                         </div>
                     ) : (
