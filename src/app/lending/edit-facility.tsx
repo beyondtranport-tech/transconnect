@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -197,24 +198,15 @@ export function EditFacilityWizard({
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'type': return (
-                 <div className="space-y-6 text-left text-foreground text-left text-foreground">
+                 <div className="space-y-6 text-left text-foreground">
                     <FormField control={methods.control} name="ownerType" render={({ field }) => (
                         <FormItem className="space-y-4">
                             <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Identify Authority Branch</FormLabel>
                             <FormControl>
                                 <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-2"><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="font-bold text-xs uppercase cursor-pointer">Client Branch</Label></div>
-                                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Borrowing member nodes.</p>
-                                    </div>
-                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'debtor' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-2"><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="font-bold text-xs uppercase cursor-pointer">Debtor Branch</Label></div>
-                                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Cessionary load providers.</p>
-                                    </div>
-                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'supplier' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
-                                        <div className="flex items-center gap-2"><RadioGroupItem value="supplier" id="type-supp" /><Label htmlFor="type-supp" className="font-bold text-xs uppercase cursor-pointer">Supplier Branch</Label></div>
-                                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Asset dealers and makers.</p>
-                                    </div>
+                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="client" id="type-client" /><Label htmlFor="type-client" className="cursor-pointer font-bold uppercase text-xs">Client Branch</Label></div>
+                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'debtor' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="debtor" id="type-debtor" /><Label htmlFor="type-debtor" className="cursor-pointer font-bold uppercase text-xs">Debtor Branch</Label></div>
+                                    <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'supplier' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="supplier" id="type-supp" /><Label htmlFor="type-supp" className="cursor-pointer font-bold uppercase text-xs">Supplier Branch</Label></div>
                                 </RadioGroup>
                             </FormControl>
                         </FormItem>
@@ -225,22 +217,22 @@ export function EditFacilityWizard({
                 <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
                     {watched.ownerType === 'client' && (
                         <FormField control={methods.control} name="clientId" render={({ field }) => (
-                            <FormItem className="text-left text-foreground"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Select Member Client</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     )}
                     {watched.ownerType === 'debtor' && (
                         <FormField control={methods.control} name="debtorId" render={({ field }) => (
-                            <FormItem className="text-left text-foreground"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Select Debtor (Cessionary)</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose debtor..." /></SelectTrigger></FormControl><SelectContent>{debtors.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     )}
                     {watched.ownerType === 'supplier' && (
                         <FormField control={methods.control} name="sourceDealerId" render={({ field }) => (
-                            <FormItem className="text-left text-foreground"><FormLabel>Select Authorized Supplier</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose supplier..." /></SelectTrigger></FormControl><SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Select Authorized Supplier</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Choose supplier..." /></SelectTrigger></FormControl><SelectContent>{suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                     )}
 
                     <FormField control={methods.control} name="limit" render={({ field }) => (
-                        <FormItem className="text-left text-foreground">
+                        <FormItem className="text-left">
                             <FormLabel className="text-primary font-black uppercase text-[10px]">Authorized Limit Ceiling (ZAR)</FormLabel>
                             <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-12 border-2 bg-white text-xl font-black" /></FormControl>
                         </FormItem>
@@ -249,14 +241,14 @@ export function EditFacilityWizard({
             );
             case 'agreement_limit': return (
                 <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
-                    <div className="p-8 border-2 rounded-3xl bg-white space-y-6 shadow-sm text-left text-foreground">
-                        <div className="p-4 bg-muted/30 rounded-xl border border-dashed text-left text-foreground text-foreground">
+                    <div className="p-8 border-2 rounded-3xl bg-white space-y-6 shadow-sm text-left">
+                        <div className="p-4 bg-muted/30 rounded-xl border border-dashed text-left">
                             <Label className="text-[9px] font-black uppercase text-muted-foreground block mb-1">Parent Node</Label>
                             <p className="text-sm font-bold text-slate-900">{resolvedTargetName}</p>
                         </div>
 
                         <FormField control={methods.control} name="type" render={({ field }) => (
-                            <FormItem className="text-left text-foreground text-foreground">
+                            <FormItem className="text-left">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Partition for Product / Asset Class</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value || ''}>
                                     <FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="Select context..." /></SelectTrigger></FormControl>
@@ -272,7 +264,7 @@ export function EditFacilityWizard({
                         )} />
 
                         <FormField control={methods.control} name="limit" render={({ field }) => (
-                            <FormItem className="text-left text-foreground">
+                            <FormItem className="text-left">
                                 <FormLabel className="text-[10px] font-black uppercase text-primary ml-1">Authorized Sub-Limit (ZAR)</FormLabel>
                                 <FormControl><Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} className="h-12 border-2 bg-white text-xl font-black" /></FormControl>
                             </FormItem>
@@ -283,13 +275,13 @@ export function EditFacilityWizard({
             case 'review': return (
                 <div className="space-y-8 animate-in zoom-in-95 duration-500 text-left text-foreground">
                     <div className="p-8 bg-slate-900 text-white rounded-3xl space-y-6 shadow-2xl text-left">
-                        <div className="flex justify-between items-baseline">
+                        <div className="flex justify-between items-baseline text-left">
                             <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Authorized Limit Ceiling</span>
                             <span className="text-4xl font-black text-primary">{formatCurrency(watched.limit)}</span>
                         </div>
                         <Separator className="bg-white/10" />
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-1">
+                        <div className="grid grid-cols-2 gap-6 text-left">
+                            <div className="space-y-1 text-left">
                                 <Label className="text-[9px] font-black uppercase text-slate-500">Target Entity</Label>
                                 <p className="font-bold text-sm text-white">{resolvedTargetName}</p>
                             </div>
@@ -309,9 +301,9 @@ export function EditFacilityWizard({
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-                    <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-foreground">
+                    <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-white">
                         <div className="flex justify-between items-center text-left">
-                            <div className="text-left">
+                            <div className="text-left text-white">
                                 <CardTitle className="text-3xl font-black font-headline uppercase text-white">Authority Node Terminal</CardTitle>
                                 <CardDescription className="text-slate-400 text-lg mt-1 text-white">Section: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
@@ -339,12 +331,12 @@ export function EditFacilityWizard({
                                     );
                                 })}
                             </div>
-                             <div className="p-12 space-y-12 bg-white min-h-[500px] text-left text-foreground text-foreground">
+                             <div className="p-12 space-y-12 bg-white min-h-[500px] text-left text-foreground">
                                 {renderStepContent()}
                              </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between text-left text-foreground">
+                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between text-left text-foreground text-foreground">
                         <Button type="button" variant="outline" onClick={handleBackStep} className="font-bold h-12 px-8">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>

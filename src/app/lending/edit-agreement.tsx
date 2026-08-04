@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -9,29 +10,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote, Database, Info } from 'lucide-react';
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { cn, fetchFromAdminAPI } from '@/lib/utils';
 import { doc, collection, query } from 'firebase/firestore';
-
-// API Helper
-async function performAdminAction(token: string, action: string, payload: any) {
-    const response = await fetch('/api/admin', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, payload }),
-    });
-    const result = await response.json();
-    if (!response.ok || !result.success) {
-        throw new Error(result.error || `API Error for action: ${action}`);
-    }
-    return result;
-}
 
 // Schemas
 const agreementSubSchema = z.object({
@@ -43,93 +27,17 @@ const agreementSubSchema = z.object({
   numberOfInstallments: z.coerce.number().int().positive('Term must be a positive integer'),
 });
 
-const assetSubSchema = z.object({
-  make: z.string().optional(),
-  model: z.string().optional(),
-  year: z.string().optional(),
-  costOfSale: z.coerce.number().optional(),
-  registrationNumber: z.string().optional(),
-  supplierName: z.string().optional(),
-  supplierContact: z.string().optional(),
-  // New fields from RC1
-  vin: z.string().optional(),
-  engineNumber: z.string().optional(),
-  tare: z.string().optional(),
-  gvm: z.string().optional(),
-  registerNumber: z.string().optional(),
-  titleholder: z.string().optional(),
-  owner: z.string().optional(),
-  firstRegistrationDate: z.string().optional(),
-  classification: z.string().optional(),
-});
-
-const securitySchema = z.object({
-  documentName: z.string().min(1, 'Document name is required'),
-  documentType: z.string().min(1, 'Document type is required'),
-  fileUrl: z.string().url('A valid file URL is required after upload.').optional().or(z.literal('')),
-});
-
 const wizardSchema = z.object({
   agreement: agreementSubSchema,
-  asset: assetSubSchema,
-  security: securitySchema,
 });
 
 type WizardFormValues = z.infer<typeof wizardSchema>;
 
-
 const steps = [
     { id: 'client', title: 'Client & Facility', icon: User, fields: ['agreement.clientId', 'agreement.type'] },
     { id: 'details', title: 'Agreement Details', icon: FileSignature, fields: ['agreement.description', 'agreement.totalAdvanced', 'agreement.interestRate', 'agreement.numberOfInstallments'] },
-    { id: 'asset', title: 'Asset Details', icon: Truck, fields: ['asset.make', 'asset.model', 'asset.year', 'asset.costOfSale', 'asset.vin', 'asset.engineNumber', 'asset.tare', 'asset.gvm', 'asset.registerNumber', 'asset.titleholder', 'asset.owner', 'asset.firstRegistrationDate', 'asset.classification'] },
-    { id: 'supplier', title: 'Supplier Details', icon: Building, fields: ['asset.supplierName', 'asset.supplierContact'] },
     { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
 ];
-
-const StepAsset = () => {
-    const { control } = useFormContext<WizardFormValues>();
-    return (
-        <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField control={control} name="asset.make" render={({ field }) => (<FormItem><FormLabel>Make</FormLabel><FormControl><Input placeholder="e.g., Scania" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.model" render={({ field }) => (<FormItem><FormLabel>Model</FormLabel><FormControl><Input placeholder="e.g., R 560" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.year" render={({ field }) => (<FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" placeholder="e.g., 2020" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.costOfSale" render={({ field }) => (<FormItem><FormLabel>Cost (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.registrationNumber" render={({ field }) => (<FormItem><FormLabel>Registration No.</FormLabel><FormControl><Input placeholder="e.g., AB 12 CD GP" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.vin" render={({ field }) => (<FormItem><FormLabel>VIN</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.engineNumber" render={({ field }) => (<FormItem><FormLabel>Engine No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.tare" render={({ field }) => (<FormItem><FormLabel>Tare (kg)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.gvm" render={({ field }) => (<FormItem><FormLabel>GVM (kg)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.registerNumber" render={({ field }) => (<FormItem><FormLabel>Register No.</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                 <FormField control={control} name="asset.firstRegistrationDate" render={({ field }) => (<FormItem><FormLabel>Date of First Registration</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField control={control} name="asset.titleholder" render={({ field }) => (<FormItem><FormLabel>Titleholder</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={control} name="asset.owner" render={({ field }) => (<FormItem><FormLabel>Owner</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            </div>
-             <FormField control={control} name="asset.classification" render={({ field }) => (<FormItem><FormLabel>Classification</FormLabel><FormControl><Input placeholder="e.g., Goods Vehicle" {...field} /></FormControl><FormMessage /></FormItem>)} />
-        </div>
-    );
-};
-
-const StepSupplier = () => {
-    const { control } = useFormContext<WizardFormValues>();
-    return (
-         <div className="space-y-4">
-            <FormField control={control} name="asset.supplierName" render={({ field }) => (<FormItem><FormLabel>Supplier Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-            <FormField control={control} name="asset.supplierContact" render={({ field }) => (<FormItem><FormLabel>Supplier Contact</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-        </div>
-    );
-};
-
 
 interface AgreementWizardProps {
   agreement?: any;
@@ -143,7 +51,6 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     const [isLoading, setIsLoading] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const { toast } = useToast();
-    const router = useRouter();
     const firestore = useFirestore();
 
     const methods = useForm<WizardFormValues>({
@@ -151,21 +58,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         mode: 'onChange',
     });
     
-    const assetRef = useMemoFirebase(() => {
-        if (!firestore || !agreement?.assetId) return null;
-        return doc(firestore, 'lendingAssets', agreement.assetId);
-    }, [firestore, agreement]);
-    const { data: assetData, isLoading: isAssetLoading } = useDoc(assetRef);
-
-    const securityQuery = useMemoFirebase(() => {
-        if (!firestore || !agreement) return null;
-        return query(collection(firestore, `lendingClients/${agreement.clientId}/agreements/${agreement.id}/securities`));
-    }, [firestore, agreement]);
-    const { data: securityData, isLoading: isSecurityLoading } = useCollection(securityQuery);
-    const securityDoc = securityData?.[0];
-    
     const isEditing = !!agreement;
-    const isEditDataLoading = isEditing && (isAssetLoading || isSecurityLoading);
 
     const selectedClientId = methods.watch('agreement.clientId');
 
@@ -180,7 +73,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     }, [availableFacilities]);
     
     useEffect(() => {
-        if (isEditing && assetData && securityDoc !== undefined) {
+        if (isEditing) {
              methods.reset({
                 agreement: { 
                     clientId: agreement.clientId,
@@ -189,62 +82,41 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                     totalAdvanced: agreement.totalAdvanced,
                     interestRate: agreement.interestRate,
                     numberOfInstallments: agreement.numberOfInstallments
-                },
-                asset: { 
-                    make: assetData.make || '',
-                    model: assetData.model || '',
-                    year: assetData.year || '',
-                    costOfSale: assetData.costOfSale || 0,
-                    registrationNumber: assetData.registrationNumber || '',
-                    vin: assetData.vin || '',
-                    engineNumber: assetData.engineNumber || '',
-                    tare: assetData.tare || '',
-                    gvm: assetData.gvm || '',
-                    registerNumber: assetData.registerNumber || '',
-                    titleholder: assetData.titleholder || '',
-                    owner: assetData.owner || '',
-                    firstRegistrationDate: assetData.firstRegistrationDate || '',
-                    classification: assetData.classification || '',
-                    supplierName: assetData.supplierName || '',
-                    supplierContact: assetData.supplierContact || '',
-                },
-                security: {
-                    documentName: securityDoc.documentName,
-                    documentType: securityDoc.documentType,
-                    fileUrl: securityDoc.fileUrl,
                 }
             });
-        } else if (!isEditing) {
-            methods.reset({}); // Reset for new entry
+        } else {
+            methods.reset({});
         }
-    }, [isEditing, agreement, assetData, securityDoc, methods]);
+    }, [isEditing, agreement, methods]);
 
+    const handleRedirect = async (type: string) => {
+        const token = await getClientSideAuthToken();
+        if (!token) return;
+        
+        // AUTOSAVE BEFORE REDIRECT: Persist current agreement node as a draft
+        const values = methods.getValues('agreement');
+        if (values.clientId) {
+            try {
+                await fetchFromAdminAPI(token, 'saveLendingAgreement', { 
+                    agreement: { id: agreement?.id, ...values, status: 'draft' } 
+                });
+            } catch (e) {
+                console.warn("Autosave failed", e);
+            }
+        }
+        
+        window.location.href = `/lending?view=assets&type=${type}&clientId=${selectedClientId || ''}&agreementId=${agreement?.id || ''}`;
+    };
 
-    const onSubmit = async (values: WizardFormValues) => {
+    const onSubmit = async (data: WizardFormValues) => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            let assetId = agreement?.assetId;
-            const assetPayload: any = { ...values.asset, clientId: values.agreement.clientId };
-
-            // Save/Update Asset if there's data for it
-            if (Object.values(values.asset).some(v => v)) {
-                if (assetId) {
-                    assetPayload.id = assetId;
-                }
-                const assetResult = await performAdminAction(token, 'saveLendingAsset', { asset: assetPayload });
-                assetId = assetResult.id;
-            }
-
-            // Save Agreement
-            const agreementPayload = {
-                id: agreement?.id,
-                ...values.agreement,
-                assetId: assetId,
-            };
-            await performAdminAction(token, 'saveLendingAgreement', { agreement: agreementPayload });
+            await fetchFromAdminAPI(token, 'saveLendingAgreement', { 
+                agreement: { id: agreement?.id, ...data.agreement } 
+            });
 
             toast({ title: agreement ? 'Agreement Updated' : 'Agreement Created' });
             onSave();
@@ -267,96 +139,109 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     
     const handleBackStep = () => setCurrentStep(prev => prev - 1);
     
-    const isStepValid = (stepIndex: number) => {
-        if (stepIndex < 0 || stepIndex >= steps.length) return true;
-        const step = steps[stepIndex];
-        if (!step.fields || step.fields.length === 0) return true;
-        return step.fields.every(field => !methods.formState.errors[field as keyof typeof methods.formState.errors]);
-    };
-    
-     const renderStepContent = () => {
-        if (isEditDataLoading) {
-            return <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin"/></div>
-        }
+    const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'client': return (
-                 <div className="space-y-4">
-                    <FormField control={methods.control} name="agreement.clientId" render={({ field }) => (<FormItem><FormLabel>Client</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                 <div className="space-y-6">
+                    <FormField control={methods.control} name="agreement.clientId" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Profile</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
                     {selectedClientId && (
                         availableTypes.length > 0 ? (
-                            <FormField control={methods.control} name="agreement.type" render={({ field }) => (<FormItem><FormLabel>Facility Type</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select an agreement type..." /></SelectTrigger></FormControl><SelectContent>{availableTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
+                                <FormField control={methods.control} name="agreement.type" render={({ field }) => (<FormItem className="text-left"><FormLabel>Facility Authority Node</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Select an agreement type..." /></SelectTrigger></FormControl><SelectContent>{availableTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                                
+                                <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6 text-left">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-primary/10 p-2 rounded-lg"><Truck className="h-6 w-6 text-primary"/></div>
+                                        <h4 className="font-black uppercase tracking-tight">Physical Asset Bind</h4>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <Button type="button" variant="outline" className="h-20 border-2 gap-3 font-bold" onClick={() => handleRedirect('Truck')}>
+                                            <div className="bg-primary/10 p-2 rounded-lg"><Truck className="h-5 w-5 text-primary" /></div>
+                                            <span>Initialize Truck Node</span>
+                                        </Button>
+                                        <Button type="button" variant="outline" className="h-20 border-2 gap-3 font-bold" onClick={() => handleRedirect('Trailer')}>
+                                            <div className="bg-primary/10 p-2 rounded-lg"><Database className="h-5 w-5 text-primary" /></div>
+                                            <span>Initialize Trailer Node</span>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
                         ) : (
-                            <Alert>
-                                <AlertTitle>No Active Facilities</AlertTitle>
-                                <AlertDescription>This client has no active credit facilities. You must create one before creating an agreement.</AlertDescription>
+                            <Alert variant="destructive" className="bg-destructive/5 border-destructive/20">
+                                <Info className="h-4 w-4" />
+                                <AlertTitle>Authority Missing</AlertTitle>
+                                <AlertDescription>This client has no active credit facilities. Establish a Global Limit before drafting an agreement.</AlertDescription>
                             </Alert>
                         )
                     )}
                  </div>
             );
             case 'details': return (
-                 <div className="space-y-4">
-                    <FormField control={methods.control} name="agreement.description" render={({ field }) => (<FormItem><FormLabel>Agreement Description</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    <div className="grid grid-cols-3 gap-4">
-                        <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Amount (R)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="agreement.interestRate" render={({ field }) => (<FormItem><FormLabel>Rate (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                        <FormField control={methods.control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                 <div className="space-y-4 text-left">
+                    <FormField control={methods.control} name="agreement.description" render={({ field }) => (<FormItem><FormLabel>Agreement Label</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Principal Advanced (R)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.interestRate" render={({ field }) => (<FormItem><FormLabel>Interest Rate (% p.a.)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
                     </div>
                 </div>
             );
-            case 'asset': return <StepAsset />;
-            case 'supplier': return <StepSupplier />;
-            case 'review': return <div className="text-center p-8"><h3 className="text-lg font-semibold">Review and Submit</h3><p className="text-muted-foreground">Please confirm all details before saving the client.</p></div>;
+            case 'review': return <div className="text-center py-20 space-y-4"><CheckCircle className="h-16 w-16 text-primary mx-auto opacity-30" /><h3 className="text-2xl font-black uppercase">Final Protocol Check</h3><p className="text-muted-foreground max-w-sm mx-auto">Verify principal and term nodes before committing the agreement to the ledger.</p></div>;
             default: return null;
         }
     };
     
     return (
-        <Card>
+        <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
+                    <CardHeader className="bg-slate-900 text-white p-10">
+                        <div className="flex justify-between items-center">
                             <div>
-                                <h2 className="text-2xl font-bold font-headline">{agreement ? 'Edit' : 'Create New'} Agreement</h2>
-                                <p className="text-muted-foreground">{steps[currentStep].title}</p>
+                                <CardTitle className="text-3xl font-black font-headline uppercase">{agreement ? 'Audit' : 'Draft'} Agreement Node</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1">{steps[currentStep].title}</CardDescription>
                             </div>
-                            <Button type="button" variant="ghost" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4"/>Back to List</Button>
+                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
                         </div>
                     </CardHeader>
-                        <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-[250px_1fr] gap-8">
-                             <div className="flex flex-col gap-2 border-r pr-4">
+                    <CardContent className="p-0 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
+                            <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
-                                    const isCompleted = index < currentStep && isStepValid(index);
                                     return (
-                                        <Button key={step.id} type="button" variant={currentStep === index ? 'secondary' : 'ghost'} className="justify-start gap-2" onClick={() => setCurrentStep(index)} disabled={index > currentStep && !isStepValid(currentStep - 1)}>
-                                            {isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <div className={cn("h-5 w-5 rounded-full flex items-center justify-center text-xs font-bold", currentStep >= index ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
-                                            <Icon className="h-4 w-4 mr-1" />
-                                            {step.title}
+                                        <Button 
+                                            key={step.id} 
+                                            type="button" 
+                                            variant={currentStep === index ? 'secondary' : 'ghost'} 
+                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all", currentStep === index && "bg-white shadow-md ring-1 ring-primary/20")} 
+                                            onClick={() => setCurrentStep(index)}
+                                        >
+                                            <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
+                                            <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
+                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
                                         </Button>
                                     );
                                 })}
                             </div>
-                             <div className="space-y-6 min-h-[400px]">
+                            <div className="p-12 space-y-12 bg-white min-h-[500px] text-left">
                                 {renderStepContent()}
-                             </div>
+                            </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="flex justify-between border-t pt-6 mt-6">
-                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading}>
+                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between">
+                        <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading} className="font-bold h-12 px-8">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext}>
-                                Next <ArrowRight className="ml-2 h-4 w-4"/>
+                            <Button type="button" onClick={handleNext} className="h-12 px-12 font-black uppercase text-xs text-white shadow-lg">
+                                Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                {agreement ? 'Update Agreement' : 'Create Agreement'}
+                            <Button type="submit" disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white">
+                                {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+                                Commit Agreement to Ledger
                             </Button>
                         )}
                     </CardFooter>

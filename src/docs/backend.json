@@ -72,6 +72,19 @@
         "availableFacility": { "type": "number" }
       }
     },
+    "LendingSupplier": {
+      "title": "Lending Supplier",
+      "type": "object",
+      "description": "Authorized asset dealer or equipment manufacturer.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "draft"] },
+        "registrationId": { "type": "string" },
+        "website": { "type": "string" }
+      }
+    },
     "LendingAgreement": {
       "title": "Lending Agreement",
       "type": "object",
@@ -83,19 +96,6 @@
         "interestRate": { "type": "number" },
         "status": { "type": "string" }
       }
-    },
-    "DataHarvestNode": {
-      "title": "Data Harvest Node",
-      "type": "object",
-      "description": "A silo for harvested, cleaned, and anonymized industrial data points.",
-      "properties": {
-        "id": { "type": "string" },
-        "silo": { "type": "string", "enum": ["behavioral", "operational", "financial"] },
-        "sourceId": { "type": "string", "description": "Obfuscated ID of the originating member." },
-        "dataPoints": { "type": "object" },
-        "isAnonymized": { "type": "boolean" },
-        "createdAt": { "type": "object" }
-      }
     }
   },
   "auth": {
@@ -106,8 +106,9 @@
       { "path": "/users/{userId}", "definition": { "entityName": "User", "schema": { "$ref": "#/entities/User" }, "description": "User profiles." } },
       { "path": "/partners/{partnerId}", "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Consolidated industrial registry." } },
       { "path": "/leads/{leadId}", "definition": { "entityName": "Partner", "schema": { "$ref": "#/entities/Partner" }, "description": "Discovery leads." } },
-      { "path": "/lendingClients/{clientId}", "definition": { "entityName": "LendingClient", "schema": { "$ref": "#/entities/LendingClient" }, "description": "Lending debtors." } },
-      { "path": "/dataHarvest/{nodeId}", "definition": { "entityName": "DataHarvestNode", "schema": { "$ref": "#/entities/DataHarvestNode" }, "description": "The proprietary IP vault." } }
+      { "path": "/lendingClients/{clientId}", "definition": { "entityName": "LendingClient", "schema": { "$ref": "#/entities/LendingClient" }, "description": "Lending borrowers." } },
+      { "path": "/lendingDebtors/{debtorId}", "definition": { "entityName": "LendingClient", "schema": { "$ref": "#/entities/LendingClient" }, "description": "Cessionary load providers." } },
+      { "path": "/lendingSuppliers/{supplierId}", "definition": { "entityName": "LendingSupplier", "schema": { "$ref": "#/entities/LendingSupplier" }, "description": "Authorized dealers." } }
     ]
   }
 }

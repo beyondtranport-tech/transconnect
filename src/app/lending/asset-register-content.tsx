@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -139,8 +140,8 @@ export default function AssetRegisterContent() {
             header: 'Asset Identity',
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
-                    <span className="font-bold text-foreground">{row.original.year} {row.original.make} {row.original.model}</span>
-                    <span className="text-[10px] text-muted-foreground font-mono uppercase">{row.original.id}</span>
+                    <span className="font-bold text-foreground text-left">{row.original.year} {row.original.make} {row.original.model}</span>
+                    <span className="text-[10px] text-muted-foreground font-mono uppercase text-left">{row.original.id}</span>
                 </div>
             )
         },
@@ -171,7 +172,7 @@ export default function AssetRegisterContent() {
                         <Truck className="h-8 w-8 text-primary" />
                         Asset Register
                     </h1>
-                    <p className="text-muted-foreground mt-1">Management of all physical collateral and technical data nodes.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Management of all physical collateral and technical data nodes.</p>
                 </div>
                 <div className="flex gap-2 text-left">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">

@@ -134,7 +134,7 @@ function LendingPortalContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center">
+        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center text-foreground">
             <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
             <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Authenticating Portal Access...</p>
         </div>
@@ -298,8 +298,8 @@ function LendingPortalContent() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="p-8 text-left text-foreground">
-            <Suspense fallback={<div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+        <div className="p-8 text-left text-foreground text-foreground">
+            <Suspense fallback={<div className="py-20 text-center text-foreground text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                 {renderContent()}
             </Suspense>
         </div>
@@ -311,9 +311,9 @@ function LendingPortalContent() {
 export default function LendingPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4 text-center">
+      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4 text-center text-foreground">
         <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
-        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Initializing Portal...</p>
+        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center text-foreground">Initializing Portal...</p>
       </div>
     }>
       <LendingPortalContent />
