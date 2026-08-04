@@ -93,7 +93,7 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
     };
 
     return (
-        <div className="space-y-1.5 text-left text-foreground">
+        <div className="space-y-1.5 text-left text-foreground text-foreground">
             <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">{label}</Label>
             <Button 
                 type="button" 
@@ -114,15 +114,15 @@ const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shar
     const { control } = useFormContext<SupplierFormValues>();
     return (
         <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative animate-in fade-in duration-300 text-left text-foreground">
-            <div className="flex justify-between items-center text-left text-foreground">
+            <div className="flex justify-between items-center text-left text-foreground text-foreground">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <UserCircle className="h-4 w-4" /> {type.slice(0, -1)} #{index + 1}
                 </h4>
                 <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
-                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground text-foreground">
+                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
             </div>
             <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="Attach Identity Scan" folder={`suppliers-${type}`} />
         </div>
@@ -233,33 +233,33 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
   const watchedValues = methods.watch();
 
   return (
-    <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
+    <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground text-foreground">
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-          <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white">
+          <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white text-left text-white">
             <div className="flex justify-between items-center text-left text-white">
-              <div className="text-left text-white text-left">
+              <div className="text-left text-white text-left text-white text-left">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Supplier Protocol Terminal</CardTitle>
                 <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Section: {currentStepConfig.title}</CardDescription>
               </div>
               <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
             </div>
           </CardHeader>
-          <CardContent className="p-0 text-left text-foreground text-foreground">
+          <CardContent className="p-0 text-left text-foreground text-foreground text-foreground">
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr]">
-              <div className="bg-slate-50 border-r p-6 space-y-2 text-left text-foreground">
+              <div className="bg-slate-50 border-r p-6 space-y-2 text-left text-foreground text-foreground">
                 {steps.map((step, i) => (
                   <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
                     {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
-                    <span className={cn("text-[11px] font-black uppercase text-left text-foreground", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
+                    <span className={cn("text-[11px] font-black uppercase text-left text-foreground text-foreground", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                   </Button>
                 ))}
               </div>
-              <div className="p-12 min-h-[600px] text-left text-foreground text-foreground text-foreground">
+              <div className="p-12 min-h-[600px] text-left text-foreground text-foreground text-foreground text-foreground">
                 {currentStepConfig.id === 'main' && (
-                    <div className="space-y-8 text-left animate-in fade-in duration-500">
-                        <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
-                        <FormField control={methods.control} name="category" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
+                    <div className="space-y-8 text-left animate-in fade-in duration-500 text-foreground">
+                        <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="category" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground text-foreground"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
                         <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left text-white">
                             <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><User className="h-4 w-4" /> Principal Identity Node</h4>
                             <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="suppliers-identity" />
@@ -267,10 +267,10 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     </div>
                 )}
                 {currentStepConfig.id === 'entity' && (
-                    <div className="space-y-8 text-left animate-in fade-in duration-500 text-foreground">
+                    <div className="space-y-8 text-left animate-in fade-in duration-500 text-foreground text-foreground">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                            <div className="space-y-6 text-left">
-                                <FormField control={methods.control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>CIPC Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="20XX/XXXXXX/07" className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
+                            <div className="space-y-6 text-left text-foreground">
+                                <FormField control={methods.control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground text-foreground"><FormLabel>CIPC Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="20XX/XXXXXX/07" className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
                                 <FormField control={methods.control} name="globalFacilityLimit" render={({ field }) => (
                                     <FormItem className="text-left">
                                         <FormLabel className="text-primary font-black uppercase text-[10px]">Global Facility Limit (ZAR)</FormLabel>
@@ -284,7 +284,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                                     </FormItem>
                                 )} />
                                 {watchedValues.vatRegistered && (
-                                    <FormField control={methods.control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in fade-in slide-in-from-left-2 text-foreground"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
+                                    <FormField control={methods.control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in fade-in slide-in-from-left-2 text-foreground text-foreground"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
                                 )}
                             </div>
                             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white text-white">
@@ -295,10 +295,10 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     </div>
                 )}
                 {currentStepConfig.id === 'standing' && (
-                    <div className="space-y-12 text-left animate-in fade-in duration-500 text-foreground">
+                    <div className="space-y-12 text-left animate-in fade-in duration-500 text-foreground text-foreground">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground text-foreground">
-                                <div className="space-y-1 text-left text-foreground text-foreground">
+                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground text-foreground text-foreground">
+                                <div className="space-y-1 text-left text-foreground text-foreground text-foreground">
                                     <span className="text-2xl font-black font-headline uppercase tracking-tight text-left text-foreground">Infrastructure Standing</span>
                                     <p className="text-base text-muted-foreground text-left text-foreground">Does this supplier own the property they operate from?</p>
                                 </div>
@@ -315,46 +315,46 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     </div>
                 )}
                 {currentStepConfig.id === 'governance' && (
-                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground text-foreground">
-                        <div className="grid grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground text-foreground text-foreground">
+                        <div className="grid grid-cols-2 gap-8 text-left text-foreground text-foreground text-foreground">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
+                                <FormItem className="text-left text-foreground text-foreground text-foreground"><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="directorCount" render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
+                                <FormItem className="text-left text-foreground text-foreground text-foreground"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
                             )} />
                         </div>
-                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-foreground"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Resource Control</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">Adjusting these counts will synchronize the registry nodes. These transformations are only processed during section transitions to protect API quota.</AlertDescription></Alert>
+                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-foreground text-foreground"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left text-foreground">Resource Control</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">Adjusting these counts will synchronize the registry nodes. These transformations are only processed during section transitions to protect API quota.</AlertDescription></Alert>
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (
-                    <div className="space-y-6 text-left text-foreground text-foreground">
+                    <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                         {shareholderFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="shareholders" onRemove={() => { removeShareholder(index); methods.setValue('shareholderCount', shareholderFields.length - 1); }} />
                         ))}
                         {shareholderFields.length === 0 && (
                             <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30 text-center text-foreground">
-                                <Users className="h-12 w-12 mx-auto mb-2 text-foreground" />
+                                <Users className="h-12 w-12 mx-auto mb-2 text-foreground text-foreground" />
                                 <p className="text-sm font-black uppercase text-center text-foreground">No Shareholders Mapped</p>
                             </div>
                         )}
                     </div>
                 )}
                 {currentStepConfig.id === 'directors' && (
-                    <div className="space-y-6 text-left text-foreground text-foreground">
+                    <div className="space-y-6 text-left text-foreground text-foreground text-foreground">
                         {directorFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="directors" onRemove={() => { removeDirector(index); methods.setValue('directorCount', directorFields.length - 1); }} />
                         ))}
                         {directorFields.length === 0 && (
                             <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30 text-center text-foreground">
-                                <UserCheck className="h-12 w-12 mx-auto mb-2 text-foreground" />
+                                <UserCheck className="h-12 w-12 mx-auto mb-2 text-foreground text-foreground" />
                                 <p className="text-sm font-black uppercase text-center text-foreground">No Directors Mapped</p>
                             </div>
                         )}
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (
-                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-700 text-left text-foreground">
+                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-700 text-left text-foreground text-foreground">
                         <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto border-2 border-primary/20 text-center">
                             <ShieldCheck className="h-20 w-20 text-primary" />
                         </div>
@@ -367,12 +367,12 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
               </div>
             </div>
           </CardContent>
-          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground text-foreground">
+          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground text-foreground text-foreground">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8 text-foreground">Back</Button>
             {currentStep < steps.length - 1 ? (
-              <Button type="button" onClick={() => handleStepTransition('next')} className="px-12 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              <Button type="button" onClick={() => handleStepTransition('next')} className="px-12 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12 text-white">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary hover:bg-primary/90 font-black uppercase tracking-tight text-white shadow-2xl">
+              <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary hover:bg-primary/90 font-black uppercase tracking-tight text-white shadow-2xl text-white">
                 {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />} Commit Supplier Node
               </Button>
             )}

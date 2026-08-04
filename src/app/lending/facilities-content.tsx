@@ -88,7 +88,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
     const toggleExpand = (id: string) => {
         const next = new Set(expandedIds);
-        if (next.has(id)) next.delete(id);
+        if (next.has(id)) next.add(id);
         else next.add(id);
         setExpandedIds(next);
     };
@@ -184,7 +184,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left text-foreground text-foreground">Management of master limits and partitioned agreement nodes.</p>
                 </div>
-                <div className="flex gap-2 text-left text-foreground">
+                <div className="flex gap-2 text-left text-foreground text-foreground">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
@@ -198,13 +198,13 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         {mode === 'debtor' ? <UserPlus className="h-4 w-4" /> : <FileSignature className="h-4 w-4" />}
                         {mode === 'debtor' ? 'Client Allocation' : 'Agreement Facility'}
                     </Button>
-                    <Button onClick={() => { setSelectedFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
+                    <Button onClick={() => { setSelectedFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left text-white text-left">
                         <PlusCircle className="h-4 w-4" /> New Master Facility
                     </Button>
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground text-foreground">
                 <Table>
                     <TableHeader className="bg-slate-900">
                         <TableRow className="hover:bg-slate-900 border-none">
@@ -307,7 +307,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                     </div>
 
                                                     {subs.length > 0 ? (
-                                                        <div className="border rounded-xl bg-white shadow-inner overflow-hidden text-left">
+                                                        <div className="border rounded-xl bg-white shadow-inner overflow-hidden text-left text-foreground">
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
@@ -320,14 +320,14 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                     {subs.map(sub => (
                                                                         <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left">
                                                                             <TableCell>
-                                                                                <div className="flex flex-col text-left">
-                                                                                    <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit text-left">
+                                                                                <div className="flex flex-col text-left text-foreground">
+                                                                                    <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit text-left text-foreground">
                                                                                         {mode === 'debtor' ? (clientMap.get(sub.associatedClientId) || 'Member Allocation') : (sub.type?.replace(/_/g, ' ') || 'Agreement')}
                                                                                     </Badge>
                                                                                     <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left">
-                                                                                        <div className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
+                                                                                        <div className="flex items-center gap-1 text-left"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
                                                                                         <Separator orientation="vertical" className="h-2.5 bg-slate-300" />
-                                                                                        <div className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
+                                                                                        <div className="flex items-center gap-1 text-left"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
                                                                                     </div>
                                                                                 </div>
                                                                             </TableCell>

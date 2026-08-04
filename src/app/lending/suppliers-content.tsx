@@ -168,8 +168,8 @@ export default function SuppliersContent() {
             />
 
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left text-foreground text-foreground">
+                <AlertDialogContent className="text-left text-foreground text-foreground">
+                    <AlertDialogHeader className="text-left text-foreground text-foreground text-foreground">
                         <AlertDialogTitle className="text-left text-foreground text-foreground">Expunge Supplier Node?</AlertDialogTitle>
                         <AlertDialogDescription className="text-left text-foreground text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
@@ -180,7 +180,7 @@ export default function SuppliersContent() {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Building className="h-8 w-8 text-primary" />
@@ -188,8 +188,8 @@ export default function SuppliersContent() {
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left text-foreground text-foreground text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
                 </div>
-                <div className="flex gap-2 text-left text-foreground">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                <div className="flex gap-2 text-left text-foreground text-foreground">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Portfolio
                     </Button>
                     
@@ -210,13 +210,13 @@ export default function SuppliersContent() {
                         </Button>
                     )}
 
-                    <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
+                    <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left text-white text-left">
                         <PlusCircle className="h-4 w-4" /> Initialize Supplier
                     </Button>
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground text-foreground">
                 <CardContent className="pt-6 text-left text-foreground text-foreground">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
