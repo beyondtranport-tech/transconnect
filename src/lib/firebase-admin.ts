@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -22,7 +22,6 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
     }
     
     // FORENSIC SANITIZATION: Clean the B64 string before processing
-    // This handles "Unexpected non-whitespace character" errors caused by .env formatting
     const rawB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
     const encodedServiceAccount = rawB64?.replace(/[\r\n\s]/gm, '').trim();
 
@@ -33,7 +32,20 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
     }
 
     try {
-        const serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
+        let serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
+        
+        // ROBUSTNESS: Strip leading "json" or markdown code blocks if the user copied too much
+        serviceAccountJson = serviceAccountJson.trim();
+        if (serviceAccountJson.startsWith('json')) {
+            serviceAccountJson = serviceAccountJson.substring(4).trim();
+        }
+        if (serviceAccountJson.startsWith('```json')) {
+            serviceAccountJson = serviceAccountJson.substring(7).trim();
+        }
+        if (serviceAccountJson.endsWith('```')) {
+            serviceAccountJson = serviceAccountJson.substring(0, serviceAccountJson.length - 3).trim();
+        }
+
         const serviceAccountObject: { [key: string]: any } = JSON.parse(serviceAccountJson);
 
         if (!serviceAccountObject.project_id || !serviceAccountObject.client_email || !serviceAccountObject.private_key) {
@@ -82,12 +94,8 @@ export async function verifyAdmin(req: NextRequest) {
     const adminAuth = getAuth(app);
     const decodedToken = await adminAuth.verifyIdToken(token);
     
-    const adminUids = ['0Y3IhZffEPNlMAIhURPnzRgNokL2', 'ylVC4F2FIYV8o9jjq13wCYiAyyM2'];
     const adminEmails = ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'];
-
-    const isAdmin = adminEmails.includes(decodedToken.email || '') || 
-                    adminUids.includes(decodedToken.uid) ||
-                    decodedToken.admin === true;
+    const isAdmin = adminEmails.includes(decodedToken.email || '') || decodedToken.admin === true;
 
     if (!isAdmin) {
         throw new Error("Forbidden: Admin access required.");

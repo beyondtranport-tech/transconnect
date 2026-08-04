@@ -1,22 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useForm, FormProvider, useFormContext } from 'react-hook-form';
+import React, { useState, useMemo } from 'react';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
-    Loader2, Save, ArrowLeft, ArrowRight, Truck, FileText, CheckCircle, 
-    Warehouse, Wrench, Car, Bus, Monitor, CheckCircle2, ListChecks, 
-    RefreshCcw, Building, User, ShoppingBag, Database, Info, ShieldCheck, Zap
+    Loader2, Save, ArrowLeft, ArrowRight, Truck, Database, ShieldCheck, 
+    ShoppingBag, CheckCircle2, RefreshCcw
 } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
+import { cn, fetchFromAdminAPI, formatCurrency } from '@/lib/utils';
 import { collection, query, where } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -40,7 +39,7 @@ const assetSchema = z.object({
 
 type AssetFormValues = z.infer<typeof assetSchema>;
 
-const allSteps = [
+const steps = [
     { id: 'source', title: '1. Asset Source', icon: ShoppingBag, fields: ['sourceType', 'sourceDealerId', 'sourceClientId'] },
     { id: 'details', title: '2. Technical Node', icon: Truck, fields: ['make', 'model', 'year', 'costOfSale', 'classification'] },
     { id: 'identifiers', title: '3. Identifiers', icon: Database, fields: ['registrationNumber', 'vin', 'engineNumber'] },
@@ -74,21 +73,13 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients'), where('status', '==', 'active')) : null, [firestore]);
     const { data: clients } = useCollection(clientsQuery);
 
-    const steps = useMemo(() => {
-        const isEquipment = watchedClass === 'Equipment' || watchedClass === 'Rights' || watchedClass === 'Invoice';
-        return allSteps.filter(s => {
-            if (s.id === 'identifiers' && isEquipment) return false;
-            return true;
-        });
-    }, [watchedClass]);
-
     const onSubmit = async (values: AssetFormValues) => {
         setIsLoading(true);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
             await fetchFromAdminAPI(token, 'saveLendingAsset', { asset: { id: asset?.id, ...values } });
-            toast({ title: 'Asset Node Committed', description: 'Registry updated successfully.' });
+            toast({ title: 'Asset Node Committed' });
             onSave();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Commit Failed', description: e.message });
@@ -176,7 +167,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                     <FormLabel>Select Authorized Dealer</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl>
-                                            <SelectTrigger className="h-12 border-2 bg-white text-left">
+                                            <SelectTrigger className="h-12 border-2 bg-white text-left text-foreground">
                                                 <SelectValue placeholder="Choose supplier..." />
                                             </SelectTrigger>
                                         </FormControl>
@@ -196,7 +187,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                     <FormLabel>Select Trade-in Client</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl>
-                                            <SelectTrigger className="h-12 border-2 bg-white text-left">
+                                            <SelectTrigger className="h-12 border-2 bg-white text-left text-foreground">
                                                 <SelectValue placeholder="Choose member..." />
                                             </SelectTrigger>
                                         </FormControl>
@@ -220,7 +211,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl>
-                                            <SelectTrigger className="h-12 border-2 bg-white font-bold text-left">
+                                            <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground">
                                                 <SelectValue placeholder="Select class..." />
                                             </SelectTrigger>
                                         </FormControl>
@@ -293,7 +284,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     <div className="text-center py-20 space-y-6">
                         <ShieldCheck className="h-20 w-20 text-primary mx-auto opacity-30" />
                         <div className="space-y-2 text-center">
-                            <h3 className="text-3xl font-black uppercase text-center">Final Protocol Check</h3>
+                            <h3 className="text-3xl font-black uppercase text-center text-foreground">Final Protocol Check</h3>
                             <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Ensure all technical nodes and valuations are verified before committing this node to the registry.</p>
                         </div>
                     </div>
@@ -307,17 +298,17 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-white">
-                         <div className="flex justify-between items-center text-left">
+                         <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
-                                <CardTitle className="text-3xl font-black font-headline uppercase text-white">Asset Protocol Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1 text-white">Section: {steps[currentStep]?.title || 'Audit'}</CardDescription>
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Asset Protocol Terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Section: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left text-foreground text-foreground">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -326,17 +317,17 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                             key={step.id} 
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                             onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
-                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em] text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                                         </Button>
                                     );
                                 })}
                             </div>
-                             <div className="p-12 space-y-10 bg-white min-h-[500px] text-left text-foreground">
+                             <div className="p-12 space-y-10 bg-white min-h-[500px] text-left">
                                 {renderStepContent()}
                              </div>
                         </div>

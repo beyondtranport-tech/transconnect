@@ -112,17 +112,6 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id } });
             }
 
-            case 'saveLendingFacility': {
-                const { facility } = payload;
-                const id = facility.id || db.collection('lendingFacilities').doc().id;
-                await db.collection('lendingFacilities').doc(id).set({
-                    ...facility,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true, data: { id } });
-            }
-
             case 'saveLendingAsset': {
                 const { asset } = payload;
                 const id = asset.id || db.collection('lendingAssets').doc().id;
@@ -134,11 +123,11 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id } });
             }
 
-            case 'saveLendingAgreement': {
-                const { agreement } = payload;
-                const id = agreement.id || db.collection('lendingAgreements').doc().id;
-                await db.collection('lendingAgreements').doc(id).set({
-                    ...agreement,
+            case 'saveLendingFacility': {
+                const { facility } = payload;
+                const id = facility.id || db.collection('lendingFacilities').doc().id;
+                await db.collection('lendingFacilities').doc(id).set({
+                    ...facility,
                     id,
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
