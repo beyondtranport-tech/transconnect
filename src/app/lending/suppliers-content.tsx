@@ -81,7 +81,7 @@ export default function SuppliersContent() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await fetchFromAdminAPI(token, 'deleteLendingPartner', { collection: 'lendingSuppliers', partnerId: supplierToDelete.id });
+            await performAdminAction(token, 'deleteLendingPartner', { collection: 'lendingSuppliers', partnerId: supplierToDelete.id });
             toast({ title: 'Supplier Deleted' });
             forceRefresh();
             setSupplierToDelete(null);
