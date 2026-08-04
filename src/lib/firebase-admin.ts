@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -21,7 +22,10 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
         // App not initialized
     }
     
-    const encodedServiceAccount = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
+    // FORENSIC SANITIZATION: Clean the B64 string before processing
+    const rawB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
+    const encodedServiceAccount = rawB64?.replace(/[\r\n\s]/gm, '').trim();
+
     if (!encodedServiceAccount) {
         adminAppError = 'Firebase Admin SDK initialization failed: The FIREBASE_ADMIN_SDK_CONFIG_B64 environment variable is not set.';
         console.error(adminAppError);
