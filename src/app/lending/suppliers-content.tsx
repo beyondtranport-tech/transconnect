@@ -4,10 +4,10 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  RotateCcw, Upload, Sparkles, ChevronDown, Smartphone, Phone, Mail, MapPin, FileSignature
+  RotateCcw, Upload, Sparkles, ChevronDown, Smartphone, Phone, Mail, MapPin, FileSignature, RefreshCcw
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -44,7 +44,7 @@ export default function SuppliersContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
             
-            // RESOURCE CAPPING: Hard 100 record limit
+            // RESOURCE CAPPING: Hard 100 record limit per forensic guidelines
             const [suppliersRes, facilitiesRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 }),
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 })
@@ -159,25 +159,25 @@ export default function SuppliersContent() {
             />
 
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <AlertDialogContent className="text-left text-foreground text-foreground">
-                    <AlertDialogHeader className="text-left text-foreground">
-                        <AlertDialogTitle className="text-left text-foreground">Expunge Supplier Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
+                <AlertDialogContent className="text-left text-foreground">
+                    <AlertDialogHeader className="text-left">
+                        <AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground">
+                    <AlertDialogFooter className="text-left">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
-                <div className="text-left text-foreground text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
                         <Building className="h-8 w-8 text-primary" />
                         Supplier Registry (DMS)
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
                 </div>
                 <div className="flex gap-2 text-left">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
@@ -207,7 +207,7 @@ export default function SuppliersContent() {
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
                 <CardContent className="pt-6 text-left">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
