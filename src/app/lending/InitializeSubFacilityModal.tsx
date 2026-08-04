@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
     Loader2, Zap, Gavel, Building, Truck, MapPin, 
-    ShieldCheck, Info, CheckCircle2, ChevronRight, X, Ban
+    ShieldCheck, Info, CheckCircle2, ChevronRight, X, Ban, PlusCircle, Globe
 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -48,10 +48,6 @@ const productTypes = [
     { id: 'Working Capital', label: 'Working Capital' }
 ];
 
-/**
- * SHARED SUB-FACILITY TERMINAL (V20.2 - INCLUSION ENGINE)
- * Resolves pt ReferenceError and finalizes list-builder logic.
- */
 export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen, onOpenChange }: InitializeSubFacilityModalProps) {
     const { user } = useUser();
     const { toast } = useToast();
@@ -62,11 +58,15 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
     const [limit, setLimit] = useState<string>('');
     const [associatedClientId, setAssociatedClientId] = useState<string>('');
 
-    // Vetting Protocol State
-    const [selectionMode, setSelectionMode] = useState<'allow_only' | 'exclude_selected'>('allow_only');
+    // Asset Vetting State
+    const [assetSelectionMode, setAssetSelectionMode] = useState<'allow_only' | 'exclude_selected'>('allow_only');
     const [makeList, setMakeList] = useState<string[]>([]);
     const [maxYear, setMaxYear] = useState('');
     const [condition, setCondition] = useState('used');
+
+    // Geographic Vetting State
+    const [geoSelectionMode, setGeoSelectionMode] = useState<'allow_only' | 'exclude_selected'>('allow_only');
+    const [geoList, setGeoList] = useState<string[]>([]);
     const [selectedProvince, setSelectedProvince] = useState('');
     const [selectedCity, setSelectedCity] = useState('');
 
@@ -78,6 +78,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
         return prov ? prov.cities : [];
     }, [selectedProvince]);
 
+    // --- ASSET LIST BUILDER ---
     const handleAddMake = (val: string) => {
         if (!val || makeList.includes(val)) return;
         setMakeList(prev => [...prev, val]);
@@ -85,6 +86,21 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
 
     const handleRemoveMake = (val: string) => {
         setMakeList(prev => prev.filter(m => m !== val));
+    };
+
+    // --- GEO LIST BUILDER ---
+    const handleAddGeoHub = () => {
+        if (!selectedProvince) return;
+        const hubLabel = selectedCity ? `${selectedProvince} - ${selectedCity}` : `${selectedProvince} - All Cities`;
+        if (geoList.includes(hubLabel)) {
+            toast({ variant: 'default', title: "Hub already added" });
+            return;
+        }
+        setGeoList(prev => [...prev, hubLabel]);
+    };
+
+    const handleRemoveGeoHub = (label: string) => {
+        setGeoList(prev => prev.filter(g => g !== label));
     };
 
     const handleSave = async () => {
@@ -111,12 +127,16 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                 status: 'active',
                 createdByName: user?.displayName || 'Admin',
                 vettingParams: isSupplierMode ? {
-                    selectionMode,
-                    makeList,
-                    maxAge: maxYear ? Number(maxYear) : null,
-                    condition,
-                    province: selectedProvince || 'National',
-                    city: selectedCity || 'All'
+                    assetVetting: {
+                        selectionMode: assetSelectionMode,
+                        makeList,
+                        maxAge: maxYear ? Number(maxYear) : null,
+                        condition,
+                    },
+                    geoVetting: {
+                        selectionMode: geoSelectionMode,
+                        hubList: geoList
+                    }
                 } : null,
                 createdAt: { _methodName: 'serverTimestamp' }
             };
@@ -138,18 +158,20 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
         setLimit('');
         setAssociatedClientId('');
         setMakeList([]);
+        setGeoList([]);
         setMaxYear('');
         setCondition('used');
         setSelectedProvince('');
         setSelectedCity('');
-        setSelectionMode('allow_only');
+        setAssetSelectionMode('allow_only');
+        setGeoSelectionMode('allow_only');
     };
 
     if (!parent) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={(o) => { if(!isSaving) onOpenChange(o); }}>
-            <DialogContent className="max-w-3xl text-left text-foreground overflow-hidden flex flex-col h-[90vh] p-0">
+            <DialogContent className="max-w-4xl text-left text-foreground overflow-hidden flex flex-col h-[90vh] p-0">
                 <DialogHeader className="p-6 border-b bg-muted/30 shrink-0 text-left">
                     <DialogTitle className="flex items-center gap-2 font-black text-xl text-left">
                         <Gavel className="h-6 w-6 text-primary" />
@@ -161,7 +183,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                 </DialogHeader>
 
                 <ScrollArea className="flex-1 p-6 space-y-8 text-left text-foreground">
-                    <div className="space-y-6 text-left">
+                    <div className="space-y-10 text-left">
                         {/* Parent Context Banner */}
                         <div className="p-5 bg-slate-900 text-white rounded-3xl flex justify-between items-center text-left">
                             <div className="text-left">
@@ -187,8 +209,8 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                 </Select>
                             </div>
                         ) : (
-                            <div className="space-y-10 text-left text-foreground">
-                                <div className="space-y-3 text-left text-foreground text-foreground">
+                            <div className="space-y-12 text-left text-foreground">
+                                <div className="space-y-3 text-left">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Product Category Authority</Label>
                                     <Select value={type} onValueChange={setType}>
                                         <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
@@ -199,94 +221,149 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                 </div>
 
                                 {isSupplierMode && (['Trucks', 'Trailers', 'Bakkies'].includes(type)) && (
-                                    <div className="p-8 border-2 rounded-[2rem] bg-slate-50 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500 text-left text-foreground">
-                                        <div className="flex items-center justify-between text-left text-foreground">
-                                            <div className="flex items-center gap-3">
-                                                <div className="bg-primary/10 p-2 rounded-lg"><ShieldCheck className="h-5 w-5 text-primary" /></div>
-                                                <h4 className="text-sm font-black uppercase tracking-widest">Asset Inclusion/Exclusion Protocol</h4>
+                                    <div className="space-y-10 text-left">
+                                        {/* 1. ASSET VETTING PROTOCOL */}
+                                        <div className="p-8 border-2 rounded-[2.5rem] bg-slate-50 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500 text-left">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="bg-primary/10 p-2 rounded-lg"><Truck className="h-5 w-5 text-primary" /></div>
+                                                    <h4 className="text-sm font-black uppercase tracking-widest">Asset Inclusion/Exclusion Protocol</h4>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-white p-1 rounded-full border shadow-sm px-4 h-10">
+                                                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Inclusion Only</Label>
+                                                    <Switch 
+                                                        checked={assetSelectionMode === 'exclude_selected'} 
+                                                        onCheckedChange={(checked) => setAssetSelectionMode(checked ? 'exclude_selected' : 'allow_only')} 
+                                                    />
+                                                    <Label className="text-[10px] font-black uppercase text-destructive">Exclusion mode</Label>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-3 bg-white p-1 rounded-full border shadow-sm px-4 h-10">
-                                                <Label className="text-[10px] font-black uppercase text-muted-foreground">Inclusion Only</Label>
-                                                <Switch 
-                                                    checked={selectionMode === 'exclude_selected'} 
-                                                    onCheckedChange={(checked) => setSelectionMode(checked ? 'exclude_selected' : 'allow_only')} 
-                                                />
-                                                <Label className="text-[10px] font-black uppercase text-destructive">Exclusion mode</Label>
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="space-y-4 text-left">
-                                            <Label className={cn(
-                                                "text-[10px] font-black uppercase tracking-widest ml-1 flex items-center gap-2",
-                                                selectionMode === 'allow_only' ? "text-primary" : "text-destructive"
-                                            )}>
-                                                {selectionMode === 'allow_only' ? <CheckCircle2 className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
-                                                {selectionMode === 'allow_only' ? 'Authorized Makes' : 'Specifically Rejected Makes'}
-                                            </Label>
                                             
-                                            <div className="flex gap-2 text-left">
-                                                <Select onValueChange={handleAddMake}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white flex-1 text-left text-foreground"><SelectValue placeholder="Add Make to List..." /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {standardMakes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
+                                            <div className="space-y-4 text-left">
+                                                <Label className={cn(
+                                                    "text-[10px] font-black uppercase tracking-widest ml-1 flex items-center gap-2",
+                                                    assetSelectionMode === 'allow_only' ? "text-primary" : "text-destructive"
+                                                )}>
+                                                    {assetSelectionMode === 'allow_only' ? <CheckCircle2 className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                                                    {assetSelectionMode === 'allow_only' ? 'Authorized Makes' : 'Specifically Rejected Makes'}
+                                                </Label>
+                                                
+                                                <div className="flex gap-2 text-left">
+                                                    <Select onValueChange={handleAddMake}>
+                                                        <SelectTrigger className="h-11 border-2 bg-white flex-1 text-left text-foreground"><SelectValue placeholder="Add Make to List..." /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {standardMakes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-white border-2 border-dashed rounded-2xl shadow-inner text-left">
+                                                    {makeList.map(m => (
+                                                        <Badge key={m} className={cn(
+                                                            "h-8 gap-2 pl-3 pr-1 text-xs font-bold border-none transition-all",
+                                                            assetSelectionMode === 'allow_only' ? "bg-primary text-white" : "bg-destructive text-white"
+                                                        )}>
+                                                            {m}
+                                                            <button onClick={() => handleRemoveMake(m)} className="hover:bg-black/10 rounded-full p-0.5">
+                                                                <X className="h-3 w-3" />
+                                                            </button>
+                                                        </Badge>
+                                                    ))}
+                                                    {makeList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2">No makes selected.</p>}
+                                                </div>
                                             </div>
 
-                                            <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-white border-2 border-dashed rounded-2xl shadow-inner text-left">
-                                                {makeList.map(m => (
-                                                    <Badge key={m} className={cn(
-                                                        "h-8 gap-2 pl-3 pr-1 text-xs font-bold border-none transition-all",
-                                                        selectionMode === 'allow_only' ? "bg-primary text-white" : "bg-destructive text-white"
-                                                    )}>
-                                                        {m}
-                                                        <button onClick={() => handleRemoveMake(m)} className="hover:bg-black/10 rounded-full p-0.5">
-                                                            <X className="h-3 w-3" />
-                                                        </button>
-                                                    </Badge>
-                                                ))}
-                                                {makeList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2">No selections recorded. {selectionMode === 'allow_only' ? 'Authorization node is currently open to ALL.' : 'Zero exclusions defined.'}</p>}
+                                            <Separator />
+
+                                            <div className="grid grid-cols-2 gap-8 text-left">
+                                                <div className="space-y-2 text-left">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Asset Replacement Cycle (Max Age)</Label>
+                                                    <Select value={maxYear} onValueChange={setMaxYear}>
+                                                        <SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="e.g. Max 7 Years" /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {[3, 5, 7, 10, 15, 20].map(yr => <SelectItem key={yr} value={String(yr)}>Max {yr} Years</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="space-y-2 text-left">
+                                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Standard Condition</Label>
+                                                    <Select value={condition} onValueChange={setCondition}>
+                                                        <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            {conditionOptions.map(opt => <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <Separator />
-
-                                        <div className="grid grid-cols-2 gap-8 text-left">
-                                            <div className="space-y-2 text-left">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Asset Replacement Cycle (Max Age)</Label>
-                                                <Select value={maxYear} onValueChange={setMaxYear}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="e.g. Max 7 Years" /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {[3, 5, 7, 10, 15, 20].map(yr => <SelectItem key={yr} value={String(yr)}>Max {yr} Years</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
+                                        {/* 2. GEOGRAPHIC AUTHORITY NODE */}
+                                        <div className="p-8 border-2 rounded-[2.5rem] bg-slate-50 space-y-8 text-left text-foreground">
+                                            <div className="flex items-center justify-between text-left">
+                                                <div className="flex items-center gap-3 text-left">
+                                                    <div className="bg-primary/10 p-2 rounded-lg"><MapPin className="h-5 w-5 text-primary" /></div>
+                                                    <h4 className="text-sm font-black uppercase tracking-widest">Geographic Authority Nodes</h4>
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-white p-1 rounded-full border shadow-sm px-4 h-10">
+                                                    <Label className="text-[10px] font-black uppercase text-muted-foreground">Inclusion Only</Label>
+                                                    <Switch 
+                                                        checked={geoSelectionMode === 'exclude_selected'} 
+                                                        onCheckedChange={(checked) => setGeoSelectionMode(checked ? 'exclude_selected' : 'allow_only')} 
+                                                    />
+                                                    <Label className="text-[10px] font-black uppercase text-destructive">Exclusion mode</Label>
+                                                </div>
                                             </div>
-                                            <div className="space-y-2 text-left">
-                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Standard Condition</Label>
-                                                <Select value={condition} onValueChange={setCondition}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {conditionOptions.map(opt => <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-4 pt-4 border-t text-left">
-                                            <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left"><MapPin className="h-3 w-3" /> Geographic Authority Node</Label>
-                                            <div className="grid grid-cols-2 gap-4 text-left">
-                                                <Select value={selectedProvince} onValueChange={setSelectedProvince}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue placeholder="Select Province" /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
-                                                <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue placeholder="Select Hub / City" /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
+                                            <div className="space-y-4 text-left">
+                                                <Label className={cn(
+                                                    "text-[10px] font-black uppercase tracking-widest ml-1 flex items-center gap-2",
+                                                    geoSelectionMode === 'allow_only' ? "text-primary" : "text-destructive"
+                                                )}>
+                                                    {geoSelectionMode === 'allow_only' ? <Globe className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                                                    {geoSelectionMode === 'allow_only' ? 'Authorized Geographic Hubs' : 'Specifically Rejected Hubs'}
+                                                </Label>
+                                                
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end text-left">
+                                                    <div className="space-y-1.5 text-left text-foreground">
+                                                        <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">1. Select Province</Label>
+                                                        <Select value={selectedProvince} onValueChange={(v) => { setSelectedProvince(v); setSelectedCity(''); }}>
+                                                            <SelectTrigger className="h-10 border-2 bg-white text-left text-foreground"><SelectValue placeholder="Province..." /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-1.5 text-left text-foreground">
+                                                        <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">2. Select Hub</Label>
+                                                        <div className="flex gap-2 text-left">
+                                                            <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
+                                                                <SelectTrigger className="h-10 border-2 bg-white flex-1 text-left text-foreground"><SelectValue placeholder="All Cities" /></SelectTrigger>
+                                                                <SelectContent>
+                                                                    <SelectItem value="All Cities">All Cities</SelectItem>
+                                                                    {cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
+                                                                </SelectContent>
+                                                            </Select>
+                                                            <Button type="button" size="icon" className="h-10 w-10 shrink-0" onClick={handleAddGeoHub} disabled={!selectedProvince}>
+                                                                <PlusCircle className="h-5 w-5" />
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-white border-2 border-dashed rounded-2xl shadow-inner text-left text-foreground">
+                                                    {geoList.map(hub => (
+                                                        <Badge key={hub} className={cn(
+                                                            "h-8 gap-2 pl-3 pr-1 text-xs font-bold border-none transition-all",
+                                                            geoSelectionMode === 'allow_only' ? "bg-primary text-white" : "bg-destructive text-white"
+                                                        )}>
+                                                            {hub}
+                                                            <button onClick={() => handleRemoveGeoHub(hub)} className="hover:bg-black/10 rounded-full p-0.5">
+                                                                <X className="h-3 w-3" />
+                                                            </button>
+                                                        </Badge>
+                                                    ))}
+                                                    {geoList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2">No geographic hubs defined. {geoSelectionMode === 'allow_only' ? 'Authorized everywhere.' : 'Zero exclusions.'}</p>}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
