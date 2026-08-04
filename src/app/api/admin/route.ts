@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
         switch (action) {
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(1000).get();
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
                 const members = await Promise.all(snap.docs.map(async (d) => {
                     const data = d.data();
                     const userSnap = await db.collection('users').doc(data.ownerId || 'N/A').get();
@@ -60,31 +61,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(members) });
             }
 
-            case 'getLeads': {
-                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'getPartnersByType': {
-                const { type } = payload;
-                const snap = await db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'savePartner': {
-                const { collection: colName, partner } = payload;
-                const coll = colName || 'partners';
-                const id = partner.id || db.collection(coll).doc().id;
-                await db.collection(coll).doc(id).set({
-                    ...partner,
-                    id,
-                    updatedAt: FieldValue.serverTimestamp()
-                }, { merge: true });
-                return NextResponse.json({ success: true, data: { id } });
-            }
-
             case 'getLendingData': {
-                const { collectionName } = payload;
+                const { collectionName, limit = 100 } = payload;
                 const collMap: Record<string, string> = {
                     'facilities': 'lendingFacilities',
                     'lendingClients': 'lendingClients',
@@ -97,7 +75,7 @@ export async function POST(req: NextRequest) {
                     'documents': 'lendingDocuments'
                 };
                 const collectionToFetch = collMap[collectionName] || collectionName;
-                const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(1000).get();
+                const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(limit).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -134,29 +112,8 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id } });
             }
 
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
-            }
-            
-            case 'listAllUsers': {
-                const auth = getAuth(app);
-                const listUsers = await auth.listUsers(1000);
-                return NextResponse.json({ 
-                    success: true, 
-                    data: listUsers.users.map(u => ({
-                        uid: u.uid,
-                        email: u.email,
-                        displayName: u.displayName,
-                        disabled: u.disabled,
-                        creationTime: u.metadata.creationTime,
-                        lastSignInTime: u.metadata.lastSignInTime
-                    }))
-                });
-            }
-
             case 'searchRegistry': {
-                const { type, term, limit: limitCount = 500 } = payload;
+                const { type, term, limit: limitCount = 100 } = payload;
                 let q: any;
                 if (type === 'lead') q = db.collection('leads');
                 else if (['transporter', 'supplier', 'finance', 'distributor', 'driver', 'warehouse', 'isa', 'investor', 'developer', 'associate'].includes(type)) {
@@ -177,18 +134,6 @@ export async function POST(req: NextRequest) {
                     );
                 }
                 return NextResponse.json({ success: true, data: serializeData(results) });
-            }
-
-            case 'logCommunication': {
-                const { partnerId, collection: colName, ...logData } = payload;
-                const coll = colName || 'partners';
-                const logRef = db.collection(coll).doc(partnerId).collection('communications').doc();
-                await logRef.set({
-                    ...logData,
-                    id: logRef.id,
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                return NextResponse.json({ success: true });
             }
 
             default: 

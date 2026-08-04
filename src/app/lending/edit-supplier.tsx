@@ -10,22 +10,19 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
-    Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
-    History, Building, FileUp, Users, UserCircle, ShieldAlert, CheckCircle2, 
-    ListChecks, Save, User, UserCheck, Gavel, Scale, Info
+    Loader2, Save, ArrowLeft, ArrowRight, User, Building, ShieldCheck, Gavel, 
+    Users, UserCircle, ShieldAlert, CheckCircle2, ListChecks, FileUp, Sparkles, FileText, Info
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken, useFirestore } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { VisionOnboardingDialog } from './VisionOnboardingDialog';
 
 // --- SCHEMAS ---
 
@@ -36,10 +33,9 @@ const stakeholderSchema = z.object({
     proofAddressUrl: z.string().optional(),
 });
 
-const clientWizardSchema = z.object({
-  applyingCapacity: z.enum(['individual', 'entity']).default('entity'),
-  entityType: z.string().optional(),
-  name: z.string().min(1, 'Name is required'),
+const supplierWizardSchema = z.object({
+  name: z.string().min(1, 'Entity name is required'),
+  category: z.string().min(1, 'Category is required'),
   registrationId: z.string().optional(),
   vatRegistered: z.boolean().default(false),
   vatNumber: z.string().optional(),
@@ -56,12 +52,12 @@ const clientWizardSchema = z.object({
   afsDocUrl: z.string().optional(),
 });
 
-type ClientFormValues = z.infer<typeof clientWizardSchema>;
+type SupplierFormValues = z.infer<typeof supplierWizardSchema>;
 
 // --- HELPER COMPONENTS ---
 
 function FileUploadField({ name, label, folder }: { name: any, label: string, folder: string }) {
-    const { setValue, watch } = useFormContext<ClientFormValues>();
+    const { setValue, watch } = useFormContext<SupplierFormValues>();
     const [isUploading, setIsUploading] = useState(false);
     const { toast } = useToast();
     const currentUrl = watch(name);
@@ -94,12 +90,12 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
     };
 
     return (
-        <div className="space-y-1.5 text-left text-foreground">
+        <div className="space-y-1.5 text-left">
             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">{label}</Label>
             <Button 
                 type="button" 
                 variant="outline" 
-                className={cn("w-full h-11 border-2 border-dashed gap-2 font-bold", currentUrl && "border-green-50 bg-green-50 text-green-700")}
+                className={cn("w-full h-11 border-2 border-dashed gap-2", currentUrl && "border-green-500 bg-green-50 text-green-700")}
                 onClick={() => document.getElementById(`upload-${name}`)?.click()}
                 disabled={isUploading}
             >
@@ -111,27 +107,101 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
     );
 }
 
+// --- STEP COMPONENTS ---
+
+function StepMain() {
+    const { control } = useFormContext<SupplierFormValues>();
+    return (
+        <div className="space-y-8 text-left">
+            <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
+            <FormField control={control} name="category" render={({ field }) => (<FormItem className="text-left"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
+            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
+                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><User className="h-4 w-4" /> Principal Identity</h4>
+                <p className="text-xs text-slate-400">Attach proof of identity for the primary dealer principal.</p>
+                <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="suppliers-identity" />
+            </div>
+        </div>
+    );
+}
+
+function StepEntity() {
+    const { control, watch } = useFormContext<SupplierFormValues>();
+    const watchedValues = watch();
+    return (
+        <div className="space-y-8 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                <div className="space-y-6 text-left">
+                    <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left"><FormLabel>CIPC Registration Number</FormLabel><FormControl><Input {...field} placeholder="20XX/XXXXXX/07" className="h-11 border-2" /></FormControl></FormItem>)} />
+                    <FormField control={control} name="vatRegistered" render={({ field }) => (
+                        <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left">
+                            <FormLabel className="font-black uppercase text-xs">VAT Registered?</FormLabel>
+                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                        </FormItem>
+                    )} />
+                    {watchedValues.vatRegistered && (
+                        <FormField control={control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in slide-in-from-left-2"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} className="h-11 border-2 font-mono" /></FormControl></FormItem>)} />
+                    )}
+                </div>
+                <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
+                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><Building className="h-4 w-4" /> Founding Evidence</h4>
+                    <FileUploadField name="registrationDocUrl" label="Registration Document" folder="suppliers-legal" />
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function StepStanding() {
+    const { control, watch } = useFormContext<SupplierFormValues>();
+    const watchedValues = watch();
+    return (
+        <div className="space-y-12 text-left">
+            <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
+                <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
+                    <div className="space-y-1 text-left">
+                        <span className="text-2xl font-black font-headline uppercase tracking-tight">Infrastructure Standing</span>
+                        <p className="text-base text-muted-foreground">Does this supplier own the property they operate from?</p>
+                    </div>
+                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
+                </FormItem>
+            )} />
+            <div className="grid grid-cols-1 gap-6 text-left">
+                <FileUploadField 
+                    name={watchedValues.ownsOperatingProperty ? "ficaDocUrl" : "ficaDocUrl"} 
+                    label={watchedValues.ownsOperatingProperty ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} 
+                    folder="suppliers-standing" 
+                />
+            </div>
+        </div>
+    );
+}
+
 // --- WIZARD TERMINAL ---
 
-export function EditClientWizard({ client, onSave, onBack, targetCollection = 'lendingClients' }: { client?: any, onSave: () => void, onBack: () => void, targetCollection?: string }) {
+export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: any, onSave: () => void, onBack: () => void }) {
   const { toast } = useToast();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
-  const methods = useForm<ClientFormValues>({
-    resolver: zodResolver(clientWizardSchema),
+  const methods = useForm<SupplierFormValues>({
+    resolver: zodResolver(supplierWizardSchema),
     mode: 'onChange',
-    defaultValues: client || { applyingCapacity: 'entity', status: 'draft', shareholderCount: 0, directorCount: 0 }
+    defaultValues: supplier || { status: 'draft', shareholderCount: 0, directorCount: 0, shareholders: [], directors: [] }
   });
 
+  const { fields: shareholderFields, append: appendShareholder, remove: removeShareholder } = useFieldArray({ control: methods.control, name: 'shareholders' });
+  const { fields: directorFields, append: appendDirector, remove: removeDirector } = useFieldArray({ control: methods.control, name: 'directors' });
+
   const memoizedSteps = [
-    { id: 'main', title: '1. Identity', icon: User, fields: ['applyingCapacity', 'name', 'userIdUrl'] },
-    { id: 'entity', title: '2. Entity', icon: Building, fields: ['entityType', 'registrationId', 'registrationDocUrl'] },
+    { id: 'main', title: '1. Identity', icon: User, fields: ['name', 'category', 'userIdUrl'] },
+    { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'vatRegistered', 'registrationDocUrl'] },
     { id: 'standing', title: '3. Standing', icon: Landmark, fields: ['ownsOperatingProperty', 'ficaDocUrl'] },
     { id: 'governance', title: '4. Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount'] },
     { id: 'review', title: 'Audit Check', icon: ShieldCheck, fields: [] },
   ];
+
+  const currentStepConfig = memoizedSteps[currentStep];
 
   const handleStepTransition = async (direction: 'next' | 'back' | number) => {
     if (direction === 'next') {
@@ -140,11 +210,11 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
     }
 
     // CONTROLLED PERSISTENCE: Save only on explicit transition if form is modified
-    if (methods.formState.isDirty && client?.id) {
+    if (methods.formState.isDirty && supplier?.id) {
         const values = methods.getValues();
         const token = await getClientSideAuthToken();
         if (token) {
-            const ref = doc(firestore, targetCollection, client.id);
+            const ref = doc(firestore, 'lendingSuppliers', supplier.id);
             setDoc(ref, { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
         }
     }
@@ -160,14 +230,14 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
     }
   };
 
-  const onSubmit = async (values: ClientFormValues) => {
+  const onSubmit = async (values: SupplierFormValues) => {
     setIsSubmitting(true);
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Auth failed.");
-        const ref = client?.id ? doc(firestore, targetCollection, client.id) : doc(collection(firestore, targetCollection));
+        const ref = supplier?.id ? doc(firestore, 'lendingSuppliers', supplier.id) : doc(collection(firestore, 'lendingSuppliers'));
         await setDoc(ref, { ...values, id: ref.id, updatedAt: serverTimestamp() }, { merge: true });
-        toast({ title: 'Client Record Saved' });
+        toast({ title: 'Supplier Node Committed' });
         onSave();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Commit Failed', description: error.message });
@@ -175,8 +245,6 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
         setIsSubmitting(false);
     }
   };
-
-  const currentStepConfig = memoizedSteps[currentStep];
 
   if (isSubmitting) return <div className="flex justify-center p-40"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>;
 
@@ -187,13 +255,13 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
           <CardHeader className="bg-slate-900 text-white p-8">
             <div className="flex justify-between items-center">
               <div className="text-left text-white">
-                <CardTitle className="text-2xl font-black font-headline uppercase">Client Onboarding Terminal</CardTitle>
+                <CardTitle className="text-2xl font-black font-headline uppercase">Supplier Protocol Node</CardTitle>
                 <CardDescription className="text-slate-400">Stage: {currentStepConfig.title}</CardDescription>
               </div>
-              <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
+              <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Wizard</Button>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 text-left">
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr]">
               <div className="bg-slate-50 border-r p-6 space-y-2">
                 {memoizedSteps.map((step, i) => (
@@ -204,59 +272,10 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                 ))}
               </div>
               <div className="p-10 min-h-[500px]">
-                {currentStepConfig.id === 'main' && (
-                    <div className="space-y-8 text-left">
-                        <FormField control={methods.control} name="applyingCapacity" render={({ field }) => (
-                            <FormItem className="space-y-4 text-left">
-                                <FormLabel className="font-black uppercase text-[10px] tracking-widest text-primary">Applying Capacity</FormLabel>
-                                <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4">
-                                        <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'individual' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="individual" id="cap-ind" /><Label htmlFor="cap-ind" className="cursor-pointer font-bold uppercase text-xs">Individual</Label></div>
-                                        <div className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer", field.value === 'entity' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><RadioGroupItem value="entity" id="cap-ent" /><Label htmlFor="cap-ent" className="cursor-pointer font-bold uppercase text-xs">Legal Entity</Label></div>
-                                    </RadioGroup>
-                                </FormControl>
-                            </FormItem>
-                        )} />
-                        <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Full Name / Label</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
-                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
-                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
-                            <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="lending-identity" />
-                        </div>
-                    </div>
-                )}
-                {currentStepConfig.id === 'entity' && (
-                    <div className="space-y-8 text-left">
-                        <FormField control={methods.control} name="entityType" render={({ field }) => (
-                            <FormItem><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{['Pty Ltd', 'Ltd', 'CC', 'Sole Prop', 'Trust'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
-                        )} />
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                            <div className="space-y-6 text-left">
-                                <FormField control={methods.control} name="registrationId" render={({ field }) => (<FormItem><FormLabel>Registration #</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 font-mono" /></FormControl></FormItem>)} />
-                            </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
-                                <FileUploadField name="registrationDocUrl" label="CIPC / Founding Document" folder="lending-legal" />
-                            </div>
-                        </div>
-                    </div>
-                )}
-                {currentStepConfig.id === 'standing' && (
-                    <div className="space-y-12 text-left">
-                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg">
-                                <div className="space-y-1">
-                                    <span className="text-2xl font-black font-headline uppercase tracking-tight">Infrastructure Standing</span>
-                                    <p className="text-base text-muted-foreground">Does the client own their operating premises?</p>
-                                </div>
-                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
-                            </FormItem>
-                        )} />
-                        <div className="grid grid-cols-1 gap-6 text-left">
-                            <FileUploadField name="ficaDocUrl" label={methods.watch('ownsOperatingProperty') ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} folder="lending-standing" />
-                        </div>
-                    </div>
-                )}
-                 {currentStepConfig.id === 'governance' && (
+                {currentStepConfig.id === 'main' && <StepMain />}
+                {currentStepConfig.id === 'entity' && <StepEntity />}
+                {currentStepConfig.id === 'standing' && <StepStanding />}
+                {currentStepConfig.id === 'governance' && (
                     <div className="space-y-6 text-left">
                         <div className="grid grid-cols-2 gap-8 text-left">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
@@ -273,7 +292,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     <div className="text-center py-20 space-y-4">
                         <CheckCircle2 className="h-16 w-16 text-primary mx-auto opacity-30" />
                         <h3 className="text-2xl font-black uppercase text-foreground">Audit Ready</h3>
-                        <p className="text-sm text-muted-foreground max-sm mx-auto">Verify data integrity before committing this client node to the grid.</p>
+                        <p className="text-sm text-muted-foreground max-w-sm mx-auto">Verify data integrity before committing this supplier node to the grid.</p>
                     </div>
                 )}
               </div>
