@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,7 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { 
     Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
     History, Building, FileUp, Users, UserCircle, ShieldAlert, CheckCircle2, 
-    ListChecks, Save, User, UserCheck, Gavel, Scale, Info, Trash2, UserPlus
+    ListChecks, Save, User, UserCheck, Gavel, Scale, Info, Trash2, UserPlus,
+    FileText
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken, useFirestore } from '@/firebase';
@@ -19,10 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 
@@ -120,8 +119,8 @@ const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shar
                 <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
             </div>
             <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="Attach Identity Scan" folder={`clients-${type}`} />
         </div>
@@ -145,7 +144,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
   const { fields: shareholderFields, append: appendShareholder, remove: removeShareholder } = useFieldArray({ control: methods.control, name: 'shareholders' });
   const { fields: directorFields, append: appendDirector, remove: removeDirector } = useFieldArray({ control: methods.control, name: 'directors' });
 
-  const memoizedSteps = [
+  const steps = [
     { id: 'main', title: '1. Identity', icon: User, fields: ['applyingCapacity', 'name', 'userIdUrl'] },
     { id: 'entity', title: '2. Entity', icon: Building, fields: ['entityType', 'registrationId', 'registrationDocUrl'] },
     { id: 'standing', title: '3. Standing', icon: Landmark, fields: ['ownsOperatingProperty', 'ficaDocUrl'] },
@@ -156,41 +155,46 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
   ];
 
   const handleStepTransition = async (direction: 'next' | 'back' | number) => {
-    if (direction === 'next') {
-        const isValid = await methods.trigger(memoizedSteps[currentStep].fields as any);
+    const isMovingForward = direction === 'next' || (typeof direction === 'number' && direction > currentStep);
+
+    if (isMovingForward) {
+        const isValid = await methods.trigger(steps[currentStep].fields as any);
         if (!isValid) return;
 
         // EVENT-DRIVEN STAKEHOLDER SYNC
-        if (memoizedSteps[currentStep].id === 'governance') {
+        if (steps[currentStep].id === 'governance') {
             const sCount = Number(methods.getValues('shareholderCount')) || 0;
             const dCount = Number(methods.getValues('directorCount')) || 0;
             
             const curS = shareholderFields.length;
-            if (sCount > curS) for (let i = 0; i < sCount - curS; i++) appendShareholder({ name: '' });
-            else if (sCount < curS) for (let i = 0; i < curS - sCount; i++) removeShareholder(curS - 1 - i);
+            if (sCount > curS) {
+                for (let i = 0; i < sCount - curS; i++) appendShareholder({ name: '' });
+            } else if (sCount < curS) {
+                for (let i = 0; i < curS - sCount; i++) removeShareholder(curS - 1 - i);
+            }
 
             const curD = directorFields.length;
-            if (dCount > curD) for (let i = 0; i < dCount - curD; i++) appendDirector({ name: '' });
-            else if (dCount < curD) for (let i = 0; i < curD - dCount; i++) removeDirector(curD - 1 - i);
+            if (dCount > curD) {
+                for (let i = 0; i < dCount - curD; i++) appendDirector({ name: '' });
+            } else if (dCount < curD) {
+                for (let i = 0; i < curD - dCount; i++) removeDirector(curD - 1 - i);
+            }
         }
     }
 
-    // CONTROLLED PERSISTENCE: Save progress if modified
+    // PERVASIVE DATA SYNC: Autosave on transition
     if (methods.formState.isDirty && client?.id) {
-        const values = methods.getValues();
         const token = await getClientSideAuthToken();
         if (token) {
-            const ref = doc(firestore, targetCollection, client.id);
-            setDoc(ref, { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
+            const values = methods.getValues();
+            setDoc(doc(firestore, targetCollection, client.id), { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
         }
     }
 
     if (typeof direction === 'number') {
-        if (direction <= currentStep || (await methods.trigger(memoizedSteps[currentStep].fields as any))) {
-            setCurrentStep(direction);
-        }
+        setCurrentStep(direction);
     } else if (direction === 'next') {
-        setCurrentStep(prev => Math.min(prev + 1, memoizedSteps.length - 1));
+        setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
     } else {
         setCurrentStep(prev => Math.max(prev - 1, 0));
     }
@@ -212,9 +216,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
     }
   };
 
-  const currentStepConfig = memoizedSteps[currentStep];
-
-  if (isSubmitting) return <div className="flex justify-center p-40"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>;
+  const currentStepConfig = steps[currentStep];
+  const watchedValues = methods.watch();
 
   return (
     <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
@@ -223,7 +226,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
           <CardHeader className="bg-slate-900 text-white p-8 text-left">
             <div className="flex justify-between items-center text-left">
               <div className="text-left text-white">
-                <CardTitle className="text-2xl font-black font-headline uppercase text-white">Client Protocol Terminal</CardTitle>
+                <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Client Protocol Terminal</CardTitle>
                 <CardDescription className="text-slate-400">Section: {currentStepConfig.title}</CardDescription>
               </div>
               <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
@@ -232,14 +235,14 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
           <CardContent className="p-0 text-left text-foreground">
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] text-left">
               <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
-                {memoizedSteps.map((step, i) => (
+                {steps.map((step, i) => (
                   <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
                     {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
-                    <span className={cn("text-[11px] font-black uppercase text-left", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
+                    <span className={cn("text-[11px] font-black uppercase text-left text-foreground", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                   </Button>
                 ))}
               </div>
-              <div className="p-10 min-h-[500px] text-left">
+              <div className="p-10 min-h-[500px] text-left text-foreground">
                 {currentStepConfig.id === 'main' && (
                     <div className="space-y-8 text-left animate-in fade-in duration-500">
                         <FormField control={methods.control} name="applyingCapacity" render={({ field }) => (
@@ -263,7 +266,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                 {currentStepConfig.id === 'entity' && (
                     <div className="space-y-8 text-left animate-in fade-in duration-500">
                         <FormField control={methods.control} name="entityType" render={({ field }) => (
-                            <FormItem><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{['Pty Ltd', 'Ltd', 'CC', 'Sole Prop', 'Trust'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
+                            <FormItem className="text-left"><FormLabel>Entity Type</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="Select type..." /></SelectTrigger></FormControl><SelectContent>{['Pty Ltd', 'Ltd', 'CC', 'Sole Prop', 'Trust'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></FormItem>
                         )} />
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                             <div className="space-y-6 text-left">
@@ -281,8 +284,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                          <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
                             <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
                                 <div className="space-y-1 text-left text-foreground">
-                                    <span className="text-2xl font-black font-headline uppercase tracking-tight">Infrastructure Standing</span>
-                                    <p className="text-base text-muted-foreground">Does the client own their operating premises?</p>
+                                    <span className="text-2xl font-black font-headline uppercase tracking-tight text-left">Infrastructure Standing</span>
+                                    <p className="text-base text-muted-foreground text-left">Does the client own their operating premises?</p>
                                 </div>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
                             </FormItem>
@@ -293,7 +296,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                  {currentStepConfig.id === 'governance' && (
-                    <div className="space-y-10 text-left animate-in fade-in duration-500">
+                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground">
                         <div className="grid grid-cols-2 gap-8 text-left text-foreground">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
                                 <FormItem className="text-left text-foreground"><FormLabel>Confirmed Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
@@ -306,14 +309,14 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (
-                    <div className="space-y-6 text-left animate-in fade-in duration-500">
+                    <div className="space-y-6 text-left text-foreground">
                         {shareholderFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="shareholders" onRemove={() => { removeShareholder(index); methods.setValue('shareholderCount', shareholderFields.length - 1); }} />
                         ))}
                     </div>
                 )}
                 {currentStepConfig.id === 'directors' && (
-                    <div className="space-y-6 text-left animate-in fade-in duration-500">
+                    <div className="space-y-6 text-left text-foreground">
                         {directorFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="directors" onRemove={() => { removeDirector(index); methods.setValue('directorCount', directorFields.length - 1); }} />
                         ))}
@@ -323,7 +326,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left text-foreground">
                         <CheckCircle2 className="h-20 w-20 text-primary mx-auto opacity-30" />
                         <div className="space-y-2 text-center text-foreground">
-                            <h3 className="text-3xl font-black uppercase">Audit Ready</h3>
+                            <h3 className="text-3xl font-black uppercase text-center">Audit Ready</h3>
                             <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before committing this client node to the grid.</p>
                         </div>
                     </div>
@@ -333,7 +336,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
           </CardContent>
           <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8">Back</Button>
-            {currentStep < memoizedSteps.length - 1 ? (
+            {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (
               <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary font-black uppercase tracking-tight text-white shadow-2xl">{isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Commit Node</Button>

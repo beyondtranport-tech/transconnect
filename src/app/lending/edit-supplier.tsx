@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -9,19 +9,21 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
-    Loader2, Save, ArrowLeft, ArrowRight, User, Building, ShieldCheck, Gavel, 
-    Users, UserCircle, ShieldAlert, CheckCircle2, FileUp, Sparkles, FileText, Info, 
-    Scale, MapPin, Zap, Trash2, PlusCircle, Landmark, UserCheck
+    Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
+    History, Building, FileUp, Users, UserCircle, ShieldAlert, CheckCircle2, 
+    ListChecks, Save, User, UserCheck, Gavel, Scale, Info, Trash2, UserPlus,
+    FileText, Sparkles, Wrench
 } from 'lucide-react';
-import { getClientSideAuthToken } from '@/firebase';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { getClientSideAuthToken, useFirestore } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { getFirestore } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // --- SCHEMAS ---
 
@@ -48,6 +50,7 @@ const supplierWizardSchema = z.object({
   registrationDocUrl: z.string().optional(),
   ficaDocUrl: z.string().optional(),
   afsDocUrl: z.string().optional(),
+  minedServiceWording: z.string().optional(),
 });
 
 type SupplierFormValues = z.infer<typeof supplierWizardSchema>;
@@ -109,13 +112,13 @@ const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shar
     const { control } = useFormContext<SupplierFormValues>();
     return (
         <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative animate-in fade-in duration-300 text-left text-foreground">
-            <div className="flex justify-between items-center text-left text-foreground text-foreground text-foreground">
+            <div className="flex justify-between items-center text-left text-foreground">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <UserCircle className="h-4 w-4" /> {type.slice(0, -1)} #{index + 1}
                 </h4>
                 <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground text-foreground text-foreground">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
                 <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
                 <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
             </div>
@@ -128,6 +131,7 @@ const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shar
 
 export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: any, onSave: () => void, onBack: () => void }) {
   const { toast } = useToast();
+  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -135,7 +139,6 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
     resolver: zodResolver(supplierWizardSchema),
     mode: 'onChange',
     defaultValues: supplier || { 
-        applyingCapacity: 'entity', 
         status: 'draft', 
         shareholderCount: 0, 
         directorCount: 0, 
@@ -166,12 +169,9 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
 
     if (isMovingForward) {
         const isValid = await methods.trigger(steps[currentStep].fields as any);
-        if (!isValid) {
-            toast({ variant: 'destructive', title: "Validation Error", description: "Please complete all mandatory nodes." });
-            return;
-        }
+        if (!isValid) return;
 
-        // EVENT-DRIVEN STAKEHOLDER SYNC (Prevents loops)
+        // EVENT-DRIVEN STAKEHOLDER SYNC
         if (steps[currentStep].id === 'governance') {
             const sCount = Number(methods.getValues('shareholderCount')) || 0;
             const dCount = Number(methods.getValues('directorCount')) || 0;
@@ -197,14 +197,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
         const token = await getClientSideAuthToken();
         if (token) {
             const values = methods.getValues();
-            fetch('/api/updateUserDoc', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    path: `lendingSuppliers/${supplier.id}`,
-                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
-                })
-            }).catch(e => console.warn("Background save failed", e));
+            setDoc(doc(firestore, 'lendingSuppliers', supplier.id), { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
         }
     }
 
@@ -222,16 +215,8 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Auth failed.");
-        const response = await fetch(supplier?.id ? '/api/updateUserDoc' : '/api/addUserDoc', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(supplier?.id 
-                ? { path: `lendingSuppliers/${supplier.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }
-                : { collectionPath: 'lendingSuppliers', data: { ...values, createdAt: { _methodName: 'serverTimestamp' } } }
-            )
-        });
-
-        if (!response.ok) throw new Error("Registry commit failed.");
+        const ref = supplier?.id ? doc(firestore, 'lendingSuppliers', supplier.id) : doc(collection(firestore, 'lendingSuppliers'));
+        await setDoc(ref, { ...values, id: ref.id, updatedAt: serverTimestamp() }, { merge: true });
         toast({ title: 'Supplier Node Committed' });
         onSave();
     } catch (error: any) {
@@ -251,7 +236,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
           <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left">
             <div className="flex justify-between items-center text-left">
               <div className="text-left text-white">
-                <CardTitle className="text-2xl font-black font-headline uppercase text-white">Supplier Protocol Terminal</CardTitle>
+                <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Supplier Protocol Terminal</CardTitle>
                 <CardDescription className="text-slate-400">Section: {currentStepConfig.title}</CardDescription>
               </div>
               <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
@@ -304,9 +289,9 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     <div className="space-y-12 text-left animate-in fade-in duration-500">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
                             <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
-                                <div className="space-y-1 text-left text-foreground">
-                                    <span className="text-2xl font-black font-headline uppercase tracking-tight">Infrastructure Standing</span>
-                                    <p className="text-base text-muted-foreground">Does this supplier own the property they operate from?</p>
+                                <div className="space-y-1 text-left text-foreground text-left">
+                                    <span className="text-2xl font-black font-headline uppercase tracking-tight text-left">Infrastructure Standing</span>
+                                    <p className="text-base text-muted-foreground text-left">Does this supplier own the property they operate from?</p>
                                 </div>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
                             </FormItem>
@@ -321,55 +306,51 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     </div>
                 )}
                 {currentStepConfig.id === 'governance' && (
-                    <div className="space-y-10 text-left animate-in fade-in duration-500">
-                        <div className="grid grid-cols-2 gap-8 text-left">
+                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground">
+                        <div className="grid grid-cols-2 gap-8 text-left text-foreground">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
-                                <FormItem className="text-left"><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
+                                <FormItem className="text-left text-foreground text-left"><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="directorCount" render={({ field }) => (
-                                <FormItem className="text-left"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
+                                <FormItem className="text-left text-foreground text-left"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
                             )} />
                         </div>
-                        <Alert className="bg-primary/5 border-primary/20 text-left">
-                            <Info className="h-4 w-4 text-primary" />
-                            <AlertTitle className="font-bold text-foreground">Sync Notice</AlertTitle>
-                            <AlertDescription className="text-xs text-muted-foreground leading-relaxed">Adjusting these counts will synchronize the registry nodes in the next sections.</AlertDescription>
-                        </Alert>
+                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-left"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Sync Notice</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left">Adjusting these counts will synchronize the registry nodes in the next sections.</AlertDescription></Alert>
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (
-                    <div className="space-y-6 text-left">
+                    <div className="space-y-6 text-left text-foreground">
                         {shareholderFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="shareholders" onRemove={() => { removeShareholder(index); methods.setValue('shareholderCount', shareholderFields.length - 1); }} />
                         ))}
                         {shareholderFields.length === 0 && (
-                            <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30">
+                            <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30 text-center">
                                 <Users className="h-12 w-12 mx-auto mb-2" />
-                                <p className="text-sm font-black uppercase">No Shareholders Mapped</p>
+                                <p className="text-sm font-black uppercase text-center">No Shareholders Mapped</p>
                             </div>
                         )}
                     </div>
                 )}
                 {currentStepConfig.id === 'directors' && (
-                    <div className="space-y-6 text-left">
+                    <div className="space-y-6 text-left text-foreground">
                         {directorFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="directors" onRemove={() => { removeDirector(index); methods.setValue('directorCount', directorFields.length - 1); }} />
                         ))}
                         {directorFields.length === 0 && (
-                            <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30">
+                            <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30 text-center">
                                 <UserCheck className="h-12 w-12 mx-auto mb-2" />
-                                <p className="text-sm font-black uppercase">No Directors Mapped</p>
+                                <p className="text-sm font-black uppercase text-center">No Directors Mapped</p>
                             </div>
                         )}
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (
-                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-700 text-left text-foreground">
-                        <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto border-2 border-primary/20">
+                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-700 text-left text-foreground text-center">
+                        <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto border-2 border-primary/20 text-center">
                             <ShieldCheck className="h-20 w-20 text-primary" />
                         </div>
                         <div className="space-y-2 text-center">
-                            <h3 className="text-3xl font-black uppercase text-foreground">Protocol Verified</h3>
+                            <h3 className="text-3xl font-black uppercase text-foreground text-center">Protocol Verified</h3>
                             <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">All technical nodes for this supplier are mapped. Committing to registry initiates the authorized dealership standing.</p>
                         </div>
                     </div>
@@ -377,7 +358,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
               </div>
             </div>
           </CardContent>
-          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
+          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground text-foreground">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8">Back</Button>
             {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-12 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
@@ -392,4 +373,3 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
     </Card>
   );
 }
-

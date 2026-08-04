@@ -135,7 +135,7 @@ export default function SuppliersContent() {
                 </div>
             )
         },
-        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black">{row.original.status}</Badge> },
+        { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black text-left">{row.original.status}</Badge> },
         { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({ row }) => (
             <div className="flex justify-end items-center gap-1 text-left text-foreground">
                 <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
@@ -166,7 +166,7 @@ export default function SuppliersContent() {
                         <AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle>
                         <AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground">
+                    <AlertDialogFooter className="text-left">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
