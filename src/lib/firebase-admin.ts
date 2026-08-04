@@ -21,7 +21,6 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
         // App not initialized
     }
     
-    // FORENSIC SANITIZATION: Clean the B64 string before processing
     const rawB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
     const encodedServiceAccount = rawB64?.replace(/[\r\n\s]/gm, '').trim();
 
@@ -34,8 +33,7 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
     try {
         const decodedString = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
         
-        // ROBUST EXTRACTION: Find the actual JSON object bounds.
-        // This strips accidental "json" prefixes or markdown code blocks.
+        // ROBUST EXTRACTION: Detect and strip "json" prefix or markdown backticks
         const startIdx = decodedString.indexOf('{');
         const endIdx = decodedString.lastIndexOf('}');
         

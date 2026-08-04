@@ -138,21 +138,21 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'dealer' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
                                             <div className="flex items-center gap-2">
                                                 <RadioGroupItem value="dealer" id="src-dealer" />
-                                                <Label htmlFor="src-dealer" className="font-bold text-xs uppercase cursor-pointer">Dealer (Supplier)</Label>
+                                                <Label htmlFor="src-dealer" className="font-bold text-xs uppercase cursor-pointer text-foreground">Dealer (Supplier)</Label>
                                             </div>
                                             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Purchased from an authorized platform supplier.</p>
                                         </div>
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'client' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
                                             <div className="flex items-center gap-2">
                                                 <RadioGroupItem value="client" id="src-client" />
-                                                <Label htmlFor="src-client" className="font-bold text-xs uppercase cursor-pointer">Client (Trade-in)</Label>
+                                                <Label htmlFor="src-client" className="font-bold text-xs uppercase cursor-pointer text-foreground">Client (Trade-in)</Label>
                                             </div>
                                             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Sourced as a trade-in from an existing member.</p>
                                         </div>
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'stock' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
                                             <div className="flex items-center gap-2">
                                                 <RadioGroupItem value="stock" id="src-stock" />
-                                                <Label htmlFor="src-stock" className="font-bold text-xs uppercase cursor-pointer">Internal Stock</Label>
+                                                <Label htmlFor="src-stock" className="font-bold text-xs uppercase cursor-pointer text-foreground">Internal Stock</Label>
                                             </div>
                                             <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">Already in possession. Move from inventory.</p>
                                         </div>
@@ -308,7 +308,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     </CardHeader>
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left text-foreground text-foreground">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -318,7 +318,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
                                             className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
-                                            onClick={(e) => { if(index <= currentStep) handleStepTransition(index); }}
+                                            onClick={(e) => { if(index <= currentStep) setCurrentStep(index); }}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
@@ -351,8 +351,4 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
             </FormProvider>
         </Card>
     );
-
-    function handleStepTransition(index: number) {
-        setCurrentStep(index);
-    }
 }

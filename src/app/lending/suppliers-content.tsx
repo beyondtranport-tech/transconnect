@@ -81,7 +81,7 @@ function SupplierDialog({ open, onOpenChange, supplier, onSave }: { open: boolea
             <DialogDescription>Define high-fidelity contact nodes for asset procurement.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 py-4 max-h-[85vh] overflow-y-auto pr-2 text-left text-foreground">
             <div className="space-y-4">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <Building className="h-4 w-4" /> Core Entity Details
@@ -119,9 +119,9 @@ function SupplierDialog({ open, onOpenChange, supplier, onSave }: { open: boolea
                 </div>
             </div>
 
-            <DialogFooter className="pt-4 border-t sticky bottom-0 bg-white z-10">
-              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg">
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Supplier Profile
+            <DialogFooter className="pt-4 border-t sticky bottom-0 bg-white z-10 text-left">
+              <Button type="submit" disabled={isLoading} size="lg" className="w-full font-bold shadow-lg text-white">
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Save Forensic Record
               </Button>
             </DialogFooter>
           </form>
@@ -177,10 +177,10 @@ export default function SuppliersContent() {
             header: 'Dealer Entity',
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
-                    <span className="font-bold text-foreground">{row.original.name}</span>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">{row.original.category}</Badge>
-                        <span className="text-[9px] text-muted-foreground font-mono uppercase">ID: {row.original.id.slice(-6)}</span>
+                    <span className="font-bold text-foreground text-left">{row.original.name}</span>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-left">
+                        <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Authorized Provider</Badge>
+                        <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id.slice(-6)}</span>
                     </div>
                 </div>
             )
@@ -188,11 +188,11 @@ export default function SuppliersContent() {
         { 
             header: 'Stakeholder Nodes',
             cell: ({row}) => (
-                <div className="flex flex-col gap-1 text-left">
-                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
+                <div className="flex flex-col gap-1 text-left text-foreground">
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-slate-700 text-left">
                         <UserCheck className="h-3 w-3 text-primary" /> {row.original.marketingManager?.name || 'N/A'}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground text-left">
                         <Mail className="h-2.5 w-2.5" /> {row.original.email || 'No Email'}
                     </div>
                 </div>
@@ -209,7 +209,7 @@ export default function SuppliersContent() {
         },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black">{row.original.status}</Badge> },
         { id: 'actions', header: <div className="text-right">Actions</div>, cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1">
+            <div className="flex justify-end items-center gap-1 text-left text-foreground">
                 <Button variant="ghost" size="icon" onClick={() => { setSelectedSupplier(row.original); setView('edit'); }}><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setSupplierToDelete(row.original); setIsDeleteOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
@@ -221,34 +221,34 @@ export default function SuppliersContent() {
             <SupplierDialog open={view === 'edit'} onOpenChange={(o) => !o && setView('list')} supplier={selectedSupplier} onSave={forceRefresh} />
             
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <AlertDialogContent className="text-left">
-                    <AlertDialogHeader><AlertDialogTitle>Expunge Supplier Node?</AlertDialogTitle><AlertDialogDescription>This will permanently remove the dealership from the authorized register.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter><AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Confirm Delete</AlertDialogAction></AlertDialogFooter>
+                <AlertDialogContent className="text-left text-foreground">
+                    <AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle><AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription></AlertDialogHeader>
+                    <AlertDialogFooter className="text-left text-foreground"><AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Confirm Delete</AlertDialogAction></AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <ShoppingBag className="h-8 w-8 text-primary" />
                         Supplier Registry
                     </h1>
-                    <p className="text-muted-foreground mt-1">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
+                <div className="flex gap-2 text-left">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
                     </Button>
-                    <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg text-white">
+                    <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
                         <PlusCircle className="h-4 w-4" /> Initialize Supplier
                     </Button>
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
-                <CardContent className="pt-6">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+                <CardContent className="pt-6 text-left text-foreground">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
                             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Mapping Authorized Dealers...</p>
                         </div>
