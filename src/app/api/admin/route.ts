@@ -161,6 +161,8 @@ export async function POST(req: NextRequest) {
                 if (type === 'lead') q = db.collection('leads');
                 else if (['transporter', 'supplier', 'finance', 'distributor', 'driver', 'warehouse', 'isa', 'investor', 'developer', 'associate'].includes(type)) {
                     q = db.collection('partners').where('type', '==', type);
+                } else if (type === 'finance_mall') {
+                     q = db.collection('lendingClients');
                 } else {
                     q = db.collection('partners');
                 }

@@ -32,24 +32,22 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
     }
 
     try {
-        let serviceAccountJson = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
+        const decodedString = Buffer.from(encodedServiceAccount, 'base64').toString('utf8');
         
-        // ROBUSTNESS: Strip leading "json" or markdown code blocks if the user copied too much
-        serviceAccountJson = serviceAccountJson.trim();
-        if (serviceAccountJson.startsWith('json')) {
-            serviceAccountJson = serviceAccountJson.substring(4).trim();
+        // ROBUST EXTRACTION: Find the actual JSON object bounds.
+        // This strips accidental "json" prefixes or markdown code blocks.
+        const startIdx = decodedString.indexOf('{');
+        const endIdx = decodedString.lastIndexOf('}');
+        
+        if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+            throw new Error('Decoded Base64 does not contain a valid JSON object.');
         }
-        if (serviceAccountJson.startsWith('```json')) {
-            serviceAccountJson = serviceAccountJson.substring(7).trim();
-        }
-        if (serviceAccountJson.endsWith('```')) {
-            serviceAccountJson = serviceAccountJson.substring(0, serviceAccountJson.length - 3).trim();
-        }
-
-        const serviceAccountObject: { [key: string]: any } = JSON.parse(serviceAccountJson);
+        
+        const serviceAccountJson = decodedString.substring(startIdx, endIdx + 1);
+        const serviceAccountObject = JSON.parse(serviceAccountJson);
 
         if (!serviceAccountObject.project_id || !serviceAccountObject.client_email || !serviceAccountObject.private_key) {
-            throw new Error('Parsed service account is invalid or missing essential properties.');
+            throw new Error('Parsed service account is missing project_id, client_email, or private_key.');
         }
 
         const app = initializeApp({
@@ -62,7 +60,7 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
 
     } catch (error: any) {
         const errorMessage = `Firebase Admin SDK initialization failed: ${error.message}`;
-        console.error(errorMessage, error);
+        console.error(errorMessage);
         adminAppError = errorMessage;
         return { app: null, error: errorMessage };
     }
@@ -82,7 +80,7 @@ export function getAdminApp(): { app: App; error: null } | { app: null; error: s
 export async function verifyAdmin(req: NextRequest) {
     const { app, error: initError } = getAdminApp();
     if (initError || !app) {
-        throw new Error(`Admin SDK not initialized: ${initError}`);
+        throw new Error(`Admin SDK failed: ${initError}`);
     }
 
     const authorization = req.headers.get('authorization');

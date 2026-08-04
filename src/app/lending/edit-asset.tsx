@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Loader2, Save, ArrowLeft, ArrowRight, Truck, Database, ShieldCheck, 
-    ShoppingBag, CheckCircle2, RefreshCcw
+    ShoppingBag, CheckCircle2, RefreshCcw, Car, Bus, Monitor
 } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -308,7 +308,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     </CardHeader>
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left text-foreground text-foreground">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -318,7 +318,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
                                             className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
-                                            onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
+                                            onClick={(e) => { if(index <= currentStep) handleStepTransition(index); }}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
@@ -351,4 +351,8 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
             </FormProvider>
         </Card>
     );
+
+    function handleStepTransition(index: number) {
+        setCurrentStep(index);
+    }
 }
