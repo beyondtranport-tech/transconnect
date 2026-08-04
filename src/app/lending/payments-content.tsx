@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Loader2, Banknote, Scale, RefreshCcw, CheckCircle2, History, Building, Truck, ArrowRight, UserCheck, AlertTriangle } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Loader2, Banknote, Scale, RefreshCcw, CheckCircle2, History, Building, Truck, ArrowRight, UserCheck, AlertTriangle, Info, ShieldCheck, FileUp } from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +14,7 @@ import { formatCurrency, formatDateSafe, fetchFromAdminAPI } from '@/lib/utils';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 /**
  * LENDING DISBURSEMENTS LEDGER
@@ -131,13 +133,13 @@ export default function PaymentsContent() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Banknote className="h-8 w-8 text-primary" />
                         Disbursements & Journals
                     </h1>
-                    <p className="text-muted-foreground mt-1">Oversight of capital flow to dealers and clients to close acquisition liabilities.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Oversight of capital flow to dealers and clients to close acquisition liabilities.</p>
                 </div>
                 <Button variant="outline" size="sm" onClick={forceLoad} disabled={isLoading} className="gap-2 h-10 px-6 font-bold">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh Ledger
@@ -145,7 +147,7 @@ export default function PaymentsContent() {
             </div>
 
             <Card className="border-none shadow-xl bg-white text-left overflow-hidden">
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 text-left">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
@@ -176,7 +178,7 @@ export default function PaymentsContent() {
                     <div className="absolute top-0 right-0 p-8 opacity-10"><History className="h-32 w-32 text-primary" /></div>
                     <CardHeader className="p-0 mb-4 text-left">
                         <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-white text-left">
-                            <ShieldCheck className="h-5 w-5 text-primary" /> Fiduciary integrity
+                            <ShieldCheck className="h-5 w-5 text-primary" /> Fiduciary Integrity
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 text-xs text-slate-400 leading-relaxed text-left">

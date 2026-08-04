@@ -12,7 +12,7 @@ import {
     Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
     History, Building, FileUp, Users, UserCircle, ShieldAlert, CheckCircle2, 
     ListChecks, Save, User, UserCheck, Gavel, Scale, Info, Trash2, UserPlus,
-    FileText, UserCircle as UserCircleIcon
+    FileText, UserCircle as UserCircleIcon, RefreshCcw
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken, useFirestore } from '@/firebase';
@@ -114,16 +114,16 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
 const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shareholders' | 'directors', onRemove: () => void }) => {
     const { control } = useFormContext<ClientFormValues>();
     return (
-        <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative animate-in fade-in duration-300 text-left text-foreground">
+        <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative animate-in fade-in duration-300 text-left text-foreground text-foreground">
             <div className="flex justify-between items-center text-left text-foreground">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left text-foreground">
                     <UserCircleIcon className="h-4 w-4" /> {type.slice(0, -1)} #{index + 1}
                 </h4>
-                <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8 text-foreground"><Trash2 className="h-4 w-4" /></Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
-                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground text-foreground">
+                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
             </div>
             <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="Attach Identity Scan" folder={`clients-${type}`} />
         </div>
@@ -251,8 +251,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                             </FormItem>
                         )} />
                         <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Full Name / Label</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
-                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
-                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
+                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left text-white text-left">
+                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
                             <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="lending-identity" />
                         </div>
                     </div>
@@ -272,18 +272,18 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Evidence</h4>
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white text-left">
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                                 <FileUploadField name="registrationDocUrl" label="CIPC / Founding Document" folder="lending-legal" />
                             </div>
                         </div>
                     </div>
                 )}
                 {currentStepConfig.id === 'standing' && (
-                    <div className="space-y-12 text-left animate-in fade-in duration-500 text-foreground">
+                    <div className="space-y-12 text-left animate-in fade-in duration-500 text-foreground text-foreground">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
-                                <div className="space-y-1 text-left">
+                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
+                                <div className="space-y-1 text-left text-foreground">
                                     <span className="text-2xl font-black font-headline uppercase tracking-tight text-left">Infrastructure Standing</span>
                                     <p className="text-base text-muted-foreground text-left">Does the client own their operating premises?</p>
                                 </div>
@@ -296,8 +296,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                  {currentStepConfig.id === 'governance' && (
-                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground">
-                        <div className="grid grid-cols-2 gap-8 text-left text-foreground">
+                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground text-foreground">
+                        <div className="grid grid-cols-2 gap-8 text-left text-foreground text-foreground">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
                                 <FormItem className="text-left"><FormLabel>Confirmed Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
                             )} />

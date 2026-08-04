@@ -29,6 +29,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { InitializeSubFacilityModal } from './InitializeSubFacilityModal';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 
 interface FacilitiesContentProps {
     mode?: 'client-global' | 'debtor' | 'facilities-suppliers';
@@ -175,7 +176,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         {mode === 'client-global' ? <Scale className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />}
                         {mode === 'client-global' ? 'Client Global Facilities' : (mode === 'debtor' ? 'Debtor Registry Ceilings' : 'Supplier Credit Matrix')}
@@ -183,7 +184,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                     <p className="text-muted-foreground mt-1 text-left">Management of master limits and partitioned agreement nodes.</p>
                 </div>
                 <div className="flex gap-2 text-left text-foreground">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
                     <Button 
@@ -322,10 +323,10 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                                     <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit text-left">
                                                                                         {mode === 'debtor' ? (clientMap.get(sub.associatedClientId) || 'Member Allocation') : (sub.type?.replace(/_/g, ' ') || 'Agreement')}
                                                                                     </Badge>
-                                                                                    <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest">
-                                                                                        <div className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
+                                                                                    <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left">
+                                                                                        <div className="flex items-center gap-1 text-left"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
                                                                                         <Separator orientation="vertical" className="h-2.5 bg-slate-300" />
-                                                                                        <div className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
+                                                                                        <div className="flex items-center gap-1 text-left"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
                                                                                     </div>
                                                                                 </div>
                                                                             </TableCell>
