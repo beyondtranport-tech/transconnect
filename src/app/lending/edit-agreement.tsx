@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -10,11 +9,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote, Database, Info, Search } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote, Database, Info, Search, CheckCircle2 } from 'lucide-react';
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn, fetchFromAdminAPI } from '@/lib/utils';
+import { cn, fetchFromAdminAPI, formatCurrency } from '@/lib/utils';
 import { doc, collection, query, where, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 
@@ -102,7 +101,8 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                     description: '',
                     totalAdvanced: 0,
                     interestRate: 15,
-                    numberOfInstallments: 48
+                    numberOfInstallments: 48,
+                    assetId: null
                 }
             });
         }
@@ -110,7 +110,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
 
     const handleRedirectToRegister = () => {
         const type = methods.watch('agreement.type')?.toLowerCase() === 'factoring' ? 'Debtor' : 'Truck';
-        window.location.href = `/lending?view=assets&type=${type}&clientId=${selectedClientId || ''}&redirectBack=agreement`;
+        router.push(`/lending?view=assets&type=${type}&clientId=${selectedClientId || ''}`);
     };
 
     const onSubmit = async (data: WizardFormValues) => {
@@ -166,19 +166,21 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'client': return (
-                 <div className="space-y-10 animate-in fade-in duration-500">
+                 <div className="space-y-10 animate-in fade-in duration-500 text-left">
                     <FormField control={methods.control} name="agreement.clientId" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Target Client</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Select member client..." /></SelectTrigger></FormControl>
-                                <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                <SelectContent>
+                                    {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                                </SelectContent>
                             </Select>
                         </FormItem>
                     )} />
 
                     {selectedClientId && (
-                        <div className="space-y-10 animate-in slide-in-from-top-4 duration-500">
+                        <div className="space-y-10 animate-in slide-in-from-top-4 duration-500 text-left">
                             <FormField control={methods.control} name="agreement.type" render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Facility Authority Node</FormLabel>
@@ -191,7 +193,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                             
                             <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6 text-left">
                                 <div className="flex justify-between items-center text-left">
-                                    <div className="flex items-center gap-3 text-left">
+                                    <div className="flex items-center gap-3">
                                         <div className="bg-primary/10 p-2 rounded-lg"><Truck className="h-6 w-6 text-primary"/></div>
                                         <h4 className="font-black uppercase tracking-tight">Physical Asset Bind</h4>
                                     </div>
@@ -226,7 +228,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                  </div>
             );
             case 'details': return (
-                 <div className="space-y-6 animate-in fade-in duration-500 text-left text-foreground">
+                 <div className="space-y-6 animate-in fade-in duration-500 text-left">
                     <FormField control={methods.control} name="agreement.description" render={({ field }) => (
                         <FormItem className="text-left">
                             <FormLabel>Agreement Description</FormLabel>
@@ -234,14 +236,14 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                         </FormItem>
                     )} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
-                        <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem className="text-left"><FormLabel>Amount Advanced (R)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-black" /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem className="text-left"><FormLabel>Amount Advanced (R)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
                         <FormField control={methods.control} name="agreement.interestRate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Rate (% p.a.)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
                         <FormField control={methods.control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem className="text-left"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
                     </div>
                 </div>
             );
             case 'review': return (
-                <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left text-foreground">
+                <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left">
                     <CheckCircle className="h-20 w-20 text-primary mx-auto opacity-30" />
                     <div className="space-y-2 text-center text-foreground">
                         <h3 className="text-3xl font-black uppercase text-center text-foreground">Agreement Node Verified</h3>
@@ -257,31 +259,33 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
-                    <CardHeader className="bg-slate-900 text-white p-10">
+                    <CardHeader className="bg-slate-900 text-white p-10 text-left">
                         <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
                                 <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Agreement Authority Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Protocol: {steps[currentStep].title}</CardDescription>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-white">Protocol: {steps[currentStep].title}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Ledger</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left text-foreground">
+                    <CardContent className="p-0 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
-                                {steps.map((step, index) => (
-                                    <Button 
-                                        key={step.id} 
-                                        type="button" 
-                                        variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                        className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
-                                        onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
-                                    >
-                                        <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                        {React.createElement(step.icon, { className: cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground") })}
-                                        <span className={cn("text-[10px] font-black uppercase tracking-[0.1em] text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
-                                    </Button>
-                                ))}
+                                {steps.map((step, index) => {
+                                    const isCompleted = index < currentStep && isStepValid(index);
+                                    return (
+                                        <Button 
+                                            key={step.id} 
+                                            type="button" 
+                                            variant={currentStep === index ? 'secondary' : 'ghost'} 
+                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                            onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
+                                        >
+                                            {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            {React.createElement(step.icon, { className: cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground") })}
+                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em] text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                        </Button>
+                                    ))}
                             </div>
                             <div className="p-12 space-y-12 bg-white min-h-[500px] text-left">
                                 {renderStepContent()}
@@ -293,7 +297,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext} className="h-12 px-12 font-black uppercase text-xs text-white shadow-lg text-left">
+                            <Button type="button" onClick={handleNext} className="h-12 px-12 font-black uppercase text-xs text-white shadow-lg">
                                 Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (
@@ -308,4 +312,3 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         </Card>
     );
 }
-

@@ -177,7 +177,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                         <Gavel className="h-6 w-6 text-primary" />
                         Initialize Sub-Facility Authorization
                     </DialogTitle>
-                    <DialogDescription className="text-left text-foreground text-left text-foreground">
+                    <DialogDescription className="text-left text-foreground">
                         Partitioning a specific sub-limit for <strong>{parent.ownerName || parent.name || 'Master Node'}</strong>.
                     </DialogDescription>
                 </DialogHeader>
@@ -210,7 +210,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                             </div>
                         ) : (
                             <div className="space-y-12 text-left text-foreground">
-                                <div className="space-y-3 text-left">
+                                <div className="space-y-3 text-left text-foreground">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Product Category Authority</Label>
                                     <Select value={type} onValueChange={setType}>
                                         <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
@@ -221,7 +221,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                 </div>
 
                                 {isSupplierMode && (['Trucks', 'Trailers', 'Bakkies'].includes(type)) && (
-                                    <div className="space-y-12 text-left">
+                                    <div className="space-y-12 text-left text-foreground">
                                         {/* 1. ASSET VETTING PROTOCOL */}
                                         <div className="p-8 border-2 rounded-[2.5rem] bg-slate-50 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500 text-left">
                                             <div className="flex items-center justify-between">
@@ -248,7 +248,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                     {assetSelectionMode === 'allow_only' ? 'Authorized Makes' : 'Specifically Rejected Makes'}
                                                 </Label>
                                                 
-                                                <div className="flex gap-2 text-left text-foreground">
+                                                <div className="flex gap-2 text-left">
                                                     <Select onValueChange={handleAddMake}>
                                                         <SelectTrigger className="h-11 border-2 bg-white flex-1 text-left text-foreground"><SelectValue placeholder="Add Make to List..." /></SelectTrigger>
                                                         <SelectContent>
@@ -269,14 +269,14 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                             </button>
                                                         </Badge>
                                                     ))}
-                                                    {makeList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2 text-left">No makes selected.</p>}
+                                                    {makeList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2">No makes selected.</p>}
                                                 </div>
                                             </div>
 
                                             <Separator />
 
                                             <div className="grid grid-cols-2 gap-8 text-left text-foreground">
-                                                <div className="space-y-2 text-left text-foreground">
+                                                <div className="space-y-2 text-left">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Replacement Cycle (Max Age)</Label>
                                                     <Select value={maxYear} onValueChange={setMaxYear}>
                                                         <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue placeholder="e.g. Max 7 Years" /></SelectTrigger>
@@ -285,7 +285,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
-                                                <div className="space-y-2 text-left text-foreground">
+                                                <div className="space-y-2 text-left">
                                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Standard Condition</Label>
                                                     <Select value={condition} onValueChange={setCondition}>
                                                         <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
@@ -299,8 +299,8 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
 
                                         {/* 2. GEOGRAPHIC AUTHORITY NODE */}
                                         <div className="p-8 border-2 rounded-[2.5rem] bg-slate-50 space-y-8 text-left text-foreground">
-                                            <div className="flex items-center justify-between text-left text-foreground">
-                                                <div className="flex items-center gap-3 text-left">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
                                                     <div className="bg-primary/10 p-2 rounded-lg"><MapPin className="h-5 w-5 text-primary" /></div>
                                                     <h4 className="text-sm font-black uppercase tracking-widest">Geographic Authority Nodes</h4>
                                                 </div>
@@ -335,7 +335,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                     </div>
                                                     <div className="space-y-1.5 text-left text-foreground">
                                                         <Label className="text-[9px] font-black uppercase text-muted-foreground ml-1">2. Select Hub</Label>
-                                                        <div className="flex gap-2 text-left">
+                                                        <div className="flex gap-2 text-left text-foreground">
                                                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                                                 <SelectTrigger className="h-10 border-2 bg-white flex-1 text-left text-foreground"><SelectValue placeholder="All Cities" /></SelectTrigger>
                                                                 <SelectContent>
@@ -362,7 +362,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                             </button>
                                                         </Badge>
                                                     ))}
-                                                    {geoList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2">No hubs defined. {geoSelectionMode === 'allow_only' ? 'Authorized everywhere.' : 'Zero exclusions.'}</p>}
+                                                    {geoList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2 text-left">No hubs defined. {geoSelectionMode === 'allow_only' ? 'Authorized everywhere.' : 'Zero exclusions.'}</p>}
                                                 </div>
                                             </div>
                                         </div>
@@ -372,7 +372,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                         )}
 
                         <div className="space-y-3 p-8 bg-primary/5 border-2 border-primary/20 rounded-[2.5rem] text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-1 text-left">Authorized Yield Ceiling (ZAR)</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-1">Authorized Yield Ceiling (ZAR)</Label>
                             <Input 
                                 type="number" 
                                 value={limit} 
@@ -380,12 +380,12 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                 placeholder="0.00"
                                 className="h-16 border-none bg-transparent text-5xl font-black focus-visible:ring-0 p-0"
                             />
-                            <p className="text-[11px] text-muted-foreground font-medium italic mt-2 text-left">This partition will be deducted from the parent global ceiling.</p>
+                            <p className="text-[11px] text-muted-foreground font-medium italic mt-2 text-left text-foreground">This partition will be deducted from the parent global ceiling.</p>
                         </div>
                     </div>
                 </ScrollArea>
 
-                <DialogFooter className="bg-slate-50 p-6 border-t shrink-0">
+                <DialogFooter className="bg-slate-50 p-6 border-t shrink-0 text-left text-foreground">
                     <Button onClick={handleSave} disabled={isSaving} className="w-full h-14 font-black uppercase tracking-widest shadow-xl text-lg text-white">
                         {isSaving ? <Loader2 className="animate-spin h-6 w-6 mr-2" /> : <Zap className="h-6 w-6 mr-2 fill-current" />}
                         {isDebtorMode ? 'Bind Client to Debtor' : 'Commit Authorization Node'}

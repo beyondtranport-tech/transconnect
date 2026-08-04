@@ -116,14 +116,14 @@ const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shar
     return (
         <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative animate-in fade-in duration-300 text-left text-foreground">
             <div className="flex justify-between items-center text-left text-foreground">
-                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                     <UserCircleIcon className="h-4 w-4" /> {type.slice(0, -1)} #{index + 1}
                 </h4>
                 <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
-                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
             </div>
             <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="Attach Identity Scan" folder={`clients-${type}`} />
         </div>
@@ -226,7 +226,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
     <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-          <CardHeader className="bg-slate-900 text-white p-8 text-left">
+          <CardHeader className="bg-slate-900 text-white p-8 text-left text-white">
             <div className="flex justify-between items-center text-left text-white">
               <div className="text-left text-white">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Client Protocol Terminal</CardTitle>
@@ -235,13 +235,13 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
               <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
             </div>
           </CardHeader>
-          <CardContent className="p-0 text-left text-foreground">
+          <CardContent className="p-0 text-left">
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] text-left">
-              <div className="bg-slate-50 border-r p-6 space-y-2 text-left text-foreground">
+              <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
                 {steps.map((step, i) => (
                   <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
                     {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
-                    <span className={cn("text-[11px] font-black uppercase text-left text-foreground", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
+                    <span className={cn("text-[11px] font-black uppercase text-left", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                   </Button>
                 ))}
               </div>
@@ -281,7 +281,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white text-white">
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
                                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                                 <FileUploadField name="registrationDocUrl" label="CIPC / Founding Document" folder="lending-legal" />
                             </div>
@@ -291,51 +291,51 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                 {currentStepConfig.id === 'standing' && (
                     <div className="space-y-12 text-left animate-in fade-in duration-500 text-foreground">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
-                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground text-foreground">
-                                <div className="space-y-1 text-left text-foreground text-foreground">
-                                    <span className="text-2xl font-black font-headline uppercase tracking-tight text-left text-foreground">Infrastructure Standing</span>
-                                    <p className="text-base text-muted-foreground text-left text-foreground">Does the client own their operating premises?</p>
+                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left">
+                                <div className="space-y-1 text-left">
+                                    <span className="text-2xl font-black font-headline uppercase tracking-tight text-left">Infrastructure Standing</span>
+                                    <p className="text-base text-muted-foreground text-left">Does the client own their operating premises?</p>
                                 </div>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
                             </FormItem>
                         )} />
-                        <div className="grid grid-cols-1 gap-6 text-left text-foreground">
+                        <div className="grid grid-cols-1 gap-6 text-left">
                             <FileUploadField name="ficaDocUrl" label={methods.watch('ownsOperatingProperty') ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} folder="lending-standing" />
                         </div>
                     </div>
                 )}
                  {currentStepConfig.id === 'governance' && (
-                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground text-foreground">
-                        <div className="grid grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                    <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground">
+                        <div className="grid grid-cols-2 gap-8 text-left">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Confirmed Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Confirmed Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="directorCount" render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-foreground"><FormLabel>Confirmed Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Confirmed Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
                             )} />
                         </div>
-                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-foreground"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Resource Control</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">Adjusting these counts will synchronize the registry nodes in the next section. These transformations are only processed during section transitions.</AlertDescription></Alert>
+                        <Alert className="bg-primary/5 border-primary/20 text-left"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Resource Control</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left">Adjusting these counts will synchronize the registry nodes in the next section. These transformations are only processed during section transitions.</AlertDescription></Alert>
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (
-                    <div className="space-y-6 text-left text-foreground text-foreground">
+                    <div className="space-y-6 text-left text-foreground">
                         {shareholderFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="shareholders" onRemove={() => { removeShareholder(index); methods.setValue('shareholderCount', shareholderFields.length - 1); }} />
                         ))}
                     </div>
                 )}
                 {currentStepConfig.id === 'directors' && (
-                    <div className="space-y-6 text-left text-foreground text-foreground">
+                    <div className="space-y-6 text-left text-foreground">
                         {directorFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="directors" onRemove={() => { removeDirector(index); methods.setValue('directorCount', directorFields.length - 1); }} />
                         ))}
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (
-                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left text-foreground">
+                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left">
                         <CheckCircle2 className="h-20 w-20 text-primary mx-auto opacity-30" />
                         <div className="space-y-2 text-center text-foreground">
-                            <h3 className="text-3xl font-black uppercase text-center">Audit Ready</h3>
+                            <h3 className="text-3xl font-black uppercase text-center text-foreground">Audit Check Complete</h3>
                             <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before committing this client node to the grid.</p>
                         </div>
                     </div>
@@ -343,7 +343,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
               </div>
             </div>
           </CardContent>
-          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
+          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8">Back</Button>
             {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>

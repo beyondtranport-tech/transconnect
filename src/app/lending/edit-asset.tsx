@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -146,7 +145,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                             <FormItem className="space-y-4">
                                 <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Select Acquisition Path</FormLabel>
                                 <FormControl>
-                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                                         <div className={cn("p-4 border-2 rounded-2xl cursor-pointer transition-all", field.value === 'dealer' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
                                             <div className="flex items-center gap-2">
                                                 <RadioGroupItem value="dealer" id="src-dealer" />
@@ -223,7 +222,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl>
-                                            <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground">
+                                            <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground text-foreground">
                                                 <SelectValue placeholder="Select class..." />
                                             </SelectTrigger>
                                         </FormControl>
@@ -237,7 +236,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 </FormItem>
                             )} />
                             <FormField control={methods.control} name="costOfSale" render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-primary font-black uppercase text-[10px]">Purchase Valuation (Excl. VAT)</FormLabel>
                                     <FormControl>
                                         <Input type="number" {...field} className="h-12 border-2 bg-white text-xl font-black" />
@@ -245,28 +244,28 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 </FormItem>
                             )} />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
                             <FormField control={methods.control} name="make" render={({ field }) => (
-                                <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input {...field} className="border-2 bg-white" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="model" render={({ field }) => (
-                                <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input {...field} className="border-2 bg-white" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="year" render={({ field }) => (
-                                <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} className="border-2 bg-white" /></FormControl></FormItem>
                             )} />
                         </div>
                     </div>
                 );
             case 'identifiers':
                 return (
-                    <div className="space-y-8 animate-in fade-in duration-500 text-left">
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                             <FormField control={methods.control} name="registrationNumber" render={({ field }) => (
                                 <FormItem className="text-left">
                                     <FormLabel>RSA Registration Number</FormLabel>
                                     <FormControl>
-                                        <Input {...field} placeholder="e.g. AB 12 CD GP" className="h-12 border-2 font-black uppercase" />
+                                        <Input {...field} placeholder="e.g. AB 12 CD GP" className="h-12 border-2 font-black uppercase bg-white" />
                                     </FormControl>
                                 </FormItem>
                             )} />
@@ -274,7 +273,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 <FormItem className="text-left">
                                     <FormLabel>VIN / Chassis Number</FormLabel>
                                     <FormControl>
-                                        <Input {...field} className="h-12 border-2 font-mono uppercase" />
+                                        <Input {...field} className="h-12 border-2 font-mono uppercase bg-white" />
                                     </FormControl>
                                 </FormItem>
                             )} />
@@ -284,7 +283,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 <FormItem className="animate-in slide-in-from-top-2 text-left">
                                     <FormLabel>Engine Number</FormLabel>
                                     <FormControl>
-                                        <Input {...field} className="h-12 border-2 font-mono uppercase" />
+                                        <Input {...field} className="h-12 border-2 font-mono uppercase bg-white" />
                                     </FormControl>
                                 </FormItem>
                             )} />
@@ -293,9 +292,9 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                 );
             case 'audit':
                 return (
-                    <div className="text-center py-20 space-y-6">
+                    <div className="text-center py-20 space-y-6 text-foreground">
                         <ShieldCheck className="h-20 w-20 text-primary mx-auto opacity-30" />
-                        <div className="space-y-2 text-center">
+                        <div className="space-y-2 text-center text-foreground text-foreground">
                             <h3 className="text-3xl font-black uppercase text-center text-foreground">Final Protocol Check</h3>
                             <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Ensure all technical nodes and valuations are verified before committing this node to the registry.</p>
                         </div>
@@ -310,17 +309,17 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-white">
-                         <div className="flex justify-between items-center text-left text-white">
+                         <div className="flex justify-between items-center text-left text-white text-left">
                             <div className="text-left text-white">
                                 <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Asset movement terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Phase: {steps[currentStep]?.title || 'Audit'}</CardDescription>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-white">Phase: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left text-foreground">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -329,17 +328,17 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                             key={step.id} 
                                             type="button" 
                                             variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left text-foreground", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
                                             onClick={(e) => { if(index <= currentStep) setCurrentStep(index); }}
                                         >
                                             {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
                                             <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
-                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em] text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
+                                            <span className={cn("text-[10px] font-black uppercase tracking-widest text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                                         </Button>
                                     );
                                 })}
                             </div>
-                             <div className="p-12 space-y-10 bg-white min-h-[500px] text-left">
+                             <div className="p-12 space-y-10 bg-white min-h-[500px] text-left text-foreground">
                                 {renderStepContent()}
                              </div>
                         </div>
@@ -364,4 +363,3 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
         </Card>
     );
 }
-

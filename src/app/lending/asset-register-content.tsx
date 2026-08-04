@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -36,30 +35,32 @@ function AssetTypeSelection({ onSelect, onBack }: { onSelect: (type: string) => 
     ];
 
     return (
-        <Card className="border-none shadow-2xl text-left bg-white overflow-hidden">
-            <CardHeader className="bg-slate-900 text-white p-8">
-                <div className="flex justify-between items-start">
-                    <div className="text-left text-white">
-                        <CardTitle className="text-2xl font-black font-headline uppercase">Initialize Asset Node</CardTitle>
-                        <CardDescription className="text-slate-400">Select the technical classification for the new registry entry.</CardDescription>
-                    </div>
-                    <Button variant="ghost" onClick={onBack} className="text-white hover:text-primary"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Registry</Button>
-                </div>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 p-8 text-left text-foreground">
-                {types.map(type => {
-                    const Icon = type.icon;
-                    return (
-                        <div key={type.id} className="group p-6 border-2 rounded-3xl text-center hover:shadow-xl hover:border-primary transition-all cursor-pointer bg-white" onClick={() => onSelect(type.id)}>
-                            <div className="bg-primary/5 p-4 rounded-2xl mx-auto group-hover:bg-primary transition-colors">
-                                <Icon className="h-10 w-10 text-primary group-hover:text-white mx-auto" />
-                            </div>
-                            <h3 className="mt-4 text-sm font-black uppercase tracking-widest">{type.label}</h3>
+        <div className="space-y-8 animate-in fade-in duration-500 text-left">
+            <Card className="border-none shadow-2xl text-left bg-white overflow-hidden">
+                <CardHeader className="bg-slate-900 text-white p-8">
+                    <div className="flex justify-between items-start">
+                        <div className="text-left text-white">
+                            <CardTitle className="text-2xl font-black font-headline uppercase">Initialize Asset Node</CardTitle>
+                            <CardDescription className="text-slate-400">Select the technical classification for the new registry entry.</CardDescription>
                         </div>
-                    );
-                })}
-            </CardContent>
-        </Card>
+                        <Button variant="ghost" onClick={onBack} className="text-white hover:text-primary"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Registry</Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 p-8 text-left text-foreground">
+                    {types.map(type => {
+                        const Icon = type.icon;
+                        return (
+                            <div key={type.id} className="group p-6 border-2 rounded-3xl text-center hover:shadow-xl hover:border-primary transition-all cursor-pointer bg-white" onClick={() => onSelect(type.id)}>
+                                <div className="bg-primary/5 p-4 rounded-2xl mx-auto group-hover:bg-primary transition-colors">
+                                    <Icon className="h-10 w-10 text-primary group-hover:text-white mx-auto" />
+                                </div>
+                                <h3 className="mt-4 text-sm font-black uppercase tracking-widest">{type.label}</h3>
+                            </div>
+                        );
+                    })}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
 
@@ -91,9 +92,9 @@ export default function AssetRegisterContent() {
             if (!token) throw new Error("Authentication failed.");
             
             const [assetsRes, clientsRes, suppliersRes] = await Promise.all([
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingAssets', limit: 500 }),
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients', limit: 200 }),
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 200 })
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingAssets', limit: 100 }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients', limit: 100 }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 })
             ]);
             
             setAssets(assetsRes.data || []);
@@ -138,8 +139,8 @@ export default function AssetRegisterContent() {
             await fetchFromAdminAPI(token, 'deleteLendingAsset', { assetId: assetToDelete.id });
             toast({ title: 'Asset Node Expunged' });
             forceRefresh();
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: 'Delete Failed', description: e.message });
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Delete Failed", description: e.message });
         } finally {
             setAssetToDelete(null);
             setIsDeleteAlertOpen(false);
@@ -158,7 +159,9 @@ export default function AssetRegisterContent() {
                 <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.year} {row.original.make} {row.original.model}</span>
                     <div className="flex items-center gap-1.5 mt-1">
-                        <Badge variant="outline" className="capitalize text-[8px] h-3.5 font-black border-primary/20 text-primary">{row.original.classification || 'Vehicle'}</Badge>
+                        <Badge variant="outline" className="capitalize text-[8px] h-3.5 font-black border-primary/20 text-primary">
+                            {row.original.classification || 'Vehicle'}
+                        </Badge>
                         <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">ID: {row.original.id.slice(-6)}</span>
                     </div>
                 </div>
@@ -212,7 +215,16 @@ export default function AssetRegisterContent() {
     return (
         <div className="space-y-8 text-left text-foreground">
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent className="text-left text-foreground"><AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left">Expunge Asset Node?</AlertDialogTitle><AlertDialogDescription className="text-left">Permanent removal of this technical record from the registry.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter className="text-left"><AlertDialogCancel onClick={() => setAssetToDelete(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Delete Node</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                <AlertDialogContent className="text-left text-foreground">
+                    <AlertDialogHeader className="text-left text-foreground">
+                        <AlertDialogTitle>Expunge Asset Node?</AlertDialogTitle>
+                        <AlertDialogDescription>Permanent removal of this technical record from the registry.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="text-left">
+                        <AlertDialogCancel onClick={() => setAssetToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Delete Node</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
             </AlertDialog>
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
@@ -221,13 +233,13 @@ export default function AssetRegisterContent() {
                         <Truck className="h-8 w-8 text-primary" />
                         Asset Register
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground text-foreground">Fiduciary ledger of all physical collateral and technical data nodes.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Fiduciary ledger of all physical collateral and technical data nodes.</p>
                 </div>
                 <div className="flex gap-2 text-left">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 h-10 px-6 font-bold">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
                     </Button>
-                    <Button onClick={handleAddNew} size="sm" className="gap-2 font-black uppercase text-[11px] tracking-widest shadow-xl h-10 px-8 text-white">
+                    <Button onClick={handleAddNew} size="sm" className="gap-2 font-black uppercase text-[11px] tracking-widest shadow-xl h-10 px-8 text-white text-left">
                         <PlusCircle className="h-4 w-4" /> Move Asset In
                     </Button>
                 </div>
@@ -237,12 +249,12 @@ export default function AssetRegisterContent() {
                 <CardHeader className="bg-slate-50 border-b p-6 text-left">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-left">
                         <div className="text-left">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2 text-left text-foreground">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2 text-left">
                                 <Search className="h-5 w-5 text-primary" /> Registry Search
                             </CardTitle>
-                            <CardDescription className="text-left text-foreground">Filter by ownership standing and technical class.</CardDescription>
+                            <CardDescription className="text-left">Filter by ownership standing and technical class.</CardDescription>
                         </div>
-                        <div className="w-full md:w-64 space-y-1.5 text-left text-foreground text-foreground text-foreground">
+                        <div className="w-full md:w-64 space-y-1.5 text-left">
                             <Label className="text-[10px] font-black uppercase text-muted-foreground ml-1">Standing Filter</Label>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
                                 <SelectTrigger className="h-10 bg-white"><SelectValue placeholder="All Assets" /></SelectTrigger>
@@ -267,4 +279,3 @@ export default function AssetRegisterContent() {
         </div>
     );
 }
-
