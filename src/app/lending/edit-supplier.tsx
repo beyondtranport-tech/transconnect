@@ -231,11 +231,11 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
   const watchedValues = methods.watch();
 
   return (
-    <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground text-foreground">
+    <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
           <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white">
-            <div className="flex justify-between items-center text-left text-white text-white">
+            <div className="flex justify-between items-center text-left text-white">
               <div className="text-left text-white">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Supplier Protocol Terminal</CardTitle>
                 <CardDescription className="text-slate-400">Section: {currentStepConfig.title}</CardDescription>
@@ -253,7 +253,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                   </Button>
                 ))}
               </div>
-              <div className="p-12 min-h-[600px] text-left text-foreground text-foreground">
+              <div className="p-12 min-h-[600px] text-left text-foreground">
                 {currentStepConfig.id === 'main' && (
                     <div className="space-y-8 text-left animate-in fade-in duration-500">
                         <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
@@ -296,14 +296,14 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     <div className="space-y-12 text-left animate-in fade-in duration-500">
                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
                             <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
-                                <div className="space-y-1 text-left text-foreground text-left">
+                                <div className="space-y-1 text-left text-foreground">
                                     <span className="text-2xl font-black font-headline uppercase tracking-tight text-left">Infrastructure Standing</span>
                                     <p className="text-base text-muted-foreground text-left">Does this supplier own the property they operate from?</p>
                                 </div>
                                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
                             </FormItem>
                         )} />
-                        <div className="grid grid-cols-1 gap-6 text-left">
+                        <div className="grid grid-cols-1 gap-6 text-left text-foreground">
                             <FileUploadField 
                                 name="ficaDocUrl" 
                                 label={watchedValues.ownsOperatingProperty ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} 
@@ -316,13 +316,13 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     <div className="space-y-10 text-left animate-in fade-in duration-500 text-foreground">
                         <div className="grid grid-cols-2 gap-8 text-left text-foreground">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-left"><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
+                                <FormItem className="text-left text-foreground"><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="directorCount" render={({ field }) => (
-                                <FormItem className="text-left text-foreground text-left"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
+                                <FormItem className="text-left text-foreground"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
                             )} />
                         </div>
-                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-left"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Sync Notice</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left">Adjusting these counts will synchronize the registry nodes in the next sections.</AlertDescription></Alert>
+                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Sync Notice</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left">Adjusting these counts will synchronize the registry nodes in the next sections.</AlertDescription></Alert>
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (
@@ -352,7 +352,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (
-                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-700 text-left text-foreground text-center">
+                    <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-700 text-left text-foreground">
                         <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto border-2 border-primary/20 text-center">
                             <ShieldCheck className="h-20 w-20 text-primary" />
                         </div>
@@ -365,8 +365,8 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
               </div>
             </div>
           </CardContent>
-          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground text-foreground text-foreground">
-            <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8">Back</Button>
+          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
+            <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8 text-foreground">Back</Button>
             {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-12 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (

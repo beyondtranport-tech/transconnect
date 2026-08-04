@@ -44,7 +44,6 @@ export default function SuppliersContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
             
-            // RESOURCE CAPPING: Hard 100 limit on matrix sync
             const [suppliersRes, facilitiesRes, clientsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 }),
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),
@@ -163,10 +162,10 @@ export default function SuppliersContent() {
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent className="text-left text-foreground">
                     <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
+                        <AlertDialogTitle className="text-left text-foreground">Expunge Supplier Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left">
+                    <AlertDialogFooter className="text-left text-foreground">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
