@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -45,7 +46,8 @@ import {
   Gavel,
   History,
   Archive,
-  User
+  User,
+  ShoppingBag
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -62,6 +64,7 @@ import React from 'react';
 // --- Dynamic Imports for Modular Content ---
 const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const DebtorsContent = dynamic(() => import('@/app/lending/debtors-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const SuppliersContent = dynamic(() => import('@/app/lending/suppliers-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
@@ -105,10 +108,12 @@ function LendingPortalContent() {
       case 'desk': return <LenderDeskContent />;
       case 'clients': return <ClientsContent />;
       case 'debtors': return <DebtorsContent />;
+      case 'suppliers': return <SuppliersContent />;
       case 'agreements': return <AgreementsContent />;
       case 'assets': return <AssetRegisterContent />;
       case 'facilities-clients': return <FacilitiesContent mode="client-global" />;
       case 'facilities-debtors': return <FacilitiesContent mode="debtor" />;
+      case 'facilities-suppliers': return <FacilitiesContent mode="supplier" />;
       case 'collateral': return <CollateralContent />;
       case 'documents': return <DocumentVaultContent />;
       case 'security-vault': return <SecurityVaultContent />;
@@ -158,7 +163,7 @@ function LendingPortalContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'debtors', 'agreements', 'assets'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'debtors', 'suppliers', 'agreements', 'assets'].includes(activeView)}>
                   <ClipboardList />
                   <span>Lending Portfolios</span>
                 </SidebarMenuButton>
@@ -171,6 +176,11 @@ function LendingPortalContent() {
                    <SidebarMenuSubItem>
                     <SidebarMenuSubButton isActive={activeView === 'debtors'} onClick={() => navigate('debtors')}>
                       Debtors
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                   <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'suppliers'} onClick={() => navigate('suppliers')}>
+                      Suppliers
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                   <SidebarMenuSubItem>
@@ -200,6 +210,11 @@ function LendingPortalContent() {
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton isActive={activeView === 'facilities-debtors'} onClick={() => navigate('facilities-debtors')}>
                       Debtor Registry
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'facilities-suppliers'} onClick={() => navigate('facilities-suppliers')}>
+                      Supplier Registry
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>

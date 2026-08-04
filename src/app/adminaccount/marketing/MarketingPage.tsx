@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import dynamic from 'next/dynamic';
-import { Loader2, ClipboardCopy, Search, Users } from 'lucide-react';
+import { Loader2, ClipboardCopy, Search, Users, Database } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -32,17 +33,17 @@ import { getClientSideAuthToken } from '@/firebase';
 
 /**
  * MARKETING PAGE TERMINAL
- * Build Identifier: 2026-03-16T12:00:00Z (Tier Reversion Model)
+ * Build Identifier: 2026-03-17T11:00:00Z (Cache Refresh Fix)
  */
 
-// Content components using absolute paths
+// Content components
 const CompanyProfile = dynamic(() => import('@/app/adminaccount/marketing/content/CompanyProfile'), { loading: () => <Loader2 className="animate-spin" /> });
 const TechArchitecture = dynamic(() => import('@/app/adminaccount/marketing/content/TechArchitecture'), { loading: () => <Loader2 className="animate-spin" /> });
 const RevenueModel = dynamic(() => import('@/app/adminaccount/marketing/content/RevenueModel'), { loading: () => <Loader2 className="animate-spin" /> });
 const PitchDeck = dynamic(() => import('@/app/adminaccount/marketing/content/PitchDeck'), { loading: () => <Loader2 className="animate-spin" /> });
 const Framework = dynamic(() => import('@/app/adminaccount/marketing/content/Framework'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Audience-specific components using absolute paths
+// Audience-specific offers
 const PartnerOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/PartnerOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/InvestorOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const DeveloperOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/DeveloperOffer'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -50,6 +51,7 @@ const SupplierOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/
 const TransporterOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/TransporterOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateOffer = dynamic(() => import('@/app/adminaccount/marketing/offers/AssociateOffer'), { loading: () => <Loader2 className="animate-spin" /> });
 
+// Emails
 const PartnerEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/PartnerEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/SupplierEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/TransporterEmails'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -57,7 +59,7 @@ const InvestorEmails = dynamic(() => import('@/app/adminaccount/marketing/emails
 const DeveloperEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/DeveloperEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 const AssociateEmails = dynamic(() => import('@/app/adminaccount/marketing/emails/AssociateEmails'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Management components using absolute paths
+// Management
 const PartnerManagement = dynamic(() => import('@/app/adminaccount/marketing/partner-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const ISAManagement = dynamic(() => import('@/app/adminaccount/marketing/isa-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const InvestorManagement = dynamic(() => import('@/app/adminaccount/marketing/investor-management'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -67,7 +69,7 @@ const TransporterManagement = dynamic(() => import('@/app/adminaccount/marketing
 const AssociateManagement = dynamic(() => import('@/app/adminaccount/marketing/associate-management'), { loading: () => <Loader2 className="animate-spin" /> });
 const FinanceManagement = dynamic(() => import('@/app/adminaccount/marketing/finance-management'), { loading: () => <Loader2 className="animate-spin" /> });
 
-// Discovery components
+// Discovery
 const AssociateDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/associate-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
 const SupplierDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/discovery-engine'), { loading: () => <Loader2 className="animate-spin" /> });
 const TransporterDiscoveryEngine = dynamic(() => import('@/app/adminaccount/marketing/transporter-discovery'), { loading: () => <Loader2 className="animate-spin" /> });
@@ -167,7 +169,7 @@ function LogAndCopyDialog({ open, onOpenChange, partners, isLoadingPartners, act
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left">
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 py-4 text-left text-foreground">
                         <FormField control={form.control} name="partnerId" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Log against {singularAudience}</FormLabel>
@@ -336,21 +338,21 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                 <p className="text-muted-foreground">Tailored content and engagement tools for {config.title.toLowerCase()}.</p>
             </div>
             <Tabs defaultValue="company-profile" className="w-full text-left" onValueChange={setActiveTab}>
-                <TabsList className="h-auto flex-wrap justify-start">
-                    <TabsTrigger value="company-profile">Company Profile</TabsTrigger>
-                    <TabsTrigger value="tech-architecture">Tech Architecture</TabsTrigger>
-                    <TabsTrigger value="revenue-model">Revenue Model</TabsTrigger>
-                    <TabsTrigger value="offer">The Offer</TabsTrigger>
-                    <TabsTrigger value="pitch">The Pitch</TabsTrigger>
-                    <TabsTrigger value="framework">The Framework</TabsTrigger>
-                    <TabsTrigger value="emails">Emails</TabsTrigger>
-                    {Discovery && <TabsTrigger value="discovery" className="gap-2"><Search className="h-3.5 w-3.5" /> Discover AI</TabsTrigger>}
-                    {CRM && <TabsTrigger value="crm" className="gap-2"><Users className="h-3.5 w-3.5" /> CRM</TabsTrigger>}
+                <TabsList className="h-auto flex-wrap justify-start bg-muted/50 p-1">
+                    <TabsTrigger value="company-profile" className="text-xs">Company Profile</TabsTrigger>
+                    <TabsTrigger value="tech-architecture" className="text-xs">Tech Architecture</TabsTrigger>
+                    <TabsTrigger value="revenue-model" className="text-xs">Revenue Model</TabsTrigger>
+                    <TabsTrigger value="offer" className="text-xs">The Offer</TabsTrigger>
+                    <TabsTrigger value="pitch" className="text-xs">The Pitch</TabsTrigger>
+                    <TabsTrigger value="framework" className="text-xs">The Framework</TabsTrigger>
+                    <TabsTrigger value="emails" className="text-xs">Emails</TabsTrigger>
+                    {Discovery && <TabsTrigger value="discovery" className="gap-2 text-xs font-bold"><Search className="h-3.5 w-3.5 text-primary" /> Discover AI</TabsTrigger>}
+                    {CRM && <TabsTrigger value="crm" className="gap-2 text-xs font-bold"><Users className="h-3.5 w-3.5 text-primary" /> CRM</TabsTrigger>}
                 </TabsList>
 
-                <Card className="mt-4 text-left">
-                    <CardHeader className="flex flex-row items-center justify-end border-b">
-                        <Button variant="outline" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!CRM)}>
+                <Card className="mt-4 text-left border-none shadow-xl bg-white overflow-hidden">
+                    <CardHeader className="flex flex-row items-center justify-end border-b bg-slate-50 p-4">
+                        <Button variant="outline" className="font-bold h-10 gap-2 border-primary/20 text-primary" onClick={() => setIsLogDialogOpen(true)} disabled={isLoadingPartners || (partners.length === 0 && !!CRM)}>
                             {isLoadingPartners ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
@@ -359,7 +361,7 @@ export default function MarketingPage({ audience }: MarketingPageProps) {
                             Log & Copy Content
                         </Button>
                     </CardHeader>
-                    <CardContent className="p-6 text-left text-foreground">
+                    <CardContent className="p-8 text-left text-foreground">
                         <TabsContent value="company-profile"><div id="tab-content-company-profile"><CompanyProfile audience={audience} /></div></TabsContent>
                         <TabsContent value="tech-architecture"><div id="tab-content-tech-architecture"><TechArchitecture /></div></TabsContent>
                         <TabsContent value="revenue-model"><div id="tab-content-revenue-model"><RevenueModel /></div></TabsContent>

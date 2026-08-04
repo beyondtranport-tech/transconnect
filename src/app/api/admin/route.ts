@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
                     'facilities': 'lendingFacilities',
                     'clients': 'lendingClients',
                     'debtors': 'lendingDebtors',
+                    'suppliers': 'lendingSuppliers',
                     'agreements': 'lendingAgreements',
                     'assets': 'lendingAssets',
                     'securities': 'lendingSecurities',
@@ -76,6 +77,17 @@ export async function POST(req: NextRequest) {
                 const collectionToFetch = collMap[collectionName] || collectionName;
                 const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(1000).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'saveLendingPartner': {
+                const { collection: colName, partner } = payload;
+                const id = partner.id || db.collection(colName).doc().id;
+                await db.collection(colName).doc(id).set({
+                    ...partner,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, data: { id } });
             }
 
             case 'saveLendingFacility': {
@@ -90,8 +102,6 @@ export async function POST(req: NextRequest) {
                     id: facilityId,
                     parentId: facility.parentId || null,
                     limit: Number(facility.limit) || 0,
-                    facilityClass: facility.facilityClass || 'global',
-                    ownerType: facility.ownerType || 'client',
                     updatedAt: FieldValue.serverTimestamp(),
                     createdAt: facility.createdAt ? (typeof facility.createdAt === 'string' ? Timestamp.fromDate(new Date(facility.createdAt)) : facility.createdAt) : FieldValue.serverTimestamp()
                 };
@@ -100,23 +110,22 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id: facilityId } });
             }
 
-            case 'updateFacilityStatus': {
-                const { facilityId, status } = payload;
-                await db.collection('lendingFacilities').doc(facilityId).update({ status, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true });
-            }
-
-            case 'deleteLendingFacility': {
-                const { facilityId } = payload;
-                await db.collection('lendingFacilities').doc(facilityId).delete();
-                return NextResponse.json({ success: true });
+            case 'savePartner': {
+                const { collection: colName, partner } = payload;
+                const id = partner.id || db.collection(colName).doc().id;
+                await db.collection(colName).doc(id).set({
+                    ...partner,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, data: { id } });
             }
 
             case 'searchRegistry': {
                 const { type, term, limit: limitCount = 500 } = payload;
                 let q: any;
                 if (type === 'lead') q = db.collection('leads');
-                else if (['transporter', 'supplier', 'finance', 'distributor', 'driver', 'warehouse', 'isa', 'investor', 'developer'].includes(type)) {
+                else if (['transporter', 'supplier', 'finance', 'distributor', 'driver', 'warehouse', 'isa', 'investor', 'developer', 'associate'].includes(type)) {
                     q = db.collection('partners').where('type', '==', type);
                 } else {
                     q = db.collection('partners');
