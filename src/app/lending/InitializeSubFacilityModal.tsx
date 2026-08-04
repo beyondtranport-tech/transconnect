@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-    Loader2, Zap, Save, Gavel, UserPlus, Building, Truck, MapPin, 
-    ShieldCheck, Info, CheckCircle2, ChevronRight, X, PlusCircle, Ban, Filter
+    Loader2, Zap, Gavel, Building, Truck, MapPin, 
+    ShieldCheck, Info, CheckCircle2, ChevronRight, X, Ban
 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -49,9 +49,8 @@ const productTypes = [
 ];
 
 /**
- * SHARED SUB-FACILITY TERMINAL (V20.1 - INCLUSION ENGINE)
- * Partitions a Global Ceiling into specific Agreement Nodes.
- * FEATURES: Inclusion/Exclusion list builder for Makes, geographic hierarchy, and hardened status toggles.
+ * SHARED SUB-FACILITY TERMINAL (V20.2 - INCLUSION ENGINE)
+ * Resolves pt ReferenceError and finalizes list-builder logic.
  */
 export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen, onOpenChange }: InitializeSubFacilityModalProps) {
     const { user } = useUser();
@@ -111,7 +110,6 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                 limit: Number(limit),
                 status: 'active',
                 createdByName: user?.displayName || 'Admin',
-                // HIGH-FIDELITY VETTING PROTOCOL
                 vettingParams: isSupplierMode ? {
                     selectionMode,
                     makeList,
@@ -190,7 +188,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                             </div>
                         ) : (
                             <div className="space-y-10 text-left text-foreground">
-                                <div className="space-y-3 text-left text-foreground">
+                                <div className="space-y-3 text-left text-foreground text-foreground">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Product Category Authority</Label>
                                     <Select value={type} onValueChange={setType}>
                                         <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
@@ -226,16 +224,16 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                 {selectionMode === 'allow_only' ? 'Authorized Makes' : 'Specifically Rejected Makes'}
                                             </Label>
                                             
-                                            <div className="flex gap-2">
+                                            <div className="flex gap-2 text-left">
                                                 <Select onValueChange={handleAddMake}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white flex-1"><SelectValue placeholder="Add Make to List..." /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 border-2 bg-white flex-1 text-left text-foreground"><SelectValue placeholder="Add Make to List..." /></SelectTrigger>
                                                     <SelectContent>
                                                         {standardMakes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
 
-                                            <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-white border-2 border-dashed rounded-2xl shadow-inner">
+                                            <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-white border-2 border-dashed rounded-2xl shadow-inner text-left">
                                                 {makeList.map(m => (
                                                     <Badge key={m} className={cn(
                                                         "h-8 gap-2 pl-3 pr-1 text-xs font-bold border-none transition-all",
@@ -266,9 +264,9 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                             <div className="space-y-2 text-left">
                                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Standard Condition</Label>
                                                 <Select value={condition} onValueChange={setCondition}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
-                                                        {conditionOptions.map(opt => <SelectItem key={pt.id} value={opt.id}>{opt.label}</SelectItem>)}
+                                                        {conditionOptions.map(opt => <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -278,13 +276,13 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                             <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left"><MapPin className="h-3 w-3" /> Geographic Authority Node</Label>
                                             <div className="grid grid-cols-2 gap-4 text-left">
                                                 <Select value={selectedProvince} onValueChange={setSelectedProvince}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left"><SelectValue placeholder="Select Province" /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue placeholder="Select Province" /></SelectTrigger>
                                                     <SelectContent>
                                                         {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                                 <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
-                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left"><SelectValue placeholder="Select Hub / City" /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left text-foreground"><SelectValue placeholder="Select Hub / City" /></SelectTrigger>
                                                     <SelectContent>
                                                         {cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
                                                     </SelectContent>
