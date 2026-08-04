@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -346,7 +347,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
             {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (
-              <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary font-black uppercase tracking-tight text-white shadow-2xl">{isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />} Commit Node</Button>
+              <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary font-black uppercase tracking-tight text-white shadow-2xl">{isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />} Commit Node</Button>
             )}
           </CardFooter>
         </form>

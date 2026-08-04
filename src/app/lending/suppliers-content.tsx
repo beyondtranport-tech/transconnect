@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  RotateCcw, Upload, Sparkles, ChevronDown, Smartphone, Phone, Mail, MapPin, FileSignature, RefreshCcw, UserCheck, ShieldCheck
+  ChevronDown, Smartphone, Phone, Mail, MapPin, FileSignature, RefreshCcw, UserCheck, ShieldCheck, Zap, Wrench
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -128,7 +129,7 @@ export default function SuppliersContent() {
         { 
             header: 'Fidelity',
             cell: ({row}) => (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 text-left">
                     {row.original.website ? <Globe className="h-4 w-4 text-primary" /> : <Globe className="h-4 w-4 text-muted-foreground opacity-20" />}
                     {row.original.address ? <MapPin className="h-4 w-4 text-primary" /> : <MapPin className="h-4 w-4 text-muted-foreground opacity-20" />}
                 </div>
@@ -136,7 +137,7 @@ export default function SuppliersContent() {
         },
         { accessorKey: 'status', header: 'Status', cell: ({row}) => <Badge variant={row.original.status === 'active' ? 'default' : 'outline'} className="capitalize text-[10px] font-black text-left">{row.original.status}</Badge> },
         { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1 text-left text-foreground">
+            <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
                 <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
                 <AddCommunicationLogDialog partnerId={row.original.id} collection="lendingSuppliers" onLogAdded={forceRefresh} />
                 <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.name} />
@@ -161,9 +162,9 @@ export default function SuppliersContent() {
 
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle className="text-left text-foreground">Expunge Supplier Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
+                    <AlertDialogHeader className="text-left text-foreground text-foreground">
+                        <AlertDialogTitle className="text-left text-foreground text-foreground">Expunge Supplier Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-foreground text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="text-left text-foreground">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
@@ -174,7 +175,7 @@ export default function SuppliersContent() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Building className="h-8 w-8 text-primary" />
                         Supplier Registry (DMS)
                     </h1>
@@ -208,8 +209,8 @@ export default function SuppliersContent() {
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white overflow-hidden text-left">
-                <CardContent className="pt-6 text-left">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
+                <CardContent className="pt-6 text-left text-foreground">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />

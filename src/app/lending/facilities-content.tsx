@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
@@ -14,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { InitializeSubFacilityModal } from './InitializeSubFacilityModal';
+import { Badge } from '@/components/ui/badge';
 
 interface FacilitiesContentProps {
     mode?: 'client-global' | 'debtor' | 'facilities-suppliers';
