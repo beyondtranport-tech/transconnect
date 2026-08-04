@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -113,7 +113,7 @@ function StepMain() {
             <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
             <FormField control={control} name="category" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left text-foreground">
-                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><User className="h-4 w-4" /> Principal Identity</h4>
+                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><User className="h-4 w-4" /> Principal Identity</h4>
                 <p className="text-xs text-slate-400">Attach proof of identity for the primary dealer principal.</p>
                 <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="suppliers-identity" />
             </div>
@@ -139,7 +139,7 @@ function StepEntity() {
                         <FormField control={control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in slide-in-from-left-2 text-foreground"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
                     )}
                 </div>
-                <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-foreground">
+                <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-foreground text-white">
                     <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Building className="h-4 w-4" /> Founding Evidence</h4>
                     <FileUploadField name="registrationDocUrl" label="Registration Document" folder="suppliers-legal" />
                 </div>
@@ -216,7 +216,6 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
     { id: 'governance', title: '4. Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount'] },
     { id: 'shareholders', title: '5. Shareholders', icon: Users, fields: ['shareholders'] },
     { id: 'directors', title: '6. Directors', icon: UserCheck, fields: ['directors'] },
-    { id: 'risk', title: '7. Forensic Risk', icon: ShieldAlert, fields: ['hasJudgements', 'hasDefaults'] },
     { id: 'review', title: 'Audit Check', icon: ShieldCheck, fields: [] },
   ];
 
@@ -228,18 +227,15 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
             return;
         }
 
-        // EVENT-DRIVEN STAKEHOLDER SYNC:
-        // We sync the field arrays only when moving FORWARD from the governance step
+        // EVENT-DRIVEN STAKEHOLDER SYNC
         if (memoizedSteps[currentStep].id === 'governance') {
             const sCount = Number(methods.getValues('shareholderCount')) || 0;
             const dCount = Number(methods.getValues('directorCount')) || 0;
             
-            // Adjust Shareholders
             const curS = shareholderFields.length;
             if (sCount > curS) for (let i = 0; i < sCount - curS; i++) appendShareholder({ name: '' });
             else if (sCount < curS) for (let i = 0; i < curS - sCount; i++) removeShareholder(curS - 1 - i);
 
-            // Adjust Directors
             const curD = directorFields.length;
             if (dCount > curD) for (let i = 0; i < dCount - curD; i++) appendDirector({ name: '' });
             else if (dCount < curD) for (let i = 0; i < curD - dCount; i++) removeDirector(curD - 1 - i);
@@ -285,8 +281,6 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
 
   const currentStepConfig = memoizedSteps[currentStep];
 
-  if (isSubmitting) return <div className="flex justify-center p-40"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>;
-
   return (
     <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
       <FormProvider {...methods}>
@@ -325,7 +319,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                             )} />
                         </div>
                         <Alert className="bg-primary/5 border-primary/20 text-left">
-                            <Info className="h-5 w-5 text-primary" />
+                            <Info className="h-4 w-4 text-primary" />
                             <AlertTitle className="font-bold text-foreground">Sync Notice</AlertTitle>
                             <AlertDescription className="text-xs text-muted-foreground leading-relaxed">Adjusting these counts will synchronize the registry nodes in the next section.</AlertDescription>
                         </Alert>
@@ -336,7 +330,6 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                         {shareholderFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="shareholders" onRemove={() => { removeShareholder(index); methods.setValue('shareholderCount', shareholderFields.length - 1); }} />
                         ))}
-                        {shareholderFields.length === 0 && <div className="py-20 text-center opacity-20 italic">No shareholders defined in governance step.</div>}
                     </div>
                 )}
                 {currentStepConfig.id === 'directors' && (
@@ -344,26 +337,6 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                         {directorFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="directors" onRemove={() => { removeDirector(index); methods.setValue('directorCount', directorFields.length - 1); }} />
                         ))}
-                        {directorFields.length === 0 && <div className="py-20 text-center opacity-20 italic text-foreground">No directors defined in governance step.</div>}
-                    </div>
-                )}
-                {currentStepConfig.id === 'risk' && (
-                    <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                            <FormField control={methods.control} name="hasJudgements" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-6 border-2 rounded-2xl bg-white shadow-sm text-left">
-                                    <div className="space-y-0.5 text-left"><FormLabel className="font-black uppercase text-xs">Active Judgements</FormLabel></div>
-                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                </FormItem>
-                            )} />
-                            <FormField control={methods.control} name="hasDefaults" render={({ field }) => (
-                                <FormItem className="flex items-center justify-between p-6 border-2 rounded-2xl bg-white shadow-sm text-left">
-                                    <div className="space-y-0.5 text-left"><FormLabel className="font-black uppercase text-xs">Active Defaults</FormLabel></div>
-                                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                                </FormItem>
-                            )} />
-                        </div>
-                        <FileUploadField name="afsDocUrl" label="Attach Audited Financials (AFS)" folder="suppliers-risk" />
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (

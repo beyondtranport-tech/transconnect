@@ -7,13 +7,13 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  RotateCcw, Upload, Sparkles, ChevronDown, Smartphone, Phone, Mail, MapPin, FileSignature, RefreshCcw
+  RotateCcw, Upload, Sparkles, ChevronDown, Smartphone, Phone, Mail, MapPin, FileSignature, RefreshCcw, UserCheck, ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { cn, fetchFromAdminAPI, downloadDataAsCSV } from '@/lib/utils';
+import { cn, fetchFromAdminAPI } from '@/lib/utils';
 import { EditSupplierWizard } from './edit-supplier';
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
@@ -24,6 +24,7 @@ import { InitializeSubFacilityModal } from './InitializeSubFacilityModal';
 export default function SuppliersContent() {
     const { toast } = useToast();
     const [suppliers, setSuppliers] = useState<any[]>([]);
+    const [clients, setClients] = useState<any[]>([]);
     const [facilities, setFacilities] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -33,7 +34,6 @@ export default function SuppliersContent() {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [supplierToDelete, setSupplierToDelete] = useState<any | null>(null);
     
-    // FACILITY HANDSHAKE STATE
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
@@ -44,14 +44,15 @@ export default function SuppliersContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
             
-            // RESOURCE CAPPING: Hard 100 record limit per forensic guidelines
-            const [suppliersRes, facilitiesRes] = await Promise.all([
+            const [suppliersRes, facilitiesRes, clientsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 }),
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 })
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients', limit: 100 })
             ]);
             
             setSuppliers(suppliersRes.data || []);
             setFacilities(facilitiesRes.data || []);
+            setClients(clientsRes.data || []);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Sync Failed', description: e.message });
@@ -152,7 +153,7 @@ export default function SuppliersContent() {
         <div className="space-y-8 text-left text-foreground">
             <InitializeSubFacilityModal 
                 parent={parentFacility ? { ...parentFacility, ownerName: activeSelection?.name } : null} 
-                clients={[]}
+                clients={clients}
                 isOpen={isSubModalOpen} 
                 onOpenChange={setIsSubModalOpen} 
                 onComplete={forceRefresh} 
@@ -164,7 +165,7 @@ export default function SuppliersContent() {
                         <AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle>
                         <AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left">
+                    <AlertDialogFooter className="text-left text-foreground">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
