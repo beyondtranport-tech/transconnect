@@ -317,7 +317,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     </CardHeader>
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left text-foreground text-foreground">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);

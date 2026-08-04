@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Globe, Search, Download, Save, 
-  RotateCcw, Upload, Zap, ShieldCheck, ShoppingBag, Landmark, ArrowRight, UserCheck, Users, Mail, Phone, MapPin
+  RotateCcw, Upload, Zap, ShieldCheck, ShoppingBag, Landmark, ArrowRight, UserCheck, Users, Mail, Phone, MapPin, Wrench
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/data-table';
@@ -87,7 +87,7 @@ function SupplierDialog({ open, onOpenChange, supplier, onSave }: { open: boolea
                     <Building className="h-4 w-4" /> Core Entity Details
                 </h4>
                 <div className="grid grid-cols-2 gap-4 text-left">
-                  <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
+                  <FormField control={form.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="category" render={({ field }) => (<FormItem className="text-left"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
                 </div>
                 <div className="grid grid-cols-2 gap-4 text-left">
@@ -229,14 +229,14 @@ export default function SuppliersContent() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <ShoppingBag className="h-8 w-8 text-primary" />
                         Supplier Registry
                     </h1>
                     <p className="text-muted-foreground mt-1">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={forceRefresh} disabled={isLoading} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
                     </Button>
                     <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg text-white">
