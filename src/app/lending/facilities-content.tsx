@@ -30,6 +30,10 @@ interface FacilitiesContentProps {
     mode?: 'client-global' | 'debtor' | 'facilities-suppliers';
 }
 
+/**
+ * MASTER FACILITIES LEDGER (V18.1)
+ * High-fidelity oversight for Global Ceilings and partitioned Sub-Nodes.
+ */
 export default function FacilitiesContent({ mode = 'client-global' }: FacilitiesContentProps) {
     const [facilities, setFacilities] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
@@ -154,28 +158,28 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             />
 
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left">
-                        <AlertDialogTitle>Expunge Authority Node?</AlertDialogTitle>
-                        <AlertDialogDescription>This will permanently remove the facility from the ledger.</AlertDialogDescription>
+                <AlertDialogContent className="text-left text-foreground text-foreground">
+                    <AlertDialogHeader className="text-left text-foreground text-foreground">
+                        <AlertDialogTitle className="text-left text-foreground text-foreground">Expunge Authority Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-foreground text-foreground">This will permanently remove the facility from the ledger.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left">
+                    <AlertDialogFooter className="text-left text-foreground text-foreground">
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: 'destructive' }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         {mode === 'client-global' ? <Scale className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />}
                         {mode === 'client-global' ? 'Client Global Facilities' : (mode === 'debtor' ? 'Debtor Registry Ceilings' : 'Supplier Credit Matrix')}
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Management of master limits and partitioned agreement nodes.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground">Management of master limits and partitioned agreement nodes.</p>
                 </div>
                 <div className="flex gap-2 text-left text-foreground">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
                     <Button 
