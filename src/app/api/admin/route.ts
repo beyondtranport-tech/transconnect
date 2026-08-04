@@ -1,10 +1,14 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getAdminApp } from '@/lib/firebase-admin';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * ADMINISTRATIVE API CORE - RESOURCE PROTECTED
+ * Hard-coded limit of 100 on all list operations to prevent Resource Exhausted errors.
+ */
 
 function serializeData(docData: any): any {
     if (docData === null || docData === undefined) return docData;
@@ -75,7 +79,7 @@ export async function POST(req: NextRequest) {
                     'documents': 'lendingDocuments'
                 };
                 const collectionToFetch = collMap[collectionName] || collectionName;
-                const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(limit).get();
+                const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(Math.min(limit, 100)).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
@@ -123,7 +127,7 @@ export async function POST(req: NextRequest) {
                 } else {
                     q = db.collection('partners');
                 }
-                const snap = await q.orderBy('updatedAt', 'desc').limit(limitCount).get();
+                const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limitCount, 100)).get();
                 let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
                 if (term) {
                     const lowTerm = term.toLowerCase();

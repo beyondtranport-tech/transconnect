@@ -1,26 +1,25 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken } from '@/firebase';
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Building, Edit, Trash2, Globe, RefreshCcw, UserCheck, 
-  Mail, Phone, MapPin, Zap, ShieldCheck, Database, ArrowRight, RotateCcw
+  Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
+  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserPlus, ShieldCheck, Zap, Wrench, RefreshCcw, Mail, Phone, MapPin
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { cn, fetchFromAdminAPI } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { cn, fetchFromAdminAPI, downloadDataAsCSV } from '@/lib/utils';
 import { EditSupplierWizard } from './edit-supplier';
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
 import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
-import Link from 'next/link';
 
 export default function SuppliersContent() {
     const { toast } = useToast();
@@ -28,7 +27,7 @@ export default function SuppliersContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [view, setView] = useState<'list' | 'wizard'>('list');
+    const [view, setView] = useState<'list' | 'edit'>('list');
     const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [supplierToDelete, setSupplierToDelete] = useState<any | null>(null);
@@ -54,14 +53,9 @@ export default function SuppliersContent() {
 
     const handleEdit = (supplier: any) => {
         setSelectedSupplier(supplier);
-        setView('wizard');
+        setView('edit');
     };
 
-    const handleAddNew = () => {
-        setSelectedSupplier(null);
-        setView('wizard');
-    };
-    
     const handleBackToList = () => {
         setView('list');
         setSelectedSupplier(null);
@@ -125,21 +119,26 @@ export default function SuppliersContent() {
                 <AddCommunicationLogDialog partnerId={row.original.id} collection="lendingSuppliers" onLogAdded={forceRefresh} />
                 <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.name} />
                 <PartnerOversightDialog partner={row.original} onUpdate={forceRefresh} />
-                <Separator orientation="vertical" className="h-4 mx-1" />
                 <Button variant="ghost" size="icon" onClick={() => handleEdit(row.original)}><Edit className="h-4 w-4" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => { setSupplierToDelete(row.original); setIsDeleteOpen(true); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
         ) },
     ];
 
-    if (view === 'wizard') return <EditSupplierWizard supplier={selectedSupplier} onSave={() => { forceRefresh(); setView('list'); }} onBack={handleBackToList} />;
+    if (view === 'edit') return <EditSupplierWizard supplier={selectedSupplier} onSave={() => { forceRefresh(); setView('list'); }} onBack={handleBackToList} />;
 
     return (
         <div className="space-y-8 text-left text-foreground">
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                 <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left text-foreground"><AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle><AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription></AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground"><AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction></AlertDialogFooter>
+                    <AlertDialogHeader className="text-left text-foreground">
+                        <AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="text-left text-foreground">
+                        <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction>
+                    </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
@@ -153,9 +152,9 @@ export default function SuppliersContent() {
                 </div>
                 <div className="flex gap-2 text-left text-foreground">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-left text-foreground">
-                        <RotateCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Portfolio
+                        <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
                     </Button>
-                    <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
+                    <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
                         <PlusCircle className="h-4 w-4" /> Initialize Supplier
                     </Button>
                 </div>
@@ -176,4 +175,3 @@ export default function SuppliersContent() {
         </div>
     );
 }
-
