@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -24,10 +23,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
-/**
- * TRANCHE SETTLEMENT DIALOG
- * Handles the recording of specific payment milestones (tranches).
- */
 function RecordTrancheDialog({ payment, onComplete }: { payment: any, onComplete: () => void }) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
@@ -54,7 +49,7 @@ function RecordTrancheDialog({ payment, onComplete }: { payment: any, onComplete
                 assetId: payment.assetId,
                 amount: trancheVal,
                 method,
-                isFinal: Math.abs(remaining - trancheVal) < 1 // Simple float-safe check
+                isFinal: Math.abs(remaining - trancheVal) < 1 
             });
 
             toast({ title: "Tranche Recorded", description: "Ledger updated successfully." });
@@ -70,17 +65,17 @@ function RecordTrancheDialog({ payment, onComplete }: { payment: any, onComplete
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="h-8 text-[9px] font-black uppercase tracking-widest gap-1.5 border-primary/30 text-primary">
+                <Button size="sm" variant="outline" className="h-8 text-[9px] font-black uppercase tracking-widest gap-1.5 border-primary/30 text-primary text-left">
                     <Zap className="h-3 w-3" /> Record Tranche
                 </Button>
             </DialogTrigger>
             <DialogContent className="text-left text-foreground">
                 <DialogHeader>
                     <DialogTitle>Record Disbursement Tranche</DialogTitle>
-                    <DialogDescription>Apply a partial or final payment to this liability node.</DialogDescription>
+                    <DialogDescription className="text-left text-foreground">Apply a partial or final payment to this liability node.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 text-left">
-                    <div className="p-4 bg-muted/30 rounded-xl flex justify-between items-center text-left">
+                    <div className="p-4 bg-muted/30 rounded-xl flex justify-between items-center text-left text-foreground">
                         <div className="text-left">
                             <p className="text-[10px] font-black uppercase text-muted-foreground">Remaining Liability</p>
                             <p className="text-xl font-black text-primary">{formatCurrency(remaining)}</p>
@@ -88,27 +83,27 @@ function RecordTrancheDialog({ payment, onComplete }: { payment: any, onComplete
                         <Badge variant="outline" className="h-5 text-[8px] uppercase">Node ID: {payment.id?.slice(-4)}</Badge>
                     </div>
 
-                    <div className="space-y-2 text-left">
+                    <div className="space-y-2 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Tranche Amount (ZAR)</Label>
                         <Input 
                             type="number" 
                             value={amount} 
                             onChange={e => setAmount(e.target.value)} 
                             placeholder="0.00" 
-                            className="h-12 text-2xl font-black border-2" 
+                            className="h-12 text-2xl font-black border-2 bg-white" 
                         />
                     </div>
 
                     <div className="space-y-2 text-left">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Settlement Channel</Label>
-                        <div className="grid grid-cols-2 gap-2 text-left">
+                        <div className="grid grid-cols-2 gap-2">
                             <Button variant={method === 'bank' ? 'default' : 'outline'} className="h-10 text-xs font-bold" onClick={() => setMethod('bank')}>Bank EFT</Button>
                             <Button variant={method === 'journal' ? 'default' : 'outline'} className="h-10 text-xs font-bold" onClick={() => setMethod('journal')}>Journal Offset</Button>
                         </div>
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleExecute} disabled={isProcessing || !amount} className="w-full h-12 font-black uppercase tracking-widest">
+                    <Button onClick={handleExecute} disabled={isProcessing || !amount} className="w-full h-12 font-black uppercase tracking-widest text-white">
                         {isProcessing ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <ShieldCheck className="h-4 w-4 mr-2" />}
                         Commit Settlement Node
                     </Button>
@@ -118,11 +113,6 @@ function RecordTrancheDialog({ payment, onComplete }: { payment: any, onComplete
     );
 }
 
-/**
- * LENDING DISBURSEMENTS LEDGER
- * Strategic oversight for closing liabilities created by active agreements.
- * Workflow: Agreement Activated -> Liability Node Created -> Tranche Payments -> Asset Financed.
- */
 export default function PaymentsContent() {
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -146,9 +136,9 @@ export default function PaymentsContent() {
         {
             header: 'Agreement / Borrower',
             cell: ({row}) => (
-                <div className="flex flex-col text-left">
+                <div className="flex flex-col text-left text-foreground">
                     <span className="font-bold text-foreground text-left">{row.original.clientName || 'Borrower'}</span>
-                    <div className="flex items-center gap-1.5 mt-1 text-left">
+                    <div className="flex items-center gap-1.5 mt-1">
                         <FileText className="h-3 w-3 text-muted-foreground" />
                         <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">AGR: {row.original.agreementId?.slice(-6)}</span>
                     </div>
@@ -160,7 +150,7 @@ export default function PaymentsContent() {
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
                     <span className="text-xs font-bold text-foreground text-left">{row.original.creditorName}</span>
-                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase font-black border-primary/20 text-primary">
+                    <Badge variant="outline" className="w-fit text-[8px] h-3.5 mt-1 uppercase font-black border-primary/20 text-primary text-left">
                         Fiduciary Recipient
                     </Badge>
                 </div>
@@ -186,7 +176,7 @@ export default function PaymentsContent() {
         {
             header: 'Authorized Total',
             cell: ({row}) => (
-                <div className="flex flex-col text-right">
+                <div className="flex flex-col text-right text-foreground">
                     <span className="font-black text-primary text-sm text-right">{formatCurrency(row.original.amount)}</span>
                     <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-tighter text-right">Authorized Ceiling</span>
                 </div>
@@ -207,11 +197,11 @@ export default function PaymentsContent() {
             id: 'actions',
             header: <div className="text-right">Execution</div>,
             cell: ({ row }) => (
-                <div className="flex justify-end gap-2">
+                <div className="flex justify-end gap-2 text-foreground">
                     {row.original.status === 'pending' ? (
                         <RecordTrancheDialog payment={row.original} onComplete={forceLoad} />
                     ) : (
-                        <div className="flex items-center gap-2 text-green-600 text-[10px] font-black uppercase mr-2">
+                        <div className="flex items-center gap-2 text-green-600 text-[10px] font-black uppercase mr-2 text-left">
                             <ShieldCheck className="h-4 w-4" /> Full Settlement
                         </div>
                     )}
@@ -224,13 +214,13 @@ export default function PaymentsContent() {
         <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Banknote className="h-8 w-8 text-primary" />
                         Disbursements & Journals
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left">Manage acquisition liabilities. Payouts can be settled in tranches until the authorized ceiling is reached.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={forceLoad} disabled={isLoading} className="gap-2 h-10 px-6 font-bold">
+                <Button variant="outline" size="sm" onClick={forceLoad} disabled={isLoading} className="gap-2 h-10 px-6 font-bold text-foreground">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh Ledger
                 </Button>
             </div>
@@ -249,20 +239,20 @@ export default function PaymentsContent() {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                <Card className="bg-primary/5 border-primary/20 p-8 rounded-[2.5rem] text-left">
+                <Card className="bg-primary/5 border-primary/20 p-8 rounded-[2.5rem] text-left text-foreground">
                     <CardHeader className="p-0 mb-4 text-left">
-                        <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                        <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-foreground">
                             <Info className="h-5 w-5 text-primary" /> Tranche Protocol
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-0 space-y-4 text-sm text-slate-600 leading-relaxed text-left">
+                    <CardContent className="p-0 space-y-4 text-sm text-slate-600 leading-relaxed text-left text-foreground">
                         <p>Liability Nodes are <strong>not locked</strong>. This allows for contingent payouts based on milestones (e.g., Duties Paid, Delivery Confirmed). Each tranche is recorded as a balanced transaction in the sub-ledger.</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-slate-900 text-white border-none p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-left">
+                <Card className="bg-slate-900 text-white border-none p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-left text-white">
                     <div className="absolute top-0 right-0 p-8 opacity-10"><History className="h-32 w-32 text-primary" /></div>
-                    <CardHeader className="p-0 mb-4 text-left">
+                    <CardHeader className="p-0 mb-4 text-left text-white">
                         <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-white">
                             <ShieldCheck className="h-5 w-5 text-primary" /> Forensic Stock Release
                         </CardTitle>

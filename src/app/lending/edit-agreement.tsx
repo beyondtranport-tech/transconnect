@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -77,12 +76,12 @@ function StepClientAsset({ clients, availableAssets, isLoadingAssets, isLocked }
                     </FormItem>
                 )} />
                 <div className="p-8 border-2 border-dashed rounded-[2rem] bg-slate-50 space-y-4 text-left">
-                    <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left"><Truck className="h-4 w-4" /> Physical Asset Bind</h4>
+                    <h4 className="font-black uppercase text-[10px] tracking-widest text-primary flex items-center gap-2 text-left text-foreground"><Truck className="h-4 w-4" /> Physical Asset Bind</h4>
                     <FormField control={control} name="agreement.assetId" render={({ field }) => (
                         <FormItem className="text-left">
                             <Select onValueChange={field.onChange} value={field.value || ''}>
                                 <FormControl>
-                                    <SelectTrigger className="h-14 border-2 bg-white font-bold text-left text-foreground">
+                                    <SelectTrigger className="h-14 border-2 bg-white font-bold text-left text-foreground text-foreground">
                                         <SelectValue placeholder={isLoadingAssets ? "Scanning Register..." : "Select from available assets..."} />
                                     </SelectTrigger>
                                 </FormControl>
@@ -157,21 +156,21 @@ function StepDisbursement({ availableAssets, isLocked }: { availableAssets: any[
         <div className="space-y-10 animate-in fade-in duration-500 text-left text-foreground">
             <div className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 space-y-6 text-left">
                 <div className="flex items-center gap-3 text-left">
-                    <div className="bg-primary p-2 rounded-lg text-white shadow-md"><Scale className="h-6 w-6" /></div>
-                    <h3 className="text-xl font-black uppercase tracking-tight text-foreground">Liability Recognition Node</h3>
+                    <div className="bg-primary p-2 rounded-lg text-white shadow-md text-left"><Scale className="h-6 w-6" /></div>
+                    <h3 className="text-xl font-black uppercase tracking-tight text-foreground text-left">Liability Recognition Node</h3>
                 </div>
-                <p className="text-sm text-slate-600 leading-relaxed text-left">Committing this agreement creates an authorized disbursement record. The financial settlement path remains flexible for contingent milestones.</p>
+                <p className="text-sm text-slate-600 leading-relaxed text-left text-foreground">Committing this agreement creates an authorized disbursement record. The financial settlement path remains flexible for contingent milestones.</p>
                 
                 <Separator className="bg-primary/10" />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                    <div className="space-y-1 text-left">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground text-foreground">
+                    <div className="space-y-1 text-left text-foreground">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Recipient Creditor</Label>
-                        <p className="text-lg font-bold text-slate-900 border-b-2 pb-1 border-primary/10">{watch('agreement.creditorName') || 'Resolving from asset...'}</p>
+                        <p className="text-lg font-bold text-slate-900 border-b-2 pb-1 border-primary/10 text-left text-foreground">{watch('agreement.creditorName') || 'Resolving from asset...'}</p>
                     </div>
                     <div className="space-y-1 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Authorized Disbursement (ZAR)</Label>
-                        <p className="text-3xl font-black text-primary">{formatCurrency(watch('agreement.liabilityAmount'))}</p>
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Authorized Disbursement (ZAR)</Label>
+                        <p className="text-3xl font-black text-primary text-left">{formatCurrency(watch('agreement.liabilityAmount'))}</p>
                     </div>
                 </div>
             </div>
@@ -184,36 +183,36 @@ function StepCommitmentAudit({ isLocked, onRefinance }: { isLocked: boolean, onR
     const values = watch('agreement');
 
     return (
-        <div className="space-y-8 animate-in zoom-in-95 duration-500 text-left text-foreground">
-            <div className="text-center py-10 space-y-6">
-                <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto border border-primary/20">
+        <div className="space-y-8 animate-in zoom-in-95 duration-500 text-left text-foreground text-foreground">
+            <div className="text-center py-10 space-y-6 text-foreground text-foreground">
+                <div className="bg-primary/10 p-6 rounded-full w-fit mx-auto border border-primary/20 text-foreground">
                     <ClipboardCheck className="h-16 w-16 text-primary" />
                 </div>
-                <div className="space-y-2">
-                    <h3 className="text-3xl font-black uppercase">Fiduciary Lock Status</h3>
-                    <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed">Verified agreements are immutable to ensure institutional audit integrity.</p>
+                <div className="space-y-2 text-foreground text-center">
+                    <h3 className="text-3xl font-black uppercase text-center">Fiduciary Lock Status</h3>
+                    <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verified agreements are immutable to ensure institutional audit integrity.</p>
                 </div>
                 {isLocked && (
-                    <Button variant="outline" className="gap-2 font-bold" onClick={onRefinance}>
+                    <Button variant="outline" className="gap-2 font-bold text-foreground" onClick={onRefinance}>
                         <RefreshCcw className="h-4 w-4" /> Initialize Refinance Protocol
                     </Button>
                 )}
             </div>
 
-            <Card className="border-2 bg-slate-50/50 text-left text-foreground">
+            <Card className="border-2 bg-slate-50/50 text-left text-foreground text-foreground text-foreground">
                 <CardContent className="p-8 space-y-6 text-left">
                     <div className="grid grid-cols-2 gap-8 text-left text-foreground">
                         <div className="space-y-1 text-left">
                             <Label className="text-[9px] font-black uppercase text-muted-foreground">Agreement Class</Label>
-                            <p className="font-bold text-sm capitalize">{values.type?.replace(/-/g, ' ')}</p>
+                            <p className="font-bold text-sm capitalize text-left">{values.type?.replace(/-/g, ' ')}</p>
                         </div>
-                        <div className="space-y-1 text-right">
+                        <div className="space-y-1 text-right text-foreground">
                             <Label className="text-[9px] font-black uppercase text-muted-foreground">Authorized Principal</Label>
-                            <p className="font-black text-xl text-primary">{formatCurrency(values.totalAdvanced)}</p>
+                            <p className="font-black text-xl text-primary text-right">{formatCurrency(values.totalAdvanced)}</p>
                         </div>
                     </div>
                     <Separator />
-                    <div className="space-y-1 text-left">
+                    <div className="space-y-1 text-left text-foreground">
                         <Label className="text-[9px] font-black uppercase text-muted-foreground">Registry Recipient (Creditor)</Label>
                         <div className="flex items-center gap-2 font-bold text-sm text-left">
                             <Building className="h-4 w-4 text-primary" />
@@ -249,7 +248,6 @@ export function AgreementWizard({ agreement, clients, onSave, onBack }: any) {
     
     const assetsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
-        // In Refinance mode, we might want to see the ALREADY linked asset
         return query(collection(firestore, 'lendingAssets'), where('status', '==', 'available'));
     }, [firestore]);
     const { data: availableAssets, isLoading: isLoadingAssets } = useCollection(assetsQuery);
@@ -290,7 +288,7 @@ export function AgreementWizard({ agreement, clients, onSave, onBack }: any) {
                 } 
             });
 
-            // 2. Commit Disbursement Node (The Journal) - Only if not already settled or if readvancing
+            // 2. Commit Disbursement Node
             if (!isLocked) {
                 const asset = availableAssets?.find(a => a.id === data.agreement.assetId);
                 await fetchFromAdminAPI(token, 'createLendingPayment', {
@@ -303,7 +301,7 @@ export function AgreementWizard({ agreement, clients, onSave, onBack }: any) {
                         creditorId: data.agreement.creditorId,
                         creditorName: data.agreement.creditorName,
                         amount: data.agreement.liabilityAmount,
-                        amountPaid: 0, // Initialize paid tracker
+                        amountPaid: 0,
                         status: 'pending',
                         createdAt: { _methodName: 'serverTimestamp' }
                     }
@@ -328,14 +326,14 @@ export function AgreementWizard({ agreement, clients, onSave, onBack }: any) {
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-                    <CardHeader className="bg-slate-900 text-white p-10 text-left">
-                        <div className="flex justify-between items-center text-left">
+                    <CardHeader className="bg-slate-900 text-white p-10 text-left text-white text-left">
+                        <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
-                                <CardTitle className="text-3xl font-black font-headline uppercase text-white">Agreement Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1">Current Phase: {steps[currentStep].title}</CardDescription>
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Agreement Terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Current Phase: {steps[currentStep].title}</CardDescription>
                             </div>
                             <div className="flex gap-3">
-                                {isLocked && <Badge variant="outline" className="h-8 border-amber-500 text-amber-500 gap-1.5 px-4 font-black uppercase tracking-widest"><Lock className="h-3 w-3" /> Fiduciary Locked</Badge>}
+                                {isLocked && <Badge variant="outline" className="h-8 border-amber-500 text-amber-500 gap-1.5 px-4 font-black uppercase tracking-widest text-left"><Lock className="h-3 w-3" /> Fiduciary Locked</Badge>}
                                 <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit terminal</Button>
                             </div>
                         </div>
@@ -361,7 +359,7 @@ export function AgreementWizard({ agreement, clients, onSave, onBack }: any) {
                                     );
                                 })}
                             </div>
-                            <div className="p-12 space-y-12 bg-white min-h-[550px] text-left text-foreground">
+                            <div className="p-12 space-y-12 bg-white min-h-[550px] text-left text-foreground text-left">
                                 {steps[currentStep].id === 'client' && <StepClientAsset clients={clients} availableAssets={availableAssets || []} isLoadingAssets={isLoadingAssets} isLocked={isLocked} />}
                                 {steps[currentStep].id === 'details' && <StepTerms isLocked={isLocked} />}
                                 {steps[currentStep].id === 'liability' && <StepDisbursement availableAssets={availableAssets || []} isLocked={isLocked} />}

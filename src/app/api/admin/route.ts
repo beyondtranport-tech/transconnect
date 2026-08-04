@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -8,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * ADMINISTRATIVE API CORE - RESOURCE PROTECTED
- * Build Identifier: 2026-03-20T14:00:00Z (Lending V24 - Tranche Settlement)
+ * Build Identifier: 2026-03-24T15:00:00Z (Lending V24 - DMS & Tranche Protocols)
  */
 
 function serializeData(docData: any): any {
@@ -56,7 +55,10 @@ export async function POST(req: NextRequest) {
                     'lendingSuppliers': 'lendingSuppliers',
                     'agreements': 'lendingAgreements',
                     'lendingAssets': 'lendingAssets',
-                    'payments': 'lendingPayments'
+                    'securities': 'lendingSecurities',
+                    'collateral': 'lendingCollateral',
+                    'documents': 'lendingDocuments',
+                    'lendingPayments': 'lendingPayments'
                 };
                 const collectionToFetch = collMap[collectionName] || collectionName;
                 const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(Math.min(limit, 100)).get();
@@ -75,7 +77,6 @@ export async function POST(req: NextRequest) {
             case 'createLendingPayment': {
                 const { payment } = payload;
                 const ref = db.collection('lendingPayments').doc();
-                // Initialize amountPaid as 0 if not present
                 await ref.set({ ...payment, id: ref.id, amountPaid: 0, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true, data: { id: ref.id } });
             }
@@ -84,17 +85,16 @@ export async function POST(req: NextRequest) {
                 const { paymentId, assetId, amount, method, isFinal } = payload;
                 const batch = db.batch();
                 
-                // 1. Record Tranche in the liability node
+                // 1. Update Liability Node (Tranche settlement)
                 const pRef = db.collection('lendingPayments').doc(paymentId);
                 batch.update(pRef, {
                     amountPaid: FieldValue.increment(amount),
                     status: isFinal ? 'completed' : 'pending',
-                    lastSettlementMethod: method,
                     lastSettledAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 });
 
-                // 2. RELEASE ASSET: Only if this is the final tranche
+                // 2. ATOMIC ASSET RELEASE: Only if this is the final tranche (fully settled)
                 if (isFinal && assetId) {
                     const aRef = db.collection('lendingAssets').doc(assetId);
                     batch.update(aRef, {
@@ -105,6 +105,34 @@ export async function POST(req: NextRequest) {
 
                 await batch.commit();
                 return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingAsset': {
+                const { asset } = payload;
+                const ref = asset.id ? db.collection('lendingAssets').doc(asset.id) : db.collection('lendingAssets').doc();
+                const data = { ...asset, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!asset.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
+            }
+
+            case 'saveLendingPartner': {
+                const { collection: colName, partner } = payload;
+                if (!colName) throw new Error("Collection target required.");
+                const ref = partner.id ? db.collection(colName).doc(partner.id) : db.collection(colName).doc();
+                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
+            }
+
+            case 'saveLendingFacility': {
+                const { facility } = payload;
+                const ref = facility.id ? db.collection('lendingFacilities').doc(facility.id) : db.collection('lendingFacilities').doc();
+                const data = { ...facility, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!facility.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
             case 'getMembers': {
@@ -118,21 +146,9 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(members) });
             }
 
-            case 'searchRegistry': {
-                const { type, term, limit: limitCount = 100 } = payload;
-                let q: any;
-                if (type === 'lead') q = db.collection('leads');
-                else if (['transporter', 'supplier', 'finance', 'driver', 'warehouse', 'isa', 'investor', 'associate'].includes(type)) {
-                    q = db.collection('partners').where('type', '==', type);
-                } else q = db.collection('partners');
-                
-                const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limitCount, 100)).get();
-                let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
-                if (term) {
-                    const lowTerm = term.toLowerCase();
-                    results = results.filter((r: any) => r.companyName?.toLowerCase().includes(lowTerm) || r.email?.toLowerCase().includes(lowTerm));
-                }
-                return NextResponse.json({ success: true, data: serializeData(results) });
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             default: 

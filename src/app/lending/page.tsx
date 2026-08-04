@@ -134,7 +134,7 @@ function LendingPortalContent() {
   if (isUserLoading || !user) {
     return (
         <div className="flex flex-col justify-center items-center py-40 gap-4 text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
             <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Authenticating Portal...</p>
         </div>
     );
