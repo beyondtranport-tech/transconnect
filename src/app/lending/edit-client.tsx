@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -113,7 +112,7 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
 const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shareholders' | 'directors', onRemove: () => void }) => {
     const { control } = useFormContext<ClientFormValues>();
     return (
-        <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative text-left text-foreground">
+        <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative animate-in fade-in duration-300 text-left text-foreground">
             <div className="flex justify-between items-center text-left text-foreground">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <UserCircle className="h-4 w-4" /> {type.slice(0, -1)} #{index + 1}
@@ -140,7 +139,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
   const methods = useForm<ClientFormValues>({
     resolver: zodResolver(clientWizardSchema),
     mode: 'onChange',
-    defaultValues: client || { applyingCapacity: 'entity', status: 'draft', shareholderCount: 0, directorCount: 0, shareholders: [], directors: [] }
+    defaultValues: client || { applyingCapacity: 'entity', status: 'draft', shareholderCount: 0, directorCount: 0, shareholders: [], directors: [], globalFacilityLimit: 0 }
   });
 
   const { fields: shareholderFields, append: appendShareholder, remove: removeShareholder } = useFieldArray({ control: methods.control, name: 'shareholders' });
@@ -260,7 +259,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                         )} />
                         <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Full Name / Label</FormLabel><FormControl><Input {...field} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
                         <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
-                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
+                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><UserCheck className="h-4 w-4" /> Principal Identity Node</h4>
                             <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="lending-identity" />
                         </div>
                     </div>
@@ -280,7 +279,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                     </FormItem>
                                 )} />
                             </div>
-                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white text-white">
                                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                                 <FileUploadField name="registrationDocUrl" label="CIPC / Founding Document" folder="lending-legal" />
                             </div>
@@ -288,8 +287,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     </div>
                 )}
                 {currentStepConfig.id === 'standing' && (
-                    <div className="space-y-12 text-left animate-in fade-in duration-500">
-                         <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
+                    <div className="space-y-12 text-left animate-in fade-in duration-500 text-foreground">
+                        <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
                             <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
                                 <div className="space-y-1 text-left text-foreground">
                                     <span className="text-2xl font-black font-headline uppercase tracking-tight text-left">Infrastructure Standing</span>
@@ -313,7 +312,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                                 <FormItem className="text-left text-foreground"><FormLabel>Confirmed Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
                             )} />
                         </div>
-                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground"><Info className="h-4 w-4 text-primary" /><AlertDescription className="text-xs text-muted-foreground">Updating these counts will synchronize the registry nodes in the next section.</AlertDescription></Alert>
+                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Resource Control</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left">Adjusting these counts will synchronize the registry nodes in the next section. These transformations are only processed during section transitions.</AlertDescription></Alert>
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (

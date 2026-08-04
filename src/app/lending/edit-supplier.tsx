@@ -1,7 +1,6 @@
-
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -174,7 +173,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
         const isValid = await methods.trigger(steps[currentStep].fields as any);
         if (!isValid) return;
 
-        // EVENT-DRIVEN STAKEHOLDER SYNC
+        // EVENT-DRIVEN STAKEHOLDER SYNC (Anti-Loop Hardened)
         if (steps[currentStep].id === 'governance') {
             const sCount = Number(methods.getValues('shareholderCount')) || 0;
             const dCount = Number(methods.getValues('directorCount')) || 0;
@@ -195,7 +194,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
         }
     }
 
-    // PERVASIVE DATA SYNC: Autosave on transition
+    // PERVASIVE DATA SYNC: Autosave on transition (Hardened)
     if (methods.formState.isDirty && supplier?.id) {
         const token = await getClientSideAuthToken();
         if (token) {
@@ -324,7 +323,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                                 <FormItem className="text-left text-foreground text-foreground"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 font-black text-xl bg-white" /></FormControl></FormItem>
                             )} />
                         </div>
-                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-foreground"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Sync Notice</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">Adjusting these counts will synchronize the registry nodes in the next sections.</AlertDescription></Alert>
+                        <Alert className="bg-primary/5 border-primary/20 text-left text-foreground text-foreground"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Resource Control</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">Adjusting these counts will synchronize the registry nodes. These transformations are only processed during section transitions to protect API quota.</AlertDescription></Alert>
                     </div>
                 )}
                 {currentStepConfig.id === 'shareholders' && (
