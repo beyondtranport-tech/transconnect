@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn, fetchFromAdminAPI, formatDateSafe } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
@@ -44,7 +45,6 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             const token = await getClientSideAuthToken();
             if (!token) return;
             
-            // RESOURCE CAPPING: Hard 100 limit on matrix sync
             const [facilitiesRes, clientsRes, debtorsRes, suppliersRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients', limit: 100 }),
@@ -157,7 +157,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         {mode === 'client-global' ? <Scale className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />}
                         {mode === 'client-global' ? 'Client Global Facilities' : (mode === 'debtor' ? 'Debtor Registry Ceilings' : 'Supplier Credit Matrix')}
                     </h1>

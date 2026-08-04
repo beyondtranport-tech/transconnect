@@ -39,6 +39,7 @@ const supplierWizardSchema = z.object({
   registrationId: z.string().optional(),
   vatRegistered: z.boolean().default(false),
   vatNumber: z.string().optional(),
+  globalFacilityLimit: z.coerce.number().min(0).default(0),
   shareholderCount: z.coerce.number().min(0).default(0),
   directorCount: z.coerce.number().min(0).default(0),
   shareholders: z.array(stakeholderSchema).optional().default([]),
@@ -156,7 +157,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
 
   const steps = [
     { id: 'main', title: '1. Identity', icon: User, fields: ['name', 'category', 'userIdUrl'] },
-    { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'vatRegistered', 'vatNumber', 'registrationDocUrl'] },
+    { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'vatRegistered', 'vatNumber', 'registrationDocUrl', 'globalFacilityLimit'] },
     { id: 'standing', title: '3. Standing', icon: Landmark, fields: ['ownsOperatingProperty', 'ficaDocUrl'] },
     { id: 'governance', title: '4. Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount'] },
     { id: 'shareholders', title: '5. Shareholders', icon: Users, fields: ['shareholders'] },
@@ -230,11 +231,11 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
   const watchedValues = methods.watch();
 
   return (
-    <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
+    <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground text-foreground">
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-          <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left">
-            <div className="flex justify-between items-center text-left">
+          <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white">
+            <div className="flex justify-between items-center text-left text-white text-white">
               <div className="text-left text-white">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Supplier Protocol Terminal</CardTitle>
                 <CardDescription className="text-slate-400">Section: {currentStepConfig.title}</CardDescription>
@@ -252,7 +253,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                   </Button>
                 ))}
               </div>
-              <div className="p-12 min-h-[600px] text-left text-foreground">
+              <div className="p-12 min-h-[600px] text-left text-foreground text-foreground">
                 {currentStepConfig.id === 'main' && (
                     <div className="space-y-8 text-left animate-in fade-in duration-500">
                         <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
@@ -268,6 +269,12 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                             <div className="space-y-6 text-left">
                                 <FormField control={methods.control} name="registrationId" render={({ field }) => (<FormItem className="text-left"><FormLabel>CIPC Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="20XX/XXXXXX/07" className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="globalFacilityLimit" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <FormLabel className="text-primary font-black uppercase text-[10px]">Global Facility Limit (ZAR)</FormLabel>
+                                        <FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-black text-lg" /></FormControl>
+                                    </FormItem>
+                                )} />
                                 <FormField control={methods.control} name="vatRegistered" render={({ field }) => (
                                     <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left text-foreground">
                                         <FormLabel className="font-black uppercase text-xs">VAT Registered?</FormLabel>
@@ -358,7 +365,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
               </div>
             </div>
           </CardContent>
-          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground text-foreground">
+          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground text-foreground text-foreground">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8">Back</Button>
             {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-12 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>

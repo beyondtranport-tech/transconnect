@@ -40,6 +40,7 @@ const clientWizardSchema = z.object({
   registrationId: z.string().optional(),
   vatRegistered: z.boolean().default(false),
   vatNumber: z.string().optional(),
+  globalFacilityLimit: z.coerce.number().min(0).default(0),
   shareholderCount: z.coerce.number().min(0).default(0),
   directorCount: z.coerce.number().min(0).default(0),
   shareholders: z.array(stakeholderSchema).optional().default([]),
@@ -146,7 +147,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
 
   const steps = [
     { id: 'main', title: '1. Identity', icon: User, fields: ['applyingCapacity', 'name', 'userIdUrl'] },
-    { id: 'entity', title: '2. Entity', icon: Building, fields: ['entityType', 'registrationId', 'registrationDocUrl'] },
+    { id: 'entity', title: '2. Entity', icon: Building, fields: ['entityType', 'registrationId', 'registrationDocUrl', 'globalFacilityLimit'] },
     { id: 'standing', title: '3. Standing', icon: Landmark, fields: ['ownsOperatingProperty', 'ficaDocUrl'] },
     { id: 'governance', title: '4. Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount'] },
     { id: 'shareholders', title: '5. Shareholders', icon: Users, fields: ['shareholders'] },
@@ -224,7 +225,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
           <CardHeader className="bg-slate-900 text-white p-8 text-left">
-            <div className="flex justify-between items-center text-left">
+            <div className="flex justify-between items-center text-left text-white">
               <div className="text-left text-white">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Client Protocol Terminal</CardTitle>
                 <CardDescription className="text-slate-400">Section: {currentStepConfig.title}</CardDescription>
@@ -234,7 +235,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
           </CardHeader>
           <CardContent className="p-0 text-left text-foreground">
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr] text-left">
-              <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
+              <div className="bg-slate-50 border-r p-6 space-y-2 text-left text-foreground">
                 {steps.map((step, i) => (
                   <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
                     {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
@@ -271,6 +272,12 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
                             <div className="space-y-6 text-left">
                                 <FormField control={methods.control} name="registrationId" render={({ field }) => (<FormItem className="text-left"><FormLabel>Registration #</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="globalFacilityLimit" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <FormLabel className="text-primary font-black uppercase text-[10px]">Global Facility Limit (ZAR)</FormLabel>
+                                        <FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-black text-lg" /></FormControl>
+                                    </FormItem>
+                                )} />
                             </div>
                             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
                                 <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
