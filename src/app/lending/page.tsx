@@ -64,20 +64,18 @@ import { signOut } from 'firebase/auth';
 import dynamic from 'next/dynamic';
 import React from 'react';
 
-// --- Dynamic Imports for Modular Content ---
-const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const DebtorsContent = dynamic(() => import('@/app/lending/debtors-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const SuppliersContent = dynamic(() => import('@/app/lending/suppliers-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const PaymentsContent = dynamic(() => import('@/app/lending/payments-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
-const CollateralContent = dynamic(() => import('@/app/lending/collateral-content'), { ssr: false });
+// --- Dynamic Imports ---
+const ClientsContent = dynamic(() => import('@/app/lending/clients-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" /></div> });
+const DebtorsContent = dynamic(() => import('@/app/lending/debtors-content'), { ssr: false });
+const SuppliersContent = dynamic(() => import('@/app/lending/suppliers-content'), { ssr: false });
+const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content'), { ssr: false });
+const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false });
+const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false });
+const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false });
+const PaymentsContent = dynamic(() => import('@/app/lending/payments-content'), { ssr: false });
 const DocumentVaultContent = dynamic(() => import('@/app/lending/documents-content'), { ssr: false });
 const SecurityVaultContent = dynamic(() => import('@/app/lending/security-content'), { ssr: false });
-
-// Admin / Fiduciary Control Modules
+const CollateralContent = dynamic(() => import('@/app/lending/collateral-content'), { ssr: false });
 const PlatformStaffManagement = dynamic(() => import('@/app/adminaccount/platform-staff'), { ssr: false });
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { ssr: false });
 
@@ -117,9 +115,9 @@ function LendingPortalContent() {
       case 'facilities-clients': return <FacilitiesContent mode="client-global" />;
       case 'facilities-debtors': return <FacilitiesContent mode="debtor" />;
       case 'facilities-suppliers': return <FacilitiesContent mode="facilities-suppliers" />;
-      case 'collateral': return <CollateralContent />;
       case 'documents': return <DocumentVaultContent />;
       case 'security-vault': return <SecurityVaultContent />;
+      case 'collateral': return <CollateralContent />;
       case 'staff': return <PlatformStaffManagement />;
       case 'permissions': return <PermissionsContent />;
       default: return <LenderDeskContent />;
@@ -135,9 +133,9 @@ function LendingPortalContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center text-foreground">
-            <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
-            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Authenticating Portal Access...</p>
+        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Authenticating Portal...</p>
         </div>
     );
   }
@@ -169,37 +167,12 @@ function LendingPortalContent() {
                   <span>Lending Portfolios</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'clients'} onClick={() => navigate('clients')}>
-                      Clients
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                   <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'debtors'} onClick={() => navigate('debtors')}>
-                      Debtors
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                   <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'suppliers'} onClick={() => navigate('suppliers')}>
-                      Suppliers
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>
-                      Agreements
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>
-                      Asset Register
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'payments'} onClick={() => navigate('payments')}>
-                      <Banknote className="h-3.5 w-3.5 mr-2 text-primary" />
-                      Disbursements
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'clients'} onClick={() => navigate('clients')}>Clients</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'debtors'} onClick={() => navigate('debtors')}>Debtors</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'suppliers'} onClick={() => navigate('suppliers')}>Suppliers</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'agreements'} onClick={() => navigate('agreements')}>Agreements</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>Asset Register</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'payments'} onClick={() => navigate('payments')}><Banknote className="h-3.5 w-3.5 mr-2 text-primary" />Disbursements</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
 
@@ -209,21 +182,9 @@ function LendingPortalContent() {
                   <span>Facilities</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'facilities-clients'} onClick={() => navigate('facilities-clients')}>
-                      Client Global
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'facilities-debtors'} onClick={() => navigate('facilities-debtors')}>
-                      Debtor Registry
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'facilities-suppliers'} onClick={() => navigate('facilities-suppliers')}>
-                      Supplier Registry
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-clients'} onClick={() => navigate('facilities-clients')}>Client Global</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-debtors'} onClick={() => navigate('facilities-debtors')}>Debtor Registry</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-suppliers'} onClick={() => navigate('facilities-suppliers')}>Supplier Registry</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
 
@@ -233,47 +194,19 @@ function LendingPortalContent() {
                   <span>Registry Vaults</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton isActive={activeView === 'documents'} onClick={() => navigate('documents')}>
-                      Document Register
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton 
-                      isActive={activeView === 'security-vault'} 
-                      onClick={() => navigate('security-vault')}
-                    >
-                      Security Vault
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                  <SidebarMenuSubItem>
-                    <SidebarMenuSubButton 
-                      isActive={activeView === 'collateral'} 
-                      onClick={() => navigate('collateral')}
-                    >
-                      Collateral Register
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'documents'} onClick={() => navigate('documents')}>Document Register</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'security-vault'} onClick={() => navigate('security-vault')}>Security Vault</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'collateral'} onClick={() => navigate('collateral')}>Collateral Register</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
 
           <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupLabel>Oversight</SidebarGroupLabel>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}>
-                  <UserCheck />
-                  <span>Internal Team</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Security" isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}>
-                  <Lock />
-                  <span>Security Matrix</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton tooltip="Staff" isActive={activeView === 'staff'} onClick={() => navigate('staff')}><UserCheck /><span>Internal Team</span></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton tooltip="Security" isActive={activeView === 'permissions'} onClick={() => navigate('permissions')}><Lock /><span>Security Matrix</span></SidebarMenuButton></SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
@@ -282,9 +215,9 @@ function LendingPortalContent() {
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left text-foreground">
-                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
+            <div className="flex flex-col truncate text-left">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Admin'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />
@@ -305,12 +238,7 @@ function LendingPortalContent() {
 
 export default function LendingPage() {
   return (
-    <Suspense fallback={
-      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4 text-center">
-        <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
-        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Initializing Portal...</p>
-      </div>
-    }>
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen text-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>}>
       <LendingPortalContent />
     </Suspense>
   );

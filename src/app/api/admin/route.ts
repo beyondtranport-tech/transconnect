@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * ADMINISTRATIVE API CORE - RESOURCE PROTECTED
- * Build Identifier: 2026-03-18T10:00:00Z (Lending V21 - Payments & Liability)
+ * Build Identifier: 2026-03-18T14:00:00Z (Lending V22 - State Transitions)
  */
 
 function serializeData(docData: any): any {
@@ -39,9 +39,7 @@ export async function POST(req: NextRequest) {
         const adminEmails = ['mkoton100@gmail.com', 'beyondtransport@gmail.com', 'michael@logisticsflow.co.za'];
         const isAdmin = adminEmails.includes(decodedToken.email || '') || decodedToken.admin === true;
 
-        if (!isAdmin) {
-            throw new Error("Forbidden: Admin access required.");
-        }
+        if (!isAdmin) throw new Error("Forbidden: Admin access required.");
 
         const body = await req.json();
         const action = (body.action || '').trim();
@@ -57,9 +55,6 @@ export async function POST(req: NextRequest) {
                     'lendingSuppliers': 'lendingSuppliers',
                     'agreements': 'lendingAgreements',
                     'lendingAssets': 'lendingAssets',
-                    'collateral': 'lendingCollateral',
-                    'securities': 'lendingSecurities',
-                    'documents': 'lendingDocuments',
                     'payments': 'lendingPayments'
                 };
                 const collectionToFetch = collMap[collectionName] || collectionName;
@@ -84,15 +79,29 @@ export async function POST(req: NextRequest) {
             }
 
             case 'executeLendingPayment': {
-                const { paymentId, method, notes } = payload;
-                const ref = db.collection('lendingPayments').doc(paymentId);
-                await ref.update({
+                const { paymentId, assetId, method, notes } = payload;
+                const batch = db.batch();
+                
+                // 1. Close Payment Node
+                const pRef = db.collection('lendingPayments').doc(paymentId);
+                batch.update(pRef, {
                     status: 'completed',
                     settlementMethod: method,
                     settlementNote: notes,
                     settledAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 });
+
+                // 2. Move Asset Standing (Take out of stock)
+                if (assetId) {
+                    const aRef = db.collection('lendingAssets').doc(assetId);
+                    batch.update(aRef, {
+                        status: 'financed',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
+                }
+
+                await batch.commit();
                 return NextResponse.json({ success: true });
             }
 
@@ -102,13 +111,7 @@ export async function POST(req: NextRequest) {
                     const data = d.data();
                     const userSnap = await db.collection('users').doc(data.ownerId || 'N/A').get();
                     const userData = userSnap.data();
-                    return {
-                        id: d.id,
-                        ...data,
-                        firstName: userData?.firstName || 'N/A',
-                        lastName: userData?.lastName || 'N/A',
-                        email: userData?.email || 'N/A'
-                    };
+                    return { id: d.id, ...data, firstName: userData?.firstName || 'N/A', lastName: userData?.lastName || 'N/A', email: userData?.email || 'N/A' };
                 }));
                 return NextResponse.json({ success: true, data: serializeData(members) });
             }
@@ -117,22 +120,15 @@ export async function POST(req: NextRequest) {
                 const { type, term, limit: limitCount = 100 } = payload;
                 let q: any;
                 if (type === 'lead') q = db.collection('leads');
-                else if (['transporter', 'supplier', 'finance', 'distributor', 'driver', 'warehouse', 'isa', 'investor', 'developer', 'associate'].includes(type)) {
+                else if (['transporter', 'supplier', 'finance', 'driver', 'warehouse', 'isa', 'investor', 'associate'].includes(type)) {
                     q = db.collection('partners').where('type', '==', type);
-                } else if (type === 'finance_mall') {
-                     q = db.collection('lendingClients');
-                } else {
-                    q = db.collection('partners');
-                }
+                } else q = db.collection('partners');
+                
                 const snap = await q.orderBy('updatedAt', 'desc').limit(Math.min(limitCount, 100)).get();
                 let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data() }));
                 if (term) {
                     const lowTerm = term.toLowerCase();
-                    results = results.filter((r: any) => 
-                        r.companyName?.toLowerCase().includes(lowTerm) || 
-                        r.email?.toLowerCase().includes(lowTerm) ||
-                        r.id.toLowerCase().includes(lowTerm)
-                    );
+                    results = results.filter((r: any) => r.companyName?.toLowerCase().includes(lowTerm) || r.email?.toLowerCase().includes(lowTerm));
                 }
                 return NextResponse.json({ success: true, data: serializeData(results) });
             }
