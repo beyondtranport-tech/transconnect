@@ -44,6 +44,7 @@ export default function SuppliersContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
             
+            // RESOURCE CAPPING: Hard 100 limit on matrix sync
             const [suppliersRes, facilitiesRes, clientsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 }),
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),

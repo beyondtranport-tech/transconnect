@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm, FormProvider, useFormContext, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,17 +10,18 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Loader2, Save, ArrowLeft, ArrowRight, User, Building, ShieldCheck, Gavel, 
-    Users, UserCircle, ShieldAlert, CheckCircle2, ListChecks, FileUp, Sparkles, FileText, Info, Scale, MapPin, Zap, Trash2, PlusCircle, Landmark
+    Users, UserCircle, ShieldAlert, CheckCircle2, FileUp, Sparkles, FileText, Info, 
+    Scale, MapPin, Zap, Trash2, PlusCircle, Landmark, UserCheck
 } from 'lucide-react';
-import { getClientSideAuthToken, useFirestore } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
+import { getFirestore } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // --- SCHEMAS ---
 
@@ -104,88 +105,19 @@ function FileUploadField({ name, label, folder }: { name: any, label: string, fo
     );
 }
 
-// --- STEP COMPONENTS ---
-
-function StepMain() {
-    const { control } = useFormContext<SupplierFormValues>();
-    return (
-        <div className="space-y-8 text-left text-foreground animate-in fade-in duration-500">
-            <FormField control={control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
-            <FormField control={control} name="category" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
-            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left text-foreground">
-                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><User className="h-4 w-4" /> Principal Identity</h4>
-                <p className="text-xs text-slate-400">Attach proof of identity for the primary dealer principal.</p>
-                <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="suppliers-identity" />
-            </div>
-        </div>
-    );
-}
-
-function StepEntity() {
-    const { control, watch } = useFormContext<SupplierFormValues>();
-    const isVat = watch('vatRegistered');
-    return (
-        <div className="space-y-8 text-left text-foreground animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
-                <div className="space-y-6 text-left">
-                    <FormField control={control} name="registrationId" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>CIPC Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="20XX/XXXXXX/07" className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
-                    <FormField control={control} name="vatRegistered" render={({ field }) => (
-                        <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left text-foreground">
-                            <FormLabel className="font-black uppercase text-xs">VAT Registered?</FormLabel>
-                            <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                        </FormItem>
-                    )} />
-                    {isVat && (
-                        <FormField control={control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in slide-in-from-left-2 text-foreground"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
-                    )}
-                </div>
-                <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-foreground text-white">
-                    <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Building className="h-4 w-4" /> Founding Evidence</h4>
-                    <FileUploadField name="registrationDocUrl" label="Registration Document" folder="suppliers-legal" />
-                </div>
-            </div>
-        </div>
-    );
-}
-
-function StepStanding() {
-    const { control, watch } = useFormContext<SupplierFormValues>();
-    const isOwner = watch('ownsOperatingProperty');
-    return (
-        <div className="space-y-12 text-left text-foreground animate-in fade-in duration-500">
-            <FormField control={control} name="ownsOperatingProperty" render={({ field }) => (
-                <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
-                    <div className="space-y-1 text-left text-foreground">
-                        <span className="text-2xl font-black font-headline uppercase tracking-tight">Infrastructure Standing</span>
-                        <p className="text-base text-muted-foreground">Does this supplier own the property they operate from?</p>
-                    </div>
-                    <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
-                </FormItem>
-            )} />
-            <div className="grid grid-cols-1 gap-6 text-left text-foreground">
-                <FileUploadField 
-                    name="ficaDocUrl" 
-                    label={isOwner ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} 
-                    folder="suppliers-standing" 
-                />
-            </div>
-        </div>
-    );
-}
-
 const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shareholders' | 'directors', onRemove: () => void }) => {
     const { control } = useFormContext<SupplierFormValues>();
     return (
         <div className="p-6 border-2 rounded-2xl bg-white shadow-sm space-y-4 relative animate-in fade-in duration-300 text-left text-foreground">
-            <div className="flex justify-between items-center text-left text-foreground">
+            <div className="flex justify-between items-center text-left text-foreground text-foreground text-foreground">
                 <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2">
                     <UserCircle className="h-4 w-4" /> {type.slice(0, -1)} #{index + 1}
                 </h4>
                 <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground text-foreground text-foreground">
+                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
             </div>
             <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="Attach Identity Scan" folder={`suppliers-${type}`} />
         </div>
@@ -196,22 +128,32 @@ const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shar
 
 export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: any, onSave: () => void, onBack: () => void }) {
   const { toast } = useToast();
-  const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
   const methods = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierWizardSchema),
     mode: 'onChange',
-    defaultValues: supplier || { status: 'draft', shareholderCount: 0, directorCount: 0, shareholders: [], directors: [] }
+    defaultValues: supplier || { 
+        applyingCapacity: 'entity', 
+        status: 'draft', 
+        shareholderCount: 0, 
+        directorCount: 0, 
+        shareholders: [], 
+        directors: [],
+        vatRegistered: false,
+        hasJudgements: false,
+        hasDefaults: false,
+        ownsOperatingProperty: false
+    }
   });
 
   const { fields: shareholderFields, append: appendShareholder, remove: removeShareholder } = useFieldArray({ control: methods.control, name: 'shareholders' });
   const { fields: directorFields, append: appendDirector, remove: removeDirector } = useFieldArray({ control: methods.control, name: 'directors' });
 
-  const memoizedSteps = [
+  const steps = [
     { id: 'main', title: '1. Identity', icon: User, fields: ['name', 'category', 'userIdUrl'] },
-    { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'vatRegistered', 'registrationDocUrl'] },
+    { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'vatRegistered', 'vatNumber', 'registrationDocUrl'] },
     { id: 'standing', title: '3. Standing', icon: Landmark, fields: ['ownsOperatingProperty', 'ficaDocUrl'] },
     { id: 'governance', title: '4. Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount'] },
     { id: 'shareholders', title: '5. Shareholders', icon: Users, fields: ['shareholders'] },
@@ -220,44 +162,56 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
   ];
 
   const handleStepTransition = async (direction: 'next' | 'back' | number) => {
-    if (direction === 'next') {
-        const isValid = await methods.trigger(memoizedSteps[currentStep].fields as any);
+    const isMovingForward = direction === 'next' || (typeof direction === 'number' && direction > currentStep);
+
+    if (isMovingForward) {
+        const isValid = await methods.trigger(steps[currentStep].fields as any);
         if (!isValid) {
             toast({ variant: 'destructive', title: "Validation Error", description: "Please complete all mandatory nodes." });
             return;
         }
 
-        // EVENT-DRIVEN STAKEHOLDER SYNC
-        if (memoizedSteps[currentStep].id === 'governance') {
+        // EVENT-DRIVEN STAKEHOLDER SYNC (Prevents loops)
+        if (steps[currentStep].id === 'governance') {
             const sCount = Number(methods.getValues('shareholderCount')) || 0;
             const dCount = Number(methods.getValues('directorCount')) || 0;
             
             const curS = shareholderFields.length;
-            if (sCount > curS) for (let i = 0; i < sCount - curS; i++) appendShareholder({ name: '' });
-            else if (sCount < curS) for (let i = 0; i < curS - sCount; i++) removeShareholder(curS - 1 - i);
+            if (sCount > curS) {
+                for (let i = 0; i < sCount - curS; i++) appendShareholder({ name: '' });
+            } else if (sCount < curS) {
+                for (let i = 0; i < curS - sCount; i++) removeShareholder(curS - 1 - i);
+            }
 
             const curD = directorFields.length;
-            if (dCount > curD) for (let i = 0; i < dCount - curD; i++) appendDirector({ name: '' });
-            else if (dCount < curD) for (let i = 0; i < curD - dCount; i++) removeDirector(curD - 1 - i);
+            if (dCount > curD) {
+                for (let i = 0; i < dCount - curD; i++) appendDirector({ name: '' });
+            } else if (dCount < curD) {
+                for (let i = 0; i < curD - dCount; i++) removeDirector(curD - 1 - i);
+            }
         }
     }
 
-    // CONTROLLED PERSISTENCE: Save progress if modified
+    // PERVASIVE DATA SYNC: Autosave on transition
     if (methods.formState.isDirty && supplier?.id) {
-        const values = methods.getValues();
         const token = await getClientSideAuthToken();
         if (token) {
-            const ref = doc(firestore, 'lendingSuppliers', supplier.id);
-            setDoc(ref, { ...values, updatedAt: serverTimestamp() }, { merge: true }).catch(console.error);
+            const values = methods.getValues();
+            fetch('/api/updateUserDoc', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    path: `lendingSuppliers/${supplier.id}`,
+                    data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } }
+                })
+            }).catch(e => console.warn("Background save failed", e));
         }
     }
 
     if (typeof direction === 'number') {
-        if (direction <= currentStep || (await methods.trigger(memoizedSteps[currentStep].fields as any))) {
-            setCurrentStep(direction);
-        }
+        setCurrentStep(direction);
     } else if (direction === 'next') {
-        setCurrentStep(prev => Math.min(prev + 1, memoizedSteps.length - 1));
+        setCurrentStep(prev => Math.min(prev + 1, steps.length - 1));
     } else {
         setCurrentStep(prev => Math.max(prev - 1, 0));
     }
@@ -268,8 +222,16 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
     try {
         const token = await getClientSideAuthToken();
         if (!token) throw new Error("Auth failed.");
-        const ref = supplier?.id ? doc(firestore, 'lendingSuppliers', supplier.id) : doc(collection(firestore, 'lendingSuppliers'));
-        await setDoc(ref, { ...values, id: ref.id, updatedAt: serverTimestamp() }, { merge: true });
+        const response = await fetch(supplier?.id ? '/api/updateUserDoc' : '/api/addUserDoc', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(supplier?.id 
+                ? { path: `lendingSuppliers/${supplier.id}`, data: { ...values, updatedAt: { _methodName: 'serverTimestamp' } } }
+                : { collectionPath: 'lendingSuppliers', data: { ...values, createdAt: { _methodName: 'serverTimestamp' } } }
+            )
+        });
+
+        if (!response.ok) throw new Error("Registry commit failed.");
         toast({ title: 'Supplier Node Committed' });
         onSave();
     } catch (error: any) {
@@ -279,13 +241,14 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
     }
   };
 
-  const currentStepConfig = memoizedSteps[currentStep];
+  const currentStepConfig = steps[currentStep];
+  const watchedValues = methods.watch();
 
   return (
     <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
       <FormProvider {...methods}>
         <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
-          <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left text-white">
+          <CardHeader className="bg-slate-900 text-white p-8 border-b border-white/5 text-left">
             <div className="flex justify-between items-center text-left">
               <div className="text-left text-white">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white">Supplier Protocol Terminal</CardTitle>
@@ -297,17 +260,66 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
           <CardContent className="p-0 text-left text-foreground">
             <div className="grid grid-cols-1 md:grid-cols-[240px_1fr]">
               <div className="bg-slate-50 border-r p-6 space-y-2 text-left">
-                {memoizedSteps.map((step, i) => (
+                {steps.map((step, i) => (
                   <Button key={step.id} type="button" variant={currentStep === i ? "secondary" : "ghost"} className={cn("w-full justify-start gap-3 h-10 px-3 transition-all text-left", currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20")} onClick={() => handleStepTransition(i)}>
                     {React.createElement(step.icon, { className: cn("h-4 w-4", currentStep >= i ? "text-primary" : "text-muted-foreground") })}
-                    <span className={cn("text-[11px] font-black uppercase text-left", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
+                    <span className={cn("text-[11px] font-black uppercase text-left text-foreground", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                   </Button>
                 ))}
               </div>
-              <div className="p-12 min-h-[600px] text-left">
-                {currentStepConfig.id === 'main' && <StepMain />}
-                {currentStepConfig.id === 'entity' && <StepEntity />}
-                {currentStepConfig.id === 'standing' && <StepStanding />}
+              <div className="p-12 min-h-[600px] text-left text-foreground">
+                {currentStepConfig.id === 'main' && (
+                    <div className="space-y-8 text-left animate-in fade-in duration-500">
+                        <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="category" render={({ field }) => (<FormItem className="text-left"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
+                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left">
+                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><User className="h-4 w-4" /> Principal Identity</h4>
+                            <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="suppliers-identity" />
+                        </div>
+                    </div>
+                )}
+                {currentStepConfig.id === 'entity' && (
+                    <div className="space-y-8 text-left animate-in fade-in duration-500">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                            <div className="space-y-6 text-left">
+                                <FormField control={methods.control} name="registrationId" render={({ field }) => (<FormItem className="text-left"><FormLabel>CIPC Registration Number</FormLabel><FormControl><Input {...field} value={field.value || ''} placeholder="20XX/XXXXXX/07" className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="vatRegistered" render={({ field }) => (
+                                    <FormItem className="flex items-center justify-between p-4 border-2 rounded-2xl bg-white text-left text-foreground">
+                                        <FormLabel className="font-black uppercase text-xs">VAT Registered?</FormLabel>
+                                        <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                    </FormItem>
+                                )} />
+                                {watchedValues.vatRegistered && (
+                                    <FormField control={methods.control} name="vatNumber" render={({ field }) => (<FormItem className="text-left animate-in fade-in slide-in-from-left-2 text-foreground"><FormLabel>VAT Number</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
+                                )}
+                            </div>
+                            <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white">
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Building className="h-4 w-4" /> Founding Evidence</h4>
+                                <FileUploadField name="registrationDocUrl" label="Registration Document" folder="suppliers-legal" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {currentStepConfig.id === 'standing' && (
+                    <div className="space-y-12 text-left animate-in fade-in duration-500">
+                        <FormField control={methods.control} name="ownsOperatingProperty" render={({ field }) => (
+                            <FormItem className="flex items-center justify-between p-8 border-2 rounded-[2.5rem] bg-white shadow-lg text-left text-foreground">
+                                <div className="space-y-1 text-left text-foreground">
+                                    <span className="text-2xl font-black font-headline uppercase tracking-tight">Infrastructure Standing</span>
+                                    <p className="text-base text-muted-foreground">Does this supplier own the property they operate from?</p>
+                                </div>
+                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} className="scale-125" /></FormControl>
+                            </FormItem>
+                        )} />
+                        <div className="grid grid-cols-1 gap-6 text-left">
+                            <FileUploadField 
+                                name="ficaDocUrl" 
+                                label={watchedValues.ownsOperatingProperty ? "Title Deed / Bond Statement" : "Signed Lease Agreement"} 
+                                folder="suppliers-standing" 
+                            />
+                        </div>
+                    </div>
+                )}
                 {currentStepConfig.id === 'governance' && (
                     <div className="space-y-10 text-left animate-in fade-in duration-500">
                         <div className="grid grid-cols-2 gap-8 text-left">
@@ -321,7 +333,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                         <Alert className="bg-primary/5 border-primary/20 text-left">
                             <Info className="h-4 w-4 text-primary" />
                             <AlertTitle className="font-bold text-foreground">Sync Notice</AlertTitle>
-                            <AlertDescription className="text-xs text-muted-foreground leading-relaxed">Adjusting these counts will synchronize the registry nodes in the next section.</AlertDescription>
+                            <AlertDescription className="text-xs text-muted-foreground leading-relaxed">Adjusting these counts will synchronize the registry nodes in the next sections.</AlertDescription>
                         </Alert>
                     </div>
                 )}
@@ -330,6 +342,12 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                         {shareholderFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="shareholders" onRemove={() => { removeShareholder(index); methods.setValue('shareholderCount', shareholderFields.length - 1); }} />
                         ))}
+                        {shareholderFields.length === 0 && (
+                            <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30">
+                                <Users className="h-12 w-12 mx-auto mb-2" />
+                                <p className="text-sm font-black uppercase">No Shareholders Mapped</p>
+                            </div>
+                        )}
                     </div>
                 )}
                 {currentStepConfig.id === 'directors' && (
@@ -337,6 +355,12 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                         {directorFields.map((field, index) => (
                             <StakeholderNode key={field.id} index={index} type="directors" onRemove={() => { removeDirector(index); methods.setValue('directorCount', directorFields.length - 1); }} />
                         ))}
+                        {directorFields.length === 0 && (
+                            <div className="py-20 text-center border-2 border-dashed rounded-3xl opacity-30">
+                                <UserCheck className="h-12 w-12 mx-auto mb-2" />
+                                <p className="text-sm font-black uppercase">No Directors Mapped</p>
+                            </div>
+                        )}
                     </div>
                 )}
                 {currentStepConfig.id === 'review' && (
@@ -355,7 +379,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
           </CardContent>
           <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8">Back</Button>
-            {currentStep < memoizedSteps.length - 1 ? (
+            {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-12 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
             ) : (
               <Button type="submit" disabled={isSubmitting} className="h-14 px-16 bg-primary hover:bg-primary/90 font-black uppercase tracking-tight text-white shadow-2xl">
@@ -368,3 +392,4 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
     </Card>
   );
 }
+
