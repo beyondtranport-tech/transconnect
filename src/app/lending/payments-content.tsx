@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
-import { Loader2, Banknote, Scale, RefreshCcw, CheckCircle2, History, Building, Truck, ArrowRight, UserCheck, AlertTriangle, Info, ShieldCheck, FileUp } from "lucide-react";
+import { 
+    Loader2, Banknote, Scale, RefreshCcw, CheckCircle2, History, Building, Truck, 
+    ArrowRight, UserCheck, AlertTriangle, Info, ShieldCheck, FileUp, Save 
+} from "lucide-react";
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +29,7 @@ export default function PaymentsContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
-    // 1. FETCH PENDING LIABILITIES
+    // 1. FETCH PENDING LIABILITIES - Manual Trigger Mode
     const paymentsQuery = useMemoFirebase(() => {
         if (!firestore) return null;
         return query(collection(firestore, 'lendingPayments'), orderBy('createdAt', 'desc'), limit(100));
@@ -68,8 +70,8 @@ export default function PaymentsContent() {
             header: 'Fiduciary Context',
             cell: ({row}) => (
                 <div className="flex flex-col text-left">
-                    <span className="font-bold text-foreground">{row.original.clientName || 'Borrower'}</span>
-                    <div className="flex items-center gap-1.5 mt-1">
+                    <span className="font-bold text-foreground text-left">{row.original.clientName || 'Borrower'}</span>
+                    <div className="flex items-center gap-1.5 mt-1 text-left">
                         <Truck className="h-3 w-3 text-muted-foreground" />
                         <span className="text-[10px] text-muted-foreground uppercase font-mono">{row.original.assetName}</span>
                     </div>
@@ -133,25 +135,25 @@ export default function PaymentsContent() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
-                <div className="text-left">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left text-foreground">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
                         <Banknote className="h-8 w-8 text-primary" />
                         Disbursements & Journals
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left">Oversight of capital flow to dealers and clients to close acquisition liabilities.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={forceLoad} disabled={isLoading} className="gap-2 h-10 px-6 font-bold">
+                <Button variant="outline" size="sm" onClick={forceLoad} disabled={isLoading} className="gap-2 h-10 px-6 font-bold text-foreground text-left">
                     <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh Ledger
                 </Button>
             </div>
 
-            <Card className="border-none shadow-xl bg-white text-left overflow-hidden">
+            <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
                 <CardContent className="pt-6 text-left">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground animate-pulse">Syncing Payment Nodes...</p>
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Syncing Payment Nodes...</p>
                         </div>
                     ) : (
                         <DataTable columns={columns} data={payments || []} />
@@ -159,30 +161,30 @@ export default function PaymentsContent() {
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
-                <Card className="bg-primary/5 border-primary/20 p-8 rounded-[2.5rem] text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
+                <Card className="bg-primary/5 border-primary/20 p-8 rounded-[2.5rem] text-left text-foreground">
                     <CardHeader className="p-0 mb-4 text-left">
-                        <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                        <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-left text-foreground">
                             <Info className="h-5 w-5 text-primary" /> Accounting Logic
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-0 space-y-4 text-sm text-slate-600 leading-relaxed text-left">
-                        <p>Liability is created upon Agreement Protocol commitment. Executing a payment or journal entry closes the creditor record and marks the asset as <strong>Authorized for Release</strong>.</p>
-                        <div className="flex items-center gap-3 text-xs font-bold text-slate-900 text-left">
+                    <CardContent className="p-0 space-y-4 text-sm text-slate-600 leading-relaxed text-left text-foreground">
+                        <p>Liability is recognized upon Agreement Protocol commitment. Executing a payment or journal entry closes the creditor record and marks the asset as <strong>Authorized for Release</strong>.</p>
+                        <div className="flex items-center gap-3 text-xs font-bold text-slate-900 text-left text-foreground">
                             <CheckCircle2 className="h-4 w-4 text-primary" /> Ledger Balance Reconciliation
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-slate-900 text-white border-none p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-left">
+                <Card className="bg-slate-900 text-white border-none p-8 rounded-[2.5rem] shadow-2xl relative overflow-hidden text-left text-white">
                     <div className="absolute top-0 right-0 p-8 opacity-10"><History className="h-32 w-32 text-primary" /></div>
-                    <CardHeader className="p-0 mb-4 text-left">
+                    <CardHeader className="p-0 mb-4 text-left text-white">
                         <CardTitle className="text-lg font-black uppercase tracking-tight flex items-center gap-2 text-white text-left">
                             <ShieldCheck className="h-5 w-5 text-primary" /> Fiduciary Integrity
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="p-0 text-xs text-slate-400 leading-relaxed text-left">
-                        All payments are hard-coded to their originating agreement ID and asset VIN. This ensures an immutable forensic trail for institutional audits.
+                    <CardContent className="p-0 text-xs text-slate-400 leading-relaxed text-left text-white">
+                        All payments are hard-coded to their originating agreement ID and asset VIN. This ensures an immutable forensic trail for institutional audits and simplifies CSV exporting for external accounting systems.
                     </CardContent>
                 </Card>
             </div>

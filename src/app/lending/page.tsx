@@ -80,8 +80,6 @@ const SecurityVaultContent = dynamic(() => import('@/app/lending/security-conten
 // Admin / Fiduciary Control Modules
 const PlatformStaffManagement = dynamic(() => import('@/app/adminaccount/platform-staff'), { ssr: false });
 const PermissionsContent = dynamic(() => import('@/app/backend/permissions-content'), { ssr: false });
-const PoliciesContent = dynamic(() => import('./policies-content'), { ssr: false });
-const UtilitiesContent = dynamic(() => import('./utilities-content'), { ssr: false });
 
 function LendingPortalContent() {
   const router = useRouter();
@@ -124,8 +122,6 @@ function LendingPortalContent() {
       case 'security-vault': return <SecurityVaultContent />;
       case 'staff': return <PlatformStaffManagement />;
       case 'permissions': return <PermissionsContent />;
-      case 'policies': return <PoliciesContent />;
-      case 'utilities': return <UtilitiesContent />;
       default: return <LenderDeskContent />;
     }
   }, [activeView]);
@@ -278,18 +274,6 @@ function LendingPortalContent() {
                   <span>Security Matrix</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Policies" isActive={activeView === 'policies'} onClick={() => navigate('policies')}>
-                  <Gavel />
-                  <span>Lending Policies</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Utilities" isActive={activeView === 'utilities'} onClick={() => navigate('utilities')}>
-                  <Wrench />
-                  <span>Global Utilities</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
@@ -298,9 +282,9 @@ function LendingPortalContent() {
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Member'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+            <div className="flex flex-col truncate text-left text-foreground">
+                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />
@@ -309,8 +293,8 @@ function LendingPortalContent() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="p-8">
-            <Suspense fallback={<div className="py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
+        <div className="p-8 text-left text-foreground">
+            <Suspense fallback={<div className="py-20 text-center text-foreground"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                 {renderContent()}
             </Suspense>
         </div>
@@ -322,7 +306,7 @@ function LendingPortalContent() {
 export default function LendingPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4">
+      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4 text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
         <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Initializing Portal...</p>
       </div>
