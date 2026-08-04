@@ -2,183 +2,27 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { DataTable } from '@/components/ui/data-table';
-import { type ColumnDef } from '@/hooks/use-data-table';
-import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
-import { 
-    Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, 
-    Users, Building, ArrowRight, ShieldCheck, Scale, Landmark, RefreshCcw, 
-    ChevronDown, ChevronRight, Zap, Gavel, Info, AlertTriangle, UserPlus, Table as TableIcon,
-    CheckCircle2, FileSignature, Lock, Save, Clock, User, ArrowRightLeft
-} from "lucide-react";
-import { getClientSideAuthToken, useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
+import { Loader2, PlusCircle, Banknote, Edit, Trash2, CheckCircle, XCircle, MoreVertical, Landmark, RefreshCcw, ChevronDown, ChevronRight, Zap, Gavel, UserPlus, Info, CheckCircle2, FileSignature, Scale, Clock, User, ArrowRightLeft } from "lucide-react";
+import { getClientSideAuthToken, useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { formatCurrency, cn, fetchFromAdminAPI, formatDateSafe } from '@/lib/utils';
 import { EditFacilityWizard } from './edit-facility';
-import { 
-    AlertDialog, 
-    AlertDialogAction, 
-    AlertDialogCancel, 
-    AlertDialogContent, 
-    AlertDialogDescription, 
-    AlertDialogFooter, 
-    AlertDialogHeader, 
-    AlertDialogTitle,
-    AlertDialogTrigger
-} from '@/components/ui/alert-dialog';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle, 
-    DialogTrigger 
-} from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { doc, serverTimestamp } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
-
-// --- MODAL COMPONENT ---
-
-function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen, onOpenChange }: { parent: any, clients: any[], onComplete: () => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-    const { user } = useUser();
-    const { toast } = useToast();
-    const [isSaving, setIsSaving] = useState(false);
-    const [type, setType] = useState('factoring');
-    const [associatedClientId, setAssociatedClientId] = useState<string>('');
-    const [limit, setLimit] = useState<string>('');
-
-    const isDebtorMode = parent?.ownerType === 'debtor';
-
-    const handleSave = async () => {
-        if (!limit || Number(limit) <= 0) {
-            toast({ variant: 'destructive', title: "Limit Required", description: "Please enter a valid authorized amount." });
-            return;
-        }
-        if (isDebtorMode && !associatedClientId) {
-            toast({ variant: 'destructive', title: "Client Required", description: "Select the member client being allocated to this debtor." });
-            return;
-        }
-
-        setIsSaving(true);
-        try {
-            const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication failed.");
-
-            // DEFINTIVE PERSISTENCE LOGIC: 
-            // We use the parent record context to hard-code the hierarchy.
-            const payload = {
-                parentId: parent.id,
-                ownerType: parent.ownerType || 'client',
-                facilityClass: 'sub',
-                clientId: isDebtorMode ? associatedClientId : (parent.clientId || null),
-                debtorId: parent.debtorId || null,
-                type: isDebtorMode ? 'Client Allocation' : type,
-                associatedClientId: isDebtorMode ? associatedClientId : null,
-                limit: Number(limit),
-                status: 'active',
-                createdByName: user?.displayName || 'Admin'
-            };
-
-            await fetchFromAdminAPI(token, 'saveLendingFacility', { facility: payload });
-            
-            toast({ title: isDebtorMode ? "Client Allocation Secured" : "Agreement Facility Created", description: "Sub-node committed to parent ceiling." });
-            onComplete();
-            onOpenChange(false);
-            setLimit('');
-            setAssociatedClientId('');
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Commit Failed", description: e.message });
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    if (!parent) return null;
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md text-left text-foreground">
-                <DialogHeader className="text-left">
-                    <DialogTitle className="flex items-center gap-2">
-                        {isDebtorMode ? <UserPlus className="h-5 w-5 text-primary" /> : <Gavel className="h-5 w-5 text-primary" />}
-                        {isDebtorMode ? 'Partition for Member Client' : 'Initialize Agreement Facility'}
-                    </DialogTitle>
-                    <DialogDescription className="text-left text-foreground">
-                        Partition a sub-limit from the global ceiling for <strong>{parent.ownerName || 'Selected Node'}</strong>.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-6 py-6 text-left">
-                    <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Parent Ceiling (Master)</Label>
-                        <p className="px-4 py-3 bg-muted/30 rounded-xl border border-dashed font-bold text-sm">{formatCurrency(parent.limit)}</p>
-                    </div>
-
-                    {isDebtorMode ? (
-                        <div className="space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Select Member Client</Label>
-                            <Select value={associatedClientId} onValueChange={setAssociatedClientId}>
-                                <SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose borrower..." /></SelectTrigger>
-                                <SelectContent>
-                                    {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    ) : (
-                        <div className="space-y-2 text-left">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Agreement Product Type</Label>
-                            <Select value={type} onValueChange={setType}>
-                                <SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="factoring">Factoring (Discounting)</SelectItem>
-                                    <SelectItem value="asset_finance">Asset Finance (Lease/Sale)</SelectItem>
-                                    <SelectItem value="working_capital">Working Capital (Loan)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
-
-                    <div className="space-y-2 text-left">
-                        <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Authorized Sub-Limit (ZAR)</Label>
-                        <Input 
-                            type="number" 
-                            value={limit} 
-                            onChange={e => setLimit(e.target.value)} 
-                            placeholder="e.g. 250000"
-                            className="h-12 border-2 text-xl font-black bg-white"
-                        />
-                    </div>
-                </div>
-
-                <DialogFooter className="bg-slate-50 p-6 -mx-6 -mb-6 border-t rounded-b-lg">
-                    <Button onClick={handleSave} disabled={isSaving} className="w-full h-12 font-black uppercase shadow-lg text-white">
-                        {isSaving ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                        {isDebtorMode ? 'Bind Client to Debtor Pool' : 'Save Agreement Node'}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
-
-// --- MAIN CONTENT ---
+import { InitializeSubFacilityModal } from './InitializeSubFacilityModal';
 
 interface FacilitiesContentProps {
-    mode?: 'client-global' | 'debtor';
+    mode?: 'client-global' | 'debtor' | 'facilities-suppliers';
 }
 
 export default function FacilitiesContent({ mode = 'client-global' }: FacilitiesContentProps) {
     const [facilities, setFacilities] = useState<any[]>([]);
     const [clients, setClients] = useState<any[]>([]);
     const [debtors, setDebtors] = useState<any[]>([]);
+    const [suppliers, setSuppliers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
     const [selectedMasterId, setSelectedMasterId] = useState<string | null>(null);
@@ -192,6 +36,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
     const clientMap = useMemo(() => new Map(clients.map(c => [c.id, c.name])), [clients]);
     const debtorMap = useMemo(() => new Map(debtors.map(d => [d.id, d.name])), [debtors]);
+    const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.id, s.name])), [suppliers]);
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
@@ -199,15 +44,18 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             const token = await getClientSideAuthToken();
             if (!token) return;
             
-            const [facilitiesRes, clientsRes, debtorsRes] = await Promise.all([
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities' }),
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients' }),
-                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingDebtors' })
+            // RESOURCE CAPPING: Hard 100 limit on matrix sync
+            const [facilitiesRes, clientsRes, debtorsRes, suppliersRes] = await Promise.all([
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingClients', limit: 100 }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingDebtors', limit: 100 }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 })
             ]);
             
             setFacilities(facilitiesRes.data || []);
             setClients(clientsRes.data || []);
             setDebtors(debtorsRes.data || []);
+            setSuppliers(suppliersRes.data || []);
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Sync Failed', description: e.message });
         } finally {
@@ -257,12 +105,13 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
             const isGlobal = f.facilityClass === 'global' || !f.parentId;
             if (mode === 'client-global') return isGlobal && f.ownerType === 'client';
             if (mode === 'debtor') return isGlobal && f.ownerType === 'debtor';
+            if (mode === 'facilities-suppliers') return isGlobal && f.ownerType === 'supplier';
             return isGlobal;
         }).map(f => ({
             ...f,
-            ownerName: f.ownerType === 'client' ? clientMap.get(f.clientId) : debtorMap.get(f.debtorId)
+            ownerName: f.ownerType === 'client' ? clientMap.get(f.clientId) : (f.ownerType === 'supplier' ? supplierMap.get(f.sourceDealerId) : debtorMap.get(f.debtorId))
         })).sort((a,b) => (b.limit || 0) - (a.limit || 0));
-    }, [facilities, mode, clientMap, debtorMap]);
+    }, [facilities, mode, clientMap, debtorMap, supplierMap]);
 
     const selectedMaster = useMemo(() => {
         return filteredGlobals.find(f => f.id === selectedMasterId);
@@ -274,9 +123,10 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                 facility={selectedFacility} 
                 clients={clients} 
                 debtors={debtors} 
+                suppliers={suppliers}
                 onSave={() => { forceRefresh(); setView('list'); }} 
                 onBack={() => setView('list')}
-                initialOwnerType={mode === 'client-global' ? 'client' : 'debtor'}
+                initialOwnerType={mode === 'client-global' ? 'client' : (mode === 'debtor' ? 'debtor' : 'supplier')}
                 initialFacilityClass="global"
             />
         );
@@ -294,27 +144,27 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
 
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left text-foreground">
-                        <AlertDialogTitle className="text-left text-foreground">Expunge Authority Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left text-foreground">This will permanently remove the facility from the ledger.</AlertDialogDescription>
+                    <AlertDialogHeader className="text-left">
+                        <AlertDialogTitle>Expunge Authority Node?</AlertDialogTitle>
+                        <AlertDialogDescription>This will permanently remove the facility from the ledger.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground">
+                    <AlertDialogFooter className="text-left">
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: 'destructive' }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
-                <div className="text-left text-foreground text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3">
                         {mode === 'client-global' ? <Scale className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />}
-                        {mode === 'client-global' ? 'Client Global Facilities' : 'Debtor Registry Ceilings'}
+                        {mode === 'client-global' ? 'Client Global Facilities' : (mode === 'debtor' ? 'Debtor Registry Ceilings' : 'Supplier Credit Matrix')}
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">{mode === 'client-global' ? 'Management of master limits and partitioned agreement nodes.' : 'Managing master ceilings for cessionary debtors and member allocations.'}</p>
+                    <p className="text-muted-foreground mt-1 text-left">Management of master limits and partitioned agreement nodes.</p>
                 </div>
-                <div className="flex gap-2 text-left">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                <div className="flex gap-2 text-left text-foreground">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Matrix
                     </Button>
                     <Button 
@@ -324,11 +174,11 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                         disabled={!selectedMasterId}
                         className={cn("gap-2 font-bold h-10 px-6", selectedMasterId && "border-primary text-primary bg-primary/5")}
                     >
-                        {mode === 'client-global' ? <FileSignature className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-                        {mode === 'client-global' ? 'Agreement Facility' : 'Client Allocation'}
+                        {mode === 'debtor' ? <UserPlus className="h-4 w-4" /> : <FileSignature className="h-4 w-4" />}
+                        {mode === 'debtor' ? 'Client Allocation' : 'Agreement Facility'}
                     </Button>
                     <Button onClick={() => { setSelectedFacility(null); setView('wizard'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
-                        <PlusCircle className="h-4 w-4" /> {mode === 'client-global' ? 'New Client Global Facility' : 'New Debtor Master Facility'}
+                        <PlusCircle className="h-4 w-4" /> New Master Facility
                     </Button>
                 </div>
             </div>
@@ -374,7 +224,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                             <div className="flex flex-col text-left">
                                                 <span className="font-black text-sm text-slate-900">{global.ownerName || 'Unknown Node'}</span>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <Badge variant="outline" className="capitalize text-[8px] h-3.5 font-black border-primary/20 text-primary">
+                                                    <Badge variant="outline" className="capitalize text-[8px] h-3.5 font-black border-primary/20 text-primary uppercase">
                                                         {global.ownerType} Master
                                                     </Badge>
                                                     <span className="text-[9px] text-muted-foreground font-mono uppercase">ID: {global.id.slice(-6)}</span>
@@ -408,8 +258,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                         </AlertDialogTrigger>
                                                         <AlertDialogContent className="text-left text-foreground">
                                                             <AlertDialogHeader className="text-left">
-                                                                <AlertDialogTitle className="text-left text-foreground">Confirm Permanent Deletion</AlertDialogTitle>
-                                                                <AlertDialogDescription className="text-left text-foreground">This will remove the facility from the registry. This action is immutable.</AlertDialogDescription>
+                                                                <AlertDialogTitle>Confirm Permanent Deletion</AlertDialogTitle>
+                                                                <AlertDialogDescription>This will remove the facility from the registry. This action is immutable.</AlertDialogDescription>
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter className="text-left">
                                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -431,29 +281,29 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                                                                 <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {global.ownerName}
                                                             </h4>
-                                                            <p className="text-[10px] text-muted-foreground mt-1 text-left">Specific {mode === 'client-global' ? 'product' : 'member'} partitions approved under this ceiling.</p>
+                                                            <p className="text-[10px] text-muted-foreground mt-1 text-left">Specific sub-partitions approved under this ceiling.</p>
                                                         </div>
                                                     </div>
 
                                                     {subs.length > 0 ? (
-                                                        <div className="border rounded-xl bg-white shadow-inner overflow-hidden text-left text-foreground">
+                                                        <div className="border rounded-xl bg-white shadow-inner overflow-hidden text-left">
                                                             <Table>
                                                                 <TableHeader className="bg-muted/50">
                                                                     <TableRow>
-                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">{mode === 'client-global' ? 'Agreement Node & Audit Trail' : 'Member Node & Audit Trail'}</TableHead>
+                                                                        <TableHead className="text-[9px] font-black uppercase py-2 text-left">Agreement Node & Audit Trail</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Sub-Limit</TableHead>
                                                                         <TableHead className="text-[9px] font-black uppercase py-2 text-right">Actions</TableHead>
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {subs.map(sub => (
-                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left text-foreground">
+                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left">
                                                                             <TableCell>
                                                                                 <div className="flex flex-col text-left">
                                                                                     <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit text-left">
-                                                                                        {mode === 'client-global' ? (sub.type?.replace(/_/g, ' ') || 'Agreement') : (clientMap.get(sub.associatedClientId) || 'Unknown Member')}
+                                                                                        {mode === 'debtor' ? (clientMap.get(sub.associatedClientId) || 'Member Allocation') : (sub.type?.replace(/_/g, ' ') || 'Agreement')}
                                                                                     </Badge>
-                                                                                    <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left text-foreground">
+                                                                                    <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left">
                                                                                         <div className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
                                                                                         <Separator orientation="vertical" className="h-2.5 bg-slate-300" />
                                                                                         <div className="flex items-center gap-1"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>

@@ -4,26 +4,27 @@ import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { getClientSideAuthToken, useUser } from '@/firebase';
+import { getClientSideAuthToken } from '@/firebase';
 import { 
   Loader2, PlusCircle, Building, Edit, Trash2, Send, Globe, Search, Download, Save, 
-  Filter, Users, UserCheck, Database, RotateCcw, Upload, Sparkles, ChevronDown, Settings2, Check, UserPlus, ShieldCheck, Zap, Wrench, RefreshCcw, Mail, Phone, MapPin
+  RotateCcw, Upload, Sparkles, ChevronDown, Smartphone, Phone, Mail, MapPin, FileSignature
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataTable } from '@/components/ui/data-table';
 import { type ColumnDef } from '@/hooks/use-data-table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { cn, fetchFromAdminAPI, downloadDataAsCSV } from '@/lib/utils';
 import { EditSupplierWizard } from './edit-supplier';
 import { EnrichPartnerButton } from '@/app/adminaccount/marketing/EnrichPartnerButton';
 import { PartnerOversightDialog } from '@/app/adminaccount/marketing/PartnerOversightDialog';
 import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommunicationLogDialog';
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
+import { InitializeSubFacilityModal } from './InitializeSubFacilityModal';
 
 export default function SuppliersContent() {
     const { toast } = useToast();
     const [suppliers, setSuppliers] = useState<any[]>([]);
+    const [facilities, setFacilities] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -31,6 +32,10 @@ export default function SuppliersContent() {
     const [selectedSupplier, setSelectedSupplier] = useState<any | null>(null);
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [supplierToDelete, setSupplierToDelete] = useState<any | null>(null);
+    
+    // FACILITY HANDSHAKE STATE
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
     const forceRefresh = useCallback(async () => {
         setIsLoading(true);
@@ -38,9 +43,15 @@ export default function SuppliersContent() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
-            // RESOURCE CAPPING: Strict 100 record limit
-            const res = await fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 });
-            setSuppliers(res.data || []);
+            
+            // RESOURCE CAPPING: Hard 100 record limit
+            const [suppliersRes, facilitiesRes] = await Promise.all([
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 }),
+                fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 })
+            ]);
+            
+            setSuppliers(suppliersRes.data || []);
+            setFacilities(facilitiesRes.data || []);
         } catch (e: any) {
             setError(e.message);
             toast({ variant: 'destructive', title: 'Sync Failed', description: e.message });
@@ -50,6 +61,16 @@ export default function SuppliersContent() {
     }, [toast]);
     
     useEffect(() => { forceRefresh(); }, [forceRefresh]);
+
+    const activeSelection = useMemo(() => {
+        if (selectedIds.length !== 1) return null;
+        return suppliers.find(s => s.id === selectedIds[0]);
+    }, [selectedIds, suppliers]);
+
+    const parentFacility = useMemo(() => {
+        if (!activeSelection) return null;
+        return facilities.find(f => f.sourceDealerId === activeSelection.id && f.facilityClass === 'global');
+    }, [activeSelection, facilities]);
 
     const handleEdit = (supplier: any) => {
         setSelectedSupplier(supplier);
@@ -129,11 +150,19 @@ export default function SuppliersContent() {
 
     return (
         <div className="space-y-8 text-left text-foreground">
+            <InitializeSubFacilityModal 
+                parent={parentFacility ? { ...parentFacility, ownerName: activeSelection?.name } : null} 
+                clients={[]}
+                isOpen={isSubModalOpen} 
+                onOpenChange={setIsSubModalOpen} 
+                onComplete={forceRefresh} 
+            />
+
             <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                <AlertDialogContent className="text-left text-foreground">
+                <AlertDialogContent className="text-left text-foreground text-foreground">
                     <AlertDialogHeader className="text-left text-foreground">
-                        <AlertDialogTitle className="text-left">Expunge Supplier Node?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
+                        <AlertDialogTitle className="text-left text-foreground">Expunge Supplier Node?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="text-left text-foreground">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
@@ -143,17 +172,35 @@ export default function SuppliersContent() {
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground">
-                <div className="text-left text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
+                <div className="text-left text-foreground text-foreground">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Building className="h-8 w-8 text-primary" />
                         Supplier Registry (DMS)
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
                 </div>
-                <div className="flex gap-2 text-left text-foreground">
-                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-left text-foreground">
-                        <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
+                <div className="flex gap-2 text-left">
+                    <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
+                        <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Portfolio
                     </Button>
+                    
+                    {selectedIds.length === 1 && (
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => {
+                                if (!parentFacility) {
+                                    toast({ variant: 'destructive', title: "Global Ceiling Missing", description: "Establish a master limit for this supplier in the Facilities ledger first." });
+                                    return;
+                                }
+                                setIsSubModalOpen(true);
+                            }}
+                            className={cn("gap-2 font-bold h-9 border-primary text-primary bg-primary/5 animate-in slide-in-from-right-2")}
+                        >
+                            <FileSignature className="h-4 w-4" /> Initialize Sub-Facility
+                        </Button>
+                    )}
+
                     <Button onClick={() => { setSelectedSupplier(null); setView('edit'); }} className="gap-2 font-bold shadow-lg h-10 px-6 text-white text-left">
                         <PlusCircle className="h-4 w-4" /> Initialize Supplier
                     </Button>
@@ -161,14 +208,14 @@ export default function SuppliersContent() {
             </div>
 
             <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
-                <CardContent className="pt-6 text-left text-foreground">
+                <CardContent className="pt-6 text-left">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
                             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Mapping Authorized Dealers...</p>
                         </div>
                     ) : (
-                        <DataTable columns={columns} data={suppliers} />
+                        <DataTable columns={columns} data={suppliers} onSelectionChange={setSelectedIds} />
                     )}
                 </CardContent>
             </Card>
