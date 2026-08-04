@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -7,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * ADMINISTRATIVE API CORE - RESOURCE PROTECTED
- * Build Identifier: 2026-03-18T14:00:00Z (Lending V22 - State Transitions)
+ * Build Identifier: 2026-03-20T14:00:00Z (Lending V24 - Tranche Settlement)
  */
 
 function serializeData(docData: any): any {
@@ -74,26 +75,27 @@ export async function POST(req: NextRequest) {
             case 'createLendingPayment': {
                 const { payment } = payload;
                 const ref = db.collection('lendingPayments').doc();
-                await ref.set({ ...payment, id: ref.id, updatedAt: FieldValue.serverTimestamp() });
+                // Initialize amountPaid as 0 if not present
+                await ref.set({ ...payment, id: ref.id, amountPaid: 0, updatedAt: FieldValue.serverTimestamp() });
                 return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
             case 'executeLendingPayment': {
-                const { paymentId, assetId, method, notes } = payload;
+                const { paymentId, assetId, amount, method, isFinal } = payload;
                 const batch = db.batch();
                 
-                // 1. Close Payment Node
+                // 1. Record Tranche in the liability node
                 const pRef = db.collection('lendingPayments').doc(paymentId);
                 batch.update(pRef, {
-                    status: 'completed',
-                    settlementMethod: method,
-                    settlementNote: notes,
-                    settledAt: FieldValue.serverTimestamp(),
+                    amountPaid: FieldValue.increment(amount),
+                    status: isFinal ? 'completed' : 'pending',
+                    lastSettlementMethod: method,
+                    lastSettledAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 });
 
-                // 2. Move Asset Standing (Take out of stock)
-                if (assetId) {
+                // 2. RELEASE ASSET: Only if this is the final tranche
+                if (isFinal && assetId) {
                     const aRef = db.collection('lendingAssets').doc(assetId);
                     batch.update(aRef, {
                         status: 'financed',
