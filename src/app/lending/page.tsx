@@ -48,7 +48,9 @@ import {
   User,
   ShoppingBag,
   Building,
-  ArrowLeft
+  ArrowLeft,
+  Wallet,
+  Banknote
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -70,6 +72,7 @@ const AgreementsContent = dynamic(() => import('@/app/lending/agreements-content
 const AssetRegisterContent = dynamic(() => import('@/app/lending/asset-register-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const FacilitiesContent = dynamic(() => import('@/app/lending/facilities-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const LenderDeskContent = dynamic(() => import('@/app/lending/lender-desk-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
+const PaymentsContent = dynamic(() => import('@/app/lending/payments-content'), { ssr: false, loading: () => <div className="flex justify-center p-20"><Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" /></div> });
 const CollateralContent = dynamic(() => import('@/app/lending/collateral-content'), { ssr: false });
 const DocumentVaultContent = dynamic(() => import('@/app/lending/documents-content'), { ssr: false });
 const SecurityVaultContent = dynamic(() => import('@/app/lending/security-content'), { ssr: false });
@@ -112,6 +115,7 @@ function LendingPortalContent() {
       case 'suppliers': return <SuppliersContent />;
       case 'agreements': return <AgreementsContent />;
       case 'assets': return <AssetRegisterContent />;
+      case 'payments': return <PaymentsContent />;
       case 'facilities-clients': return <FacilitiesContent mode="client-global" />;
       case 'facilities-debtors': return <FacilitiesContent mode="debtor" />;
       case 'facilities-suppliers': return <FacilitiesContent mode="facilities-suppliers" />;
@@ -135,9 +139,9 @@ function LendingPortalContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center">
+        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center text-foreground">
             <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
-            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Authenticating Portal Access...</p>
+            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Authenticating Portal Access...</p>
         </div>
     );
   }
@@ -147,10 +151,10 @@ function LendingPortalContent() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2 p-2 text-left">
-            <div className="bg-primary/10 p-2 rounded-lg text-left">
+            <div className="bg-primary/10 p-2 rounded-lg">
               <Landmark className="h-6 w-6 text-primary" />
             </div>
-            <h2 className="text-lg font-black uppercase tracking-tight text-sidebar-foreground text-left">Lending Desk</h2>
+            <h2 className="text-lg font-black uppercase tracking-tight text-sidebar-foreground">Lending Desk</h2>
           </div>
         </SidebarHeader>
         <SidebarContent>
@@ -164,7 +168,7 @@ function LendingPortalContent() {
               </SidebarMenuItem>
               
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'debtors', 'suppliers', 'agreements', 'assets'].includes(activeView)}>
+                <SidebarMenuButton tooltip="Portfolios" isActive={['clients', 'debtors', 'suppliers', 'agreements', 'assets', 'payments'].includes(activeView)}>
                   <ClipboardList />
                   <span>Lending Portfolios</span>
                 </SidebarMenuButton>
@@ -192,6 +196,12 @@ function LendingPortalContent() {
                   <SidebarMenuSubItem>
                     <SidebarMenuSubButton isActive={activeView === 'assets'} onClick={() => navigate('assets')}>
                       Asset Register
+                    </SidebarMenuSubButton>
+                  </SidebarMenuSubItem>
+                  <SidebarMenuSubItem>
+                    <SidebarMenuSubButton isActive={activeView === 'payments'} onClick={() => navigate('payments')}>
+                      <Banknote className="h-3.5 w-3.5 mr-2 text-primary" />
+                      Disbursements
                     </SidebarMenuSubButton>
                   </SidebarMenuSubItem>
                 </SidebarMenuSub>
@@ -284,13 +294,13 @@ function LendingPortalContent() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col truncate text-left">
-                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Member'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
+            <div className="flex flex-col truncate">
+                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Member'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />
@@ -299,7 +309,7 @@ function LendingPortalContent() {
         </SidebarFooter>
       </Sidebar>
       <SidebarInset>
-        <div className="p-8 text-left">
+        <div className="p-8">
             <Suspense fallback={<div className="py-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /></div>}>
                 {renderContent()}
             </Suspense>
@@ -312,9 +322,9 @@ function LendingPortalContent() {
 export default function LendingPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4 text-center">
+      <div className="flex flex-col justify-center items-center min-h-screen text-foreground gap-4">
         <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />
-        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">Initializing Portal...</p>
+        <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Initializing Portal...</p>
       </div>
     }>
       <LendingPortalContent />
