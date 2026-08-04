@@ -79,7 +79,7 @@ export default function SuppliersContent() {
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await performAdminAction(token, 'deleteLendingPartner', { collection: 'lendingSuppliers', partnerId: supplierToDelete.id });
+            await fetchFromAdminAPI(token, 'deleteLendingPartner', { collection: 'lendingSuppliers', partnerId: supplierToDelete.id });
             toast({ title: 'Supplier Deleted' });
             forceRefresh();
             setSupplierToDelete(null);
@@ -159,38 +159,38 @@ export default function SuppliersContent() {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
                 <div className="text-left text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground">
                         <ShoppingBag className="h-8 w-8 text-primary" />
                         Supplier Registry
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left">Dealerships and equipment manufacturers authorized for platform acquisitions.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground">Dealerships and equipment manufacturers authorized for platform acquisitions.</p>
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white text-left text-foreground">
+            <Card className="border-none shadow-xl bg-white text-left text-foreground text-foreground">
                 <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
                     <div className="text-left text-foreground">
-                        <CardTitle className="text-lg font-bold text-left">Authorized Suppliers</CardTitle>
+                        <CardTitle className="text-lg font-bold text-left text-foreground">Authorized Suppliers</CardTitle>
                         <CardDescription className="text-left text-foreground">Entities approved to supply assets for financing.</CardDescription>
                     </div>
-                    <div className="flex gap-2 text-left">
-                        <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
+                    <div className="flex gap-2 text-left text-foreground">
+                        <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground">
                             <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(suppliers, `suppliers-registry-${Date.now()}.csv`)} className="gap-2">
+                        <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(suppliers, `suppliers-registry-${Date.now()}.csv`)} className="gap-2 text-foreground text-foreground">
                             <Download className="h-4 w-4" /> Export
                         </Button>
                         <BulkImportDialog type="lendingSupplier" onComplete={forceRefresh}>
-                            <Button variant="outline" size="sm" className="gap-2"><Upload className="mr-2 h-4 w-4" /> Import</Button>
+                            <Button variant="outline" size="sm" className="gap-2 text-foreground text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button>
                         </BulkImportDialog>
-                        <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg">
+                        <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg text-foreground">
                             <PlusCircle className="h-4 w-4" /> Add Supplier
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="pt-6 text-left">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
                             <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Synchronizing Ledger...</p>
                         </div>

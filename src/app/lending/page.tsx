@@ -284,7 +284,7 @@ function LendingPortalContent() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left text-foreground">
+          <div className="flex items-center gap-3 p-2 rounded-md bg-sidebar-accent text-left">
             <Avatar className="h-10 w-10">
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>

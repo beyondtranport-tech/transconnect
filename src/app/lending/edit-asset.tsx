@@ -16,7 +16,7 @@ import {
 import { getClientSideAuthToken, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
-import { cn, fetchFromAdminAPI } from '@/lib/utils';
+import { cn, formatCurrency, fetchFromAdminAPI } from '@/lib/utils';
 import { collection, query, where } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
@@ -167,8 +167,8 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 <FormItem className="animate-in slide-in-from-left-2">
                                     <FormLabel>Select Authorized Dealer</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Choose supplier..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{suppliers?.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left"><SelectValue placeholder="Choose supplier..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{suppliers?.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -179,8 +179,8 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 <FormItem className="animate-in slide-in-from-left-2">
                                     <FormLabel>Select Trade-in Client</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
-                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
-                                        <SelectContent>{clients?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white text-left"><SelectValue placeholder="Choose member..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{clients?.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </FormItem>
                             )} />
@@ -192,7 +192,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     <div className="space-y-8 animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <FormField control={methods.control} name="classification" render={({ field }) => (
-                                <FormItem><FormLabel>Asset Class</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Truck">Heavy Vehicle (Truck)</SelectItem><SelectItem value="Trailer">Interlink / Trailer</SelectItem><SelectItem value="Bakkie">Light Commercial</SelectItem><SelectItem value="Equipment">Industrial Equipment</SelectItem></Select></FormItem>
+                                <FormItem><FormLabel>Asset Class</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Truck">Heavy Vehicle (Truck)</SelectItem><SelectItem value="Trailer">Interlink / Trailer</SelectItem><SelectItem value="Bakkie">Light Commercial</SelectItem><SelectItem value="Equipment">Industrial Equipment</SelectItem></Select></FormItem>
                             )} />
                             <FormField control={methods.control} name="costOfSale" render={({ field }) => (
                                 <FormItem><FormLabel className="text-primary font-black uppercase text-[10px]">Purchase Valuation (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white text-xl font-black" /></FormControl></FormItem>
@@ -222,8 +222,8 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     <div className="text-center py-20 space-y-6">
                         <ShieldCheck className="h-20 w-20 text-primary mx-auto opacity-30" />
                         <div className="space-y-2 text-center">
-                            <h3 className="text-3xl font-black uppercase">Final Protocol Check</h3>
-                            <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed">Ensure all technical nodes and valuations are verified before committing this node to the registry.</p>
+                            <h3 className="text-3xl font-black uppercase text-center">Final Protocol Check</h3>
+                            <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Ensure all technical nodes and valuations are verified before committing this node to the registry.</p>
                         </div>
                     </div>
                 );
@@ -236,17 +236,17 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5">
-                         <div className="flex justify-between items-center">
+                         <div className="flex justify-between items-center text-left">
                             <div className="text-left text-white">
-                                <CardTitle className="text-3xl font-black font-headline uppercase">Asset Protocol Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1">Stage: {steps[currentStep]?.title || 'Audit'}</CardDescription>
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-white">Asset Protocol Terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-white">Section: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
                             <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr]">
-                             <div className="bg-slate-50 border-r p-8 space-y-2">
+                    <CardContent className="p-0 text-left">
+                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
                                 {steps.map((step, i) => (
                                     <div key={step.id} className={cn(
                                         "flex items-center gap-4 p-4 rounded-xl transition-all",
@@ -259,7 +259,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                     </div>
                                 ))}
                             </div>
-                             <div className="p-12 space-y-10 bg-white min-h-[500px]">
+                             <div className="p-12 space-y-10 bg-white min-h-[500px] text-left text-foreground">
                                 {renderStepContent()}
                              </div>
                         </div>
