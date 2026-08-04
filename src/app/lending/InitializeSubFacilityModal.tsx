@@ -5,7 +5,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, Zap, Save, Gavel, UserPlus, Building, Truck, MapPin, ShieldCheck, Info, CheckCircle2, ChevronRight } from 'lucide-react';
+import { 
+    Loader2, Zap, Save, Gavel, UserPlus, Building, Truck, MapPin, 
+    ShieldCheck, Info, CheckCircle2, ChevronRight, X, PlusCircle, Ban, Filter
+} from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +17,7 @@ import { provinces } from '@/lib/geodata';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 interface InitializeSubFacilityModalProps {
@@ -24,24 +28,44 @@ interface InitializeSubFacilityModalProps {
     onOpenChange: (open: boolean) => void;
 }
 
+const standardMakes = [
+    "Scania", "Volvo", "Mercedes-Benz", "MAN", "DAF", "Iveco", "UD Trucks", 
+    "Isuzu", "Hino", "Freightliner", "International", "FAW", "Fuso", 
+    "Powerstar", "Henred Fruehauf", "Afrit", "Top Trailer", "Kearneys"
+];
+
+const conditionOptions = [
+    { id: 'new', label: 'Brand New (0km)' },
+    { id: 'used', label: 'Used / Refurbished' },
+    { id: 'all', label: 'Any Condition' }
+];
+
+const productTypes = [
+    { id: 'Trucks', label: 'Heavy Trucks (Horses)' },
+    { id: 'Trailers', label: 'Interlinks / Trailers' },
+    { id: 'Bakkies', label: 'Light Commercial (Bakkies)' },
+    { id: 'Factoring', label: 'Factoring / Discounting' },
+    { id: 'Working Capital', label: 'Working Capital' }
+];
+
 /**
- * SHARED SUB-FACILITY TERMINAL (V19.1)
- * Partitions a Global Ceiling into specific Agreement Nodes or Member Allocations.
- * HIGH-FIDELITY VETTING: Supports Make, Model, Year, Condition, and Location focus.
+ * SHARED SUB-FACILITY TERMINAL (V20.1 - INCLUSION ENGINE)
+ * Partitions a Global Ceiling into specific Agreement Nodes.
+ * FEATURES: Inclusion/Exclusion list builder for Makes, geographic hierarchy, and hardened status toggles.
  */
 export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen, onOpenChange }: InitializeSubFacilityModalProps) {
     const { user } = useUser();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
 
-    // Core Fields
+    // Core State
     const [type, setType] = useState('Trucks');
     const [limit, setLimit] = useState<string>('');
     const [associatedClientId, setAssociatedClientId] = useState<string>('');
 
-    // Supplier Vetting Variables
-    const [make, setMake] = useState('');
-    const [model, setModel] = useState('');
+    // Vetting Protocol State
+    const [selectionMode, setSelectionMode] = useState<'allow_only' | 'exclude_selected'>('allow_only');
+    const [makeList, setMakeList] = useState<string[]>([]);
     const [maxYear, setMaxYear] = useState('');
     const [condition, setCondition] = useState('used');
     const [selectedProvince, setSelectedProvince] = useState('');
@@ -55,20 +79,25 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
         return prov ? prov.cities : [];
     }, [selectedProvince]);
 
+    const handleAddMake = (val: string) => {
+        if (!val || makeList.includes(val)) return;
+        setMakeList(prev => [...prev, val]);
+    };
+
+    const handleRemoveMake = (val: string) => {
+        setMakeList(prev => prev.filter(m => m !== val));
+    };
+
     const handleSave = async () => {
         if (!limit || Number(limit) <= 0) {
             toast({ variant: 'destructive', title: "Limit Required", description: "Enter a valid authorized amount." });
-            return;
-        }
-        if (isDebtorMode && !associatedClientId) {
-            toast({ variant: 'destructive', title: "Client Required", description: "Select the member client being allocated to this debtor pool." });
             return;
         }
 
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication node not found.");
+            if (!token) throw new Error("Authentication session expired.");
 
             const payload = {
                 parentId: parent.id,
@@ -82,11 +111,11 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                 limit: Number(limit),
                 status: 'active',
                 createdByName: user?.displayName || 'Admin',
-                // HIGH-FIDELITY VETTING PARAMETERS
+                // HIGH-FIDELITY VETTING PROTOCOL
                 vettingParams: isSupplierMode ? {
-                    make: make || 'All',
-                    model: model || 'All',
-                    maxYear: maxYear ? Number(maxYear) : null,
+                    selectionMode,
+                    makeList,
+                    maxAge: maxYear ? Number(maxYear) : null,
                     condition,
                     province: selectedProvince || 'National',
                     city: selectedCity || 'All'
@@ -96,7 +125,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { facility: payload });
             
-            toast({ title: isDebtorMode ? "Client Allocation Secured" : "Agreement Facility Created" });
+            toast({ title: isDebtorMode ? "Client Handshake Secured" : "Agreement Protocol Committed" });
             onComplete();
             onOpenChange(false);
             resetForm();
@@ -110,112 +139,152 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
     const resetForm = () => {
         setLimit('');
         setAssociatedClientId('');
-        setMake('');
-        setModel('');
+        setMakeList([]);
         setMaxYear('');
         setCondition('used');
         setSelectedProvince('');
         setSelectedCity('');
+        setSelectionMode('allow_only');
     };
 
     if (!parent) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={(o) => { if(!isSaving) onOpenChange(o); }}>
-            <DialogContent className="max-w-2xl text-left text-foreground overflow-hidden flex flex-col h-[90vh] p-0">
+            <DialogContent className="max-w-3xl text-left text-foreground overflow-hidden flex flex-col h-[90vh] p-0">
                 <DialogHeader className="p-6 border-b bg-muted/30 shrink-0 text-left">
                     <DialogTitle className="flex items-center gap-2 font-black text-xl text-left">
-                        {isDebtorMode ? <UserPlus className="h-6 w-6 text-primary" /> : <Gavel className="h-6 w-6 text-primary" />}
-                        {isDebtorMode ? 'Partition for Member Client' : 'Initialize Agreement Facility'}
+                        <Gavel className="h-6 w-6 text-primary" />
+                        Initialize Sub-Facility Authorization
                     </DialogTitle>
                     <DialogDescription className="text-left text-foreground">
-                        Partitioning a sub-limit from the global ceiling of <strong>{parent.ownerName || parent.name || 'Master Node'}</strong>.
+                        Partitioning a specific sub-limit for <strong>{parent.ownerName || parent.name || 'Master Node'}</strong>.
                     </DialogDescription>
                 </DialogHeader>
 
                 <ScrollArea className="flex-1 p-6 space-y-8 text-left text-foreground">
                     <div className="space-y-6 text-left">
-                        <div className="p-4 bg-slate-900 text-white rounded-2xl flex justify-between items-center text-left">
+                        {/* Parent Context Banner */}
+                        <div className="p-5 bg-slate-900 text-white rounded-3xl flex justify-between items-center text-left">
                             <div className="text-left">
-                                <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Master Ceiling Node</Label>
-                                <p className="text-xl font-black text-primary">{formatCurrency(parent.limit)}</p>
+                                <Label className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">Global Ceiling Node</Label>
+                                <p className="text-2xl font-black text-primary">{formatCurrency(parent.limit)}</p>
                             </div>
-                            <Badge variant="outline" className="border-white/20 text-white uppercase text-[9px] font-black">{parent.ownerType} Master</Badge>
+                            <div className="text-right">
+                                <Badge variant="outline" className="border-white/20 text-white uppercase text-[8px] font-black tracking-widest px-3 h-5">{parent.ownerType} Master</Badge>
+                                <p className="text-[10px] text-slate-500 font-mono mt-1 uppercase">ID: {parent.id.slice(-6)}</p>
+                            </div>
                         </div>
 
                         {isDebtorMode ? (
-                            <div className="space-y-2 text-left">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Allocate Member Client</Label>
+                            <div className="space-y-3 text-left">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Member Client Allocation</Label>
                                 <Select value={associatedClientId} onValueChange={setAssociatedClientId}>
-                                    <SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose borrower..." /></SelectTrigger>
+                                    <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground">
+                                        <SelectValue placeholder="Choose borrower to bind to this debtor..." />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
                         ) : (
-                            <div className="space-y-6 text-left text-foreground">
-                                <div className="space-y-2 text-left">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 text-left">Authorized Product Category</Label>
+                            <div className="space-y-10 text-left text-foreground">
+                                <div className="space-y-3 text-left text-foreground">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Product Category Authority</Label>
                                     <Select value={type} onValueChange={setType}>
                                         <SelectTrigger className="h-12 border-2 bg-white font-bold text-left text-foreground"><SelectValue /></SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="Trucks">Trucks</SelectItem>
-                                            <SelectItem value="Trailers">Trailers</SelectItem>
-                                            <SelectItem value="Bakkies">Light Commercials</SelectItem>
-                                            <SelectItem value="Factoring">Factoring / Discounting</SelectItem>
-                                            <SelectItem value="Working Capital">Working Capital</SelectItem>
+                                            {productTypes.map(pt => <SelectItem key={pt.id} value={pt.id}>{pt.label}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                 </div>
 
                                 {isSupplierMode && (['Trucks', 'Trailers', 'Bakkies'].includes(type)) && (
-                                    <div className="p-6 border-2 border-dashed rounded-3xl bg-primary/5 space-y-6 animate-in fade-in slide-in-from-top-4 duration-500 text-left text-foreground">
-                                        <div className="flex items-center gap-2 text-left">
-                                            <ShieldCheck className="h-5 w-5 text-primary" />
-                                            <h4 className="text-xs font-black uppercase tracking-widest">Asset Vetting Node</h4>
+                                    <div className="p-8 border-2 rounded-[2rem] bg-slate-50 space-y-8 animate-in fade-in slide-in-from-top-4 duration-500 text-left text-foreground">
+                                        <div className="flex items-center justify-between text-left text-foreground">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-primary/10 p-2 rounded-lg"><ShieldCheck className="h-5 w-5 text-primary" /></div>
+                                                <h4 className="text-sm font-black uppercase tracking-widest">Asset Inclusion/Exclusion Protocol</h4>
+                                            </div>
+                                            <div className="flex items-center gap-3 bg-white p-1 rounded-full border shadow-sm px-4 h-10">
+                                                <Label className="text-[10px] font-black uppercase text-muted-foreground">Inclusion Only</Label>
+                                                <Switch 
+                                                    checked={selectionMode === 'exclude_selected'} 
+                                                    onCheckedChange={(checked) => setSelectionMode(checked ? 'exclude_selected' : 'allow_only')} 
+                                                />
+                                                <Label className="text-[10px] font-black uppercase text-destructive">Exclusion mode</Label>
+                                            </div>
                                         </div>
                                         
-                                        <div className="grid grid-cols-2 gap-4 text-left">
-                                            <div className="space-y-1.5 text-left">
-                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Make Focus</Label>
-                                                <Input value={make} onChange={e => setMake(e.target.value)} placeholder="e.g. Scania" className="bg-white border-2" />
+                                        <div className="space-y-4 text-left">
+                                            <Label className={cn(
+                                                "text-[10px] font-black uppercase tracking-widest ml-1 flex items-center gap-2",
+                                                selectionMode === 'allow_only' ? "text-primary" : "text-destructive"
+                                            )}>
+                                                {selectionMode === 'allow_only' ? <CheckCircle2 className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                                                {selectionMode === 'allow_only' ? 'Authorized Makes' : 'Specifically Rejected Makes'}
+                                            </Label>
+                                            
+                                            <div className="flex gap-2">
+                                                <Select onValueChange={handleAddMake}>
+                                                    <SelectTrigger className="h-11 border-2 bg-white flex-1"><SelectValue placeholder="Add Make to List..." /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {standardMakes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
                                             </div>
-                                            <div className="space-y-1.5 text-left">
-                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Model Focus</Label>
-                                                <Input value={model} onChange={e => setModel(e.target.value)} placeholder="e.g. R500" className="bg-white border-2" />
+
+                                            <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-white border-2 border-dashed rounded-2xl shadow-inner">
+                                                {makeList.map(m => (
+                                                    <Badge key={m} className={cn(
+                                                        "h-8 gap-2 pl-3 pr-1 text-xs font-bold border-none transition-all",
+                                                        selectionMode === 'allow_only' ? "bg-primary text-white" : "bg-destructive text-white"
+                                                    )}>
+                                                        {m}
+                                                        <button onClick={() => handleRemoveMake(m)} className="hover:bg-black/10 rounded-full p-0.5">
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </Badge>
+                                                ))}
+                                                {makeList.length === 0 && <p className="text-[10px] text-muted-foreground italic my-auto px-2">No selections recorded. {selectionMode === 'allow_only' ? 'Authorization node is currently open to ALL.' : 'Zero exclusions defined.'}</p>}
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 text-left">
-                                            <div className="space-y-1.5 text-left">
-                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Max Age (Year)</Label>
-                                                <Input type="number" value={maxYear} onChange={e => setMaxYear(e.target.value)} placeholder="e.g. 7" className="bg-white border-2" />
-                                            </div>
-                                            <div className="space-y-1.5 text-left">
-                                                <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Condition Node</Label>
-                                                <Select value={condition} onValueChange={setCondition}>
-                                                    <SelectTrigger className="bg-white border-2"><SelectValue /></SelectTrigger>
+                                        <Separator />
+
+                                        <div className="grid grid-cols-2 gap-8 text-left">
+                                            <div className="space-y-2 text-left">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Asset Replacement Cycle (Max Age)</Label>
+                                                <Select value={maxYear} onValueChange={setMaxYear}>
+                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue placeholder="e.g. Max 7 Years" /></SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="new">Brand New Only</SelectItem>
-                                                        <SelectItem value="used">Used / Refurbished</SelectItem>
-                                                        <SelectItem value="all">Any Condition</SelectItem>
+                                                        {[3, 5, 7, 10, 15, 20].map(yr => <SelectItem key={yr} value={String(yr)}>Max {yr} Years</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2 text-left">
+                                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Standard Condition</Label>
+                                                <Select value={condition} onValueChange={setCondition}>
+                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {conditionOptions.map(opt => <SelectItem key={pt.id} value={opt.id}>{opt.label}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-4 pt-2 text-left">
-                                            <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left"><MapPin className="h-3 w-3" /> Regional Authority Hub</Label>
+                                        <div className="space-y-4 pt-4 border-t text-left">
+                                            <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left"><MapPin className="h-3 w-3" /> Geographic Authority Node</Label>
                                             <div className="grid grid-cols-2 gap-4 text-left">
                                                 <Select value={selectedProvince} onValueChange={setSelectedProvince}>
-                                                    <SelectTrigger className="bg-white border-2"><SelectValue placeholder="Province" /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left"><SelectValue placeholder="Select Province" /></SelectTrigger>
                                                     <SelectContent>
                                                         {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                                 <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
-                                                    <SelectTrigger className="bg-white border-2"><SelectValue placeholder="City / Hub" /></SelectTrigger>
+                                                    <SelectTrigger className="h-11 border-2 bg-white font-bold text-left"><SelectValue placeholder="Select Hub / City" /></SelectTrigger>
                                                     <SelectContent>
                                                         {cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
                                                     </SelectContent>
@@ -227,15 +296,16 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                             </div>
                         )}
 
-                        <div className="space-y-2 text-left text-foreground">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 text-left text-foreground">Authorized Sub-Limit (ZAR)</Label>
+                        <div className="space-y-3 p-8 bg-primary/5 border-2 border-primary/20 rounded-[2.5rem] text-left text-foreground">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-1 text-left">Authorized Yield Ceiling (ZAR)</Label>
                             <Input 
                                 type="number" 
                                 value={limit} 
                                 onChange={e => setLimit(e.target.value)} 
-                                placeholder="e.g. 500000"
-                                className="h-14 border-2 text-2xl font-black bg-white focus-visible:ring-primary"
+                                placeholder="0.00"
+                                className="h-16 border-none bg-transparent text-5xl font-black focus-visible:ring-0 p-0"
                             />
+                            <p className="text-[11px] text-muted-foreground font-medium italic mt-2 text-left">This partition will be deducted from the parent global ceiling.</p>
                         </div>
                     </div>
                 </ScrollArea>
