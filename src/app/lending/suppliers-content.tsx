@@ -94,9 +94,9 @@ export default function SuppliersContent() {
             accessorKey: 'name', 
             header: 'Supplier Entity',
             cell: ({row}) => (
-                <div className="flex flex-col text-left text-foreground">
+                <div className="flex flex-col text-left">
                     <span className="font-bold text-foreground text-left">{row.original.name}</span>
-                    <div className="flex items-center gap-1.5 mt-0.5 text-left text-foreground">
+                    <div className="flex items-center gap-1.5 mt-0.5 text-left">
                         <Badge variant="outline" className="text-[8px] h-3.5 uppercase font-black border-primary/20 text-primary">Dealer Node</Badge>
                         <span className="text-[9px] text-muted-foreground font-mono uppercase text-left">{row.original.id.slice(-6)}</span>
                     </div>
@@ -106,9 +106,9 @@ export default function SuppliersContent() {
         { 
             header: 'Specialization', 
             cell: ({row}) => (
-                <div className="flex flex-wrap gap-1 text-left text-foreground">
+                <div className="flex flex-wrap gap-1 text-left">
                     {(row.original.industrial_tags || []).slice(0, 3).map((tag: string) => (
-                        <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 uppercase font-black px-1.5">{tag}</Badge>
+                        <Badge key={tag} variant="secondary" className="text-[8px] h-3.5 uppercase font-black px-1.5 text-left">{tag}</Badge>
                     ))}
                     {!row.original.industrial_tags?.length && <span className="text-[10px] text-muted-foreground italic text-left">General</span>}
                 </div>
@@ -124,7 +124,7 @@ export default function SuppliersContent() {
             )
         },
         { id: 'actions', header: <div className="text-right">Audit</div>, cell: ({ row }) => (
-            <div className="flex justify-end items-center gap-1 text-left text-foreground text-foreground">
+            <div className="flex justify-end items-center gap-1 text-left">
                 <EnrichPartnerButton partner={row.original} onUpdate={forceRefresh} />
                 <AddCommunicationLogDialog partnerId={row.original.id} collection="lendingSuppliers" onLogAdded={forceRefresh} />
                 <CommunicationLogDialog partnerId={row.original.id} partnerName={row.original.name} />
@@ -145,50 +145,50 @@ export default function SuppliersContent() {
     return (
         <div className="space-y-8 text-left text-foreground">
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
-                <AlertDialogContent className="text-left text-foreground text-left text-foreground">
-                    <AlertDialogHeader className="text-left text-foreground text-left text-foreground text-foreground">
-                        <AlertDialogTitle className="text-left text-foreground text-left text-foreground text-foreground">Expunge Supplier Record?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-left text-foreground text-left text-foreground text-foreground">Permanent removal of "{supplierToDelete?.name}" from the dealership registry.</AlertDialogDescription>
+                <AlertDialogContent className="text-left text-foreground">
+                    <AlertDialogHeader className="text-left text-foreground">
+                        <AlertDialogTitle className="text-left text-foreground">Expunge Supplier Record?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-left text-foreground">Permanent removal of "{supplierToDelete?.name}" from the dealership registry.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground text-left text-foreground text-foreground">
+                    <AlertDialogFooter className="text-left text-foreground">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={buttonVariants({ variant: "destructive" })}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left text-foreground text-foreground">
-                <div className="text-left text-foreground text-foreground">
-                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left text-foreground text-foreground">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
+                <div className="text-left text-foreground">
+                    <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <ShoppingBag className="h-8 w-8 text-primary" />
                         Supplier Registry
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">Dealerships and equipment manufacturers authorized for platform acquisitions.</p>
+                    <p className="text-muted-foreground mt-1 text-left">Dealerships and equipment manufacturers authorized for platform acquisitions.</p>
                 </div>
             </div>
 
-            <Card className="border-none shadow-xl bg-white text-left text-foreground text-foreground text-foreground">
-                <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6 text-foreground text-foreground text-foreground text-foreground">
-                    <div className="text-left text-foreground text-left text-foreground text-foreground">
-                        <CardTitle className="text-lg font-bold text-left text-foreground">Authorized Suppliers</CardTitle>
+            <Card className="border-none shadow-xl bg-white text-left text-foreground">
+                <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/10 text-left p-6">
+                    <div className="text-left text-foreground">
+                        <CardTitle className="text-lg font-bold text-left">Authorized Suppliers</CardTitle>
                         <CardDescription className="text-left text-foreground">Entities approved to supply assets for financing.</CardDescription>
                     </div>
-                    <div className="flex gap-2 text-left text-foreground text-foreground text-foreground">
-                        <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground text-foreground">
+                    <div className="flex gap-2 text-left">
+                        <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2">
                             <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Refresh
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(suppliers, `suppliers-registry-${Date.now()}.csv`)} className="gap-2 text-foreground text-foreground text-foreground">
+                        <Button variant="outline" size="sm" onClick={() => downloadDataAsCSV(suppliers, `suppliers-registry-${Date.now()}.csv`)} className="gap-2">
                             <Download className="h-4 w-4" /> Export
                         </Button>
                         <BulkImportDialog type="lendingSupplier" onComplete={forceRefresh}>
-                            <Button variant="outline" size="sm" className="gap-2 text-foreground"><Upload className="mr-2 h-4 w-4" /> Import</Button>
+                            <Button variant="outline" size="sm" className="gap-2"><Upload className="mr-2 h-4 w-4" /> Import</Button>
                         </BulkImportDialog>
-                        <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg text-foreground">
+                        <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg">
                             <PlusCircle className="h-4 w-4" /> Add Supplier
                         </Button>
                     </div>
                 </CardHeader>
-                <CardContent className="pt-6 text-left text-foreground text-foreground text-foreground text-foreground">
+                <CardContent className="pt-6 text-left">
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
