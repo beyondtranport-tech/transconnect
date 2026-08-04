@@ -118,6 +118,21 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
         setCurrentStep(prev => prev - 1);
     };
 
+    const isStepValid = (stepIndex: number) => {
+        if (stepIndex < 0 || stepIndex >= steps.length) return true;
+        const step = steps[stepIndex];
+        if (!step.fields || step.fields.length === 0) return true;
+        const errors = methods.formState.errors;
+        return step.fields.every(field => {
+            const path = field.split('.');
+            let error: any = errors;
+            for (const segment of path) {
+                error = error?.[segment];
+            }
+            return !error;
+        });
+    };
+
     const renderStepContent = () => {
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
@@ -303,17 +318,23 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
                              <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
-                                {steps.map((step, i) => (
-                                    <div key={step.id} className={cn(
-                                        "flex items-center gap-4 p-4 rounded-xl transition-all",
-                                        currentStep === i ? "bg-white shadow-md ring-1 ring-primary/20" : "opacity-40"
-                                    )}>
-                                        <div className={cn("h-8 w-8 rounded-full flex items-center justify-center shrink-0", currentStep >= i ? "bg-primary text-white" : "bg-muted")}>
-                                            {React.createElement(step.icon, { className: "h-4 w-4" })}
-                                        </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{step.title}</span>
-                                    </div>
-                                ))}
+                                {steps.map((step, index) => {
+                                    const Icon = step.icon;
+                                    const isCompleted = index < currentStep && isStepValid(index);
+                                    return (
+                                        <Button 
+                                            key={step.id} 
+                                            type="button" 
+                                            variant={currentStep === index ? 'secondary' : 'ghost'} 
+                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                            onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
+                                        >
+                                            {isCompleted ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>}
+                                            <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
+                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                        </Button>
+                                    );
+                                })}
                             </div>
                              <div className="p-12 space-y-10 bg-white min-h-[500px] text-left text-foreground">
                                 {renderStepContent()}

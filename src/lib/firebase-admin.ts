@@ -1,4 +1,3 @@
-
 import { initializeApp, getApps, getApp, App, cert } from 'firebase-admin/app';
 import { NextRequest } from 'next/server';
 import { getAuth } from 'firebase-admin/auth';
@@ -23,6 +22,7 @@ function initializeAdminApp(): { app: App; error: null } | { app: null; error: s
     }
     
     // FORENSIC SANITIZATION: Clean the B64 string before processing
+    // This handles "Unexpected non-whitespace character" errors caused by .env formatting
     const rawB64 = process.env.FIREBASE_ADMIN_SDK_CONFIG_B64;
     const encodedServiceAccount = rawB64?.replace(/[\r\n\s]/gm, '').trim();
 
