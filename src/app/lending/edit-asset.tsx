@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -10,13 +11,13 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
     Loader2, Save, ArrowLeft, ArrowRight, Truck, Database, ShieldCheck, 
-    ShoppingBag, CheckCircle2, RefreshCcw, Car, Bus, Monitor
+    ShoppingBag, CheckCircle2, RefreshCcw, Car, Bus, Monitor, Info, Building, User
 } from 'lucide-react';
 import { getClientSideAuthToken, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, fetchFromAdminAPI, formatCurrency } from '@/lib/utils';
-import { collection, query, where } from 'firebase/firestore';
+import { collection, query, where, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -30,7 +31,7 @@ const assetSchema = z.object({
   model: z.string().min(1, 'Model is required'),
   year: z.string().min(4, 'Year is required'),
   costOfSale: z.coerce.number().positive('Cost must be positive'),
-  status: z.enum(['available', 'financed', 'sold', 'decommissioned']).default('available'),
+  status: z.enum(['pending_acquisition', 'available', 'financed', 'sold', 'decommissioned']).default('pending_acquisition'),
   classification: z.string().min(1, "Asset class required"),
   registrationNumber: z.string().optional(),
   vin: z.string().optional(),
@@ -59,7 +60,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
             sourceType: 'dealer',
             classification: initialType || 'Truck',
             clientId: initialClientId || null,
-            status: 'available',
+            status: 'pending_acquisition',
             costOfSale: 0
         }
     });
@@ -67,9 +68,11 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
     const watchedSource = methods.watch('sourceType');
     const watchedClass = methods.watch('classification');
 
+    // 1. Fetch Suppliers (Dealers) for the source dropdown
     const suppliersQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingSuppliers'), where('status', '==', 'active')) : null, [firestore]);
     const { data: suppliers } = useCollection(suppliersQuery);
 
+    // 2. Fetch Clients for trade-in/source dropdown
     const clientsQuery = useMemoFirebase(() => firestore ? query(collection(firestore, 'lendingClients'), where('status', '==', 'active')) : null, [firestore]);
     const { data: clients } = useCollection(clientsQuery);
 
@@ -78,8 +81,17 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
-            await fetchFromAdminAPI(token, 'saveLendingAsset', { asset: { id: asset?.id, ...values } });
-            toast({ title: 'Asset Node Committed' });
+            
+            const ref = asset?.id ? doc(firestore, 'lendingAssets', asset.id) : doc(collection(firestore, 'lendingAssets'));
+            
+            await setDoc(ref, { 
+                ...values, 
+                id: ref.id, 
+                updatedAt: serverTimestamp(),
+                createdAt: asset?.createdAt || serverTimestamp()
+            }, { merge: true });
+
+            toast({ title: 'Asset Node Committed to Registry' });
             onSave();
         } catch (e: any) {
             toast({ variant: 'destructive', title: 'Commit Failed', description: e.message });
@@ -129,7 +141,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
         switch (stepId) {
             case 'source':
                 return (
-                    <div className="space-y-8 animate-in fade-in duration-500">
+                    <div className="space-y-8 animate-in fade-in duration-500 text-left">
                         <FormField control={methods.control} name="sourceType" render={({ field }) => (
                             <FormItem className="space-y-4">
                                 <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Select Acquisition Path</FormLabel>
@@ -163,12 +175,12 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                         
                         {watchedSource === 'dealer' && (
                             <FormField control={methods.control} name="sourceDealerId" render={({ field }) => (
-                                <FormItem className="animate-in slide-in-from-left-2">
+                                <FormItem className="animate-in slide-in-from-left-2 text-left">
                                     <FormLabel>Select Authorized Dealer</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl>
                                             <SelectTrigger className="h-12 border-2 bg-white text-left text-foreground">
-                                                <SelectValue placeholder="Choose supplier..." />
+                                                <SelectValue placeholder="Choose supplier from DMS..." />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -183,12 +195,12 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
 
                         {watchedSource === 'client' && (
                             <FormField control={methods.control} name="sourceClientId" render={({ field }) => (
-                                <FormItem className="animate-in slide-in-from-left-2">
+                                <FormItem className="animate-in slide-in-from-left-2 text-left">
                                     <FormLabel>Select Trade-in Client</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl>
                                             <SelectTrigger className="h-12 border-2 bg-white text-left text-foreground">
-                                                <SelectValue placeholder="Choose member..." />
+                                                <SelectValue placeholder="Choose source member..." />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -204,10 +216,10 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                 );
             case 'details':
                 return (
-                    <div className="space-y-8 animate-in fade-in duration-500">
+                    <div className="space-y-8 animate-in fade-in duration-500 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <FormField control={methods.control} name="classification" render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="text-left">
                                     <FormLabel>Asset Class</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value || ''}>
                                         <FormControl>
@@ -225,7 +237,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 </FormItem>
                             )} />
                             <FormField control={methods.control} name="costOfSale" render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="text-left">
                                     <FormLabel className="text-primary font-black uppercase text-[10px]">Purchase Valuation (Excl. VAT)</FormLabel>
                                     <FormControl>
                                         <Input type="number" {...field} className="h-12 border-2 bg-white text-xl font-black" />
@@ -235,23 +247,23 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <FormField control={methods.control} name="make" render={({ field }) => (
-                                <FormItem><FormLabel>Make</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Make</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="model" render={({ field }) => (
-                                <FormItem><FormLabel>Model</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="year" render={({ field }) => (
-                                <FormItem><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>
                             )} />
                         </div>
                     </div>
                 );
             case 'identifiers':
                 return (
-                    <div className="space-y-8 animate-in fade-in duration-500">
+                    <div className="space-y-8 animate-in fade-in duration-500 text-left">
                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <FormField control={methods.control} name="registrationNumber" render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="text-left">
                                     <FormLabel>RSA Registration Number</FormLabel>
                                     <FormControl>
                                         <Input {...field} placeholder="e.g. AB 12 CD GP" className="h-12 border-2 font-black uppercase" />
@@ -259,7 +271,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                 </FormItem>
                             )} />
                             <FormField control={methods.control} name="vin" render={({ field }) => (
-                                <FormItem>
+                                <FormItem className="text-left">
                                     <FormLabel>VIN / Chassis Number</FormLabel>
                                     <FormControl>
                                         <Input {...field} className="h-12 border-2 font-mono uppercase" />
@@ -269,7 +281,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                         </div>
                         {watchedClass !== 'Trailer' && (
                             <FormField control={methods.control} name="engineNumber" render={({ field }) => (
-                                <FormItem className="animate-in slide-in-from-top-2">
+                                <FormItem className="animate-in slide-in-from-top-2 text-left">
                                     <FormLabel>Engine Number</FormLabel>
                                     <FormControl>
                                         <Input {...field} className="h-12 border-2 font-mono uppercase" />
@@ -300,15 +312,15 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-white">
                          <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
-                                <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Asset Protocol Terminal</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Section: {steps[currentStep]?.title || 'Audit'}</CardDescription>
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Asset movement terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Phase: {steps[currentStep]?.title || 'Audit'}</CardDescription>
                             </div>
-                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
+                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 text-left">
                         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
-                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
+                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left text-foreground">
                                 {steps.map((step, index) => {
                                     const Icon = step.icon;
                                     const isCompleted = index < currentStep && isStepValid(index);
@@ -332,7 +344,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                              </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between">
+                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between text-left">
                         <Button type="button" variant="outline" onClick={handleBackStep} className="font-bold h-12 px-8">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
@@ -343,7 +355,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                         ) : (
                             <Button type="submit" disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white">
                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                                Commit Node to Ledger
+                                Commit Move-In Node
                             </Button>
                         )}
                     </CardFooter>
@@ -352,3 +364,4 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
         </Card>
     );
 }
+

@@ -10,16 +10,18 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote, Database, Info } from 'lucide-react';
+import { Loader2, Save, ArrowLeft, ArrowRight, CheckCircle, FileSignature, Truck, Building, User, Banknote, Database, Info, Search } from 'lucide-react';
 import { getClientSideAuthToken, useDoc, useFirestore, useMemoFirebase, useCollection } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn, fetchFromAdminAPI } from '@/lib/utils';
-import { doc, collection, query } from 'firebase/firestore';
+import { doc, collection, query, where, setDoc, serverTimestamp } from 'firebase/firestore';
+import Link from 'next/link';
 
 // Schemas
 const agreementSubSchema = z.object({
   clientId: z.string().min(1, 'Client is required'),
+  assetId: z.string().optional().nullable(),
   type: z.string().min(1, 'Agreement type is required'),
   description: z.string().min(1, 'Description is required'),
   totalAdvanced: z.coerce.number().positive('Amount must be positive'),
@@ -34,7 +36,7 @@ const wizardSchema = z.object({
 type WizardFormValues = z.infer<typeof wizardSchema>;
 
 const steps = [
-    { id: 'client', title: 'Client & Facility', icon: User, fields: ['agreement.clientId', 'agreement.type'] },
+    { id: 'client', title: 'Client & Facility', icon: User, fields: ['agreement.clientId', 'agreement.type', 'agreement.assetId'] },
     { id: 'details', title: 'Agreement Details', icon: FileSignature, fields: ['agreement.description', 'agreement.totalAdvanced', 'agreement.interestRate', 'agreement.numberOfInstallments'] },
     { id: 'review', title: 'Review & Submit', icon: CheckCircle, fields: [] },
 ];
@@ -59,8 +61,15 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
     });
     
     const isEditing = !!agreement;
-
     const selectedClientId = methods.watch('agreement.clientId');
+    const selectedAssetId = methods.watch('agreement.assetId');
+
+    // Fetch available assets for binding
+    const assetsQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'lendingAssets'), where('status', '==', 'available'));
+    }, [firestore]);
+    const { data: availableAssets, isLoading: isLoadingAssets } = useCollection(assetsQuery);
 
     const availableFacilities = useMemo(() => {
         if (!selectedClientId) return [];
@@ -77,6 +86,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
              methods.reset({
                 agreement: { 
                     clientId: agreement.clientId,
+                    assetId: agreement.assetId || null,
                     type: agreement.type,
                     description: agreement.description,
                     totalAdvanced: agreement.totalAdvanced,
@@ -85,27 +95,22 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
                 }
             });
         } else {
-            methods.reset({});
+            methods.reset({
+                agreement: {
+                    clientId: '',
+                    type: '',
+                    description: '',
+                    totalAdvanced: 0,
+                    interestRate: 15,
+                    numberOfInstallments: 48
+                }
+            });
         }
     }, [isEditing, agreement, methods]);
 
-    const handleRedirect = async (type: string) => {
-        const token = await getClientSideAuthToken();
-        if (!token) return;
-        
-        // AUTOSAVE BEFORE REDIRECT: Persist current agreement node as a draft
-        const values = methods.getValues('agreement');
-        if (values.clientId) {
-            try {
-                await fetchFromAdminAPI(token, 'saveLendingAgreement', { 
-                    agreement: { id: agreement?.id, ...values, status: 'draft' } 
-                });
-            } catch (e) {
-                console.warn("Autosave failed", e);
-            }
-        }
-        
-        window.location.href = `/lending?view=assets&type=${type}&clientId=${selectedClientId || ''}&agreementId=${agreement?.id || ''}`;
+    const handleRedirectToRegister = () => {
+        const type = methods.watch('agreement.type')?.toLowerCase() === 'factoring' ? 'Debtor' : 'Truck';
+        window.location.href = `/lending?view=assets&type=${type}&clientId=${selectedClientId || ''}&redirectBack=agreement`;
     };
 
     const onSubmit = async (data: WizardFormValues) => {
@@ -114,9 +119,27 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            await fetchFromAdminAPI(token, 'saveLendingAgreement', { 
-                agreement: { id: agreement?.id, ...data.agreement } 
+            // 1. COMMIT AGREEMENT
+            const res = await fetchFromAdminAPI(token, 'saveLendingAgreement', { 
+                agreement: { id: agreement?.id, ...data.agreement, status: 'active' } 
             });
+
+            // 2. MARK ASSET AS FINANCED (Move Out of Register)
+            if (data.agreement.assetId) {
+                await fetch('/api/updateUserDoc', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        path: `lendingAssets/${data.agreement.assetId}`,
+                        data: { 
+                            status: 'financed', 
+                            agreementId: res.data.id,
+                            clientId: data.agreement.clientId,
+                            updatedAt: { _methodName: 'serverTimestamp' }
+                        }
+                    })
+                });
+            }
 
             toast({ title: agreement ? 'Agreement Updated' : 'Agreement Created' });
             onSave();
@@ -133,7 +156,7 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         if (isValid && currentStep < steps.length - 1) {
             setCurrentStep(prev => prev + 1);
         } else if (!isValid) {
-            toast({ variant: "destructive", title: "Please complete all required fields for this step." });
+            toast({ variant: "destructive", title: "Incomplete Node", description: "Complete all fields before proceeding." });
         }
     };
     
@@ -143,51 +166,89 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         const stepId = steps[currentStep]?.id;
         switch (stepId) {
             case 'client': return (
-                 <div className="space-y-6">
-                    <FormField control={methods.control} name="agreement.clientId" render={({ field }) => (<FormItem className="text-left"><FormLabel>Client Profile</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-12 border-2 bg-white"><SelectValue placeholder="Select a client..." /></SelectTrigger></FormControl><SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
+                 <div className="space-y-10 animate-in fade-in duration-500">
+                    <FormField control={methods.control} name="agreement.clientId" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Target Client</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Select member client..." /></SelectTrigger></FormControl>
+                                <SelectContent>{clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </FormItem>
+                    )} />
+
                     {selectedClientId && (
-                        availableTypes.length > 0 ? (
-                            <div className="space-y-6 animate-in fade-in slide-in-from-top-2">
-                                <FormField control={methods.control} name="agreement.type" render={({ field }) => (<FormItem className="text-left"><FormLabel>Facility Authority Node</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Select an agreement type..." /></SelectTrigger></FormControl><SelectContent>{availableTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>)} />
-                                
-                                <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6 text-left">
-                                    <div className="flex items-center gap-3">
+                        <div className="space-y-10 animate-in slide-in-from-top-4 duration-500">
+                            <FormField control={methods.control} name="agreement.type" render={({ field }) => (
+                                <FormItem className="text-left">
+                                    <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest">Facility Authority Node</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl><SelectTrigger className="h-12 border-2 bg-white font-black"><SelectValue placeholder="Select agreement type..." /></SelectTrigger></FormControl>
+                                        <SelectContent>{availableTypes.map(type => <SelectItem key={type} value={type} className="capitalize">{type.replace(/_/g, ' ')}</SelectItem>)}</SelectContent>
+                                    </Select>
+                                </FormItem>
+                            )} />
+                            
+                            <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6 text-left">
+                                <div className="flex justify-between items-center text-left">
+                                    <div className="flex items-center gap-3 text-left">
                                         <div className="bg-primary/10 p-2 rounded-lg"><Truck className="h-6 w-6 text-primary"/></div>
                                         <h4 className="font-black uppercase tracking-tight">Physical Asset Bind</h4>
                                     </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <Button type="button" variant="outline" className="h-20 border-2 gap-3 font-bold" onClick={() => handleRedirect('Truck')}>
-                                            <div className="bg-primary/10 p-2 rounded-lg"><Truck className="h-5 w-5 text-primary" /></div>
-                                            <span>Initialize Truck Node</span>
-                                        </Button>
-                                        <Button type="button" variant="outline" className="h-20 border-2 gap-3 font-bold" onClick={() => handleRedirect('Trailer')}>
-                                            <div className="bg-primary/10 p-2 rounded-lg"><Database className="h-5 w-5 text-primary" /></div>
-                                            <span>Initialize Trailer Node</span>
-                                        </Button>
-                                    </div>
+                                    <Button type="button" variant="outline" size="sm" className="gap-2" onClick={handleRedirectToRegister}>
+                                        <PlusCircle className="h-4 w-4" /> Move Asset In
+                                    </Button>
                                 </div>
+                                
+                                <FormField control={methods.control} name="agreement.assetId" render={({ field }) => (
+                                    <FormItem className="text-left">
+                                        <Select onValueChange={field.onChange} defaultValue={field.value || ''}>
+                                            <FormControl>
+                                                <SelectTrigger className="h-14 border-2 bg-white font-bold text-left text-foreground">
+                                                    <SelectValue placeholder={isLoadingAssets ? "Scanning Register..." : "Select available asset from register..."} />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {availableAssets?.map((asset: any) => (
+                                                    <SelectItem key={asset.id} value={asset.id}>
+                                                        {asset.year} {asset.make} {asset.model} - {formatCurrency(asset.costOfSale)}
+                                                    </SelectItem>
+                                                ))}
+                                                {availableAssets?.length === 0 && <SelectItem value="none" disabled>No available assets in register.</SelectItem>}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-[10px] text-muted-foreground mt-2 italic text-left text-foreground">Assets must be registered with "Available" status before they can be bound to an agreement.</p>
+                                    </FormItem>
+                                )} />
                             </div>
-                        ) : (
-                            <Alert variant="destructive" className="bg-destructive/5 border-destructive/20">
-                                <Info className="h-4 w-4" />
-                                <AlertTitle>Authority Missing</AlertTitle>
-                                <AlertDescription>This client has no active credit facilities. Establish a Global Limit before drafting an agreement.</AlertDescription>
-                            </Alert>
-                        )
+                        </div>
                     )}
                  </div>
             );
             case 'details': return (
-                 <div className="space-y-4 text-left">
-                    <FormField control={methods.control} name="agreement.description" render={({ field }) => (<FormItem><FormLabel>Agreement Label</FormLabel><FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} className="bg-white border-2" /></FormControl><FormMessage /></FormItem>)} />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem><FormLabel>Principal Advanced (R)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
-                        <FormField control={methods.control} name="agreement.interestRate" render={({ field }) => (<FormItem><FormLabel>Interest Rate (% p.a.)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
-                        <FormField control={methods.control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-bold" /></FormControl></FormItem>)} />
+                 <div className="space-y-6 animate-in fade-in duration-500 text-left text-foreground">
+                    <FormField control={methods.control} name="agreement.description" render={({ field }) => (
+                        <FormItem className="text-left">
+                            <FormLabel>Agreement Description</FormLabel>
+                            <FormControl><Textarea placeholder="e.g., Asset finance for Scania R500" {...field} className="min-h-[100px] border-2 bg-white" /></FormControl>
+                        </FormItem>
+                    )} />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                        <FormField control={methods.control} name="agreement.totalAdvanced" render={({ field }) => (<FormItem className="text-left"><FormLabel>Amount Advanced (R)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white font-black" /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.interestRate" render={({ field }) => (<FormItem className="text-left"><FormLabel>Rate (% p.a.)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
+                        <FormField control={methods.control} name="agreement.numberOfInstallments" render={({ field }) => (<FormItem className="text-left"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
                     </div>
                 </div>
             );
-            case 'review': return <div className="text-center py-20 space-y-4"><CheckCircle className="h-16 w-16 text-primary mx-auto opacity-30" /><h3 className="text-2xl font-black uppercase">Final Protocol Check</h3><p className="text-muted-foreground max-w-sm mx-auto">Verify principal and term nodes before committing the agreement to the ledger.</p></div>;
+            case 'review': return (
+                <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-left text-foreground">
+                    <CheckCircle className="h-20 w-20 text-primary mx-auto opacity-30" />
+                    <div className="space-y-2 text-center text-foreground">
+                        <h3 className="text-3xl font-black uppercase text-center text-foreground">Agreement Node Verified</h3>
+                        <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center text-foreground">Ready to commit this agreement and bind the selected asset to the client's ledger.</p>
+                    </div>
+                </div>
+            );
             default: return null;
         }
     };
@@ -197,51 +258,48 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
             <FormProvider {...methods}>
                 <form onSubmit={methods.handleSubmit(onSubmit)}>
                     <CardHeader className="bg-slate-900 text-white p-10">
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle className="text-3xl font-black font-headline uppercase">{agreement ? 'Audit' : 'Draft'} Agreement Node</CardTitle>
-                                <CardDescription className="text-slate-400 text-lg mt-1">{steps[currentStep].title}</CardDescription>
+                        <div className="flex justify-between items-center text-left text-white">
+                            <div className="text-left text-white">
+                                <CardTitle className="text-3xl font-black font-headline uppercase text-white text-left">Agreement Authority Terminal</CardTitle>
+                                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Protocol: {steps[currentStep].title}</CardDescription>
                             </div>
-                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Back to Ledger</Button>
+                            <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Ledger</Button>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-0 text-left">
-                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left">
+                    <CardContent className="p-0 text-left text-foreground">
+                        <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] text-left text-foreground">
                             <div className="bg-slate-50 border-r p-8 space-y-2 text-left">
-                                {steps.map((step, index) => {
-                                    const Icon = step.icon;
-                                    return (
-                                        <Button 
-                                            key={step.id} 
-                                            type="button" 
-                                            variant={currentStep === index ? 'secondary' : 'ghost'} 
-                                            className={cn("w-full justify-start gap-4 h-12 px-4 transition-all", currentStep === index && "bg-white shadow-md ring-1 ring-primary/20")} 
-                                            onClick={() => setCurrentStep(index)}
-                                        >
-                                            <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
-                                            <Icon className={cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground")} />
-                                            <span className={cn("text-[10px] font-black uppercase tracking-[0.1em]", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
-                                        </Button>
-                                    );
-                                })}
+                                {steps.map((step, index) => (
+                                    <Button 
+                                        key={step.id} 
+                                        type="button" 
+                                        variant={currentStep === index ? 'secondary' : 'ghost'} 
+                                        className={cn("w-full justify-start gap-4 h-12 px-4 transition-all text-left", currentStep === index && "bg-white shadow-sm ring-1 ring-primary/20")} 
+                                        onClick={() => { if(index <= currentStep) setCurrentStep(index); }}
+                                    >
+                                        <div className={cn("h-4 w-4 rounded-full flex items-center justify-center text-[10px] font-black", currentStep >= index ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>{index + 1}</div>
+                                        {React.createElement(step.icon, { className: cn("h-5 w-5", currentStep >= index ? "text-primary" : "text-muted-foreground") })}
+                                        <span className={cn("text-[10px] font-black uppercase tracking-[0.1em] text-left", currentStep === index ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                    </Button>
+                                ))}
                             </div>
                             <div className="p-12 space-y-12 bg-white min-h-[500px] text-left">
                                 {renderStepContent()}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between">
+                    <CardFooter className="bg-slate-50 border-t p-10 flex justify-between text-left">
                         <Button type="button" variant="outline" onClick={handleBackStep} disabled={currentStep === 0 || isLoading} className="font-bold h-12 px-8">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back
                         </Button>
                         {currentStep < steps.length - 1 ? (
-                            <Button type="button" onClick={handleNext} className="h-12 px-12 font-black uppercase text-xs text-white shadow-lg">
+                            <Button type="button" onClick={handleNext} className="h-12 px-12 font-black uppercase text-xs text-white shadow-lg text-left">
                                 Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4"/>
                             </Button>
                         ) : (
                             <Button type="submit" disabled={isLoading} className="h-14 px-16 bg-primary hover:bg-primary/90 shadow-2xl font-black uppercase tracking-tight text-white">
                                 {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                                Commit Agreement to Ledger
+                                Commit Agreement to Registry
                             </Button>
                         )}
                     </CardFooter>
@@ -250,3 +308,4 @@ export function AgreementWizard({ agreement, clients, facilities, onSave, onBack
         </Card>
     );
 }
+
