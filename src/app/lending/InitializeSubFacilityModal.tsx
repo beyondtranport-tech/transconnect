@@ -5,13 +5,16 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { Loader2, Zap, Save, Gavel, UserPlus, Building, Truck, MapPin, ShieldCheck, Info } from 'lucide-react';
+import { Loader2, Zap, Save, Gavel, UserPlus, Building, Truck, MapPin, ShieldCheck, Info, CheckCircle2, ChevronRight } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchFromAdminAPI, formatCurrency } from '@/lib/utils';
 import { provinces } from '@/lib/geodata';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface InitializeSubFacilityModalProps {
     parent: any;
@@ -22,9 +25,9 @@ interface InitializeSubFacilityModalProps {
 }
 
 /**
- * SHARED SUB-FACILITY TERMINAL (V18.1)
+ * SHARED SUB-FACILITY TERMINAL (V19.1)
  * Partitions a Global Ceiling into specific Agreement Nodes or Member Allocations.
- * Optimized for Supplier Vetting: Make, Model, Year, Condition, and Location focus.
+ * HIGH-FIDELITY VETTING: Supports Make, Model, Year, Condition, and Location focus.
  */
 export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen, onOpenChange }: InitializeSubFacilityModalProps) {
     const { user } = useUser();
@@ -79,15 +82,16 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                 limit: Number(limit),
                 status: 'active',
                 createdByName: user?.displayName || 'Admin',
-                // Vetting Metadata (Supplier Hub)
+                // HIGH-FIDELITY VETTING PARAMETERS
                 vettingParams: isSupplierMode ? {
-                    make,
-                    model,
+                    make: make || 'All',
+                    model: model || 'All',
                     maxYear: maxYear ? Number(maxYear) : null,
                     condition,
-                    province: selectedProvince,
-                    city: selectedCity
-                } : null
+                    province: selectedProvince || 'National',
+                    city: selectedCity || 'All'
+                } : null,
+                createdAt: { _methodName: 'serverTimestamp' }
             };
 
             await fetchFromAdminAPI(token, 'saveLendingFacility', { facility: payload });
@@ -109,6 +113,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
         setMake('');
         setModel('');
         setMaxYear('');
+        setCondition('used');
         setSelectedProvince('');
         setSelectedCity('');
     };
@@ -116,7 +121,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
     if (!parent) return null;
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <Dialog open={isOpen} onOpenChange={(o) => { if(!isSaving) onOpenChange(o); }}>
             <DialogContent className="max-w-2xl text-left text-foreground overflow-hidden flex flex-col h-[90vh] p-0">
                 <DialogHeader className="p-6 border-b bg-muted/30 shrink-0 text-left">
                     <DialogTitle className="flex items-center gap-2 font-black text-xl text-left">
@@ -135,7 +140,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                 <Label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Master Ceiling Node</Label>
                                 <p className="text-xl font-black text-primary">{formatCurrency(parent.limit)}</p>
                             </div>
-                            <Badge variant="outline" className="border-white/20 text-white uppercase text-[9px] font-black">{parent.ownerType} Branch</Badge>
+                            <Badge variant="outline" className="border-white/20 text-white uppercase text-[9px] font-black">{parent.ownerType} Master</Badge>
                         </div>
 
                         {isDebtorMode ? (
@@ -174,23 +179,23 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                         <div className="grid grid-cols-2 gap-4 text-left">
                                             <div className="space-y-1.5 text-left">
                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Make Focus</Label>
-                                                <Input value={make} onChange={e => setMake(e.target.value)} placeholder="e.g. Scania" className="bg-white" />
+                                                <Input value={make} onChange={e => setMake(e.target.value)} placeholder="e.g. Scania" className="bg-white border-2" />
                                             </div>
                                             <div className="space-y-1.5 text-left">
                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Model Focus</Label>
-                                                <Input value={model} onChange={e => setModel(e.target.value)} placeholder="e.g. R500" className="bg-white" />
+                                                <Input value={model} onChange={e => setModel(e.target.value)} placeholder="e.g. R500" className="bg-white border-2" />
                                             </div>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4 text-left">
                                             <div className="space-y-1.5 text-left">
                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Max Age (Year)</Label>
-                                                <Input type="number" value={maxYear} onChange={e => setMaxYear(e.target.value)} placeholder="e.g. 2018" className="bg-white" />
+                                                <Input type="number" value={maxYear} onChange={e => setMaxYear(e.target.value)} placeholder="e.g. 7" className="bg-white border-2" />
                                             </div>
                                             <div className="space-y-1.5 text-left">
                                                 <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Condition Node</Label>
                                                 <Select value={condition} onValueChange={setCondition}>
-                                                    <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
+                                                    <SelectTrigger className="bg-white border-2"><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="new">Brand New Only</SelectItem>
                                                         <SelectItem value="used">Used / Refurbished</SelectItem>
@@ -204,13 +209,13 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                             <Label className="text-[10px] font-black uppercase text-primary tracking-widest flex items-center gap-2 text-left"><MapPin className="h-3 w-3" /> Regional Authority Hub</Label>
                                             <div className="grid grid-cols-2 gap-4 text-left">
                                                 <Select value={selectedProvince} onValueChange={setSelectedProvince}>
-                                                    <SelectTrigger className="bg-white"><SelectValue placeholder="Province" /></SelectTrigger>
+                                                    <SelectTrigger className="bg-white border-2"><SelectValue placeholder="Province" /></SelectTrigger>
                                                     <SelectContent>
                                                         {provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                                 <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
-                                                    <SelectTrigger className="bg-white"><SelectValue placeholder="City / Hub" /></SelectTrigger>
+                                                    <SelectTrigger className="bg-white border-2"><SelectValue placeholder="City / Hub" /></SelectTrigger>
                                                     <SelectContent>
                                                         {cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
                                                     </SelectContent>
@@ -228,7 +233,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                 type="number" 
                                 value={limit} 
                                 onChange={e => setLimit(e.target.value)} 
-                                placeholder="e.g. 250000"
+                                placeholder="e.g. 500000"
                                 className="h-14 border-2 text-2xl font-black bg-white focus-visible:ring-primary"
                             />
                         </div>
@@ -244,9 +249,4 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
             </DialogContent>
         </Dialog>
     );
-}
-
-// Simple ScrollArea wrapper for prototype stability
-function ScrollArea({ children, className }: { children: React.ReactNode, className?: string }) {
-    return <div className={cn("overflow-y-auto", className)}>{children}</div>;
 }

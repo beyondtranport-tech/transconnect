@@ -12,7 +12,7 @@ import {
     Loader2, Landmark, ArrowLeft, ArrowRight, CheckCircle, ShieldCheck, 
     History, Building, FileUp, Users, UserCircle, ShieldAlert, CheckCircle2, 
     ListChecks, Save, User, UserCheck, Gavel, Scale, Info, Trash2, UserPlus,
-    FileText, Sparkles, Wrench
+    FileText, Sparkles, Wrench, RefreshCcw
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getClientSideAuthToken, useFirestore } from '@/firebase';
@@ -24,6 +24,7 @@ import { doc, setDoc, serverTimestamp, collection } from 'firebase/firestore';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // --- SCHEMAS ---
 
@@ -120,13 +121,23 @@ const StakeholderNode = ({ index, type, onRemove }: { index: number, type: 'shar
                 <Button variant="ghost" size="icon" onClick={onRemove} className="text-destructive h-8 w-8"><Trash2 className="h-4 w-4" /></Button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
-                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2" /></FormControl></FormItem>)} />
-                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.name` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Full Name</FormLabel><FormControl><Input {...field} className="h-10 border-2 bg-white" /></FormControl></FormItem>)} />
+                <FormField control={control} name={`${type}.${index}.rsaIdNumber` as any} render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>RSA ID Number</FormLabel><FormControl><Input {...field} className="h-10 border-2 font-mono bg-white" /></FormControl></FormItem>)} />
             </div>
             <FileUploadField name={`${type}.${index}.rsaIdUrl`} label="Attach Identity Scan" folder={`suppliers-${type}`} />
         </div>
     );
 };
+
+const steps = [
+    { id: 'main', title: '1. Identity', icon: User, fields: ['name', 'category', 'userIdUrl'] },
+    { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'vatRegistered', 'vatNumber', 'registrationDocUrl', 'globalFacilityLimit'] },
+    { id: 'standing', title: '3. Standing', icon: Landmark, fields: ['ownsOperatingProperty', 'ficaDocUrl'] },
+    { id: 'governance', title: '4. Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount'] },
+    { id: 'shareholders', title: '5. Shareholders', icon: Users, fields: ['shareholders'] },
+    { id: 'directors', title: '6. Directors', icon: UserCheck, fields: ['directors'] },
+    { id: 'review', title: 'Audit Check', icon: ShieldCheck, fields: [] },
+];
 
 // --- WIZARD TERMINAL ---
 
@@ -156,16 +167,6 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
   const { fields: shareholderFields, append: appendShareholder, remove: removeShareholder } = useFieldArray({ control: methods.control, name: 'shareholders' });
   const { fields: directorFields, append: appendDirector, remove: removeDirector } = useFieldArray({ control: methods.control, name: 'directors' });
 
-  const steps = [
-    { id: 'main', title: '1. Identity', icon: User, fields: ['name', 'category', 'userIdUrl'] },
-    { id: 'entity', title: '2. Entity', icon: Building, fields: ['registrationId', 'vatRegistered', 'vatNumber', 'registrationDocUrl', 'globalFacilityLimit'] },
-    { id: 'standing', title: '3. Standing', icon: Landmark, fields: ['ownsOperatingProperty', 'ficaDocUrl'] },
-    { id: 'governance', title: '4. Governance', icon: Gavel, fields: ['shareholderCount', 'directorCount'] },
-    { id: 'shareholders', title: '5. Shareholders', icon: Users, fields: ['shareholders'] },
-    { id: 'directors', title: '6. Directors', icon: UserCheck, fields: ['directors'] },
-    { id: 'review', title: 'Audit Check', icon: ShieldCheck, fields: [] },
-  ];
-
   const handleStepTransition = async (direction: 'next' | 'back' | number) => {
     const isMovingForward = direction === 'next' || (typeof direction === 'number' && direction > currentStep);
 
@@ -173,7 +174,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
         const isValid = await methods.trigger(steps[currentStep].fields as any);
         if (!isValid) return;
 
-        // EVENT-DRIVEN STAKEHOLDER SYNC (Anti-Loop Hardened)
+        // EVENT-DRIVEN STAKEHOLDER SYNC
         if (steps[currentStep].id === 'governance') {
             const sCount = Number(methods.getValues('shareholderCount')) || 0;
             const dCount = Number(methods.getValues('directorCount')) || 0;
@@ -194,7 +195,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
         }
     }
 
-    // PERVASIVE DATA SYNC: Autosave on transition (Hardened)
+    // PERVASIVE DATA SYNC: Autosave on transition
     if (methods.formState.isDirty && supplier?.id) {
         const token = await getClientSideAuthToken();
         if (token) {
@@ -239,7 +240,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
             <div className="flex justify-between items-center text-left text-white">
               <div className="text-left text-white text-left">
                 <CardTitle className="text-2xl font-black font-headline uppercase text-white text-left">Supplier Protocol Terminal</CardTitle>
-                <CardDescription className="text-slate-400">Section: {currentStepConfig.title}</CardDescription>
+                <CardDescription className="text-slate-400 text-lg mt-1 text-white text-left">Section: {currentStepConfig.title}</CardDescription>
               </div>
               <Button type="button" variant="ghost" className="text-white hover:text-primary" onClick={onBack}><ArrowLeft className="mr-2 h-4 w-4" /> Exit Terminal</Button>
             </div>
@@ -260,7 +261,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                         <FormField control={methods.control} name="name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Legal Trading Name</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-12 border-2 bg-white font-black text-lg" /></FormControl></FormItem>)} />
                         <FormField control={methods.control} name="category" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Industrial Trade (e.g. Scania Dealer)</FormLabel><FormControl><Input {...field} value={field.value || ''} className="h-11 border-2 bg-white" /></FormControl></FormItem>)} />
                         <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl space-y-4 text-left text-white">
-                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><User className="h-4 w-4" /> Principal Identity</h4>
+                            <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left text-white"><User className="h-4 w-4" /> Principal Identity Node</h4>
                             <FileUploadField name="userIdUrl" label="Principal RSA ID / Passport" folder="suppliers-identity" />
                         </div>
                     </div>
@@ -287,7 +288,7 @@ export function EditSupplierWizard({ supplier, onSave, onBack }: { supplier?: an
                                 )}
                             </div>
                             <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex flex-col justify-center gap-4 text-left text-white text-white">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><Building className="h-4 w-4" /> Founding Evidence</h4>
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Evidence</h4>
                                 <FileUploadField name="registrationDocUrl" label="Registration Document" folder="suppliers-legal" />
                             </div>
                         </div>

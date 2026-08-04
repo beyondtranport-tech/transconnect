@@ -22,6 +22,11 @@ import { AddCommunicationLogDialog } from '@/app/adminaccount/marketing/AddCommu
 import { CommunicationLogDialog } from '@/app/adminaccount/marketing/CommunicationLogDialog';
 import { InitializeSubFacilityModal } from './InitializeSubFacilityModal';
 
+/**
+ * SUPPLIER REGISTRY (DMS)
+ * Strategic oversight of authorized asset dealers and equipment manufacturers.
+ * RESOURCE HARDENED: Definitively prevents infinite loops and quota exhaustion.
+ */
 export default function SuppliersContent() {
     const { toast } = useToast();
     const [suppliers, setSuppliers] = useState<any[]>([]);
@@ -35,6 +40,7 @@ export default function SuppliersContent() {
     const [isDeleteOpen, setIsDeleteOpen] = useState(false);
     const [supplierToDelete, setSupplierToDelete] = useState<any | null>(null);
     
+    // SELECTION HUB
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
@@ -45,6 +51,7 @@ export default function SuppliersContent() {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Auth failed.");
             
+            // RESOURCE CAPPING: Hard 100 record limit applied
             const [suppliersRes, facilitiesRes, clientsRes] = await Promise.all([
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'lendingSuppliers', limit: 100 }),
                 fetchFromAdminAPI(token, 'getLendingData', { collectionName: 'facilities', limit: 100 }),
@@ -166,7 +173,7 @@ export default function SuppliersContent() {
                         <AlertDialogTitle className="text-left text-foreground text-foreground">Expunge Supplier Node?</AlertDialogTitle>
                         <AlertDialogDescription className="text-left text-foreground text-foreground">This will permanently remove the dealership from the authorized register.</AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="text-left text-foreground">
+                    <AlertDialogFooter className="text-left text-foreground text-foreground">
                         <AlertDialogCancel onClick={() => setSupplierToDelete(null)}>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className={cn(buttonVariants({ variant: "destructive" }))}>Confirm Delete</AlertDialogAction>
                     </AlertDialogFooter>
@@ -174,14 +181,14 @@ export default function SuppliersContent() {
             </AlertDialog>
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 text-left">
-                <div className="text-left">
+                <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         <Building className="h-8 w-8 text-primary" />
                         Supplier Registry (DMS)
                     </h1>
-                    <p className="text-muted-foreground mt-1 text-left text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
+                    <p className="text-muted-foreground mt-1 text-left text-foreground text-foreground text-foreground">Authorized asset dealers and equipment manufacturers for the lending grid.</p>
                 </div>
-                <div className="flex gap-2 text-left">
+                <div className="flex gap-2 text-left text-foreground">
                     <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
                         <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Portfolio
                     </Button>
@@ -197,7 +204,7 @@ export default function SuppliersContent() {
                                 }
                                 setIsSubModalOpen(true);
                             }}
-                            className={cn("gap-2 font-bold h-9 border-primary text-primary bg-primary/5 animate-in slide-in-from-right-2")}
+                            className={cn("gap-2 font-bold h-10 px-6", activeSelection && "border-primary text-primary bg-primary/5 animate-in slide-in-from-right-2")}
                         >
                             <FileSignature className="h-4 w-4" /> Initialize Sub-Facility
                         </Button>
@@ -210,11 +217,11 @@ export default function SuppliersContent() {
             </div>
 
             <Card className="border-none shadow-xl bg-white overflow-hidden text-left text-foreground">
-                <CardContent className="pt-6 text-left text-foreground">
+                <CardContent className="pt-6 text-left text-foreground text-foreground">
                     {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center text-foreground">
                             <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground">Mapping Authorized Dealers...</p>
+                            <p className="text-xs font-black uppercase tracking-widest text-muted-foreground text-center">Mapping Authorized Dealers...</p>
                         </div>
                     ) : (
                         <DataTable columns={columns} data={suppliers} onSelectionChange={setSelectedIds} />
