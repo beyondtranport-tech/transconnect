@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { getClientSideAuthToken, useUser } from '@/firebase';
 import { 
-  Loader2, PlusCircle, Users, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, 
+  Loader2, PlusCircle, Building, Edit, Trash2, Eye, Database, SearchCode, History, RotateCcw, 
   Download, Upload, Zap, Search, Globe, ShieldCheck, Scale, FileCheck, ShoppingBag
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -149,7 +148,7 @@ export default function SuppliersContent() {
         <div className="space-y-8 text-left text-foreground">
             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
                 <AlertDialogContent className="text-left text-foreground">
-                    <AlertDialogHeader className="text-left">
+                    <AlertDialogHeader className="text-left text-foreground">
                         <AlertDialogTitle className="text-left">Expunge Supplier Record?</AlertDialogTitle>
                         <AlertDialogDescription className="text-left">Permanent removal of "{supplierToDelete?.name}" from the dealership registry.</AlertDialogDescription>
                     </AlertDialogHeader>
@@ -178,7 +177,7 @@ export default function SuppliersContent() {
                     </div>
                     <div className="flex gap-2 text-left">
                         <Button variant="outline" size="sm" onClick={forceRefresh} disabled={isLoading} className="gap-2 text-foreground">
-                            <RotateCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Registry
+                            <RefreshCcw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Sync Registry
                         </Button>
                         <Button onClick={handleAddNew} size="sm" className="gap-2 font-bold text-white shadow-lg">
                             <PlusCircle className="h-4 w-4" /> Add Supplier

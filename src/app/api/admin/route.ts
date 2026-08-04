@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirestore, Timestamp, FieldValue, type QueryDocumentSnapshot } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
@@ -110,10 +109,22 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id: facilityId } });
             }
 
+            case 'saveLendingAsset': {
+                const { asset } = payload;
+                const id = asset.id || db.collection('lendingAssets').doc().id;
+                await db.collection('lendingAssets').doc(id).set({
+                    ...asset,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, data: { id } });
+            }
+
             case 'savePartner': {
                 const { collection: colName, partner } = payload;
-                const id = partner.id || db.collection(colName).doc().id;
-                await db.collection(colName).doc(id).set({
+                const coll = colName || 'partners';
+                const id = partner.id || db.collection(coll).doc().id;
+                await db.collection(coll).doc(id).set({
                     ...partner,
                     id,
                     updatedAt: FieldValue.serverTimestamp()
@@ -146,6 +157,22 @@ export async function POST(req: NextRequest) {
             case 'getPlatformStaff': {
                 const snap = await db.collection('platformStaff').get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+            
+            case 'listAllUsers': {
+                const auth = getAuth(app);
+                const listUsers = await auth.listUsers(1000);
+                return NextResponse.json({ 
+                    success: true, 
+                    data: listUsers.users.map(u => ({
+                        uid: u.uid,
+                        email: u.email,
+                        displayName: u.displayName,
+                        disabled: u.disabled,
+                        creationTime: u.metadata.creationTime,
+                        lastSignInTime: u.metadata.lastSignInTime
+                    }))
+                });
             }
 
             default: 

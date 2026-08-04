@@ -1,11 +1,10 @@
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@opentelemetry/instrumentation', 'require-in-the-middle'],
   },
   reactStrictMode: true,
-  // Cache-busting Identifier: 2026-03-17T11:00:00Z - FORCING REBUILD TO RESOLVE CHUNKLOADERRORS
+  // Cache-busting Identifier: 2026-08-04T09:15:00Z - FORCING REBUILD TO RESOLVE MODULE_NOT_FOUND
   images: {
     remotePatterns: [
       {

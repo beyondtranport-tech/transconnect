@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -47,7 +46,8 @@ import {
   History,
   Archive,
   User,
-  ShoppingBag
+  ShoppingBag,
+  Building
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -113,7 +113,7 @@ function LendingPortalContent() {
       case 'assets': return <AssetRegisterContent />;
       case 'facilities-clients': return <FacilitiesContent mode="client-global" />;
       case 'facilities-debtors': return <FacilitiesContent mode="debtor" />;
-      case 'facilities-suppliers': return <FacilitiesContent mode="supplier" />;
+      case 'facilities-suppliers': return <FacilitiesContent mode="facilities-suppliers" />;
       case 'collateral': return <CollateralContent />;
       case 'documents': return <DocumentVaultContent />;
       case 'security-vault': return <SecurityVaultContent />;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -196,7 +195,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                     <div className="space-y-8 animate-in fade-in duration-500 text-left text-foreground">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left text-foreground">
                                             <FormField control={methods.control} name="classification" render={({ field }) => (
-                                                <FormItem className="text-left text-foreground"><FormLabel>Asset Class</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Truck">Heavy Vehicle (Truck)</SelectItem><SelectItem value="Trailer">Interlink / Trailer</SelectItem><SelectItem value="Bakkie">Light Commercial</SelectItem><SelectItem value="Equipment">Industrial Equipment</SelectItem></SelectContent></Select></FormItem>
+                                                <FormItem className="text-left text-foreground"><FormLabel>Asset Class</FormLabel><Select onValueChange={field.onChange} value={field.value || ''}><FormControl><SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="Truck">Heavy Vehicle (Truck)</SelectItem><SelectItem value="Trailer">Interlink / Trailer</SelectItem><SelectItem value="Bakkie">Light Commercial</SelectItem><SelectItem value="Equipment">Industrial Equipment</SelectItem></Select></FormItem>
                                             )} />
                                             <FormField control={methods.control} name="costOfSale" render={({ field }) => (
                                                 <FormItem className="text-left text-foreground"><FormLabel className="text-primary font-black uppercase text-[10px]">Purchase Valuation (Excl. VAT)</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white text-xl font-black" /></FormControl></FormItem>
@@ -227,7 +226,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                         <ShieldCheck className="h-20 w-20 text-primary mx-auto opacity-30" />
                                         <div className="space-y-2 text-center text-foreground text-foreground">
                                             <h3 className="text-3xl font-black uppercase">Final Protocol Check</h3>
-                                            <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">Ensure all technical nodes and valuations are verified before committing this node to the registry.</p>
+                                            <p className="text-muted-foreground max-sm mx-auto leading-relaxed">Ensure all technical nodes and valuations are verified before committing this node to the registry.</p>
                                         </div>
                                     </div>
                                 )}
