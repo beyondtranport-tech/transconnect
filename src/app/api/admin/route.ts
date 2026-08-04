@@ -60,17 +60,40 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(members) });
             }
 
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(1000).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'getPartnersByType': {
+                const { type } = payload;
+                const snap = await db.collection('partners').where('type', '==', type).orderBy('updatedAt', 'desc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'savePartner': {
+                const { collection: colName, partner } = payload;
+                const coll = colName || 'partners';
+                const id = partner.id || db.collection(coll).doc().id;
+                await db.collection(coll).doc(id).set({
+                    ...partner,
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, data: { id } });
+            }
+
             case 'getLendingData': {
                 const { collectionName } = payload;
                 const collMap: Record<string, string> = {
                     'facilities': 'lendingFacilities',
-                    'clients': 'lendingClients',
-                    'debtors': 'lendingDebtors',
-                    'suppliers': 'lendingSuppliers',
+                    'lendingClients': 'lendingClients',
+                    'lendingDebtors': 'lendingDebtors',
+                    'lendingSuppliers': 'lendingSuppliers',
                     'agreements': 'lendingAgreements',
-                    'assets': 'lendingAssets',
-                    'securities': 'lendingSecurities',
+                    'lendingAssets': 'lendingAssets',
                     'collateral': 'lendingCollateral',
+                    'securities': 'lendingSecurities',
                     'documents': 'lendingDocuments'
                 };
                 const collectionToFetch = collMap[collectionName] || collectionName;
@@ -91,22 +114,13 @@ export async function POST(req: NextRequest) {
 
             case 'saveLendingFacility': {
                 const { facility } = payload;
-                if (!facility) throw new Error("Missing facility payload.");
-                
-                const facilityId = facility.id || db.collection('lendingFacilities').doc().id;
-                const ref = db.collection('lendingFacilities').doc(facilityId);
-                
-                const dataToSave = {
+                const id = facility.id || db.collection('lendingFacilities').doc().id;
+                await db.collection('lendingFacilities').doc(id).set({
                     ...facility,
-                    id: facilityId,
-                    parentId: facility.parentId || null,
-                    limit: Number(facility.limit) || 0,
-                    updatedAt: FieldValue.serverTimestamp(),
-                    createdAt: facility.createdAt ? (typeof facility.createdAt === 'string' ? Timestamp.fromDate(new Date(facility.createdAt)) : facility.createdAt) : FieldValue.serverTimestamp()
-                };
-                
-                await ref.set(dataToSave, { merge: true });
-                return NextResponse.json({ success: true, data: { id: facilityId } });
+                    id,
+                    updatedAt: FieldValue.serverTimestamp()
+                }, { merge: true });
+                return NextResponse.json({ success: true, data: { id } });
             }
 
             case 'saveLendingAsset': {
@@ -120,16 +134,36 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id } });
             }
 
-            case 'savePartner': {
-                const { collection: colName, partner } = payload;
-                const coll = colName || 'partners';
-                const id = partner.id || db.collection(coll).doc().id;
-                await db.collection(coll).doc(id).set({
-                    ...partner,
+            case 'saveLendingAgreement': {
+                const { agreement } = payload;
+                const id = agreement.id || db.collection('lendingAgreements').doc().id;
+                await db.collection('lendingAgreements').doc(id).set({
+                    ...agreement,
                     id,
                     updatedAt: FieldValue.serverTimestamp()
                 }, { merge: true });
                 return NextResponse.json({ success: true, data: { id } });
+            }
+
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+            
+            case 'listAllUsers': {
+                const auth = getAuth(app);
+                const listUsers = await auth.listUsers(1000);
+                return NextResponse.json({ 
+                    success: true, 
+                    data: listUsers.users.map(u => ({
+                        uid: u.uid,
+                        email: u.email,
+                        displayName: u.displayName,
+                        disabled: u.disabled,
+                        creationTime: u.metadata.creationTime,
+                        lastSignInTime: u.metadata.lastSignInTime
+                    }))
+                });
             }
 
             case 'searchRegistry': {
@@ -154,25 +188,16 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(results) });
             }
 
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
-            }
-            
-            case 'listAllUsers': {
-                const auth = getAuth(app);
-                const listUsers = await auth.listUsers(1000);
-                return NextResponse.json({ 
-                    success: true, 
-                    data: listUsers.users.map(u => ({
-                        uid: u.uid,
-                        email: u.email,
-                        displayName: u.displayName,
-                        disabled: u.disabled,
-                        creationTime: u.metadata.creationTime,
-                        lastSignInTime: u.metadata.lastSignInTime
-                    }))
+            case 'logCommunication': {
+                const { partnerId, collection: colName, ...logData } = payload;
+                const coll = colName || 'partners';
+                const logRef = db.collection(coll).doc(partnerId).collection('communications').doc();
+                await logRef.set({
+                    ...logData,
+                    id: logRef.id,
+                    timestamp: FieldValue.serverTimestamp()
                 });
+                return NextResponse.json({ success: true });
             }
 
             default: 

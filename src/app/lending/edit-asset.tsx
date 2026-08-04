@@ -27,7 +27,7 @@ const assetSchema = z.object({
   sourceType: z.enum(['dealer', 'client', 'stock']).default('dealer'),
   sourceDealerId: z.string().optional().nullable(),
   sourceClientId: z.string().optional().nullable(),
-  clientId: z.string().optional().nullable(), // Optional allocation for now
+  clientId: z.string().optional().nullable(), 
   make: z.string().min(1, 'Make is required'),
   model: z.string().min(1, 'Model is required'),
   year: z.string().min(4, 'Year is required'),
@@ -46,7 +46,7 @@ type AssetFormValues = z.infer<typeof assetSchema>;
 
 const allSteps = [
     { id: 'source', title: '1. Asset Source', icon: ShoppingBag, fields: ['sourceType', 'sourceDealerId', 'sourceClientId'] },
-    { id: 'details', title: '2. Technical Node', icon: Truck, fields: ['make', 'model', 'year', 'costOfSale', 'classification'] },
+    { id: 'details', title: '2. Technical Node', icon: Truck, fields: ['make', 'model', 'year', 'costOfSale', 'classification', 'clientId'] },
     { id: 'identifiers', title: '3. Identifiers', icon: Database, fields: ['registrationNumber', 'vin', 'engineNumber'] },
     { id: 'audit', title: '4. Forensic Audit', icon: ShieldCheck, fields: [] },
 ];
@@ -115,7 +115,7 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
     return (
         <Card className="max-w-6xl mx-auto shadow-2xl border-none overflow-hidden text-left text-foreground">
             <FormProvider {...methods}>
-                <form onSubmit={methods.handleSubmit(onSubmit)}>
+                <form onSubmit={methods.handleSubmit(onSubmit)} onKeyDown={(e) => { if(e.key === 'Enter') e.preventDefault(); }}>
                     <CardHeader className="bg-slate-900 text-white p-10 border-b border-white/5 text-left text-white">
                          <div className="flex justify-between items-center text-left text-white">
                             <div className="text-left text-white">
@@ -206,6 +206,16 @@ export function EditAssetWizard({ asset, onSave, onBack, assetType: initialType,
                                             <FormField control={methods.control} name="model" render={({ field }) => (<FormItem className="text-left"><FormLabel>Model</FormLabel><FormControl><Input {...field} className="border-2" /></FormControl></FormItem>)} />
                                             <FormField control={methods.control} name="year" render={({ field }) => (<FormItem className="text-left"><FormLabel>Year</FormLabel><FormControl><Input type="number" {...field} className="border-2" /></FormControl></FormItem>)} />
                                         </div>
+                                        
+                                        <FormField control={methods.control} name="clientId" render={({ field }) => (
+                                            <FormItem className="text-left">
+                                                <FormLabel>Allocate to Borrower Node (Optional)</FormLabel>
+                                                <Select onValueChange={field.onChange} value={field.value || ''} disabled={!!initialClientId}>
+                                                    <FormControl><SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Select client profile..." /></SelectTrigger></FormControl>
+                                                    <SelectContent>{clients?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                            </FormItem>
+                                        )} />
                                     </div>
                                 )}
 
