@@ -50,7 +50,8 @@ import {
   Building,
   ArrowLeft,
   Wallet,
-  Banknote
+  Banknote,
+  Briefcase
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -133,7 +134,7 @@ function LendingPortalContent() {
 
   if (isUserLoading || !user) {
     return (
-        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center">
+        <div className="flex flex-col justify-center items-center py-40 gap-4 text-center text-foreground">
             <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
             <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Authenticating Portal...</p>
         </div>
@@ -182,9 +183,9 @@ function LendingPortalContent() {
                   <span>Facilities</span>
                 </SidebarMenuButton>
                 <SidebarMenuSub>
-                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-clients'} onClick={() => navigate('facilities-clients')}>Client Global</SidebarMenuSubButton></SidebarMenuSubItem>
-                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-debtors'} onClick={() => navigate('facilities-debtors')}>Debtor Registry</SidebarMenuSubButton></SidebarMenuSubItem>
-                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-suppliers'} onClick={() => navigate('facilities-suppliers')}>Supplier Registry</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-clients'} onClick={() => navigate('facilities-clients')}>Client facility</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-debtors'} onClick={() => navigate('facilities-debtors')}>Debtor facility</SidebarMenuSubButton></SidebarMenuSubItem>
+                  <SidebarMenuSubItem><SidebarMenuSubButton isActive={activeView === 'facilities-suppliers'} onClick={() => navigate('facilities-suppliers')}>Supplier facility</SidebarMenuSubButton></SidebarMenuSubItem>
                 </SidebarMenuSub>
               </SidebarMenuItem>
 
@@ -216,8 +217,8 @@ function LendingPortalContent() {
                 <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
             </Avatar>
             <div className="flex flex-col truncate text-left">
-                <span className="text-sm font-medium text-sidebar-foreground truncate">{user?.displayName || 'Admin'}</span>
-                <span className="text-xs text-sidebar-foreground/70 truncate">{user?.email}</span>
+                <span className="text-sm font-medium text-sidebar-foreground truncate text-left">{user?.displayName || 'Admin'}</span>
+                <span className="text-xs text-sidebar-foreground/70 truncate text-left">{user?.email}</span>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto" onClick={onLogout} title="Sign Out">
                 <LogOut className="h-5 w-5" />

@@ -19,6 +19,7 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 
 interface InitializeSubFacilityModalProps {
@@ -48,7 +49,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
     const [isSaving, setIsSaving] = useState(false);
 
     // --- FORM STATE ---
-    const [type, setType] = useState('loan-pv-term'); // Agreement Type
+    const [type, setType] = useState('loan-pv-term'); 
     const [discountingSubType, setDiscountingSubType] = useState('factoring');
     const [limit, setLimit] = useState<string>('');
     const [associatedClientId, setAssociatedClientId] = useState<string>('');
@@ -77,17 +78,17 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
     // --- WIZARD STEPS CONFIG ---
     const steps = useMemo(() => {
         const base = [
-            { id: 'identity', title: 'Identity', icon: isDebtorMode ? UserPlus : Landmark },
+            { id: 'identity', title: '1. Identity', icon: isDebtorMode ? UserPlus : Landmark, fields: ['type', 'associatedClientId'] },
         ];
         if (isAssetBased) {
-            base.push({ id: 'assets', title: 'Asset Vetting', icon: Truck });
+            base.push({ id: 'assets', title: '2. Asset Vetting', icon: Truck, fields: ['makeList'] });
         }
         if (isDiscounting) {
-            base.push({ id: 'discounting', title: 'Product Spec', icon: Banknote });
+            base.push({ id: 'discounting', title: '2. Product Spec', icon: Banknote, fields: ['discountingSubType'] });
         }
-        base.push({ id: 'geography', title: 'Regional Control', icon: Globe });
-        base.push({ id: 'authorization', title: 'Authorization', icon: Zap });
-        base.push({ id: 'audit', title: 'Audit Summary', icon: ListChecks });
+        base.push({ id: 'geography', title: (isAssetBased || isDiscounting) ? '3. Regional Control' : '2. Regional Control', icon: Globe, fields: [] });
+        base.push({ id: 'authorization', title: (isAssetBased || isDiscounting) ? '4. Authorization' : '3. Authorization', icon: Zap, fields: ['limit'] });
+        base.push({ id: 'audit', title: 'Audit Summary', icon: ListChecks, fields: [] });
         return base;
     }, [isDebtorMode, isAssetBased, isDiscounting]);
 
@@ -105,14 +106,14 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
 
     const handleSave = async () => {
         if (!limit || Number(limit) <= 0) {
-            toast({ variant: 'destructive', title: "Limit Required", description: "Enter a valid authorized amount." });
+            toast({ variant: 'destructive', title: "Limit Required" });
             return;
         }
 
         setIsSaving(true);
         try {
             const token = await getClientSideAuthToken();
-            if (!token) throw new Error("Authentication session expired.");
+            if (!token) throw new Error("Auth failed");
 
             const payload = {
                 parentId: parent.id,
@@ -154,6 +155,10 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
         }
     };
 
+    const handleNext = () => {
+        if (currentStep < steps.length - 1) setCurrentStep(prev => prev + 1);
+    };
+
     const resetWizard = () => {
         setCurrentStep(0);
         setLimit('');
@@ -171,13 +176,13 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
         <Dialog open={isOpen} onOpenChange={(o) => { if(!isSaving) onOpenChange(o); }}>
             <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden text-left text-foreground">
                 <DialogHeader className="p-6 border-b bg-muted/30 shrink-0 text-left">
-                    <div className="flex justify-between items-center text-left">
-                        <div className="text-left">
+                    <div className="flex justify-between items-center">
+                        <div className="text-left text-foreground">
                             <DialogTitle className="flex items-center gap-2 font-black text-xl text-left">
                                 <Gavel className="h-6 w-6 text-primary" />
                                 Sub-Facility Authorization Protocol
                             </DialogTitle>
-                            <DialogDescription className="text-left">Partitioning capital for {parent.ownerName || 'Master Node'}.</DialogDescription>
+                            <DialogDescription className="text-left text-foreground">Partitioning capital for {parent.ownerName || 'Master Node'}.</DialogDescription>
                         </div>
                         <Badge variant="outline" className="h-7 px-4 border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest">
                             Ceiling: {formatCurrency(parent.limit)}
@@ -185,9 +190,8 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                     </div>
                 </DialogHeader>
 
-                <div className="flex-1 flex overflow-hidden text-left">
-                    {/* SIDE MENU */}
-                    <div className="w-64 border-r bg-slate-50 p-6 space-y-2 text-left shrink-0">
+                <div className="flex-1 flex overflow-hidden">
+                    <div className="w-64 border-r bg-slate-50 p-6 space-y-2 shrink-0 text-left">
                         {steps.map((step, i) => (
                             <Button 
                                 key={step.id} 
@@ -203,21 +207,20 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                     currentStep >= i ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                                 )}>{i+1}</div>
                                 <step.icon className={cn("h-4 w-4", currentStep === i ? "text-primary" : "text-muted-foreground")} />
-                                <span className={cn("text-xs font-bold truncate", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                <span className={cn("text-[10px] font-black uppercase tracking-tight truncate", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                             </Button>
                         ))}
                     </div>
 
-                    {/* STEP CONTENT */}
                     <ScrollArea className="flex-1 bg-white p-10 text-left">
-                        <div className="max-w-2xl mx-auto space-y-10 text-left">
+                        <div className="max-w-2xl mx-auto space-y-10 text-left text-foreground">
                             
                             {currentStepId === 'identity' && (
                                 <div className="space-y-8 animate-in fade-in duration-500 text-left">
                                     <div className="space-y-3 text-left">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Agreement Protocol Type</Label>
                                         <Select value={type} onValueChange={setType}>
-                                            <SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue /></SelectTrigger>
+                                            <SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="loan-pv-term">Loan / Working Capital</SelectItem>
                                                 <SelectItem value="installment-sale-term">Installment Sale</SelectItem>
@@ -225,14 +228,13 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                 <SelectItem value="discounting">Discounting Products</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <p className="text-[10px] text-muted-foreground italic ml-1">This selection determines which vetting nodes are required.</p>
                                     </div>
 
                                     {isDebtorMode && (
                                         <div className="space-y-3 pt-4 text-left animate-in slide-in-from-top-2">
                                             <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Member Client Allocation</Label>
                                             <Select value={associatedClientId} onValueChange={setAssociatedClientId}>
-                                                <SelectTrigger className="h-12 border-2 bg-white font-bold text-left"><SelectValue placeholder="Choose borrower to bind..." /></SelectTrigger>
+                                                <SelectTrigger className="h-12 border-2 bg-white font-bold"><SelectValue placeholder="Choose borrower to bind..." /></SelectTrigger>
                                                 <SelectContent>
                                                     {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                                                 </SelectContent>
@@ -259,7 +261,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                     <div className="space-y-4 text-left">
                                         <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Vetted Makes</Label>
                                         <Select onValueChange={handleAddMake}>
-                                            <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Add Make to Register..." /></SelectTrigger>
+                                            <SelectTrigger className="h-11 border-2 bg-white"><SelectValue placeholder="Add Make to Register..." /></SelectTrigger>
                                             <SelectContent>{standardMakes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
                                         </Select>
                                         <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-slate-50 border-2 border-dashed rounded-2xl text-left">
@@ -292,9 +294,9 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                     <div className="flex items-center justify-between">
                                         <h3 className="font-black text-lg uppercase tracking-tight">Geographic Control</h3>
                                         <div className="flex items-center gap-3 bg-slate-50 p-1 rounded-full border px-4 h-10">
-                                            <Label className="text-[9px] font-black uppercase text-muted-foreground">Inclusion</Label>
+                                            <Label className="text-[9px] font-black uppercase text-muted-foreground text-left">Inclusion</Label>
                                             <Switch checked={geoSelectionMode === 'exclude_selected'} onCheckedChange={(c) => setGeoSelectionMode(c ? 'exclude_selected' : 'allow_only')} />
-                                            <Label className="text-[9px] font-black uppercase text-destructive">Exclusion</Label>
+                                            <Label className="text-[9px] font-black uppercase text-destructive text-left">Exclusion</Label>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-2 gap-4 text-left">
@@ -304,7 +306,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                         </Select>
                                         <div className="flex gap-2 text-left">
                                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
-                                                <SelectTrigger className="flex-1"><SelectValue placeholder="City..." /></SelectTrigger>
+                                                <SelectTrigger className="flex-1 text-left"><SelectValue placeholder="City..." /></SelectTrigger>
                                                 <SelectContent>{cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
                                             </Select>
                                             <Button type="button" size="icon" className="shrink-0" onClick={handleAddGeoHub} disabled={!selectedProvince}><PlusCircle className="h-5 w-5"/></Button>
@@ -323,15 +325,15 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                             {currentStepId === 'authorization' && (
                                 <div className="space-y-6 animate-in fade-in duration-500 text-left">
                                     <div className="space-y-3 p-8 bg-primary/5 border-2 border-primary/20 rounded-[2.5rem] text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-1 text-left">Authorized Limit Partition (ZAR)</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-1">Authorized Limit Partition (ZAR)</Label>
                                         <Input 
                                             type="number" 
                                             value={limit} 
                                             onChange={e => setLimit(e.target.value)} 
                                             placeholder="0.00"
-                                            className="h-16 border-none bg-transparent text-5xl font-black focus-visible:ring-0 p-0 text-left text-foreground"
+                                            className="h-16 border-none bg-transparent text-5xl font-black focus-visible:ring-0 p-0 text-left"
                                         />
-                                        <p className="text-[11px] text-muted-foreground font-medium italic mt-2">Deducted from Global Ceiling node.</p>
+                                        <p className="text-[11px] text-muted-foreground font-medium italic mt-2">Deducted from Master Ceiling node.</p>
                                     </div>
                                 </div>
                             )}
@@ -349,9 +351,9 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                                 <Label className="text-[9px] font-black uppercase text-slate-500">Agreement Node</Label>
                                                 <p className="font-bold text-sm capitalize">{type.replace(/-/g, ' ')}</p>
                                             </div>
-                                            <div className="space-y-1 text-right">
-                                                <Label className="text-[9px] font-black uppercase text-slate-500">Target Member</Label>
-                                                <p className="font-bold text-sm">{parent.ownerName || 'Direct Node'}</p>
+                                            <div className="space-y-1 text-right text-white">
+                                                <Label className="text-[9px] font-black uppercase text-slate-500">Master Identity</Label>
+                                                <p className="font-bold text-sm">{parent.ownerName}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -362,18 +364,18 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                     </ScrollArea>
                 </div>
 
-                <DialogFooter className="bg-slate-50 p-6 border-t shrink-0 flex justify-between text-left">
-                    <Button variant="ghost" onClick={() => currentStep > 0 ? setCurrentStep(prev => prev - 1) : onOpenChange(false)} disabled={isSaving} className="text-foreground">
-                        <ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Cancel' : 'Protocol Back'}
+                <DialogFooter className="bg-slate-50 p-6 border-t shrink-0 flex justify-between">
+                    <Button variant="ghost" onClick={() => currentStep > 0 ? setCurrentStep(prev => prev - 1) : onOpenChange(false)} disabled={isSaving}>
+                        <ArrowLeft className="mr-2 h-4 w-4" /> {currentStep === 0 ? 'Cancel' : 'Back'}
                     </Button>
                     {currentStep < steps.length - 1 ? (
-                        <Button onClick={() => handleStepTransition('next')} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">
-                            Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" />
+                        <Button onClick={handleNext} className="px-10 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">
+                            Next Stage <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     ) : (
                         <Button onClick={handleSave} disabled={isSaving || !limit} className="h-12 px-16 font-black uppercase tracking-tight shadow-xl text-white">
                             {isSaving ? <Loader2 className="mr-2 animate-spin h-4 w-4" /> : <ShieldCheck className="mr-2 h-5 w-5" />} 
-                            Commit Authorization Node
+                            Commit Authorization
                         </Button>
                     )}
                 </DialogFooter>
@@ -381,4 +383,3 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
         </Dialog>
     );
 }
-

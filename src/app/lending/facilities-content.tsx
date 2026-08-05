@@ -179,7 +179,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                 <div className="text-left text-foreground">
                     <h1 className="text-3xl font-black font-headline tracking-tight flex items-center gap-3 text-left">
                         {mode === 'client-global' ? <Scale className="h-8 w-8 text-primary" /> : <Landmark className="h-8 w-8 text-primary" />}
-                        {mode === 'client-global' ? 'Client Global Facilities' : (mode === 'debtor' ? 'Debtor Registry Ceilings' : 'Supplier Credit Matrix')}
+                        {mode === 'client-global' ? 'Client Facilities' : (mode === 'debtor' ? 'Debtor Registry Ceilings' : 'Supplier Credit Matrix')}
                     </h1>
                     <p className="text-muted-foreground mt-1 text-left">Management of master limits and partitioned agreement nodes.</p>
                 </div>
@@ -241,7 +241,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                             </Button>
                                         </TableCell>
                                         <TableCell>
-                                            <div className="flex flex-col text-left">
+                                            <div className="flex flex-col text-left text-foreground">
                                                 <span className="font-black text-sm text-slate-900">{global.ownerName || 'Unknown Node'}</span>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Badge variant="outline" className="capitalize text-[8px] h-3.5 font-black border-primary/20 text-primary uppercase">
@@ -259,7 +259,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                 {global.status || 'Active'}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right text-foreground">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
@@ -296,7 +296,7 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                         <TableRow className="bg-slate-50 border-y-2 border-primary/10 text-left">
                                             <TableCell colSpan={6} className="p-0">
                                                 <div className="p-8 space-y-6 text-left animate-in slide-in-from-top-2 duration-300">
-                                                    <div className="flex justify-between items-center">
+                                                    <div className="flex justify-between items-center text-left">
                                                         <div className="text-left text-foreground">
                                                             <h4 className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2 text-left">
                                                                 <Zap className="h-4 w-4 fill-current" /> Authorization Ledger: {global.ownerName}
@@ -317,16 +317,16 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {subs.map(sub => (
-                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left text-foreground text-left">
+                                                                        <TableRow key={sub.id} className="hover:bg-slate-50 transition-colors text-left">
                                                                             <TableCell>
-                                                                                <div className="flex flex-col text-left">
+                                                                                <div className="flex flex-col text-left text-foreground">
                                                                                     <Badge variant="outline" className="capitalize text-[10px] font-black border-slate-300 w-fit text-left">
                                                                                         {mode === 'debtor' ? (clientMap.get(sub.associatedClientId) || 'Member Allocation') : (sub.type?.replace(/_/g, ' ') || 'Agreement')}
                                                                                     </Badge>
                                                                                     <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground font-bold uppercase tracking-widest text-left">
                                                                                         <div className="flex items-center gap-1 text-left"><Clock className="h-2.5 w-2.5" /> {formatDateSafe(sub.createdAt, "dd MMM yyyy, HH:mm")}</div>
                                                                                         <Separator orientation="vertical" className="h-2.5 bg-slate-300" />
-                                                                                        <div className="flex items-center gap-1 text-left"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
+                                                                                        <div className="flex items-center gap-1 text-left text-foreground"><User className="h-2.5 w-2.5" /> {sub.createdByName || 'System Auto'}</div>
                                                                                     </div>
                                                                                 </div>
                                                                             </TableCell>
@@ -356,8 +356,8 @@ export default function FacilitiesContent({ mode = 'client-global' }: Facilities
                                                             </Table>
                                                         </div>
                                                     ) : (
-                                                        <div className="py-12 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40 text-left text-foreground">
-                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center">No Partitions Allocated</p>
+                                                        <div className="py-12 text-center border-2 border-dashed rounded-xl bg-white/50 opacity-40">
+                                                            <p className="text-[10px] font-bold uppercase tracking-widest text-center text-foreground">No Partitions Allocated</p>
                                                         </div>
                                                     )}
                                                 </div>
