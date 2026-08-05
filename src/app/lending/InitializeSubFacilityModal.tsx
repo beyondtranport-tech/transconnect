@@ -174,15 +174,15 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
 
     return (
         <Dialog open={isOpen} onOpenChange={(o) => { if(!isSaving) onOpenChange(o); }}>
-            <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden text-left text-foreground text-foreground">
+            <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden text-left text-foreground">
                 <DialogHeader className="p-6 border-b bg-muted/30 shrink-0 text-left">
                     <div className="flex justify-between items-center text-left">
-                        <div className="text-left text-foreground">
+                        <div className="text-left">
                             <DialogTitle className="flex items-center gap-2 font-black text-xl text-left">
                                 <Gavel className="h-6 w-6 text-primary" />
                                 Sub-Facility Authorization Protocol
                             </DialogTitle>
-                            <DialogDescription className="text-left text-foreground">Partitioning capital for {parent.ownerName || 'Master Node'}.</DialogDescription>
+                            <DialogDescription className="text-left">Partitioning capital for {parent.ownerName || 'Master Node'}.</DialogDescription>
                         </div>
                         <Badge variant="outline" className="h-7 px-4 border-primary/30 text-primary font-black uppercase text-[10px] tracking-widest text-left">
                             Ceiling: {formatCurrency(parent.limit)}
@@ -191,13 +191,13 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                 </DialogHeader>
 
                 <div className="flex-1 flex overflow-hidden text-left">
-                    <div className="w-64 border-r bg-slate-50 p-6 space-y-2 shrink-0 text-left text-foreground">
+                    <div className="w-64 border-r bg-slate-50 p-6 space-y-2 shrink-0 text-left">
                         {steps.map((step, i) => (
                             <Button 
                                 key={step.id} 
                                 variant={currentStep === i ? "secondary" : "ghost"} 
                                 className={cn(
-                                    "w-full justify-start gap-3 h-11 px-3 transition-all text-left text-foreground",
+                                    "w-full justify-start gap-3 h-11 px-3 transition-all text-left",
                                     currentStep === i && "bg-white shadow-sm ring-1 ring-primary/20"
                                 )}
                                 onClick={() => i < currentStep && setCurrentStep(i)}
@@ -207,7 +207,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                     currentStep >= i ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                                 )}>{i+1}</div>
                                 <step.icon className={cn("h-4 w-4", currentStep === i ? "text-primary" : "text-muted-foreground")} />
-                                <span className={cn("text-[10px] font-black uppercase tracking-tight truncate", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title}</span>
+                                <span className={cn("text-[10px] font-black uppercase tracking-tight truncate text-left", currentStep === i ? "text-primary" : "text-muted-foreground")}>{step.title.split('. ')[1]}</span>
                             </Button>
                         ))}
                     </div>
@@ -259,7 +259,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                     </div>
                                     
                                     <div className="space-y-4 text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Vetted Makes</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 text-left">Vetted Makes</Label>
                                         <Select onValueChange={handleAddMake}>
                                             <SelectTrigger className="h-11 border-2 bg-white text-left"><SelectValue placeholder="Add Make to Register..." /></SelectTrigger>
                                             <SelectContent>{standardMakes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
@@ -277,12 +277,12 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
 
                             {currentStepId === 'discounting' && (
                                 <div className="space-y-6 animate-in fade-in duration-500 text-left">
-                                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Discounting Sub-Type</Label>
+                                     <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1 text-left">Discounting Sub-Type</Label>
                                      <RadioGroup value={discountingSubType} onValueChange={setDiscountingSubType} className="grid grid-cols-1 gap-4 text-left">
                                         {discountingTypes.map(dt => (
                                             <div key={dt.id} className={cn("flex items-center space-x-3 p-4 border-2 rounded-2xl cursor-pointer transition-all", discountingSubType === dt.id ? "border-primary bg-primary/5 shadow-md" : "bg-white")}>
                                                 <RadioGroupItem value={dt.id} id={dt.id} />
-                                                <Label htmlFor={dt.id} className="font-bold text-sm cursor-pointer">{dt.label}</Label>
+                                                <Label htmlFor={dt.id} className="font-bold text-sm cursor-pointer text-left">{dt.label}</Label>
                                             </div>
                                         ))}
                                      </RadioGroup>
@@ -291,20 +291,20 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
 
                             {currentStepId === 'geography' && (
                                 <div className="space-y-8 animate-in fade-in duration-500 text-left">
-                                    <div className="flex items-center justify-between text-left">
-                                        <h3 className="font-black text-lg uppercase tracking-tight">Geographic Control</h3>
-                                        <div className="flex items-center gap-3 bg-slate-50 p-1 rounded-full border px-4 h-10 text-left text-foreground">
+                                    <div className="flex items-center justify-between text-left text-foreground">
+                                        <h3 className="font-black text-lg uppercase tracking-tight text-left">Geographic Control</h3>
+                                        <div className="flex items-center gap-3 bg-slate-50 p-1 rounded-full border px-4 h-10 text-left">
                                             <Label className="text-[9px] font-black uppercase text-muted-foreground text-left">Inclusion</Label>
                                             <Switch checked={geoSelectionMode === 'exclude_selected'} onCheckedChange={(c) => setGeoSelectionMode(c ? 'exclude_selected' : 'allow_only')} />
                                             <Label className="text-[9px] font-black uppercase text-destructive text-left">Exclusion</Label>
                                         </div>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-4 text-left text-foreground">
+                                    <div className="grid grid-cols-2 gap-4 text-left">
                                         <Select value={selectedProvince} onValueChange={setSelectedProvince}>
-                                            <SelectTrigger className="text-left text-foreground"><SelectValue placeholder="Province..." /></SelectTrigger>
+                                            <SelectTrigger className="text-left"><SelectValue placeholder="Province..." /></SelectTrigger>
                                             <SelectContent>{provinces.map(p => <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>)}</SelectContent>
                                         </Select>
-                                        <div className="flex gap-2 text-left text-foreground">
+                                        <div className="flex gap-2 text-left">
                                             <Select value={selectedCity} onValueChange={setSelectedCity} disabled={!selectedProvince}>
                                                 <SelectTrigger className="flex-1 text-left"><SelectValue placeholder="City..." /></SelectTrigger>
                                                 <SelectContent>{cities.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
@@ -312,7 +312,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                             <Button type="button" size="icon" className="shrink-0" onClick={handleAddGeoHub} disabled={!selectedProvince}><PlusCircle className="h-5 w-5"/></Button>
                                         </div>
                                     </div>
-                                    <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-slate-50 border-2 border-dashed rounded-2xl text-left text-foreground">
+                                    <div className="flex flex-wrap gap-2 p-4 min-h-[60px] bg-slate-50 border-2 border-dashed rounded-2xl text-left">
                                         {geoList.map(g => (
                                             <Badge key={g} className={cn("h-8 gap-2 pl-3 pr-1 text-xs font-bold transition-all", geoSelectionMode === 'allow_only' ? "bg-primary" : "bg-destructive")}>
                                                 {g} <button onClick={() => setGeoList(prev => prev.filter(x => x !== g))}><X className="h-3 w-3" /></button>
@@ -325,7 +325,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                             {currentStepId === 'authorization' && (
                                 <div className="space-y-6 animate-in fade-in duration-500 text-left">
                                     <div className="space-y-3 p-8 bg-primary/5 border-2 border-primary/20 rounded-[2.5rem] text-left">
-                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-1">Authorized Limit Partition (ZAR)</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary ml-1 text-left">Authorized Limit Partition (ZAR)</Label>
                                         <Input 
                                             type="number" 
                                             value={limit} 
@@ -333,7 +333,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                                             placeholder="0.00"
                                             className="h-16 border-none bg-transparent text-5xl font-black focus-visible:ring-0 p-0 text-left"
                                         />
-                                        <p className="text-[11px] text-muted-foreground font-medium italic mt-2">Deducted from Master Ceiling node.</p>
+                                        <p className="text-[11px] text-muted-foreground font-medium italic mt-2 text-left">Deducted from Master Ceiling node.</p>
                                     </div>
                                 </div>
                             )}
@@ -341,19 +341,19 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                             {currentStepId === 'audit' && (
                                 <div className="space-y-8 animate-in zoom-in-95 duration-500 text-left">
                                     <div className="p-8 bg-slate-900 text-white rounded-3xl space-y-6 shadow-2xl text-left">
-                                        <div className="flex justify-between items-baseline text-left text-white">
-                                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Authorized Sub-Limit</span>
-                                            <span className="text-4xl font-black text-primary">{formatCurrency(limit)}</span>
+                                        <div className="flex justify-between items-baseline text-left">
+                                            <span className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] text-left">Authorized Sub-Limit</span>
+                                            <span className="text-4xl font-black text-primary text-left">{formatCurrency(limit)}</span>
                                         </div>
                                         <Separator className="bg-white/10" />
-                                        <div className="grid grid-cols-2 gap-8 text-left text-white">
-                                            <div className="space-y-1 text-left text-white">
-                                                <Label className="text-[9px] font-black uppercase text-slate-500">Agreement Node</Label>
-                                                <p className="font-bold text-sm capitalize">{type.replace(/-/g, ' ')}</p>
+                                        <div className="grid grid-cols-2 gap-8 text-left">
+                                            <div className="space-y-1 text-left">
+                                                <Label className="text-[9px] font-black uppercase text-slate-500 text-left">Agreement Node</Label>
+                                                <p className="font-bold text-sm capitalize text-left">{type.replace(/-/g, ' ')}</p>
                                             </div>
-                                            <div className="space-y-1 text-right text-white">
-                                                <Label className="text-[9px] font-black uppercase text-slate-500">Master Identity</Label>
-                                                <p className="font-bold text-sm">{parent.ownerName}</p>
+                                            <div className="space-y-1 text-right text-left">
+                                                <Label className="text-[9px] font-black uppercase text-slate-500 text-right">Master Identity</Label>
+                                                <p className="font-bold text-sm text-right">{parent.ownerName}</p>
                                             </div>
                                         </div>
                                     </div>

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * ADMINISTRATIVE API CORE - RESOURCE PROTECTED
- * Build Identifier: 2026-03-24T15:00:00Z (Lending V24 - DMS & Tranche Protocols)
+ * Build Identifier: 2026-03-24T17:00:00Z (Lending V28 - Deletion & Unlock Protocols)
  */
 
 function serializeData(docData: any): any {
@@ -74,6 +74,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
+            case 'deleteLendingAgreement': {
+                const { agreementId } = payload;
+                if (!agreementId) throw new Error("Agreement ID required.");
+                await db.collection('lendingAgreements').doc(agreementId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'createLendingPayment': {
                 const { payment } = payload;
                 const ref = db.collection('lendingPayments').doc();
@@ -84,8 +91,6 @@ export async function POST(req: NextRequest) {
             case 'executeLendingPayment': {
                 const { paymentId, assetId, amount, method, isFinal } = payload;
                 const batch = db.batch();
-                
-                // 1. Update Liability Node (Tranche settlement)
                 const pRef = db.collection('lendingPayments').doc(paymentId);
                 batch.update(pRef, {
                     amountPaid: FieldValue.increment(amount),
@@ -93,16 +98,10 @@ export async function POST(req: NextRequest) {
                     lastSettledAt: FieldValue.serverTimestamp(),
                     updatedAt: FieldValue.serverTimestamp()
                 });
-
-                // 2. ATOMIC ASSET RELEASE: Only if this is the final tranche (fully settled)
                 if (isFinal && assetId) {
                     const aRef = db.collection('lendingAssets').doc(assetId);
-                    batch.update(aRef, {
-                        status: 'financed',
-                        updatedAt: FieldValue.serverTimestamp()
-                    });
+                    batch.update(aRef, { status: 'financed', updatedAt: FieldValue.serverTimestamp() });
                 }
-
                 await batch.commit();
                 return NextResponse.json({ success: true });
             }
@@ -116,6 +115,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
+            case 'deleteLendingAsset': {
+                const { assetId } = payload;
+                await db.collection('lendingAssets').doc(assetId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'saveLendingPartner': {
                 const { collection: colName, partner } = payload;
                 if (!colName) throw new Error("Collection target required.");
@@ -126,6 +131,12 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
+            case 'deleteLendingPartner': {
+                const { collection: colName, partnerId } = payload;
+                await db.collection(colName).doc(partnerId).delete();
+                return NextResponse.json({ success: true });
+            }
+
             case 'saveLendingFacility': {
                 const { facility } = payload;
                 const ref = facility.id ? db.collection('lendingFacilities').doc(facility.id) : db.collection('lendingFacilities').doc();
@@ -133,6 +144,12 @@ export async function POST(req: NextRequest) {
                 if (!facility.id) data.createdAt = FieldValue.serverTimestamp();
                 await ref.set(data, { merge: true });
                 return NextResponse.json({ success: true, data: { id: ref.id } });
+            }
+
+            case 'deleteLendingFacility': {
+                const { facilityId } = payload;
+                await db.collection('lendingFacilities').doc(facilityId).delete();
+                return NextResponse.json({ success: true });
             }
 
             case 'getMembers': {
