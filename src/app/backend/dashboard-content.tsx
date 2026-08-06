@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Loader2, Store, Handshake, TrendingUp, Zap, CheckCircle2, Clock, Users,
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { getClientSideAuthToken, useUser } from '@/firebase';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, Cell, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Separator } from '@/components/ui/separator';
@@ -29,7 +28,7 @@ async function fetchFromAdminAPI(token: string, action: string, payload?: any) {
 }
 
 const StatCard = ({ title, value, icon, link, linkText, trend }: { title: string, value: string | number, icon: React.ReactNode, link: string, linkText: string, trend?: string }) => (
-    <Card>
+    <Card className="text-left">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 text-left">
             <CardTitle className="text-sm font-medium">{title}</CardTitle>
             {icon}
@@ -38,8 +37,8 @@ const StatCard = ({ title, value, icon, link, linkText, trend }: { title: string
             <div className="text-2xl font-bold">{value}</div>
             {trend && <p className="text-xs text-green-600 mt-1">{trend}</p>}
         </CardContent>
-        <CardFooter>
-             <Button asChild variant="outline" size="sm" className="w-full">
+        <CardFooter className="text-left">
+             <Button asChild variant="outline" size="sm" className="w-full text-left">
                 <Link href={link}>{linkText} <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
         </CardFooter>
@@ -53,26 +52,29 @@ export default function AdminDashboardContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const { toast } = useToast();
+    const { user } = useUser();
+    
+    // QUOTA GUARD: Prevent redundant sync during prototype sessions
+    const hasFetched = useRef(false);
 
     const loadDashboardData = useCallback(async () => {
+        if (hasFetched.current) return;
         setIsLoading(true);
         setError(null);
         try {
             const token = await getClientSideAuthToken();
             if (!token) throw new Error("Authentication failed.");
 
-            // Fetch data sequentially to avoid crashing the whole view on one index error
-            let mData = [];
-            let cData = [];
-            let sData = [];
-
-            try { mData = (await fetchFromAdminAPI(token, 'getMembers')).data || []; } catch(e) { console.warn("Members fetch failed (likely index issue)", e); }
-            try { cData = (await fetchFromAdminAPI(token, 'getContributions')).data || []; } catch(e) { console.warn("Contributions fetch failed (likely index issue)", e); }
-            try { sData = (await fetchFromAdminAPI(token, 'getShops')).data || []; } catch(e) { console.warn("Shops fetch failed (likely index issue)", e); }
+            const [mData, cData, sData] = await Promise.all([
+                fetchFromAdminAPI(token, 'getMembers').then(r => r.data || []),
+                fetchFromAdminAPI(token, 'getContributions').then(r => r.data || []).catch(() => []),
+                fetchFromAdminAPI(token, 'getShops').then(r => r.data || []).catch(() => [])
+            ]);
             
             setMembers(mData);
             setContributions(cData);
             setShops(sData);
+            hasFetched.current = true;
 
         } catch (e: any) {
             setError(e.message);
@@ -83,8 +85,8 @@ export default function AdminDashboardContent() {
     }, [toast]); 
 
     useEffect(() => {
-        loadDashboardData();
-    }, [loadDashboardData]);
+        if (user) loadDashboardData();
+    }, [user, loadDashboardData]);
 
     const stats = useMemo(() => {
         const total = members.length;
@@ -110,19 +112,19 @@ export default function AdminDashboardContent() {
         { stage: 'Shop Owners', count: stats.shopOwners, color: 'hsl(var(--primary))', opacity: 1 },
     ];
 
-    if (isLoading) return <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>;
+    if (isLoading) return <div className="flex justify-center p-20 text-center"><Loader2 className="animate-spin h-10 w-10 text-primary mx-auto" /><p className="mt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground text-center">Syncing Registry...</p></div>;
 
     return (
-        <div className="space-y-8 text-left">
-            <div className="flex justify-between items-end text-left">
-                <div className="text-left">
-                    <h1 className="text-2xl font-bold font-headline text-left">Member Success Dashboard</h1>
-                    <p className="text-muted-foreground text-left">Monitoring member engagement, data contributions, and plan upgrades.</p>
+        <div className="space-y-8 text-left text-foreground">
+            <div className="flex justify-between items-end text-left text-foreground">
+                <div className="text-left text-foreground">
+                    <h1 className="text-2xl font-bold font-headline text-left">Platform Intelligence Dashboard</h1>
+                    <p className="text-muted-foreground text-left">Monitoring member engagement and forensic yield distribution.</p>
                 </div>
-                <Button variant="outline" onClick={loadDashboardData} size="sm"><Clock className="mr-2 h-4 w-4"/> Refresh Metrics</Button>
+                <Button variant="outline" onClick={() => { hasFetched.current = false; loadDashboardData(); }} size="sm" className="text-foreground"><Clock className="mr-2 h-4 w-4"/> Sync Metrics</Button>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 text-left">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 text-left text-foreground">
                 <StatCard 
                     title="Active Members"
                     value={stats.total}
@@ -133,7 +135,7 @@ export default function AdminDashboardContent() {
                <StatCard 
                     title="Paid Conversion"
                     value={`${stats.paidPercent}%`}
-                    trend={`${stats.paid} paid plans`}
+                    trend={`${stats.paid} active plans`}
                     icon={<Star className="h-4 w-4 text-amber-500" />}
                     link="/backend?view=success-engine"
                     linkText="Drive Upgrades"
@@ -141,32 +143,32 @@ export default function AdminDashboardContent() {
                 <StatCard 
                     title="Data Contributors"
                     value={`${stats.contributorPercent}%`}
-                    trend={`${stats.contributors} companies`}
+                    trend={`${stats.contributors} entities`}
                     icon={<PackageCheck className="h-4 w-4 text-muted-foreground" />}
                     link="/backend?view=contributions"
                     linkText="Review Data"
                />
                 <StatCard 
-                    title="Live Shops"
+                    title="Verified Nodes"
                     value={stats.shopOwners}
                     icon={<Store className="h-4 w-4 text-muted-foreground" />}
-                    link="/backend?view=shops"
+                    link="/backend?view=supplier-mall"
                     linkText="Review Shops"
                />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
-                <Card className="lg:col-span-2 shadow-sm border-primary/10 text-left">
-                    <CardHeader className="text-left">
-                        <CardTitle className="flex items-center gap-2 text-xl text-left"><TrendingUp className="h-5 w-5 text-primary"/> Member Success Funnel</CardTitle>
-                        <CardDescription className="text-left">Tracking how members move from free entry to engaged community participation.</CardDescription>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left text-foreground">
+                <Card className="lg:col-span-2 shadow-sm border-primary/10 text-left text-foreground">
+                    <CardHeader className="text-left text-foreground">
+                        <CardTitle className="flex items-center gap-2 text-xl text-left text-foreground"><TrendingUp className="h-5 w-5 text-primary"/> Member Success Funnel</CardTitle>
+                        <CardDescription className="text-left text-foreground">Tracking progression from free entry to ecosystem participation.</CardDescription>
                     </CardHeader>
-                    <CardContent className="h-80 text-left">
+                    <CardContent className="h-80 text-left text-foreground">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={successFunnel} layout="vertical" margin={{ left: 40, right: 40 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="stage" type="category" width={150} tick={{ fontSize: 12, fontWeight: 'bold' }} />
+                                <YAxis dataKey="stage" type="category" width={150} tick={{ fontSize: 11, fontWeight: 'bold' }} />
                                 <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px' }} />
                                 <Bar dataKey="count" radius={[0, 4, 4, 0]}>
                                     {successFunnel.map((entry, index) => (
@@ -178,32 +180,32 @@ export default function AdminDashboardContent() {
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm border-primary/10 text-left">
-                    <CardHeader className="text-left">
-                        <CardTitle className="flex items-center gap-2 text-left"><Zap className="h-5 w-5 text-amber-500"/> Conversion Insights</CardTitle>
-                        <CardDescription className="text-left">Members ready for a paid plan upgrade.</CardDescription>
+                <Card className="shadow-sm border-primary/10 text-left text-foreground">
+                    <CardHeader className="text-left text-foreground">
+                        <CardTitle className="flex items-center gap-2 text-left text-foreground"><Zap className="h-5 w-5 text-amber-500"/> Growth Insights</CardTitle>
+                        <CardDescription className="text-left text-foreground">Candidates ready for intelligence upgrades.</CardDescription>
                     </CardHeader>
-                    <CardContent className="text-left">
-                        <div className="space-y-6 text-left">
-                            <div className="space-y-4 text-left">
+                    <CardContent className="text-left text-foreground">
+                        <div className="space-y-6 text-left text-foreground">
+                            <div className="space-y-4 text-left text-foreground">
                                 <h4 className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest text-left">High Engagement (Free)</h4>
                                 {members.filter(m => m.membershipId === 'free' && (m.rewardPoints || 0) > 100).slice(0, 3).map(m => (
                                     <div key={m.id} className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 text-left">
                                         <div className="bg-amber-100 p-1.5 rounded-full"><TrendingUp className="h-4 w-4 text-amber-600" /></div>
                                         <div className="flex-1 min-w-0 text-left">
                                             <p className="text-sm font-bold truncate text-left">{m.companyName}</p>
-                                            <p className="text-[10px] text-muted-foreground uppercase text-left">{m.rewardPoints || 0} Points • Potential Lead</p>
+                                            <p className="text-[10px] text-muted-foreground uppercase text-left">{m.rewardPoints || 0} pts • Potential Lead</p>
                                         </div>
                                     </div>
                                 ))}
                                 {members.filter(m => m.membershipId === 'free' && (m.rewardPoints || 0) > 100).length === 0 && (
-                                    <p className="text-xs text-center text-muted-foreground py-4 italic">No high-engagement free members detected yet.</p>
+                                    <p className="text-xs text-center text-muted-foreground py-4 italic">No high-engagement leads detected.</p>
                                 )}
                             </div>
                         </div>
                     </CardContent>
-                    <CardFooter>
-                        <Button variant="ghost" className="w-full text-[10px] uppercase font-bold tracking-widest" asChild>
+                    <CardFooter className="text-left text-foreground">
+                        <Button variant="ghost" className="w-full text-[10px] uppercase font-bold tracking-widest text-left" asChild>
                             <Link href="/backend?view=success-engine">Launch Success Engine <ArrowRight className="ml-2 h-3 w-3"/></Link>
                         </Button>
                     </CardFooter>

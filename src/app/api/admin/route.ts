@@ -6,8 +6,8 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export const dynamic = 'force-dynamic';
 
 /**
- * ADMINISTRATIVE API CORE - RESOURCE PROTECTED
- * Build Identifier: 2026-03-24T17:00:00Z (Lending V28 - Deletion & Unlock Protocols)
+ * ADMINISTRATIVE API CORE - V28 STABILITY
+ * Build Identifier: 2026-03-24T18:30:00Z
  */
 
 function serializeData(docData: any): any {
@@ -46,23 +46,81 @@ export async function POST(req: NextRequest) {
         const payload = body.payload || {};
 
         switch (action) {
+            case 'searchRegistry': {
+                const { type, limit: limitVal = 100, term = '' } = payload;
+                let collectionName = 'leads';
+                if (['driver', 'transporter', 'supplier', 'finance', 'warehouse', 'distributor', 'isa', 'partner', 'developer'].includes(type)) {
+                    collectionName = 'partners';
+                }
+
+                let q: any = db.collection(collectionName);
+                if (type !== 'all' && type !== 'lead') {
+                    q = q.where('type', '==', type);
+                }
+
+                const snap = await q.orderBy('updatedAt', 'desc').limit(limitVal).get();
+                let results = snap.docs.map((d: QueryDocumentSnapshot) => ({ id: d.id, ...d.data(), source: collectionName === 'leads' ? 'Lead' : 'Member' }));
+
+                if (term) {
+                    const lowerTerm = term.toLowerCase();
+                    results = results.filter((r: any) => 
+                        (r.companyName || '').toLowerCase().includes(lowerTerm) || 
+                        (r.id || '').toLowerCase().includes(lowerTerm)
+                    );
+                }
+
+                return NextResponse.json({ success: true, data: serializeData(results) });
+            }
+
+            case 'getLeads': {
+                const snap = await db.collection('leads').orderBy('updatedAt', 'desc').limit(500).get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data(), source: 'Lead' }))) });
+            }
+
+            case 'getStaff': {
+                const snap = await db.collectionGroup('staff').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }))) });
+            }
+
+            case 'logCommunication': {
+                const { partnerId, type: commType, subject, notes, collection: col = 'partners' } = payload;
+                if (!partnerId) throw new Error("Partner ID required");
+                const ref = db.collection(col).doc(partnerId).collection('communications').doc();
+                await ref.set({
+                    id: ref.id,
+                    type: commType || 'System',
+                    subject,
+                    notes,
+                    timestamp: FieldValue.serverTimestamp()
+                });
+                // Also update the main record's last activity
+                await db.collection(col).doc(partnerId).update({
+                    lastOutreachAt: FieldValue.serverTimestamp(),
+                    lastOutreachSubject: subject,
+                    updatedAt: FieldValue.serverTimestamp()
+                });
+                return NextResponse.json({ success: true });
+            }
+
             case 'getLendingData': {
-                const { collectionName, limit = 100 } = payload;
-                const collMap: Record<string, string> = {
-                    'facilities': 'lendingFacilities',
-                    'lendingClients': 'lendingClients',
-                    'lendingDebtors': 'lendingDebtors',
-                    'lendingSuppliers': 'lendingSuppliers',
-                    'agreements': 'lendingAgreements',
-                    'lendingAssets': 'lendingAssets',
-                    'securities': 'lendingSecurities',
-                    'collateral': 'lendingCollateral',
-                    'documents': 'lendingDocuments',
-                    'lendingPayments': 'lendingPayments'
-                };
-                const collectionToFetch = collMap[collectionName] || collectionName;
-                const snap = await db.collection(collectionToFetch).orderBy('updatedAt', 'desc').limit(Math.min(limit, 100)).get();
+                const { collectionName, limit: limitVal = 100 } = payload;
+                const snap = await db.collection(collectionName).orderBy('updatedAt', 'desc').limit(Math.min(limitVal, 100)).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
+            }
+
+            case 'savePartner': {
+                const { collection: col = 'partners', partner } = payload;
+                const ref = partner.id ? db.collection(col).doc(partner.id) : db.collection(col).doc();
+                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
+            }
+
+            case 'deleteLendingAgreement': {
+                const { agreementId } = payload;
+                await db.collection('lendingAgreements').doc(agreementId).delete();
+                return NextResponse.json({ success: true });
             }
 
             case 'saveLendingAgreement': {
@@ -74,97 +132,13 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
-            case 'deleteLendingAgreement': {
-                const { agreementId } = payload;
-                if (!agreementId) throw new Error("Agreement ID required.");
-                await db.collection('lendingAgreements').doc(agreementId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'createLendingPayment': {
-                const { payment } = payload;
-                const ref = db.collection('lendingPayments').doc();
-                await ref.set({ ...payment, id: ref.id, amountPaid: 0, updatedAt: FieldValue.serverTimestamp() });
-                return NextResponse.json({ success: true, data: { id: ref.id } });
-            }
-
-            case 'executeLendingPayment': {
-                const { paymentId, assetId, amount, method, isFinal } = payload;
-                const batch = db.batch();
-                const pRef = db.collection('lendingPayments').doc(paymentId);
-                batch.update(pRef, {
-                    amountPaid: FieldValue.increment(amount),
-                    status: isFinal ? 'completed' : 'pending',
-                    lastSettledAt: FieldValue.serverTimestamp(),
-                    updatedAt: FieldValue.serverTimestamp()
-                });
-                if (isFinal && assetId) {
-                    const aRef = db.collection('lendingAssets').doc(assetId);
-                    batch.update(aRef, { status: 'financed', updatedAt: FieldValue.serverTimestamp() });
-                }
-                await batch.commit();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'saveLendingAsset': {
-                const { asset } = payload;
-                const ref = asset.id ? db.collection('lendingAssets').doc(asset.id) : db.collection('lendingAssets').doc();
-                const data = { ...asset, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
-                if (!asset.id) data.createdAt = FieldValue.serverTimestamp();
-                await ref.set(data, { merge: true });
-                return NextResponse.json({ success: true, data: { id: ref.id } });
-            }
-
-            case 'deleteLendingAsset': {
-                const { assetId } = payload;
-                await db.collection('lendingAssets').doc(assetId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'saveLendingPartner': {
-                const { collection: colName, partner } = payload;
-                if (!colName) throw new Error("Collection target required.");
-                const ref = partner.id ? db.collection(colName).doc(partner.id) : db.collection(colName).doc();
-                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
-                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
-                await ref.set(data, { merge: true });
-                return NextResponse.json({ success: true, data: { id: ref.id } });
-            }
-
-            case 'deleteLendingPartner': {
-                const { collection: colName, partnerId } = payload;
-                await db.collection(colName).doc(partnerId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'saveLendingFacility': {
-                const { facility } = payload;
-                const ref = facility.id ? db.collection('lendingFacilities').doc(facility.id) : db.collection('lendingFacilities').doc();
-                const data = { ...facility, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
-                if (!facility.id) data.createdAt = FieldValue.serverTimestamp();
-                await ref.set(data, { merge: true });
-                return NextResponse.json({ success: true, data: { id: ref.id } });
-            }
-
-            case 'deleteLendingFacility': {
-                const { facilityId } = payload;
-                await db.collection('lendingFacilities').doc(facilityId).delete();
-                return NextResponse.json({ success: true });
+            case 'getPlatformStaff': {
+                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
             case 'getMembers': {
-                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(100).get();
-                const members = await Promise.all(snap.docs.map(async (d) => {
-                    const data = d.data();
-                    const userSnap = await db.collection('users').doc(data.ownerId || 'N/A').get();
-                    const userData = userSnap.data();
-                    return { id: d.id, ...data, firstName: userData?.firstName || 'N/A', lastName: userData?.lastName || 'N/A', email: userData?.email || 'N/A' };
-                }));
-                return NextResponse.json({ success: true, data: serializeData(members) });
-            }
-
-            case 'getPlatformStaff': {
-                const snap = await db.collection('platformStaff').orderBy('firstName', 'asc').get();
+                const snap = await db.collection('companies').orderBy('updatedAt', 'desc').limit(500).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
             }
 
