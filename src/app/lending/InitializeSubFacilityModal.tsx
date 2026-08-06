@@ -214,7 +214,7 @@ export function InitializeSubFacilityModal({ parent, clients, onComplete, isOpen
                     </div>
 
                     <ScrollArea className="flex-1 bg-white p-10 text-left">
-                        <div className="max-w-2xl mx-auto space-y-10 text-left">
+                        <div className="max-w-2xl mx-auto space-y-10 text-left text-foreground">
                             
                             {currentStepId === 'identity' && (
                                 <div className="space-y-8 animate-in fade-in duration-500 text-left">

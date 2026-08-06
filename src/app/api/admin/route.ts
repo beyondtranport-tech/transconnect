@@ -6,8 +6,8 @@ import { getAdminApp } from '@/lib/firebase-admin';
 export const dynamic = 'force-dynamic';
 
 /**
- * ADMINISTRATIVE API CORE - V28 STABILITY
- * Build Identifier: 2026-03-24T18:30:00Z
+ * ADMINISTRATIVE API CORE - V29 STABILITY
+ * Build Identifier: 2026-03-24T20:45:00Z
  */
 
 function serializeData(docData: any): any {
@@ -77,27 +77,79 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data(), source: 'Lead' }))) });
             }
 
-            case 'getStaff': {
-                const snap = await db.collectionGroup('staff').get();
-                return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, path: d.ref.path, ...d.data() }))) });
+            case 'saveLendingFacility': {
+                const { facility } = payload;
+                const ref = facility.id ? db.collection('facilities').doc(facility.id) : db.collection('facilities').doc();
+                const data = { ...facility, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!facility.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
-            case 'logCommunication': {
-                const { partnerId, type: commType, subject, notes, collection: col = 'partners' } = payload;
-                if (!partnerId) throw new Error("Partner ID required");
-                const ref = db.collection(col).doc(partnerId).collection('communications').doc();
-                await ref.set({
-                    id: ref.id,
-                    type: commType || 'System',
-                    subject,
-                    notes,
-                    timestamp: FieldValue.serverTimestamp()
-                });
-                // Also update the main record's last activity
-                await db.collection(col).doc(partnerId).update({
-                    lastOutreachAt: FieldValue.serverTimestamp(),
-                    lastOutreachSubject: subject,
-                    updatedAt: FieldValue.serverTimestamp()
+            case 'updateFacilityStatus': {
+                const { facilityId, status } = payload;
+                await db.collection('facilities').doc(facilityId).update({ status, updatedAt: FieldValue.serverTimestamp() });
+                return NextResponse.json({ success: true });
+            }
+
+            case 'deleteLendingFacility': {
+                const { facilityId } = payload;
+                await db.collection('facilities').doc(facilityId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingAsset': {
+                const { asset } = payload;
+                const ref = asset.id ? db.collection('lendingAssets').doc(asset.id) : db.collection('lendingAssets').doc();
+                const data = { ...asset, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!asset.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
+            }
+
+            case 'deleteLendingAsset': {
+                const { assetId } = payload;
+                await db.collection('lendingAssets').doc(assetId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingAgreement': {
+                const { agreement } = payload;
+                const ref = agreement.id ? db.collection('agreements').doc(agreement.id) : db.collection('agreements').doc();
+                const data = { ...agreement, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!agreement.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
+            }
+
+            case 'deleteLendingAgreement': {
+                const { agreementId } = payload;
+                await db.collection('agreements').doc(agreementId).delete();
+                return NextResponse.json({ success: true });
+            }
+
+            case 'saveLendingPartner': {
+                const { partner, collection: col = 'partners' } = payload;
+                const ref = partner.id ? db.collection(col).doc(partner.id) : db.collection(col).doc();
+                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
+                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
+                await ref.set(data, { merge: true });
+                return NextResponse.json({ success: true, data: { id: ref.id } });
+            }
+
+            case 'executeLendingPayment': {
+                const { paymentId, amount, isFinal } = payload;
+                const ref = db.collection('lendingPayments').doc(paymentId);
+                await db.runTransaction(async (transaction) => {
+                    const snap = await transaction.get(ref);
+                    if (!snap.exists) throw new Error("Payment node not found");
+                    const data = snap.data()!;
+                    const newPaid = (data.amountPaid || 0) + amount;
+                    transaction.update(ref, {
+                        amountPaid: newPaid,
+                        status: isFinal ? 'completed' : 'pending',
+                        updatedAt: FieldValue.serverTimestamp()
+                    });
                 });
                 return NextResponse.json({ success: true });
             }
@@ -106,30 +158,6 @@ export async function POST(req: NextRequest) {
                 const { collectionName, limit: limitVal = 100 } = payload;
                 const snap = await db.collection(collectionName).orderBy('updatedAt', 'desc').limit(Math.min(limitVal, 100)).get();
                 return NextResponse.json({ success: true, data: serializeData(snap.docs.map(d => ({ id: d.id, ...d.data() }))) });
-            }
-
-            case 'savePartner': {
-                const { collection: col = 'partners', partner } = payload;
-                const ref = partner.id ? db.collection(col).doc(partner.id) : db.collection(col).doc();
-                const data = { ...partner, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
-                if (!partner.id) data.createdAt = FieldValue.serverTimestamp();
-                await ref.set(data, { merge: true });
-                return NextResponse.json({ success: true, data: { id: ref.id } });
-            }
-
-            case 'deleteLendingAgreement': {
-                const { agreementId } = payload;
-                await db.collection('lendingAgreements').doc(agreementId).delete();
-                return NextResponse.json({ success: true });
-            }
-
-            case 'saveLendingAgreement': {
-                const { agreement } = payload;
-                const ref = agreement.id ? db.collection('lendingAgreements').doc(agreement.id) : db.collection('lendingAgreements').doc();
-                const data = { ...agreement, id: ref.id, updatedAt: FieldValue.serverTimestamp() };
-                if (!agreement.id) data.createdAt = FieldValue.serverTimestamp();
-                await ref.set(data, { merge: true });
-                return NextResponse.json({ success: true, data: { id: ref.id } });
             }
 
             case 'getPlatformStaff': {

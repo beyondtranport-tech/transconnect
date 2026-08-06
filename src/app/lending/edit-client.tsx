@@ -282,7 +282,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     <div className="space-y-8 animate-in fade-in duration-500 text-left">
                          <div className="grid grid-cols-2 gap-4 text-left">
                             <FormField control={methods.control} name="status" render={({ field }) => (
-                                <FormItem className="text-left">
+                                <FormItem className="text-left text-foreground">
                                     <FormLabel className="text-[10px] font-black uppercase text-primary tracking-widest ml-1">Account Standing</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl><SelectTrigger className="bg-white border-2 font-bold"><SelectValue /></SelectTrigger></FormControl>
@@ -320,10 +320,10 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                             )} />
                             <FormField control={methods.control} name="registrationId" render={({ field }) => (<FormItem><FormLabel>Registration Number</FormLabel><FormControl><Input {...field} placeholder="20XX/XXXXXX/07" className="border-2 bg-white font-mono" /></FormControl></FormItem>)} />
                         </div>
-                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left">
+                        <div className="p-8 bg-slate-900 text-white rounded-[2rem] shadow-xl flex justify-between items-center text-left text-white">
                             <div className="space-y-1 text-left">
-                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2"><FileText className="h-4 w-4" /> Founding Record</h4>
-                                <p className="text-xs text-slate-400">Attach CIPC COR14.3 or Founding Statement.</p>
+                                <h4 className="text-[10px] font-black uppercase text-primary flex items-center gap-2 text-left"><FileText className="h-4 w-4" /> Founding Record</h4>
+                                <p className="text-xs text-slate-400 text-left">Attach CIPC COR14.3 or Founding Statement.</p>
                             </div>
                             <FileUploadField name="registrationDocUrl" label="Registration Doc" folder="lending-legal" />
                         </div>
@@ -332,29 +332,29 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
 
                 {currentStepId === 'standing' && (
                     <div className="space-y-10 animate-in fade-in duration-500 text-left">
-                        <div className="space-y-4">
-                            <h3 className="font-black text-lg uppercase flex items-center gap-2"><MapPin className="h-6 w-6 text-primary" /> Work Address Ledger</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                <FormField control={methods.control} name="workAddress.street" render={({ field }) => (<FormItem><FormLabel>Street Address</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FormField control={methods.control} name="workAddress.suburb" render={({ field }) => (<FormItem><FormLabel>Suburb</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                        <div className="space-y-4 text-left">
+                            <h3 className="font-black text-lg uppercase flex items-center gap-2 text-left"><MapPin className="h-6 w-6 text-primary" /> Work Address Ledger</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={methods.control} name="workAddress.street" render={({ field }) => (<FormItem className="text-left"><FormLabel>Street Address</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="workAddress.suburb" render={({ field }) => (<FormItem className="text-left"><FormLabel>Suburb</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
                             </div>
-                            <div className="grid grid-cols-3 gap-4 text-left">
-                                <FormField control={methods.control} name="workAddress.city" render={({ field }) => (<FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FormField control={methods.control} name="workAddress.province" render={({ field }) => (<FormItem><FormLabel>Province</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                                <FormField control={methods.control} name="workAddress.postalCode" render={({ field }) => (<FormItem><FormLabel>Post Code</FormLabel><FormControl><Input {...field} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
+                            <div className="grid grid-cols-3 gap-4">
+                                <FormField control={methods.control} name="workAddress.city" render={({ field }) => (<FormItem className="text-left"><FormLabel>City</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="workAddress.province" render={({ field }) => (<FormItem className="text-left"><FormLabel>Province</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                                <FormField control={methods.control} name="workAddress.postalCode" render={({ field }) => (<FormItem className="text-left"><FormLabel>Post Code</FormLabel><FormControl><Input {...field} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
                             </div>
                         </div>
 
                         <Separator />
 
-                        <div className="space-y-6">
+                        <div className="space-y-6 text-left">
                             <FormField control={methods.control} name="propertyStanding" render={({ field }) => (
                                 <FormItem className="space-y-4 text-left">
-                                    <FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest">Premises Infrastructure Standing</FormLabel>
+                                    <FormLabel className="font-black uppercase text-[10px] text-primary tracking-widest text-left">Premises Infrastructure Standing</FormLabel>
                                     <FormControl>
                                         <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="grid grid-cols-2 gap-4 text-left">
-                                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'rented' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><div className="flex items-center gap-2"><RadioGroupItem value="rented" id="p-rent" /><Label htmlFor="p-rent" className="font-bold uppercase text-xs cursor-pointer">Rented / Lease</Label></div></div>
-                                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'owned' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><div className="flex items-center gap-2"><RadioGroupItem value="owned" id="p-own" /><Label htmlFor="p-own" className="font-bold uppercase text-xs cursor-pointer">Owned Asset</Label></div></div>
+                                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'rented' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><div className="flex items-center gap-2"><RadioGroupItem value="rented" id="p-rent" /><Label htmlFor="p-rent" className="font-bold uppercase text-xs cursor-pointer text-foreground">Rented / Lease</Label></div></div>
+                                            <div className={cn("p-4 border-2 rounded-2xl cursor-pointer", field.value === 'owned' ? "border-primary bg-primary/5 shadow-md" : "bg-white")}><div className="flex items-center gap-2"><RadioGroupItem value="owned" id="p-own" /><Label htmlFor="p-own" className="font-bold uppercase text-xs cursor-pointer text-foreground">Owned Asset</Label></div></div>
                                         </RadioGroup>
                                     </FormControl>
                                 </FormItem>
@@ -363,20 +363,20 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                             {watched.propertyStanding === 'rented' ? (
                                 <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6 animate-in slide-in-from-top-2 text-left">
                                     <h4 className="font-black text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left"><UserPlus className="h-4 w-4" /> Landlord & Lease Details</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                                        <FormField control={methods.control} name="landlordDetails.name" render={({ field }) => (<FormItem><FormLabel>Landlord Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="landlordDetails.phone" render={({ field }) => (<FormItem><FormLabel>Landlord Phone</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left text-foreground">
+                                        <FormField control={methods.control} name="landlordDetails.name" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Landlord Name</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="landlordDetails.phone" render={({ field }) => (<FormItem className="text-left"><FormLabel>Landlord Phone</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                     <div className="grid grid-cols-3 gap-4 text-left">
-                                        <FormField control={methods.control} name="leaseTerms.rentPerMonth" render={({ field }) => (<FormItem><FormLabel>Monthly Rent (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="leaseTerms.sinceDate" render={({ field }) => (<FormItem><FormLabel>Tenant Since</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
-                                        <FormField control={methods.control} name="leaseTerms.expiryDate" render={({ field }) => (<FormItem><FormLabel>Lease Expiry</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="leaseTerms.rentPerMonth" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Monthly Rent (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="leaseTerms.sinceDate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Tenant Since</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
+                                        <FormField control={methods.control} name="leaseTerms.expiryDate" render={({ field }) => (<FormItem className="text-left text-foreground"><FormLabel>Lease Expiry</FormLabel><FormControl><Input type="date" {...field} className="bg-white" /></FormControl></FormItem>)} />
                                     </div>
                                 </div>
                             ) : (
                                 <div className="p-8 border-2 border-dashed rounded-3xl bg-slate-50 space-y-6 animate-in slide-in-from-top-2 text-left">
                                     <div className="flex items-center justify-between text-left">
-                                        <h4 className="font-black text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left text-foreground text-foreground"><Landmark className="h-4 w-4" /> Ownership Standing</h4>
+                                        <h4 className="font-black text-xs uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-left"><Landmark className="h-4 w-4" /> Ownership Standing</h4>
                                         <div className="flex items-center gap-3">
                                             <Label className="text-[10px] font-black uppercase text-muted-foreground">Is Financed (Bonded)?</Label>
                                             <FormField control={methods.control} name="isPropertyFinanced" render={({ field }) => (
@@ -400,19 +400,19 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                             <p className="text-sm text-muted-foreground text-left">Declare the primary debt instrument attached to the operational premises.</p>
                         </div>
                         <div className="grid grid-cols-2 gap-6 text-left">
-                             <FormField control={methods.control} name="bondDetails.bank" render={({ field }) => (<FormItem><FormLabel>Financing Institution (Bank)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
-                             <FormField control={methods.control} name="bondDetails.bondNumber" render={({ field }) => (<FormItem><FormLabel>Bond Reference #</FormLabel><FormControl><Input {...field} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
+                             <FormField control={methods.control} name="bondDetails.bank" render={({ field }) => (<FormItem className="text-left"><FormLabel>Financing Institution (Bank)</FormLabel><FormControl><Input {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                             <FormField control={methods.control} name="bondDetails.bondNumber" render={({ field }) => (<FormItem className="text-left"><FormLabel>Bond Reference #</FormLabel><FormControl><Input {...field} className="bg-white border-2 font-mono" /></FormControl></FormItem>)} />
                         </div>
                         <div className="grid grid-cols-3 gap-6 text-left">
-                             <FormField control={methods.control} name="bondDetails.originalAmount" render={({ field }) => (<FormItem><FormLabel>Original Amount (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2 font-bold" /></FormControl></FormItem>)} />
-                             <FormField control={methods.control} name="bondDetails.outstandingBalance" render={({ field }) => (<FormItem><FormLabel>Outstanding Balance (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2 font-black text-destructive" /></FormControl></FormItem>)} />
-                             <FormField control={methods.control} name="bondDetails.term" render={({ field }) => (<FormItem><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
+                             <FormField control={methods.control} name="bondDetails.originalAmount" render={({ field }) => (<FormItem className="text-left"><FormLabel>Original Amount (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2 font-bold" /></FormControl></FormItem>)} />
+                             <FormField control={methods.control} name="bondDetails.outstandingBalance" render={({ field }) => (<FormItem className="text-left"><FormLabel>Outstanding Balance (R)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2 font-black text-destructive" /></FormControl></FormItem>)} />
+                             <FormField control={methods.control} name="bondDetails.term" render={({ field }) => (<FormItem className="text-left"><FormLabel>Term (Months)</FormLabel><FormControl><Input type="number" {...field} className="bg-white border-2" /></FormControl></FormItem>)} />
                         </div>
                         
                         <div className="p-8 bg-primary/5 border-2 border-primary/20 rounded-[2.5rem] flex justify-between items-center text-left">
                             <div className="text-left">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Estimated Asset Equity</Label>
-                                <p className="text-4xl font-black text-primary">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Estimated Repaid Capital</Label>
+                                <p className="text-4xl font-black text-primary text-left">
                                     {formatCurrency((watched.bondDetails?.originalAmount || 0) - (watched.bondDetails?.outstandingBalance || 0))}
                                 </p>
                             </div>
@@ -427,13 +427,13 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
                     <div className="space-y-10 animate-in fade-in duration-500 text-left">
                         <div className="grid grid-cols-2 gap-8 text-left">
                             <FormField control={methods.control} name="shareholderCount" render={({ field }) => (
-                                <FormItem><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Authorized Shareholders</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
                             )} />
                             <FormField control={methods.control} name="directorCount" render={({ field }) => (
-                                <FormItem><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
+                                <FormItem className="text-left"><FormLabel>Authorized Directors</FormLabel><FormControl><Input type="number" {...field} className="h-12 border-2 bg-white font-black text-xl" /></FormControl></FormItem>
                             )} />
                         </div>
-                        <Alert className="bg-primary/5 border-primary/20 text-left"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Governance Sync</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left">Adjusting these counts will synchronize the identity nodes in the next section.</AlertDescription></Alert>
+                        <Alert className="bg-primary/5 border-primary/20 text-left"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold text-left">Governance Sync</AlertTitle><AlertDescription className="text-xs text-muted-foreground leading-relaxed text-left text-foreground">Adjusting these counts will synchronize the identity nodes in the next section.</AlertDescription></Alert>
                     </div>
                 )}
 
@@ -455,8 +455,8 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
 
                 {currentStepId === 'review' && (
                     <div className="text-center py-24 space-y-6 animate-in zoom-in-95 duration-500 text-center">
-                        <CheckCircle2 className="h-20 w-20 text-primary mx-auto opacity-30 text-center" />
-                        <div className="space-y-2 text-center">
+                        <CheckCircle2 className="h-20 w-20 text-primary mx-auto opacity-30" />
+                        <div className="space-y-2 text-center text-foreground">
                             <h3 className="text-3xl font-black uppercase text-center">Audit Check Complete</h3>
                             <p className="text-sm text-muted-foreground max-sm mx-auto leading-relaxed text-center">Verify data integrity before committing this client node to the grid.</p>
                         </div>
@@ -465,7 +465,7 @@ export function EditClientWizard({ client, onSave, onBack, targetCollection = 'l
               </div>
             </div>
           </CardContent>
-          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left">
+          <CardFooter className="bg-slate-50 border-t p-8 flex justify-between text-left text-foreground">
             <Button type="button" variant="outline" onClick={() => handleStepTransition('back')} className="font-bold h-12 px-8">Back</Button>
             {currentStep < steps.length - 1 ? (
               <Button type="button" onClick={() => handleStepTransition('next')} className="px-12 font-black uppercase text-xs tracking-widest text-white shadow-lg h-12">Next Protocol Stage <ArrowRight className="ml-2 h-4 w-4" /></Button>
